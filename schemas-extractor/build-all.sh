@@ -43,12 +43,16 @@ generate_one() {
 }
 
 for p in $(cat "$CUR/providers.list.full"); do
+  if [[ "$p" == "terraform-provider-scaffolding" ]]; then
+    continue
+  fi
+
   pushd "$p" >/dev/null
 
   echo "Preparing $p"
   revision="$(git describe)"
 
-  name="${p:19}"
+  name="${p#terraform-provider-}"
   pkg_name="$name"
   if [[ "$pkg_name" == "azure-classic" ]]; then
     pkg_name="azure"
