@@ -62,7 +62,7 @@ for p in $(cat "$CUR/providers.list.full"); do
   mkdir generate-schema
   cp -r "$CUR/template/generate-schema.go" generate-schema/generate-schema.go
   sed -i -e "s/__FULL_NAME__/$p/g" generate-schema/generate-schema.go
-  sed -i -e "s/__NAME__/${name:19}/g" generate-schema/generate-schema.go
+  sed -i -e "s/__NAME__/${name}/g" generate-schema/generate-schema.go
   sed -i -e "s/__PKG_NAME__/${pkg_name}/g" generate-schema/generate-schema.go
   sed -i -e "s/__REVISION__/$revision/g" generate-schema/generate-schema.go
   sed -i -e "s~__OUT__~$out~g" generate-schema/generate-schema.go
