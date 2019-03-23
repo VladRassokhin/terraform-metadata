@@ -22,11 +22,10 @@ update_or_clone() {
   location="$GOPATH/src/github.com/terraform-providers/$name"
   if [[ -d "$location" ]]; then
     echo "Updating $name"
-    [[ -d "$location/vendor" ]] && git -C "$location" checkout -- 'vendor/' >/dev/null
-    git -C "$location" pull >/dev/null
+    git -C "$location" pull >/dev/null || echo "ERROR: Failed to update '$name'"
   else
     echo "Cloning $name"
-    git clone "https://github.com/terraform-providers/$name.git" "$location" >/dev/null
+    git clone --quiet "https://github.com/terraform-providers/$name.git" "$location" >/dev/null
   fi
 }
 
@@ -51,53 +50,77 @@ generate_one() {
   echo "Finished $1"
 }
 
-for p in $(cat "$CUR/providers.list.full"); do
-  if [[ "$p" == "terraform-provider-scaffolding" ]]; then
-    continue
-  fi
-
-  pushd "$p" >/dev/null
-
-  echo "Preparing $p"
-  revision="$(git describe)"
-
-  name="${p#terraform-provider-}"
+process_repository() {
+  full_name="$1"
+  location="$GOPATH/src/github.com/terraform-providers/$full_name"
+  name="${full_name#terraform-provider-}"
   pkg_name="$name"
+
   if [[ "$pkg_name" == "azure-classic" ]]; then
     pkg_name="azure"
   fi
 
+  if output=$(git -C "$location" status --untracked-files=no --porcelain) && [[ ! -z "$output" ]]; then
+    echo "git working copy is not clear, cannot proceed"
+    echo "$full_name" >> "$CUR/failure.txt"
+    exit 2
+  fi
+
+  pushd "$location" >/dev/null
+
+  echo "Preparing $full_name"
+
+  # All tags:
+  echo "Repository all tags:"
+  echo "$(git tag -l --sort=-v:refname)"
+  latest=$(git tag -l --sort=-v:refname | head -n 1)
+  if [[ -z "$latest" ]]; then
+    echo "There's no tags in $full_name, will use current state"
+  else
+    echo "Will generate schema for tag '$latest'"
+  fi
+
+  [[ -n "$latest" ]] && git checkout -q "$latest"
+
+
+  revision="$(git describe)"
+
   rm -rf generate-schema
   mkdir generate-schema
   cp -r "$CUR/template/generate-schema.go" generate-schema/generate-schema.go
-  sed -i -e "s/__FULL_NAME__/$p/g" generate-schema/generate-schema.go
+  sed -i -e "s/__FULL_NAME__/$full_name/g" generate-schema/generate-schema.go
   sed -i -e "s/__NAME__/${name}/g" generate-schema/generate-schema.go
   sed -i -e "s/__PKG_NAME__/${pkg_name}/g" generate-schema/generate-schema.go
   sed -i -e "s/__REVISION__/$revision/g" generate-schema/generate-schema.go
   sed -i -e "s~__OUT__~$out~g" generate-schema/generate-schema.go
 
-  #echo "Building $p"
-  #make
-
-  echo "Generating schema for $p"
+  echo "Generating schema for $full_name"
   if [[ "$KILL_CPU" == "1" ]]; then
   (
-    generate_one "$p" "$CUR"
+    generate_one "$full_name" "$CUR"
   )&
   else
-    generate_one "$p" "$CUR"
+    generate_one "$full_name" "$CUR"
   fi
 
+  # Revert to previous state
+  [[ -n "$latest" ]] && git checkout -q '@{-1}'
   popd >/dev/null
+}
+
+for p in $(cat "$CUR/providers.list.full"); do
+  if [[ "$p" == "terraform-provider-scaffolding" ]]; then
+    continue
+  fi
+
+  process_repository "$p"
 done
 
-if [[ "$KILL_CPU" == "1" ]]; then
 echo
 echo "========================================"
 echo "Waiting for 'generate-schemas' processes to finish"
 wait
 echo
-fi
 
 echo "========================================"
 echo "Everything done!"
