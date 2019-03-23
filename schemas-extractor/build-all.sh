@@ -1,31 +1,40 @@
 #!/usr/bin/env bash
 
-CUR="$(pwd)"
-
-if [ ! -f 'providers.list.full' ]; then
-  echo 'providers.list.full required'
+if [[ ! -f 'providers.list.full' ]]; then
+  echo "File 'providers.list.full' required to operate"
   exit 1
 fi
+if [[ -z "$GOPATH" ]]; then
+  echo 'GOPATH env variable required to operate'
+  exit 1
+fi
+
+CUR="$(pwd)"
 
 out="$CUR/schemas"
 mkdir -p "$out"
 rm -f "$CUR/failure.txt"
 
 mkdir -p "$GOPATH/src/github.com/terraform-providers"
-pushd "$GOPATH/src/github.com/terraform-providers" >/dev/null
+
+update_or_clone() {
+  name="$1"
+  location="$GOPATH/src/github.com/terraform-providers/$name"
+  if [[ -d "$location" ]]; then
+    echo "Updating $name"
+    [[ -d "$location/vendor" ]] && git -C "$location" checkout -- 'vendor/' >/dev/null
+    git -C "$location" pull >/dev/null
+  else
+    echo "Cloning $name"
+    git clone "https://github.com/terraform-providers/$name.git" "$location" >/dev/null
+  fi
+}
 
 for p in $(cat "$CUR/providers.list.full"); do
-  if [ -d "$p" ]; then
-    echo "Updating $p"
-    pushd "$p" >/dev/null
-    [[ -d 'vendor' ]] && git checkout -- vendor/ >/dev/null
-    git pull >/dev/null &
-    popd >/dev/null
-  else
-    echo "Cloning $p"
-    git clone "https://github.com/terraform-providers/$p.git" >/dev/null &
-  fi
+  update_or_clone "$p" &
 done
+
+pushd "$GOPATH/src/github.com/terraform-providers" >/dev/null
 
 echo
 echo "========================================"
