@@ -105,6 +105,9 @@ func (m schemaMap) Export() SchemaInfo {
 	return result
 }
 
+var envDefaultFunc = schema.EnvDefaultFunc("", nil)
+var multiEnvDefaultFunc = schema.MultiEnvDefaultFunc([]string{}, nil)
+
 func export(v *schema.Schema) SchemaDefinition {
 	item := SchemaDefinition{}
 
@@ -126,18 +129,25 @@ func export(v *schema.Schema) SchemaDefinition {
 		item.Elem = exportValue(v.Elem, fmt.Sprintf("%T", v.Elem))
 	}
 
-	// TODO: Find better solution
-	if defValue, err := v.DefaultValue(); err == nil && defValue != nil && !reflect.DeepEqual(defValue, v.Default) {
+	if defValue := v.Default; defValue != nil {
 		item.Default = exportValue(defValue, fmt.Sprintf("%T", defValue))
+	}
+	if defFunc := v.DefaultFunc; defFunc != nil {
+		// TODO: Find how to get first argument passed to EnvDefaultFunc/MultiEnvDefaultFunc from bytecode
+		if reflect.ValueOf(defFunc).Pointer() == reflect.ValueOf(envDefaultFunc).Pointer() {
+			item.DefaultFunc = "ENV"
+		} else if reflect.ValueOf(defFunc).Pointer() == reflect.ValueOf(multiEnvDefaultFunc).Pointer() {
+			item.DefaultFunc = "MENV"
+		}
 	}
 	return item
 }
 
 func shortenType(value string) string {
-  if (len(value) > 4 && value[0:4] == "Type") {
-    return value[4:]
-  }
-  return value
+	if len(value) > 4 && value[0:4] == "Type" {
+		return value[4:]
+	}
+	return value
 }
 
 func exportValue(value interface{}, t string) *SchemaElement {
@@ -151,7 +161,7 @@ func exportValue(value interface{}, t string) *SchemaElement {
 	}
 	vt, ok := value.(schema.ValueType)
 	if ok {
-	  return &SchemaElement{Value: shortenType(fmt.Sprintf("%v", vt))}
+		return &SchemaElement{Value: shortenType(fmt.Sprintf("%v", vt))}
 	}
 	// Unknown case
 	return &SchemaElement{Type: t, Value: fmt.Sprintf("%v", value)}
@@ -209,6 +219,7 @@ type SchemaDefinition struct {
 	MaxItems      int    `json:",omitempty"`
 	MinItems      int    `json:",omitempty"`
 	PromoteSingle bool   `json:",omitempty"`
+	DefaultFunc   string `json:",omitempty"`
 
 	ComputedWhen  []string `json:",omitempty"`
 	ConflictsWith []string `json:",omitempty"`
@@ -222,6 +233,7 @@ type SchemaDefinition struct {
 
 type SchemaInfo map[string]SchemaDefinition
 type SchemaInfoWithTimeouts map[string]interface{}
+
 //{
 //	SchemaInfo `json:""`
 //	Timeouts []string `json:"__timeouts__,omitempty"`
@@ -229,10 +241,10 @@ type SchemaInfoWithTimeouts map[string]interface{}
 
 // ResourceProviderSchema
 type ResourceProviderSchema struct {
-	Name        string                `json:"name"`
-	Type        string                `json:"type"`
-	Version     string                `json:"version"`
-	Provider    SchemaInfo            `json:"provider"`
+	Name        string                            `json:"name"`
+	Type        string                            `json:"type"`
+	Version     string                            `json:"version"`
+	Provider    SchemaInfo                        `json:"provider"`
 	Resources   map[string]SchemaInfoWithTimeouts `json:"resources"`
 	DataSources map[string]SchemaInfoWithTimeouts `json:"data-sources"`
 }
