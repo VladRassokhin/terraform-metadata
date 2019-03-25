@@ -17,6 +17,7 @@ import (
 // of the provider.
 func Export(p *schema.Provider) *ResourceProviderSchema {
 	result := new(ResourceProviderSchema)
+	result.SchemaVersion = "1"
 
 	result.Name = "__NAME__"
 	result.Type = "provider"
@@ -241,6 +242,8 @@ type SchemaInfoWithTimeouts map[string]interface{}
 
 // ResourceProviderSchema
 type ResourceProviderSchema struct {
+	SchemaVersion string `json:".schema_version"`
+
 	Name        string                            `json:"name"`
 	Type        string                            `json:"type"`
 	Version     string                            `json:"version"`
