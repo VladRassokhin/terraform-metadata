@@ -29,7 +29,7 @@ update_or_clone() {
   fi
 }
 
-for p in $(cat "$CUR/providers.list.full"); do
+[[ -z "$SKIP_UPDATE" ]] && for p in $(cat "$CUR/providers.list.full"); do
   update_or_clone "$p" &
 done
 
