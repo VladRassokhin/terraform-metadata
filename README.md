@@ -1,4 +1,4 @@
-#Terraform Metadata
+##Terraform Metadata
 
 This repository contains some metadata for [Terraform](https://www.terraform.io):
  * Providers
@@ -22,6 +22,9 @@ mkdir -p "$HOME/.terraform.d/metadata-repo"
 git clone "https://github.com/VladRassokhin/terraform-metadata" "$HOME/.terraform.d/metadata-repo"
 ```
 And then update it regularly using `git pull`
+
+### Update
+Follow instructions at schemas-extractor/ReadMe.md
 
 
 ### License
