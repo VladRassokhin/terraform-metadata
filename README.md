@@ -1,4 +1,5 @@
-##Terraform Metadata
+Terraform Metadata
+========
 
 This repository contains some metadata for [Terraform](https://www.terraform.io):
  * Providers
