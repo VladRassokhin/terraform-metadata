@@ -139,6 +139,8 @@ func export(v *schema.Schema) SchemaDefinition {
 			item.DefaultFunc = "ENV"
 		} else if reflect.ValueOf(defFunc).Pointer() == reflect.ValueOf(multiEnvDefaultFunc).Pointer() {
 			item.DefaultFunc = "MENV"
+		} else {
+			item.DefaultFunc = "UNKNOWN"
 		}
 	}
 	return item
