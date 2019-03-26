@@ -72,7 +72,7 @@ process_repository() {
 
   # All tags:
   echo "Repository all tags:"
-  echo "$(git tag -l --sort=-v:refname)"
+  echo "$(git tag -l --sort=-v:refname | (head; tail))"
   latest=$(git tag -l --sort=-v:refname | head -n 1)
   if [[ -z "$latest" ]]; then
     echo "There's no tags in $full_name, will use current state"
