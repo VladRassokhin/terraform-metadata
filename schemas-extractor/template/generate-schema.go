@@ -256,6 +256,6 @@ type ResourceProviderSchema struct {
 
 func main() {
 	var provider tf.ResourceProvider
-	provider = prvdr.Provider()
+	provider = prvdr.Provider(__PROVIDER_ARGS__)
 	Generate(provider.(*schema.Provider), "__NAME__", "__OUT__")
 }

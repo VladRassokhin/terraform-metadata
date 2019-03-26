@@ -55,9 +55,13 @@ process_repository() {
   location="$GOPATH/src/github.com/terraform-providers/$full_name"
   name="${full_name#terraform-provider-}"
   pkg_name="$name"
+  provider_args=""
 
   if [[ "$pkg_name" == "azure-classic" ]]; then
     pkg_name="azure"
+  fi
+  if [[ "$pkg_name" == "oci" ]]; then
+    provider_args="prvdr.ProviderConfig"
   fi
 
   if output=$(git -C "$location" status --untracked-files=no --porcelain) && [[ ! -z "$output" ]]; then
@@ -96,6 +100,7 @@ process_repository() {
   sed -i -e "s/__NAME__/${name}/g" generate-schema/generate-schema.go
   sed -i -e "s/__PKG_NAME__/${pkg_name}/g" generate-schema/generate-schema.go
   sed -i -e "s/__REVISION__/$revision/g" generate-schema/generate-schema.go
+  sed -i -e "s/__PROVIDER_ARGS__/$provider_args/g" generate-schema/generate-schema.go
   sed -i -e "s~__OUT__~$out~g" generate-schema/generate-schema.go
 
   echo "Generating schema for $full_name"
