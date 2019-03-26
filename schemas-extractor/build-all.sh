@@ -83,7 +83,11 @@ process_repository() {
   [[ -n "$latest" ]] && git checkout -q "$latest"
 
 
-  revision="$(git describe)"
+  revision="$(git describe --tags)"
+  if [[ -n "$latest" ]] && [[ "$revision" != "$latest" ]]; then
+    echo "WARN: 'git describe' and tag mismatch: '$revision' vs '$latest', will use '$latest'"
+    revision="$latest"
+  fi
 
   rm -rf generate-schema
   mkdir generate-schema
