@@ -10,7 +10,9 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"time"
+	"unsafe"
 )
 
 // ExportSchema should be called to export the structure
@@ -134,11 +136,10 @@ func export(v *schema.Schema) SchemaDefinition {
 		item.Default = exportValue(defValue, fmt.Sprintf("%T", defValue))
 	}
 	if defFunc := v.DefaultFunc; defFunc != nil {
-		// TODO: Find how to get first argument passed to EnvDefaultFunc/MultiEnvDefaultFunc from bytecode
 		if reflect.ValueOf(defFunc).Pointer() == reflect.ValueOf(envDefaultFunc).Pointer() {
-			item.DefaultFunc = "ENV"
+			item.DefaultFunc = getEnvDefaultFuncDescription(defFunc)
 		} else if reflect.ValueOf(defFunc).Pointer() == reflect.ValueOf(multiEnvDefaultFunc).Pointer() {
-			item.DefaultFunc = "MENV"
+			item.DefaultFunc = getMultiEnvDefaultFuncDescription(defFunc)
 		} else {
 			item.DefaultFunc = "UNKNOWN"
 		}
@@ -258,4 +259,59 @@ func main() {
 	var provider tf.ResourceProvider
 	provider = prvdr.Provider(__PROVIDER_ARGS__)
 	Generate(provider.(*schema.Provider), "__NAME__", "__OUT__")
+}
+
+func getEnvDefaultFuncDescription(df schema.SchemaDefaultFunc) string {
+	return fmt.Sprintf("ENV(%s)", getEnvDefaultFuncArgs(df))
+}
+func getMultiEnvDefaultFuncDescription(df schema.SchemaDefaultFunc) string {
+	return fmt.Sprintf("MENV(%s)", strings.Join(getMultiEnvDefaultFuncArgs(df), ","))
+}
+
+func getEnvDefaultFuncArgs(df schema.SchemaDefaultFunc) string {
+	loc := (uintptr)(unsafe.Pointer(&df))
+	context_ptr := getPointerFromLocation(loc)
+	// (context_ptr) <- closure function
+	// (context_ptr+(uintptr(8))) <- str address
+	// (context_ptr+(uintptr(16))) <- str length
+	str_addr := context_ptr + (uintptr(8))
+	return getString(str_addr)
+}
+
+func getMultiEnvDefaultFuncArgs(df schema.SchemaDefaultFunc) []string {
+	loc := (uintptr)(unsafe.Pointer(&df))
+	context_ptr := getPointerFromLocation(loc)
+	// (context_ptr) <- closure function
+	// (context_ptr+(uintptr(8))) <- []str address
+	// (context_ptr+(uintptr(16))) <- []str length
+	// (context_ptr+(uintptr(24))) <- []str cap
+	str_addr := context_ptr + (uintptr(8))
+	return getSlice(str_addr)
+}
+
+func getPointerFromLocation(location uintptr) uintptr {
+	return *(*uintptr)(unsafe.Pointer(location))
+}
+
+func getString(addr uintptr) string {
+	SH := (*reflect.StringHeader)(unsafe.Pointer(addr))
+
+	var res string
+	pString := (*reflect.StringHeader)(unsafe.Pointer(&res))
+
+	pString.Data = SH.Data
+	pString.Len = SH.Len
+	return res
+}
+
+func getSlice(addr uintptr) []string {
+	SH := (*reflect.SliceHeader)(unsafe.Pointer(addr))
+
+	var res = make([]string, 3)
+	pString := (*reflect.SliceHeader)(unsafe.Pointer(&res))
+
+	pString.Data = SH.Data
+	pString.Len = SH.Len
+	pString.Cap = SH.Len
+	return res
 }
