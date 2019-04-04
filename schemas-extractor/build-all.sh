@@ -95,13 +95,14 @@ process_repository() {
 
   rm -rf generate-schema
   mkdir generate-schema
-  cp -r "$CUR/template/generate-schema.go" generate-schema/generate-schema.go
-  sed -i -e "s/__FULL_NAME__/$full_name/g" generate-schema/generate-schema.go
-  sed -i -e "s/__NAME__/${name}/g" generate-schema/generate-schema.go
-  sed -i -e "s/__PKG_NAME__/${pkg_name}/g" generate-schema/generate-schema.go
-  sed -i -e "s/__REVISION__/$revision/g" generate-schema/generate-schema.go
-  sed -i -e "s/__PROVIDER_ARGS__/$provider_args/g" generate-schema/generate-schema.go
-  sed -i -e "s~__OUT__~$out~g" generate-schema/generate-schema.go
+  cat "$CUR/template/generate-schema.go" | sed \
+    -e "s/__FULL_NAME__/$full_name/g" \
+    -e "s/__NAME__/${name}/g" \
+    -e "s/__PKG_NAME__/${pkg_name}/g" \
+    -e "s/__REVISION__/$revision/g" \
+    -e "s/__PROVIDER_ARGS__/$provider_args/g" \
+    -e "s~__OUT__~$out~g" \
+    > generate-schema/generate-schema.go
 
   echo "Generating schema for $full_name"
   if [[ "$KILL_CPU" == "1" ]]; then
