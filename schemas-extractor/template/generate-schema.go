@@ -38,46 +38,15 @@ func Export(p *schema.Provider) *ResourceProviderSchema {
 	return result
 }
 
-const (
-	TimeoutCreate  = "create"
-	TimeoutRead    = "read"
-	TimeoutUpdate  = "update"
-	TimeoutDelete  = "delete"
-	TimeoutDefault = "default"
-)
-
-func timeoutKeys() []string {
-	return []string{
-		TimeoutCreate,
-		TimeoutRead,
-		TimeoutUpdate,
-		TimeoutDelete,
-		TimeoutDefault,
-	}
-}
-
 func ExportResourceWithTimeouts(r *schema.Resource) SchemaInfoWithTimeouts {
 	var timeouts []string
-	t := r.Timeouts
-	if t != nil {
-		for _, key := range timeoutKeys() {
-			var timeout *time.Duration
-			switch key {
-			case TimeoutCreate:
-				timeout = t.Create
-			case TimeoutUpdate:
-				timeout = t.Update
-			case TimeoutRead:
-				timeout = t.Read
-			case TimeoutDelete:
-				timeout = t.Delete
-			case TimeoutDefault:
-				timeout = t.Default
-			default:
-				panic("Unsupported timeout key, update switch statement!")
-			}
-			if timeout != nil {
-				timeouts = append(timeouts, key)
+	if t := r.Timeouts; t != nil {
+		tp := reflect.ValueOf(*t)
+		for i := 0; i < tp.NumField(); i++ {
+			field := tp.Type().Field(i)
+			val := tp.Field(i)
+			if field.Type == reflect.PtrTo(reflect.TypeOf(time.Nanosecond)) && !val.IsNil() {
+				timeouts = append(timeouts, strings.ToLower(field.Name))
 			}
 		}
 	}
