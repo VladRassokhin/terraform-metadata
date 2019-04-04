@@ -172,15 +172,15 @@ func exportValue(value interface{}, t string) *SchemaElement {
 }
 
 func Generate(provider *schema.Provider, name string, outputPath string) {
-	outputFilePath := filepath.Join(outputPath, fmt.Sprintf("%s.json", name))
+	outputFilePath := filepath.Join(outputPath, name+`.json`)
 
-	if err := DoGenerate(provider, name, outputFilePath); err != nil {
-		fmt.Fprintln(os.Stderr, "Error: ", err.Error())
+	if err := DoGenerate(provider, outputFilePath); err != nil {
+		_, _ = fmt.Fprintf(os.Stderr, "Error: %s", err.Error())
 		os.Exit(255)
 	}
 }
 
-func DoGenerate(provider *schema.Provider, providerName string, outputFilePath string) error {
+func DoGenerate(provider *schema.Provider, outputFilePath string) error {
 	providerJson, err := json.MarshalIndent(Export(provider), "", "  ")
 
 	if err != nil {
