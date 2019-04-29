@@ -2,13 +2,25 @@
   ".schema_version": "1",
   "name": "linode",
   "type": "provider",
-  "version": "v1.5.0",
+  "version": "v1.6.0",
   "provider": {
     "token": {
       "Type": "String",
       "Required": true,
       "Description": "The token that allows you access to your Linode account",
       "DefaultFunc": "ENV(LINODE_TOKEN)"
+    },
+    "ua_prefix": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "An HTTP User-Agent Prefix to prepend in API requests.",
+      "DefaultFunc": "ENV(LINODE_UA_PREFIX)"
+    },
+    "url": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "The HTTP(S) API address of the Linode API to use.",
+      "DefaultFunc": "ENV(LINODE_URL)"
     }
   },
   "resources": {
@@ -35,7 +47,7 @@
       "expire_sec": {
         "Type": "Int",
         "Optional": true,
-        "Description": "The amount of time in seconds that may pass before this Domain is no longer authoritative. Valid values are 300, 3600, 7200, 14400, 28800, 57600, 86400, 172800, 345600, 604800, 1209600, and 2419200 - any other value will be rounded to the nearest valid value."
+        "Description": "The amount of time in seconds that may pass before this Domain is no longer authoritative. Valid values are 0, 00, 3600, 7200, 14400, 28800, 57600, 86400, 172800, 345600, 604800, 1209600, and 2419200 - any other value will be rounded to the nearest valid value."
       },
       "group": {
         "Type": "String",
@@ -54,12 +66,12 @@
       "refresh_sec": {
         "Type": "Int",
         "Optional": true,
-        "Description": "The amount of time in seconds before this Domain should be refreshed. Valid values are 300, 3600, 7200, 14400, 28800, 57600, 86400, 172800, 345600, 604800, 1209600, and 2419200 - any other value will be rounded to the nearest valid value."
+        "Description": "The amount of time in seconds before this Domain should be refreshed. Valid values are 0, 300, 3600, 7200, 14400, 28800, 57600, 86400, 172800, 345600, 604800, 1209600, and 2419200 - any other value will be rounded to the nearest valid value."
       },
       "retry_sec": {
         "Type": "Int",
         "Optional": true,
-        "Description": "The interval, in seconds, at which a failed refresh should be retried. Valid values are 300, 3600, 7200, 14400, 28800, 57600, 86400, 172800, 345600, 604800, 1209600, and 2419200 - any other value will be rounded to the nearest valid value."
+        "Description": "The interval, in seconds, at which a failed refresh should be retried. Valid values are 0, 300, 3600, 7200, 14400, 28800, 57600, 86400, 172800, 345600, 604800, 1209600, and 2419200 - any other value will be rounded to the nearest valid value."
       },
       "soa_email": {
         "Type": "String",
@@ -85,7 +97,7 @@
       "ttl_sec": {
         "Type": "Int",
         "Optional": true,
-        "Description": "'Time to Live' - the amount of time in seconds that this Domain's records may be cached by resolvers or other domain servers. Valid values are 300, 3600, 7200, 14400, 28800, 57600, 86400, 172800, 345600, 604800, 1209600, and 2419200 - any other value will be rounded to the nearest valid value."
+        "Description": "'Time to Live' - the amount of time in seconds that this Domain's records may be cached by resolvers or other domain servers. Valid values are 0, 300, 3600, 7200, 14400, 28800, 57600, 86400, 172800, 345600, 604800, 1209600, and 2419200 - any other value will be rounded to the nearest valid value."
       },
       "type": {
         "Type": "String",
@@ -143,7 +155,7 @@
       "ttl_sec": {
         "Type": "Int",
         "Optional": true,
-        "Description": "'Time to Live' - the amount of time in seconds that this Domain's records may be cached by resolvers or other domain servers. Valid values are 300, 3600, 7200, 14400, 28800, 57600, 86400, 172800, 345600, 604800, 1209600, and 2419200 - any other value will be rounded to the nearest valid value."
+        "Description": "'Time to Live' - the amount of time in seconds that this Domain's records may be cached by resolvers or other domain servers. Valid values are 0, 300, 3600, 7200, 14400, 28800, 57600, 86400, 172800, 345600, 604800, 1209600, and 2419200 - any other value will be rounded to the nearest valid value."
       },
       "weight": {
         "Type": "Int",
@@ -1161,6 +1173,18 @@
         "Computed": true
       }
     },
+    "linode_rdns": {
+      "address": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The public Linode IPv4 or IPv6 address to operate on."
+      },
+      "rdns": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The reverse DNS assigned to this address. For public IPv4 addresses, this will be set to a default value provided by Linode if not explicitly set."
+      }
+    },
     "linode_sshkey": {
       "created": {
         "Type": "String",
@@ -1663,6 +1687,53 @@
       "vcpus": {
         "Type": "Int",
         "Description": "The number of VCPU cores this Linode Type offers.",
+        "Computed": true
+      }
+    },
+    "linode_networking_ip": {
+      "address": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The IP address."
+      },
+      "gateway": {
+        "Type": "String",
+        "Description": "The default gateway for this address.",
+        "Computed": true
+      },
+      "linode_id": {
+        "Type": "Int",
+        "Description": "The ID of the Linode this address currently belongs to.",
+        "Computed": true
+      },
+      "prefix": {
+        "Type": "Int",
+        "Description": "The number of bits set in the subnet mask.",
+        "Computed": true
+      },
+      "public": {
+        "Type": "Bool",
+        "Description": "Whether this is a public or private IP address.",
+        "Computed": true
+      },
+      "rdns": {
+        "Type": "String",
+        "Description": "The reverse DNS assigned to this address. For public IPv4 addresses, this will be set to a default value provided by Linode if not explicitly set.",
+        "Computed": true
+      },
+      "region": {
+        "Type": "String",
+        "Description": "The Region this IP address resides in.",
+        "Computed": true
+      },
+      "subnet_mask": {
+        "Type": "String",
+        "Description": "The mask that separates host bits from network bits for this address.",
+        "Computed": true
+      },
+      "type": {
+        "Type": "String",
+        "Description": "The type of address this is (ipv4, ipv6, ipv6/pool, ipv6/range).",
         "Computed": true
       }
     },

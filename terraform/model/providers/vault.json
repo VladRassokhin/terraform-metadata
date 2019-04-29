@@ -2,7 +2,7 @@
   ".schema_version": "1",
   "name": "vault",
   "type": "provider",
-  "version": "v1.6.0",
+  "version": "v1.7.0",
   "provider": {
     "address": {
       "Type": "String",
@@ -49,6 +49,12 @@
       "Optional": true,
       "Description": "Maximum TTL for secret leases requested by this provider",
       "DefaultFunc": "ENV(TERRAFORM_VAULT_MAX_TTL)"
+    },
+    "max_retries": {
+      "Type": "Int",
+      "Optional": true,
+      "Description": "Maximum number of retries when a 5xx error code is encountered.",
+      "DefaultFunc": "ENV(VAULT_MAX_RETRIES)"
     },
     "namespace": {
       "Type": "String",
@@ -989,7 +995,6 @@
         "Optional": true,
         "Description": "ARN for an existing IAM policy the role should use.",
         "ConflictsWith": [
-          "policy_document",
           "policy",
           "policy_arn"
         ],
@@ -1003,7 +1008,6 @@
         "Optional": true,
         "Description": "IAM policy the role should use in JSON format.",
         "ConflictsWith": [
-          "policy_arns",
           "policy_arn",
           "policy"
         ]
@@ -1425,7 +1429,7 @@
       "data": {
         "Type": "Map",
         "Optional": true,
-        "Description": "A map of sensitive data to pass to the endpoint. Usefule for templated connection strings."
+        "Description": "A map of sensitive data to pass to the endpoint. Useful for templated connection strings."
       },
       "hana": {
         "Type": "List",
@@ -2108,12 +2112,139 @@
         }
       }
     },
+    "vault_gcp_secret_roleset": {
+      "backend": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Path where the GCP secrets engine is mounted."
+      },
+      "binding": {
+        "Type": "Set",
+        "Required": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "resource": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Resource name"
+            },
+            "roles": {
+              "Type": "Set",
+              "Required": true,
+              "Description": "List of roles to apply to the resource",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
+      "project": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the GCP project that this roleset's service account will belong to. "
+      },
+      "roleset": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the RoleSet to create"
+      },
+      "secret_type": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Type of secret generated for this role set. Defaults to `access_token`. Accepted values: `access_token`, `service_account_key`",
+        "Computed": true
+      },
+      "service_account_email": {
+        "Type": "String",
+        "Description": "Email of the service account created by Vault for this Roleset",
+        "Computed": true
+      },
+      "token_scopes": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "List of OAuth scopes to assign to `access_token` secrets generated under this role set (`access_token` role sets only) ",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      }
+    },
+    "vault_generic_endpoint": {
+      "data_json": {
+        "Type": "String",
+        "Required": true,
+        "Description": "JSON-encoded data to write."
+      },
+      "disable_delete": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Don't attempt to delete the path from Vault if true",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "disable_read": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Don't attempt to read the path from Vault if true; drift won't be detected",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "ignore_absent_fields": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "When reading, disregard fields not present in data_json",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "path": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Full path where to the endpoint that will be written"
+      },
+      "write_data": {
+        "Type": "Map",
+        "Description": "Map of strings returned by write operation",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "write_data_json": {
+        "Type": "String",
+        "Description": "JSON data returned by write operation",
+        "Computed": true
+      },
+      "write_fields": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Top-level fields returned by write to persist in state",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      }
+    },
     "vault_generic_secret": {
       "allow_read": {
         "Type": "Bool",
         "Optional": true,
         "Description": "Attempt to read the token from Vault if true; if false, drift won't be detected.",
         "Deprecated": "Please use disable_read instead."
+      },
+      "data": {
+        "Type": "Map",
+        "Description": "Map of strings read from Vault.",
+        "Computed": true
       },
       "data_json": {
         "Type": "String",
@@ -2136,6 +2267,11 @@
       }
     },
     "vault_github_auth_backend": {
+      "accessor": {
+        "Type": "String",
+        "Description": "The mount accessor related to the auth mount.",
+        "Computed": true
+      },
       "base_url": {
         "Type": "String",
         "Optional": true,
@@ -2285,11 +2421,6 @@
         "Optional": true,
         "Description": "Whether the entity is disabled. Disabled entities' associated tokens cannot be used, but are not revoked."
       },
-      "id": {
-        "Type": "String",
-        "Description": "ID of the entity.",
-        "Computed": true
-      },
       "metadata": {
         "Type": "Map",
         "Optional": true,
@@ -2301,8 +2432,9 @@
       },
       "name": {
         "Type": "String",
-        "Required": true,
-        "Description": "Name of the entity."
+        "Optional": true,
+        "Description": "Name of the entity.",
+        "Computed": true
       },
       "policies": {
         "Type": "Set",
@@ -2320,11 +2452,6 @@
         "Required": true,
         "Description": "ID of the entity to which this is an alias."
       },
-      "id": {
-        "Type": "String",
-        "Description": "ID of the entity alias.",
-        "Computed": true
-      },
       "mount_accessor": {
         "Type": "String",
         "Required": true,
@@ -2337,10 +2464,14 @@
       }
     },
     "vault_identity_group": {
-      "id": {
-        "Type": "String",
-        "Description": "ID of the group.",
-        "Computed": true
+      "external_policies": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Manage policies externally through `vault_identity_group_policies`, allows using group ID in assigned policies.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
       },
       "member_entity_ids": {
         "Type": "Set",
@@ -2372,8 +2503,9 @@
       },
       "name": {
         "Type": "String",
-        "Required": true,
-        "Description": "Name of the group."
+        "Optional": true,
+        "Description": "Name of the group.",
+        "Computed": true
       },
       "policies": {
         "Type": "Set",
@@ -2400,11 +2532,6 @@
         "Required": true,
         "Description": "ID of the group to which this is an alias."
       },
-      "id": {
-        "Type": "String",
-        "Description": "ID of the group alias.",
-        "Computed": true
-      },
       "mount_accessor": {
         "Type": "String",
         "Required": true,
@@ -2414,6 +2541,36 @@
         "Type": "String",
         "Required": true,
         "Description": "Name of the group alias."
+      }
+    },
+    "vault_identity_group_policies": {
+      "exclusive": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Should the resource manage policies exclusively? Beware of race conditions when disabling exclusive management",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "group_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "ID of the group."
+      },
+      "group_name": {
+        "Type": "String",
+        "Description": "Name of the group.",
+        "Computed": true
+      },
+      "policies": {
+        "Type": "Set",
+        "Required": true,
+        "Description": "Policies to be tied to the group.",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       }
     },
     "vault_jwt_auth_backend": {
@@ -2431,6 +2588,15 @@
         "Type": "String",
         "Optional": true,
         "Description": "The description of the auth backend"
+      },
+      "jwt_supported_algs": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "A list of supported signing algorithms. Defaults to [RS256]",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       },
       "jwt_validation_pubkeys": {
         "Type": "List",
@@ -2499,6 +2665,12 @@
         "Optional": true,
         "Description": "The claim to use to uniquely identify the set of groups to which the user belongs; this will be used as the names for the Identity group aliases created due to a successful login. The claim value must be a list of strings."
       },
+      "groups_claim_delimiter_pattern": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "A pattern of delimiters used to allow the groups_claim to live outside of the top-level JWT structure. For instance, a groups_claim of meta/user.name/groups with this field set to // will expect nested structures named meta, user.name, and groups. If this field was set to /./ the groups information would expect to be via nested structures of meta, user, name, and groups.",
+        "Deprecated": "`groups_claim_delimiter_pattern` has been removed since Vault 1.1. If the groups claim is not at the top level, it can now be specified as a JSONPointer."
+      },
       "max_ttl": {
         "Type": "Int",
         "Optional": true,
@@ -2530,6 +2702,12 @@
         "Type": "String",
         "Required": true,
         "Description": "Name of the role."
+      },
+      "role_type": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Type of role, either \"oidc\" (default) or \"jwt\"",
+        "Computed": true
       },
       "ttl": {
         "Type": "Int",
@@ -2746,6 +2924,11 @@
         "Type": "String",
         "Required": true
       },
+      "use_token_groups": {
+        "Type": "Bool",
+        "Optional": true,
+        "Computed": true
+      },
       "userattr": {
         "Type": "String",
         "Optional": true,
@@ -2852,11 +3035,6 @@
       }
     },
     "vault_namespace": {
-      "id": {
-        "Type": "String",
-        "Description": "ID of the namespace.",
-        "Computed": true
-      },
       "path": {
         "Type": "String",
         "Required": true,
@@ -3138,7 +3316,7 @@
         "Computed": true
       },
       "ttl": {
-        "Type": "Int",
+        "Type": "String",
         "Optional": true,
         "Description": "Time to leave."
       }
@@ -4238,20 +4416,132 @@
         "Computed": true
       }
     },
+    "vault_token": {
+      "client_token": {
+        "Type": "String",
+        "Description": "The client token.",
+        "Computed": true
+      },
+      "display_name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The display name of the token.",
+        "Default": {
+          "Type": "string",
+          "Value": "token"
+        }
+      },
+      "explicit_max_ttl": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The explicit max TTL of the token."
+      },
+      "lease_duration": {
+        "Type": "Int",
+        "Description": "The token lease duration.",
+        "Computed": true
+      },
+      "lease_started": {
+        "Type": "String",
+        "Description": "The token lease started on.",
+        "Computed": true
+      },
+      "no_default_policy": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Flag to disable the default policy."
+      },
+      "no_parent": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Flag to create a token without parent."
+      },
+      "num_uses": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The number of allowed uses of the token."
+      },
+      "period": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The period of the token."
+      },
+      "policies": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "List of policies.",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "renew_increment": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The renew increment."
+      },
+      "renew_min_lease": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The minimum lease to renew token."
+      },
+      "renewable": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Flag to allow the token to be renewed"
+      },
+      "role_name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The token role name."
+      },
+      "ttl": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The TTL period of the token."
+      },
+      "wrapped_token": {
+        "Type": "String",
+        "Description": "The client wrapped token.",
+        "Computed": true
+      },
+      "wrapping_accessor": {
+        "Type": "String",
+        "Description": "The client wrapping accessor.",
+        "Computed": true
+      },
+      "wrapping_ttl": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The TTL period of the wrapped token."
+      }
+    },
     "vault_token_auth_backend_role": {
       "allowed_policies": {
-        "Type": "List",
+        "Type": "Set",
         "Optional": true,
         "Description": "List of allowed policies for given role.",
+        "DefaultFunc": "UNKNOWN",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "bound_cidrs": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "If set, restricts usage of the generated token to client IPs falling within the range of the specified CIDR(s).",
+        "DefaultFunc": "UNKNOWN",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
         }
       },
       "disallowed_policies": {
-        "Type": "List",
+        "Type": "Set",
         "Optional": true,
         "Description": "List of disallowed policies for given role.",
+        "DefaultFunc": "UNKNOWN",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -4261,13 +4551,10 @@
         "Type": "String",
         "Optional": true,
         "Description": "If set, the token will have an explicit max TTL set upon it.",
-        "Computed": true
-      },
-      "max_ttl": {
-        "Type": "String",
-        "Optional": true,
-        "Description": "The maximum allowed lifetime of tokens issued using this role.",
-        "Computed": true
+        "Default": {
+          "Type": "string",
+          "Value": "0"
+        }
       },
       "orphan": {
         "Type": "Bool",
@@ -4290,12 +4577,15 @@
         "Type": "String",
         "Optional": true,
         "Description": "The duration in which a token should be renewed. At each renewal, the token's TTL will be set to the value of this parameter.",
-        "Computed": true
+        "Default": {
+          "Type": "string",
+          "Value": "0"
+        }
       },
       "renewable": {
         "Type": "Bool",
         "Optional": true,
-        "Description": "Wether to disable the ability of the token to be renewed past its initial TTL.",
+        "Description": "Whether to disable the ability of the token to be renewed past its initial TTL.",
         "Default": {
           "Type": "bool",
           "Value": "true"
@@ -4306,11 +4596,14 @@
         "Required": true,
         "Description": "Name of the role."
       },
-      "ttl": {
+      "token_type": {
         "Type": "String",
         "Optional": true,
-        "Description": "The TTL period of tokens issued using this role, provided as the number of minutes.",
-        "Computed": true
+        "Description": "Specifies the type of tokens that should be returned by the role. If either service or batch is specified, that kind of token will always be returned.",
+        "Default": {
+          "Type": "string",
+          "Value": "default-service"
+        }
       }
     }
   },

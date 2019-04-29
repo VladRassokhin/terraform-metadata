@@ -2,7 +2,7 @@
   ".schema_version": "1",
   "name": "kubernetes",
   "type": "provider",
-  "version": "v1.5.2",
+  "version": "v1.6.2",
   "provider": {
     "client_certificate": {
       "Type": "String",
@@ -252,9 +252,10 @@
         }
       },
       "role_ref": {
-        "Type": "Map",
+        "Type": "List",
         "Required": true,
         "Description": "RoleRef references the Cluster Role for this binding",
+        "MaxItems": 1,
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
@@ -266,11 +267,7 @@
             "kind": {
               "Type": "String",
               "Required": true,
-              "Description": "The kind of resource.",
-              "Default": {
-                "Type": "string",
-                "Value": "ClusterRole"
-              }
+              "Description": "The kind of resource."
             },
             "name": {
               "Type": "String",
@@ -604,7 +601,7 @@
                   "metadata": {
                     "Type": "List",
                     "Required": true,
-                    "Description": "Standard stateful set's metadata. More info: https://github.com/kubernetes/community/blob/master/contributors/devel/api-conventions.md#metadata",
+                    "Description": "Standard daemon set's metadata. More info: https://github.com/kubernetes/community/blob/master/contributors/devel/api-conventions.md#metadata",
                     "MaxItems": 1,
                     "Elem": {
                       "Type": "SchemaInfo",
@@ -612,7 +609,7 @@
                         "annotations": {
                           "Type": "Map",
                           "Optional": true,
-                          "Description": "An unstructured key value map stored with the stateful set that may be used to store arbitrary metadata. More info: http://kubernetes.io/docs/user-guide/annotations",
+                          "Description": "An unstructured key value map stored with the daemon set that may be used to store arbitrary metadata. More info: http://kubernetes.io/docs/user-guide/annotations",
                           "Elem": {
                             "Type": "SchemaElements",
                             "ElementsType": "String"
@@ -623,7 +620,7 @@
                           "Optional": true,
                           "Description": "Prefix, used by the server, to generate a unique name ONLY IF the `name` field has not been provided. This value will also be combined with a unique suffix. Read more: https://github.com/kubernetes/community/blob/master/contributors/devel/api-conventions.md#idempotency",
                           "ConflictsWith": [
-                            "metadata.name"
+                            "metadata.0.name"
                           ]
                         },
                         "generation": {
@@ -634,7 +631,7 @@
                         "labels": {
                           "Type": "Map",
                           "Optional": true,
-                          "Description": "Map of string keys and values that can be used to organize and categorize (scope and select) the stateful set. May match selectors of replication controllers and services. More info: http://kubernetes.io/docs/user-guide/labels",
+                          "Description": "Map of string keys and values that can be used to organize and categorize (scope and select) the daemon set. May match selectors of replication controllers and services. More info: http://kubernetes.io/docs/user-guide/labels",
                           "Elem": {
                             "Type": "SchemaElements",
                             "ElementsType": "String"
@@ -643,25 +640,25 @@
                         "name": {
                           "Type": "String",
                           "Optional": true,
-                          "Description": "Name of the stateful set, must be unique. Cannot be updated. More info: http://kubernetes.io/docs/user-guide/identifiers#names",
+                          "Description": "Name of the daemon set, must be unique. Cannot be updated. More info: http://kubernetes.io/docs/user-guide/identifiers#names",
                           "Computed": true,
                           "ConflictsWith": [
-                            "metadata.generate_name"
+                            "metadata.0.generate_name"
                           ]
                         },
                         "resource_version": {
                           "Type": "String",
-                          "Description": "An opaque value that represents the internal version of this stateful set that can be used by clients to determine when stateful set has changed. Read more: https://github.com/kubernetes/community/blob/master/contributors/devel/api-conventions.md#concurrency-control-and-consistency",
+                          "Description": "An opaque value that represents the internal version of this daemon set that can be used by clients to determine when daemon set has changed. Read more: https://github.com/kubernetes/community/blob/master/contributors/devel/api-conventions.md#concurrency-control-and-consistency",
                           "Computed": true
                         },
                         "self_link": {
                           "Type": "String",
-                          "Description": "A URL representing this stateful set.",
+                          "Description": "A URL representing this daemon set.",
                           "Computed": true
                         },
                         "uid": {
                           "Type": "String",
-                          "Description": "The unique in time and space value for this stateful set. More info: http://kubernetes.io/docs/user-guide/identifiers#uids",
+                          "Description": "The unique in time and space value for this daemon set. More info: http://kubernetes.io/docs/user-guide/identifiers#uids",
                           "Computed": true
                         }
                       }
@@ -670,7 +667,7 @@
                   "spec": {
                     "Type": "List",
                     "Optional": true,
-                    "Description": "Spec of the pods owned by the stateful set",
+                    "Description": "Spec of the pods owned by the daemon set",
                     "MaxItems": 1,
                     "Elem": {
                       "Type": "SchemaInfo",
@@ -1671,29 +1668,114 @@
                             }
                           }
                         },
+                        "dns_config": {
+                          "Type": "List",
+                          "Optional": true,
+                          "Description": "Specifies the DNS parameters of a pod. Parameters specified here will be merged to the generated DNS configuration based on DNSPolicy. Optional: Defaults to empty",
+                          "MaxItems": 1,
+                          "Elem": {
+                            "Type": "SchemaInfo",
+                            "Info": {
+                              "nameservers": {
+                                "Type": "List",
+                                "Optional": true,
+                                "Description": "A list of DNS name server IP addresses. This will be appended to the base nameservers generated from DNSPolicy. Duplicated nameservers will be removed.",
+                                "Elem": {
+                                  "Type": "SchemaElements",
+                                  "ElementsType": "String"
+                                }
+                              },
+                              "option": {
+                                "Type": "List",
+                                "Optional": true,
+                                "Description": "A list of DNS resolver options. This will be merged with the base options generated from DNSPolicy. Duplicated entries will be removed. Resolution options given in Options will override those that appear in the base DNSPolicy.",
+                                "Elem": {
+                                  "Type": "SchemaInfo",
+                                  "Info": {
+                                    "name": {
+                                      "Type": "String",
+                                      "Required": true,
+                                      "Description": "Name of the option."
+                                    },
+                                    "value": {
+                                      "Type": "String",
+                                      "Optional": true,
+                                      "Description": "Value of the option. Optional: Defaults to empty."
+                                    }
+                                  }
+                                }
+                              },
+                              "searches": {
+                                "Type": "List",
+                                "Optional": true,
+                                "Description": "A list of DNS search domains for host-name lookup. This will be appended to the base search paths generated from DNSPolicy. Duplicated search paths will be removed.",
+                                "Elem": {
+                                  "Type": "SchemaElements",
+                                  "ElementsType": "String"
+                                }
+                              }
+                            }
+                          }
+                        },
                         "dns_policy": {
                           "Type": "String",
                           "Optional": true,
-                          "Description": "Set DNS policy for containers within the pod. One of 'ClusterFirst' or 'Default'. Defaults to 'ClusterFirst'.",
-                          "DefaultFunc": "UNKNOWN"
+                          "Description": "Set DNS policy for containers within the pod. Valid values are 'ClusterFirstWithHostNet', 'ClusterFirst', 'Default' or 'None'. DNS parameters given in DNSConfig will be merged with the policy selected with DNSPolicy. To have DNS options set along with hostNetwork, you have to specify DNS policy explicitly to 'ClusterFirstWithHostNet'. Optional: Defaults to 'ClusterFirst', see [Kubernetes reference](https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy).",
+                          "Default": {
+                            "Type": "string",
+                            "Value": "ClusterFirst"
+                          }
+                        },
+                        "host_aliases": {
+                          "Type": "List",
+                          "Optional": true,
+                          "Description": "List of hosts and IPs that will be injected into the pod's hosts file if specified. Optional: Defaults to empty.",
+                          "Elem": {
+                            "Type": "SchemaInfo",
+                            "Info": {
+                              "hostnames": {
+                                "Type": "List",
+                                "Required": true,
+                                "Description": "Hostnames for the IP address.",
+                                "Elem": {
+                                  "Type": "SchemaElements",
+                                  "ElementsType": "String"
+                                }
+                              },
+                              "ip": {
+                                "Type": "String",
+                                "Required": true,
+                                "Description": "IP address of the host file entry."
+                              }
+                            }
+                          }
                         },
                         "host_ipc": {
                           "Type": "Bool",
                           "Optional": true,
-                          "Description": "Use the host's ipc namespace. Optional: Default to false.",
-                          "DefaultFunc": "UNKNOWN"
+                          "Description": "Use the host's ipc namespace. Optional: Defaults to false.",
+                          "Default": {
+                            "Type": "bool",
+                            "Value": "false"
+                          }
                         },
                         "host_network": {
                           "Type": "Bool",
                           "Optional": true,
                           "Description": "Host networking requested for this pod. Use the host's network namespace. If this option is set, the ports that will be used must be specified.",
-                          "DefaultFunc": "UNKNOWN"
+                          "Default": {
+                            "Type": "bool",
+                            "Value": "false"
+                          }
                         },
                         "host_pid": {
                           "Type": "Bool",
                           "Optional": true,
                           "Description": "Use the host's pid namespace.",
-                          "DefaultFunc": "UNKNOWN"
+                          "Default": {
+                            "Type": "bool",
+                            "Value": "false"
+                          }
                         },
                         "hostname": {
                           "Type": "String",
@@ -2723,7 +2805,10 @@
                           "Type": "String",
                           "Optional": true,
                           "Description": "Restart policy for all containers within the pod. One of Always, OnFailure, Never. More info: http://kubernetes.io/docs/user-guide/pod-states#restartpolicy.",
-                          "DefaultFunc": "UNKNOWN"
+                          "Default": {
+                            "Type": "string",
+                            "Value": "Always"
+                          }
                         },
                         "security_context": {
                           "Type": "List",
@@ -2806,7 +2891,10 @@
                           "Type": "Int",
                           "Optional": true,
                           "Description": "Optional duration in seconds the pod needs to terminate gracefully. May be decreased in delete request. Value must be non-negative integer. The value zero indicates delete immediately. If this value is nil, the default grace period will be used instead. The grace period is the duration in seconds after the processes running in the pod are sent a termination signal and the time when the processes are forcibly halted with a kill signal. Set this value longer than the expected cleanup time for your process.",
-                          "DefaultFunc": "UNKNOWN"
+                          "Default": {
+                            "Type": "int",
+                            "Value": "30"
+                          }
                         },
                         "volume": {
                           "Type": "List",
@@ -3003,9 +3091,13 @@
                                   "Type": "SchemaInfo",
                                   "Info": {
                                     "default_mode": {
-                                      "Type": "Int",
+                                      "Type": "String",
                                       "Optional": true,
-                                      "Description": "Optional: mode bits to use on created files by default. Must be a value between 0 and 0777. Defaults to 0644. Directories within the path are not affected by this setting. This might be in conflict with other options that affect the file mode, like fsGroup, and the result can be other mode bits set."
+                                      "Description": "Optional: mode bits to use on created files by default. Must be a value between 0 and 0777. Defaults to 0644. Directories within the path are not affected by this setting. This might be in conflict with other options that affect the file mode, like fsGroup, and the result can be other mode bits set.",
+                                      "Default": {
+                                        "Type": "string",
+                                        "Value": "0644"
+                                      }
                                     },
                                     "items": {
                                       "Type": "List",
@@ -3020,7 +3112,7 @@
                                             "Description": "The key to project."
                                           },
                                           "mode": {
-                                            "Type": "Int",
+                                            "Type": "String",
                                             "Optional": true,
                                             "Description": "Optional: mode bits to use on this file, must be a value between 0 and 0777. If not specified, the volume defaultMode will be used. This might be in conflict with other options that affect the file mode, like fsGroup, and the result can be other mode bits set."
                                           },
@@ -3049,9 +3141,13 @@
                                   "Type": "SchemaInfo",
                                   "Info": {
                                     "default_mode": {
-                                      "Type": "Int",
+                                      "Type": "String",
                                       "Optional": true,
-                                      "Description": "Optional: mode bits to use on created files by default. Must be a value between 0 and 0777. Defaults to 0644. Directories within the path are not affected by this setting. This might be in conflict with other options that affect the file mode, like fsGroup, and the result can be other mode bits set."
+                                      "Description": "Optional: mode bits to use on created files by default. Must be a value between 0 and 0777. Defaults to 0644. Directories within the path are not affected by this setting. This might be in conflict with other options that affect the file mode, like fsGroup, and the result can be other mode bits set.",
+                                      "Default": {
+                                        "Type": "string",
+                                        "Value": "0644"
+                                      }
                                     },
                                     "items": {
                                       "Type": "List",
@@ -3086,7 +3182,7 @@
                                             }
                                           },
                                           "mode": {
-                                            "Type": "Int",
+                                            "Type": "String",
                                             "Optional": true,
                                             "Description": "Optional: mode bits to use on this file, must be a value between 0 and 0777. If not specified, the volume defaultMode will be used. This might be in conflict with other options that affect the file mode, like fsGroup, and the result can be other mode bits set."
                                           },
@@ -3608,12 +3704,12 @@
                                   "Type": "SchemaInfo",
                                   "Info": {
                                     "default_mode": {
-                                      "Type": "Int",
+                                      "Type": "String",
                                       "Optional": true,
                                       "Description": "Optional: mode bits to use on created files by default. Must be a value between 0 and 0777. Defaults to 0644. Directories within the path are not affected by this setting. This might be in conflict with other options that affect the file mode, like fsGroup, and the result can be other mode bits set.",
                                       "Default": {
-                                        "Type": "int",
-                                        "Value": "420"
+                                        "Type": "string",
+                                        "Value": "0644"
                                       }
                                     },
                                     "items": {
@@ -3629,7 +3725,7 @@
                                             "Description": "The key to project."
                                           },
                                           "mode": {
-                                            "Type": "Int",
+                                            "Type": "String",
                                             "Optional": true,
                                             "Description": "Optional: mode bits to use on this file, must be a value between 0 and 0777. If not specified, the volume defaultMode will be used. This might be in conflict with other options that affect the file mode, like fsGroup, and the result can be other mode bits set."
                                           },
@@ -3871,6 +3967,7 @@
               "Type": "List",
               "Optional": true,
               "Description": "The deployment strategy to use to replace existing pods with new ones.",
+              "Computed": true,
               "MaxItems": 1,
               "Elem": {
                 "Type": "SchemaInfo",
@@ -3879,6 +3976,7 @@
                     "Type": "List",
                     "Optional": true,
                     "Description": "Rolling update config params. Present only if DeploymentStrategyType = RollingUpdate.",
+                    "Computed": true,
                     "MaxItems": 1,
                     "Elem": {
                       "Type": "SchemaInfo",
@@ -3886,12 +3984,20 @@
                         "max_surge": {
                           "Type": "String",
                           "Optional": true,
-                          "Description": "The maximum number of pods that can be scheduled above the desired number of pods. Value can be an absolute number (ex: 5) or a percentage of desired pods (ex: 10%). This can not be 0 if MaxUnavailable is 0. Absolute number is calculated from percentage by rounding up. Defaults to 25%. Example: when this is set to 30%, the new RC can be scaled up immediately when the rolling update starts, such that the total number of old and new pods do not exceed 130% of desired pods. Once old pods have been killed, new RC can be scaled up further, ensuring that total number of pods running at any time during the update is atmost 130% of desired pods."
+                          "Description": "The maximum number of pods that can be scheduled above the desired number of pods. Value can be an absolute number (ex: 5) or a percentage of desired pods (ex: 10%). This can not be 0 if MaxUnavailable is 0. Absolute number is calculated from percentage by rounding up. Defaults to 25%. Example: when this is set to 30%, the new RC can be scaled up immediately when the rolling update starts, such that the total number of old and new pods do not exceed 130% of desired pods. Once old pods have been killed, new RC can be scaled up further, ensuring that total number of pods running at any time during the update is atmost 130% of desired pods.",
+                          "Default": {
+                            "Type": "string",
+                            "Value": "25%"
+                          }
                         },
                         "max_unavailable": {
                           "Type": "String",
                           "Optional": true,
-                          "Description": "The maximum number of pods that can be unavailable during the update. Value can be an absolute number (ex: 5) or a percentage of desired pods (ex: 10%). Absolute number is calculated from percentage by rounding down. This can not be 0 if MaxSurge is 0. Defaults to 25%. Example: when this is set to 30%, the old RC can be scaled down to 70% of desired pods immediately when the rolling update starts. Once new pods are ready, old RC can be scaled down further, followed by scaling up the new RC, ensuring that the total number of pods available at all times during the update is at least 70% of desired pods."
+                          "Description": "The maximum number of pods that can be unavailable during the update. Value can be an absolute number (ex: 5) or a percentage of desired pods (ex: 10%). Absolute number is calculated from percentage by rounding down. This can not be 0 if MaxSurge is 0. Defaults to 25%. Example: when this is set to 30%, the old RC can be scaled down to 70% of desired pods immediately when the rolling update starts. Once new pods are ready, old RC can be scaled down further, followed by scaling up the new RC, ensuring that the total number of pods available at all times during the update is at least 70% of desired pods.",
+                          "Default": {
+                            "Type": "string",
+                            "Value": "25%"
+                          }
                         }
                       }
                     }
@@ -4995,29 +5101,114 @@
                             }
                           }
                         },
+                        "dns_config": {
+                          "Type": "List",
+                          "Optional": true,
+                          "Description": "Specifies the DNS parameters of a pod. Parameters specified here will be merged to the generated DNS configuration based on DNSPolicy. Optional: Defaults to empty",
+                          "MaxItems": 1,
+                          "Elem": {
+                            "Type": "SchemaInfo",
+                            "Info": {
+                              "nameservers": {
+                                "Type": "List",
+                                "Optional": true,
+                                "Description": "A list of DNS name server IP addresses. This will be appended to the base nameservers generated from DNSPolicy. Duplicated nameservers will be removed.",
+                                "Elem": {
+                                  "Type": "SchemaElements",
+                                  "ElementsType": "String"
+                                }
+                              },
+                              "option": {
+                                "Type": "List",
+                                "Optional": true,
+                                "Description": "A list of DNS resolver options. This will be merged with the base options generated from DNSPolicy. Duplicated entries will be removed. Resolution options given in Options will override those that appear in the base DNSPolicy.",
+                                "Elem": {
+                                  "Type": "SchemaInfo",
+                                  "Info": {
+                                    "name": {
+                                      "Type": "String",
+                                      "Required": true,
+                                      "Description": "Name of the option."
+                                    },
+                                    "value": {
+                                      "Type": "String",
+                                      "Optional": true,
+                                      "Description": "Value of the option. Optional: Defaults to empty."
+                                    }
+                                  }
+                                }
+                              },
+                              "searches": {
+                                "Type": "List",
+                                "Optional": true,
+                                "Description": "A list of DNS search domains for host-name lookup. This will be appended to the base search paths generated from DNSPolicy. Duplicated search paths will be removed.",
+                                "Elem": {
+                                  "Type": "SchemaElements",
+                                  "ElementsType": "String"
+                                }
+                              }
+                            }
+                          }
+                        },
                         "dns_policy": {
                           "Type": "String",
                           "Optional": true,
-                          "Description": "Set DNS policy for containers within the pod. One of 'ClusterFirst' or 'Default'. Defaults to 'ClusterFirst'.",
-                          "DefaultFunc": "UNKNOWN"
+                          "Description": "Set DNS policy for containers within the pod. Valid values are 'ClusterFirstWithHostNet', 'ClusterFirst', 'Default' or 'None'. DNS parameters given in DNSConfig will be merged with the policy selected with DNSPolicy. To have DNS options set along with hostNetwork, you have to specify DNS policy explicitly to 'ClusterFirstWithHostNet'. Optional: Defaults to 'ClusterFirst', see [Kubernetes reference](https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy).",
+                          "Default": {
+                            "Type": "string",
+                            "Value": "ClusterFirst"
+                          }
+                        },
+                        "host_aliases": {
+                          "Type": "List",
+                          "Optional": true,
+                          "Description": "List of hosts and IPs that will be injected into the pod's hosts file if specified. Optional: Defaults to empty.",
+                          "Elem": {
+                            "Type": "SchemaInfo",
+                            "Info": {
+                              "hostnames": {
+                                "Type": "List",
+                                "Required": true,
+                                "Description": "Hostnames for the IP address.",
+                                "Elem": {
+                                  "Type": "SchemaElements",
+                                  "ElementsType": "String"
+                                }
+                              },
+                              "ip": {
+                                "Type": "String",
+                                "Required": true,
+                                "Description": "IP address of the host file entry."
+                              }
+                            }
+                          }
                         },
                         "host_ipc": {
                           "Type": "Bool",
                           "Optional": true,
-                          "Description": "Use the host's ipc namespace. Optional: Default to false.",
-                          "DefaultFunc": "UNKNOWN"
+                          "Description": "Use the host's ipc namespace. Optional: Defaults to false.",
+                          "Default": {
+                            "Type": "bool",
+                            "Value": "false"
+                          }
                         },
                         "host_network": {
                           "Type": "Bool",
                           "Optional": true,
                           "Description": "Host networking requested for this pod. Use the host's network namespace. If this option is set, the ports that will be used must be specified.",
-                          "DefaultFunc": "UNKNOWN"
+                          "Default": {
+                            "Type": "bool",
+                            "Value": "false"
+                          }
                         },
                         "host_pid": {
                           "Type": "Bool",
                           "Optional": true,
                           "Description": "Use the host's pid namespace.",
-                          "DefaultFunc": "UNKNOWN"
+                          "Default": {
+                            "Type": "bool",
+                            "Value": "false"
+                          }
                         },
                         "hostname": {
                           "Type": "String",
@@ -6047,7 +6238,10 @@
                           "Type": "String",
                           "Optional": true,
                           "Description": "Restart policy for all containers within the pod. One of Always, OnFailure, Never. More info: http://kubernetes.io/docs/user-guide/pod-states#restartpolicy.",
-                          "DefaultFunc": "UNKNOWN"
+                          "Default": {
+                            "Type": "string",
+                            "Value": "Always"
+                          }
                         },
                         "security_context": {
                           "Type": "List",
@@ -6130,7 +6324,10 @@
                           "Type": "Int",
                           "Optional": true,
                           "Description": "Optional duration in seconds the pod needs to terminate gracefully. May be decreased in delete request. Value must be non-negative integer. The value zero indicates delete immediately. If this value is nil, the default grace period will be used instead. The grace period is the duration in seconds after the processes running in the pod are sent a termination signal and the time when the processes are forcibly halted with a kill signal. Set this value longer than the expected cleanup time for your process.",
-                          "DefaultFunc": "UNKNOWN"
+                          "Default": {
+                            "Type": "int",
+                            "Value": "30"
+                          }
                         },
                         "volume": {
                           "Type": "List",
@@ -6327,9 +6524,13 @@
                                   "Type": "SchemaInfo",
                                   "Info": {
                                     "default_mode": {
-                                      "Type": "Int",
+                                      "Type": "String",
                                       "Optional": true,
-                                      "Description": "Optional: mode bits to use on created files by default. Must be a value between 0 and 0777. Defaults to 0644. Directories within the path are not affected by this setting. This might be in conflict with other options that affect the file mode, like fsGroup, and the result can be other mode bits set."
+                                      "Description": "Optional: mode bits to use on created files by default. Must be a value between 0 and 0777. Defaults to 0644. Directories within the path are not affected by this setting. This might be in conflict with other options that affect the file mode, like fsGroup, and the result can be other mode bits set.",
+                                      "Default": {
+                                        "Type": "string",
+                                        "Value": "0644"
+                                      }
                                     },
                                     "items": {
                                       "Type": "List",
@@ -6344,7 +6545,7 @@
                                             "Description": "The key to project."
                                           },
                                           "mode": {
-                                            "Type": "Int",
+                                            "Type": "String",
                                             "Optional": true,
                                             "Description": "Optional: mode bits to use on this file, must be a value between 0 and 0777. If not specified, the volume defaultMode will be used. This might be in conflict with other options that affect the file mode, like fsGroup, and the result can be other mode bits set."
                                           },
@@ -6373,9 +6574,13 @@
                                   "Type": "SchemaInfo",
                                   "Info": {
                                     "default_mode": {
-                                      "Type": "Int",
+                                      "Type": "String",
                                       "Optional": true,
-                                      "Description": "Optional: mode bits to use on created files by default. Must be a value between 0 and 0777. Defaults to 0644. Directories within the path are not affected by this setting. This might be in conflict with other options that affect the file mode, like fsGroup, and the result can be other mode bits set."
+                                      "Description": "Optional: mode bits to use on created files by default. Must be a value between 0 and 0777. Defaults to 0644. Directories within the path are not affected by this setting. This might be in conflict with other options that affect the file mode, like fsGroup, and the result can be other mode bits set.",
+                                      "Default": {
+                                        "Type": "string",
+                                        "Value": "0644"
+                                      }
                                     },
                                     "items": {
                                       "Type": "List",
@@ -6410,7 +6615,7 @@
                                             }
                                           },
                                           "mode": {
-                                            "Type": "Int",
+                                            "Type": "String",
                                             "Optional": true,
                                             "Description": "Optional: mode bits to use on this file, must be a value between 0 and 0777. If not specified, the volume defaultMode will be used. This might be in conflict with other options that affect the file mode, like fsGroup, and the result can be other mode bits set."
                                           },
@@ -6932,12 +7137,12 @@
                                   "Type": "SchemaInfo",
                                   "Info": {
                                     "default_mode": {
-                                      "Type": "Int",
+                                      "Type": "String",
                                       "Optional": true,
                                       "Description": "Optional: mode bits to use on created files by default. Must be a value between 0 and 0777. Defaults to 0644. Directories within the path are not affected by this setting. This might be in conflict with other options that affect the file mode, like fsGroup, and the result can be other mode bits set.",
                                       "Default": {
-                                        "Type": "int",
-                                        "Value": "420"
+                                        "Type": "string",
+                                        "Value": "0644"
                                       }
                                     },
                                     "items": {
@@ -6953,7 +7158,7 @@
                                             "Description": "The key to project."
                                           },
                                           "mode": {
-                                            "Type": "Int",
+                                            "Type": "String",
                                             "Optional": true,
                                             "Description": "Optional: mode bits to use on this file, must be a value between 0 and 0777. If not specified, the volume defaultMode will be used. This might be in conflict with other options that affect the file mode, like fsGroup, and the result can be other mode bits set."
                                           },
@@ -7003,6 +7208,175 @@
                           }
                         }
                       }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "kubernetes_endpoints": {
+      "metadata": {
+        "Type": "List",
+        "Required": true,
+        "Description": "Standard endpoints's metadata. More info: https://github.com/kubernetes/community/blob/master/contributors/devel/api-conventions.md#metadata",
+        "MaxItems": 1,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "annotations": {
+              "Type": "Map",
+              "Optional": true,
+              "Description": "An unstructured key value map stored with the endpoints that may be used to store arbitrary metadata. More info: http://kubernetes.io/docs/user-guide/annotations",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "generate_name": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Prefix, used by the server, to generate a unique name ONLY IF the `name` field has not been provided. This value will also be combined with a unique suffix. Read more: https://github.com/kubernetes/community/blob/master/contributors/devel/api-conventions.md#idempotency",
+              "ConflictsWith": [
+                "metadata.name"
+              ]
+            },
+            "generation": {
+              "Type": "Int",
+              "Description": "A sequence number representing a specific generation of the desired state.",
+              "Computed": true
+            },
+            "labels": {
+              "Type": "Map",
+              "Optional": true,
+              "Description": "Map of string keys and values that can be used to organize and categorize (scope and select) the endpoints. May match selectors of replication controllers and services. More info: http://kubernetes.io/docs/user-guide/labels",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "name": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Name of the endpoints, must be unique. Cannot be updated. More info: http://kubernetes.io/docs/user-guide/identifiers#names",
+              "Computed": true,
+              "ConflictsWith": [
+                "metadata.generate_name"
+              ]
+            },
+            "namespace": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Namespace defines the space within which name of the endpoints must be unique.",
+              "Default": {
+                "Type": "string",
+                "Value": "default"
+              }
+            },
+            "resource_version": {
+              "Type": "String",
+              "Description": "An opaque value that represents the internal version of this endpoints that can be used by clients to determine when endpoints has changed. Read more: https://github.com/kubernetes/community/blob/master/contributors/devel/api-conventions.md#concurrency-control-and-consistency",
+              "Computed": true
+            },
+            "self_link": {
+              "Type": "String",
+              "Description": "A URL representing this endpoints.",
+              "Computed": true
+            },
+            "uid": {
+              "Type": "String",
+              "Description": "The unique in time and space value for this endpoints. More info: http://kubernetes.io/docs/user-guide/identifiers#uids",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "subset": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Set of addresses and ports that comprise a service. More info: https://kubernetes.io/docs/concepts/services-networking/service/#services-without-selectors",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "address": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "IP address which offers the related ports that are marked as ready. These endpoints should be considered safe for load balancers and clients to utilize.",
+              "MinItems": 1,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "hostname": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "The Hostname of this endpoint."
+                  },
+                  "ip": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "The IP of this endpoint. May not be loopback (127.0.0.0/8), link-local (169.254.0.0/16), or link-local multicast ((224.0.0.0/24)."
+                  },
+                  "node_name": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Node hosting this endpoint. This can be used to determine endpoints local to a node."
+                  }
+                }
+              }
+            },
+            "not_ready_address": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "IP address which offers the related ports but is not currently marked as ready because it have not yet finished starting, have recently failed a readiness check, or have recently failed a liveness check.",
+              "MinItems": 1,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "hostname": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "The Hostname of this endpoint."
+                  },
+                  "ip": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "The IP of this endpoint. May not be loopback (127.0.0.0/8), link-local (169.254.0.0/16), or link-local multicast ((224.0.0.0/24)."
+                  },
+                  "node_name": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Node hosting this endpoint. This can be used to determine endpoints local to a node."
+                  }
+                }
+              }
+            },
+            "port": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Port number available on the related IP addresses.",
+              "MinItems": 1,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "name": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "The name of this port within the endpoint. Must be a DNS_LABEL. Optional if only one Port is defined on this endpoint."
+                  },
+                  "port": {
+                    "Type": "Int",
+                    "Required": true,
+                    "Description": "The port that will be exposed by this endpoint."
+                  },
+                  "protocol": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "The IP protocol for this port. Supports `TCP` and `UDP`. Default is `TCP`.",
+                    "Default": {
+                      "Type": "string",
+                      "Value": "TCP"
                     }
                   }
                 }
@@ -7298,7 +7672,7 @@
               "Optional": true,
               "Description": "Prefix, used by the server, to generate a unique name ONLY IF the `name` field has not been provided. This value will also be combined with a unique suffix. Read more: https://github.com/kubernetes/community/blob/master/contributors/devel/api-conventions.md#idempotency",
               "ConflictsWith": [
-                "metadata.name"
+                "metadata.0.name"
               ]
             },
             "generation": {
@@ -7321,7 +7695,7 @@
               "Description": "Name of the namespace, must be unique. Cannot be updated. More info: http://kubernetes.io/docs/user-guide/identifiers#names",
               "Computed": true,
               "ConflictsWith": [
-                "metadata.generate_name"
+                "metadata.0.generate_name"
               ]
             },
             "resource_version": {
@@ -7889,6 +8263,7 @@
               "Type": "List",
               "Optional": true,
               "Description": "A description of the persistent volume's node affinity. More info: https://kubernetes.io/docs/concepts/storage/volumes/#local",
+              "Computed": true,
               "MaxItems": 1,
               "Elem": {
                 "Type": "SchemaInfo",
@@ -7902,7 +8277,7 @@
                       "Info": {
                         "node_selector_term": {
                           "Type": "List",
-                          "Optional": true,
+                          "Required": true,
                           "Elem": {
                             "Type": "SchemaInfo",
                             "Info": {
@@ -7915,13 +8290,13 @@
                                   "Info": {
                                     "key": {
                                       "Type": "String",
-                                      "Optional": true,
+                                      "Required": true,
                                       "Description": "The label key that the selector applies to."
                                     },
                                     "operator": {
                                       "Type": "String",
-                                      "Optional": true,
-                                      "Description": "A key's relationship to a set of values. Valid operators ard `In`, `NotIn`, `Exists` and `DoesNotExist`."
+                                      "Required": true,
+                                      "Description": "A key's relationship to a set of values. Valid operators ard `In`, `NotIn`, `Exists`, `DoesNotExist`, `Gt`, and `Lt`."
                                     },
                                     "values": {
                                       "Type": "Set",
@@ -7944,13 +8319,13 @@
                                   "Info": {
                                     "key": {
                                       "Type": "String",
-                                      "Optional": true,
+                                      "Required": true,
                                       "Description": "The label key that the selector applies to."
                                     },
                                     "operator": {
                                       "Type": "String",
-                                      "Optional": true,
-                                      "Description": "A key's relationship to a set of values. Valid operators ard `In`, `NotIn`, `Exists` and `DoesNotExist`."
+                                      "Required": true,
+                                      "Description": "A key's relationship to a set of values. Valid operators ard `In`, `NotIn`, `Exists`, `DoesNotExist`, `Gt`, and `Lt`."
                                     },
                                     "values": {
                                       "Type": "Set",
@@ -9872,29 +10247,114 @@
                 }
               }
             },
+            "dns_config": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Specifies the DNS parameters of a pod. Parameters specified here will be merged to the generated DNS configuration based on DNSPolicy. Optional: Defaults to empty",
+              "MaxItems": 1,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "nameservers": {
+                    "Type": "List",
+                    "Optional": true,
+                    "Description": "A list of DNS name server IP addresses. This will be appended to the base nameservers generated from DNSPolicy. Duplicated nameservers will be removed.",
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  },
+                  "option": {
+                    "Type": "List",
+                    "Optional": true,
+                    "Description": "A list of DNS resolver options. This will be merged with the base options generated from DNSPolicy. Duplicated entries will be removed. Resolution options given in Options will override those that appear in the base DNSPolicy.",
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "name": {
+                          "Type": "String",
+                          "Required": true,
+                          "Description": "Name of the option."
+                        },
+                        "value": {
+                          "Type": "String",
+                          "Optional": true,
+                          "Description": "Value of the option. Optional: Defaults to empty."
+                        }
+                      }
+                    }
+                  },
+                  "searches": {
+                    "Type": "List",
+                    "Optional": true,
+                    "Description": "A list of DNS search domains for host-name lookup. This will be appended to the base search paths generated from DNSPolicy. Duplicated search paths will be removed.",
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  }
+                }
+              }
+            },
             "dns_policy": {
               "Type": "String",
               "Optional": true,
-              "Description": "Set DNS policy for containers within the pod. One of 'ClusterFirst' or 'Default'. Defaults to 'ClusterFirst'.",
-              "DefaultFunc": "UNKNOWN"
+              "Description": "Set DNS policy for containers within the pod. Valid values are 'ClusterFirstWithHostNet', 'ClusterFirst', 'Default' or 'None'. DNS parameters given in DNSConfig will be merged with the policy selected with DNSPolicy. To have DNS options set along with hostNetwork, you have to specify DNS policy explicitly to 'ClusterFirstWithHostNet'. Optional: Defaults to 'ClusterFirst', see [Kubernetes reference](https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy).",
+              "Default": {
+                "Type": "string",
+                "Value": "ClusterFirst"
+              }
+            },
+            "host_aliases": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "List of hosts and IPs that will be injected into the pod's hosts file if specified. Optional: Defaults to empty.",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "hostnames": {
+                    "Type": "List",
+                    "Required": true,
+                    "Description": "Hostnames for the IP address.",
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  },
+                  "ip": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "IP address of the host file entry."
+                  }
+                }
+              }
             },
             "host_ipc": {
               "Type": "Bool",
               "Optional": true,
-              "Description": "Use the host's ipc namespace. Optional: Default to false.",
-              "DefaultFunc": "UNKNOWN"
+              "Description": "Use the host's ipc namespace. Optional: Defaults to false.",
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
+              }
             },
             "host_network": {
               "Type": "Bool",
               "Optional": true,
               "Description": "Host networking requested for this pod. Use the host's network namespace. If this option is set, the ports that will be used must be specified.",
-              "DefaultFunc": "UNKNOWN"
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
+              }
             },
             "host_pid": {
               "Type": "Bool",
               "Optional": true,
               "Description": "Use the host's pid namespace.",
-              "DefaultFunc": "UNKNOWN"
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
+              }
             },
             "hostname": {
               "Type": "String",
@@ -10924,7 +11384,10 @@
               "Type": "String",
               "Optional": true,
               "Description": "Restart policy for all containers within the pod. One of Always, OnFailure, Never. More info: http://kubernetes.io/docs/user-guide/pod-states#restartpolicy.",
-              "DefaultFunc": "UNKNOWN"
+              "Default": {
+                "Type": "string",
+                "Value": "Always"
+              }
             },
             "security_context": {
               "Type": "List",
@@ -11007,7 +11470,10 @@
               "Type": "Int",
               "Optional": true,
               "Description": "Optional duration in seconds the pod needs to terminate gracefully. May be decreased in delete request. Value must be non-negative integer. The value zero indicates delete immediately. If this value is nil, the default grace period will be used instead. The grace period is the duration in seconds after the processes running in the pod are sent a termination signal and the time when the processes are forcibly halted with a kill signal. Set this value longer than the expected cleanup time for your process.",
-              "DefaultFunc": "UNKNOWN"
+              "Default": {
+                "Type": "int",
+                "Value": "30"
+              }
             },
             "volume": {
               "Type": "List",
@@ -11204,9 +11670,13 @@
                       "Type": "SchemaInfo",
                       "Info": {
                         "default_mode": {
-                          "Type": "Int",
+                          "Type": "String",
                           "Optional": true,
-                          "Description": "Optional: mode bits to use on created files by default. Must be a value between 0 and 0777. Defaults to 0644. Directories within the path are not affected by this setting. This might be in conflict with other options that affect the file mode, like fsGroup, and the result can be other mode bits set."
+                          "Description": "Optional: mode bits to use on created files by default. Must be a value between 0 and 0777. Defaults to 0644. Directories within the path are not affected by this setting. This might be in conflict with other options that affect the file mode, like fsGroup, and the result can be other mode bits set.",
+                          "Default": {
+                            "Type": "string",
+                            "Value": "0644"
+                          }
                         },
                         "items": {
                           "Type": "List",
@@ -11221,7 +11691,7 @@
                                 "Description": "The key to project."
                               },
                               "mode": {
-                                "Type": "Int",
+                                "Type": "String",
                                 "Optional": true,
                                 "Description": "Optional: mode bits to use on this file, must be a value between 0 and 0777. If not specified, the volume defaultMode will be used. This might be in conflict with other options that affect the file mode, like fsGroup, and the result can be other mode bits set."
                               },
@@ -11250,9 +11720,13 @@
                       "Type": "SchemaInfo",
                       "Info": {
                         "default_mode": {
-                          "Type": "Int",
+                          "Type": "String",
                           "Optional": true,
-                          "Description": "Optional: mode bits to use on created files by default. Must be a value between 0 and 0777. Defaults to 0644. Directories within the path are not affected by this setting. This might be in conflict with other options that affect the file mode, like fsGroup, and the result can be other mode bits set."
+                          "Description": "Optional: mode bits to use on created files by default. Must be a value between 0 and 0777. Defaults to 0644. Directories within the path are not affected by this setting. This might be in conflict with other options that affect the file mode, like fsGroup, and the result can be other mode bits set.",
+                          "Default": {
+                            "Type": "string",
+                            "Value": "0644"
+                          }
                         },
                         "items": {
                           "Type": "List",
@@ -11287,7 +11761,7 @@
                                 }
                               },
                               "mode": {
-                                "Type": "Int",
+                                "Type": "String",
                                 "Optional": true,
                                 "Description": "Optional: mode bits to use on this file, must be a value between 0 and 0777. If not specified, the volume defaultMode will be used. This might be in conflict with other options that affect the file mode, like fsGroup, and the result can be other mode bits set."
                               },
@@ -11809,12 +12283,12 @@
                       "Type": "SchemaInfo",
                       "Info": {
                         "default_mode": {
-                          "Type": "Int",
+                          "Type": "String",
                           "Optional": true,
                           "Description": "Optional: mode bits to use on created files by default. Must be a value between 0 and 0777. Defaults to 0644. Directories within the path are not affected by this setting. This might be in conflict with other options that affect the file mode, like fsGroup, and the result can be other mode bits set.",
                           "Default": {
-                            "Type": "int",
-                            "Value": "420"
+                            "Type": "string",
+                            "Value": "0644"
                           }
                         },
                         "items": {
@@ -11830,7 +12304,7 @@
                                 "Description": "The key to project."
                               },
                               "mode": {
-                                "Type": "Int",
+                                "Type": "String",
                                 "Optional": true,
                                 "Description": "Optional: mode bits to use on this file, must be a value between 0 and 0777. If not specified, the volume defaultMode will be used. This might be in conflict with other options that affect the file mode, like fsGroup, and the result can be other mode bits set."
                               },
@@ -13011,24 +13485,105 @@
                       }
                     }
                   },
+                  "dns_config": {
+                    "Type": "List",
+                    "Optional": true,
+                    "Description": "Specifies the DNS parameters of a pod. Parameters specified here will be merged to the generated DNS configuration based on DNSPolicy. Optional: Defaults to empty",
+                    "MaxItems": 1,
+                    "ConflictsWith": [
+                      "spec.0.template.0.spec",
+                      "spec.0.template.0.metadata"
+                    ],
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "nameservers": {
+                          "Type": "List",
+                          "Optional": true,
+                          "Description": "A list of DNS name server IP addresses. This will be appended to the base nameservers generated from DNSPolicy. Duplicated nameservers will be removed.",
+                          "Elem": {
+                            "Type": "SchemaElements",
+                            "ElementsType": "String"
+                          }
+                        },
+                        "option": {
+                          "Type": "List",
+                          "Optional": true,
+                          "Description": "A list of DNS resolver options. This will be merged with the base options generated from DNSPolicy. Duplicated entries will be removed. Resolution options given in Options will override those that appear in the base DNSPolicy.",
+                          "Elem": {
+                            "Type": "SchemaInfo",
+                            "Info": {
+                              "name": {
+                                "Type": "String",
+                                "Required": true,
+                                "Description": "Name of the option."
+                              },
+                              "value": {
+                                "Type": "String",
+                                "Optional": true,
+                                "Description": "Value of the option. Optional: Defaults to empty."
+                              }
+                            }
+                          }
+                        },
+                        "searches": {
+                          "Type": "List",
+                          "Optional": true,
+                          "Description": "A list of DNS search domains for host-name lookup. This will be appended to the base search paths generated from DNSPolicy. Duplicated search paths will be removed.",
+                          "Elem": {
+                            "Type": "SchemaElements",
+                            "ElementsType": "String"
+                          }
+                        }
+                      }
+                    }
+                  },
                   "dns_policy": {
                     "Type": "String",
                     "Optional": true,
-                    "Description": "Set DNS policy for containers within the pod. One of 'ClusterFirst' or 'Default'. Defaults to 'ClusterFirst'.",
+                    "Description": "Set DNS policy for containers within the pod. Valid values are 'ClusterFirstWithHostNet', 'ClusterFirst', 'Default' or 'None'. DNS parameters given in DNSConfig will be merged with the policy selected with DNSPolicy. To have DNS options set along with hostNetwork, you have to specify DNS policy explicitly to 'ClusterFirstWithHostNet'. Optional: Defaults to 'ClusterFirst', see [Kubernetes reference](https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy).",
                     "Computed": true,
-                    "DefaultFunc": "UNKNOWN",
                     "ConflictsWith": [
                       "spec.0.template.0.spec",
                       "spec.0.template.0.metadata"
                     ],
                     "Deprecated": "This field is deprecated because template was incorrectly defined as a PodSpec preventing the definition of metadata. Please use the one under the spec field"
                   },
+                  "host_aliases": {
+                    "Type": "List",
+                    "Optional": true,
+                    "Description": "List of hosts and IPs that will be injected into the pod's hosts file if specified. Optional: Defaults to empty.",
+                    "Computed": true,
+                    "ConflictsWith": [
+                      "spec.0.template.0.spec",
+                      "spec.0.template.0.metadata"
+                    ],
+                    "Deprecated": "This field is deprecated because template was incorrectly defined as a PodSpec preventing the definition of metadata. Please use the one under the spec field",
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "hostnames": {
+                          "Type": "List",
+                          "Required": true,
+                          "Description": "Hostnames for the IP address.",
+                          "Elem": {
+                            "Type": "SchemaElements",
+                            "ElementsType": "String"
+                          }
+                        },
+                        "ip": {
+                          "Type": "String",
+                          "Required": true,
+                          "Description": "IP address of the host file entry."
+                        }
+                      }
+                    }
+                  },
                   "host_ipc": {
                     "Type": "Bool",
                     "Optional": true,
-                    "Description": "Use the host's ipc namespace. Optional: Default to false.",
+                    "Description": "Use the host's ipc namespace. Optional: Defaults to false.",
                     "Computed": true,
-                    "DefaultFunc": "UNKNOWN",
                     "ConflictsWith": [
                       "spec.0.template.0.spec",
                       "spec.0.template.0.metadata"
@@ -13040,7 +13595,6 @@
                     "Optional": true,
                     "Description": "Host networking requested for this pod. Use the host's network namespace. If this option is set, the ports that will be used must be specified.",
                     "Computed": true,
-                    "DefaultFunc": "UNKNOWN",
                     "ConflictsWith": [
                       "spec.0.template.0.spec",
                       "spec.0.template.0.metadata"
@@ -13052,7 +13606,6 @@
                     "Optional": true,
                     "Description": "Use the host's pid namespace.",
                     "Computed": true,
-                    "DefaultFunc": "UNKNOWN",
                     "ConflictsWith": [
                       "spec.0.template.0.spec",
                       "spec.0.template.0.metadata"
@@ -14191,7 +14744,6 @@
                     "Optional": true,
                     "Description": "Restart policy for all containers within the pod. One of Always, OnFailure, Never. More info: http://kubernetes.io/docs/user-guide/pod-states#restartpolicy.",
                     "Computed": true,
-                    "DefaultFunc": "UNKNOWN",
                     "ConflictsWith": [
                       "spec.0.template.0.spec",
                       "spec.0.template.0.metadata"
@@ -15288,33 +15840,103 @@
                             }
                           }
                         },
+                        "dns_config": {
+                          "Type": "List",
+                          "Optional": true,
+                          "Description": "Specifies the DNS parameters of a pod. Parameters specified here will be merged to the generated DNS configuration based on DNSPolicy. Optional: Defaults to empty",
+                          "MaxItems": 1,
+                          "Elem": {
+                            "Type": "SchemaInfo",
+                            "Info": {
+                              "nameservers": {
+                                "Type": "List",
+                                "Optional": true,
+                                "Description": "A list of DNS name server IP addresses. This will be appended to the base nameservers generated from DNSPolicy. Duplicated nameservers will be removed.",
+                                "Elem": {
+                                  "Type": "SchemaElements",
+                                  "ElementsType": "String"
+                                }
+                              },
+                              "option": {
+                                "Type": "List",
+                                "Optional": true,
+                                "Description": "A list of DNS resolver options. This will be merged with the base options generated from DNSPolicy. Duplicated entries will be removed. Resolution options given in Options will override those that appear in the base DNSPolicy.",
+                                "Elem": {
+                                  "Type": "SchemaInfo",
+                                  "Info": {
+                                    "name": {
+                                      "Type": "String",
+                                      "Required": true,
+                                      "Description": "Name of the option."
+                                    },
+                                    "value": {
+                                      "Type": "String",
+                                      "Optional": true,
+                                      "Description": "Value of the option. Optional: Defaults to empty."
+                                    }
+                                  }
+                                }
+                              },
+                              "searches": {
+                                "Type": "List",
+                                "Optional": true,
+                                "Description": "A list of DNS search domains for host-name lookup. This will be appended to the base search paths generated from DNSPolicy. Duplicated search paths will be removed.",
+                                "Elem": {
+                                  "Type": "SchemaElements",
+                                  "ElementsType": "String"
+                                }
+                              }
+                            }
+                          }
+                        },
                         "dns_policy": {
                           "Type": "String",
                           "Optional": true,
-                          "Description": "Set DNS policy for containers within the pod. One of 'ClusterFirst' or 'Default'. Defaults to 'ClusterFirst'.",
+                          "Description": "Set DNS policy for containers within the pod. Valid values are 'ClusterFirstWithHostNet', 'ClusterFirst', 'Default' or 'None'. DNS parameters given in DNSConfig will be merged with the policy selected with DNSPolicy. To have DNS options set along with hostNetwork, you have to specify DNS policy explicitly to 'ClusterFirstWithHostNet'. Optional: Defaults to 'ClusterFirst', see [Kubernetes reference](https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy).",
+                          "Computed": true
+                        },
+                        "host_aliases": {
+                          "Type": "List",
+                          "Optional": true,
+                          "Description": "List of hosts and IPs that will be injected into the pod's hosts file if specified. Optional: Defaults to empty.",
                           "Computed": true,
-                          "DefaultFunc": "UNKNOWN"
+                          "Elem": {
+                            "Type": "SchemaInfo",
+                            "Info": {
+                              "hostnames": {
+                                "Type": "List",
+                                "Required": true,
+                                "Description": "Hostnames for the IP address.",
+                                "Elem": {
+                                  "Type": "SchemaElements",
+                                  "ElementsType": "String"
+                                }
+                              },
+                              "ip": {
+                                "Type": "String",
+                                "Required": true,
+                                "Description": "IP address of the host file entry."
+                              }
+                            }
+                          }
                         },
                         "host_ipc": {
                           "Type": "Bool",
                           "Optional": true,
-                          "Description": "Use the host's ipc namespace. Optional: Default to false.",
-                          "Computed": true,
-                          "DefaultFunc": "UNKNOWN"
+                          "Description": "Use the host's ipc namespace. Optional: Defaults to false.",
+                          "Computed": true
                         },
                         "host_network": {
                           "Type": "Bool",
                           "Optional": true,
                           "Description": "Host networking requested for this pod. Use the host's network namespace. If this option is set, the ports that will be used must be specified.",
-                          "Computed": true,
-                          "DefaultFunc": "UNKNOWN"
+                          "Computed": true
                         },
                         "host_pid": {
                           "Type": "Bool",
                           "Optional": true,
                           "Description": "Use the host's pid namespace.",
-                          "Computed": true,
-                          "DefaultFunc": "UNKNOWN"
+                          "Computed": true
                         },
                         "hostname": {
                           "Type": "String",
@@ -16346,8 +16968,7 @@
                           "Type": "String",
                           "Optional": true,
                           "Description": "Restart policy for all containers within the pod. One of Always, OnFailure, Never. More info: http://kubernetes.io/docs/user-guide/pod-states#restartpolicy.",
-                          "Computed": true,
-                          "DefaultFunc": "UNKNOWN"
+                          "Computed": true
                         },
                         "security_context": {
                           "Type": "List",
@@ -16432,8 +17053,7 @@
                           "Type": "Int",
                           "Optional": true,
                           "Description": "Optional duration in seconds the pod needs to terminate gracefully. May be decreased in delete request. Value must be non-negative integer. The value zero indicates delete immediately. If this value is nil, the default grace period will be used instead. The grace period is the duration in seconds after the processes running in the pod are sent a termination signal and the time when the processes are forcibly halted with a kill signal. Set this value longer than the expected cleanup time for your process.",
-                          "Computed": true,
-                          "DefaultFunc": "UNKNOWN"
+                          "Computed": true
                         },
                         "volume": {
                           "Type": "List",
@@ -16631,9 +17251,13 @@
                                   "Type": "SchemaInfo",
                                   "Info": {
                                     "default_mode": {
-                                      "Type": "Int",
+                                      "Type": "String",
                                       "Optional": true,
-                                      "Description": "Optional: mode bits to use on created files by default. Must be a value between 0 and 0777. Defaults to 0644. Directories within the path are not affected by this setting. This might be in conflict with other options that affect the file mode, like fsGroup, and the result can be other mode bits set."
+                                      "Description": "Optional: mode bits to use on created files by default. Must be a value between 0 and 0777. Defaults to 0644. Directories within the path are not affected by this setting. This might be in conflict with other options that affect the file mode, like fsGroup, and the result can be other mode bits set.",
+                                      "Default": {
+                                        "Type": "string",
+                                        "Value": "0644"
+                                      }
                                     },
                                     "items": {
                                       "Type": "List",
@@ -16648,7 +17272,7 @@
                                             "Description": "The key to project."
                                           },
                                           "mode": {
-                                            "Type": "Int",
+                                            "Type": "String",
                                             "Optional": true,
                                             "Description": "Optional: mode bits to use on this file, must be a value between 0 and 0777. If not specified, the volume defaultMode will be used. This might be in conflict with other options that affect the file mode, like fsGroup, and the result can be other mode bits set."
                                           },
@@ -16677,9 +17301,13 @@
                                   "Type": "SchemaInfo",
                                   "Info": {
                                     "default_mode": {
-                                      "Type": "Int",
+                                      "Type": "String",
                                       "Optional": true,
-                                      "Description": "Optional: mode bits to use on created files by default. Must be a value between 0 and 0777. Defaults to 0644. Directories within the path are not affected by this setting. This might be in conflict with other options that affect the file mode, like fsGroup, and the result can be other mode bits set."
+                                      "Description": "Optional: mode bits to use on created files by default. Must be a value between 0 and 0777. Defaults to 0644. Directories within the path are not affected by this setting. This might be in conflict with other options that affect the file mode, like fsGroup, and the result can be other mode bits set.",
+                                      "Default": {
+                                        "Type": "string",
+                                        "Value": "0644"
+                                      }
                                     },
                                     "items": {
                                       "Type": "List",
@@ -16714,7 +17342,7 @@
                                             }
                                           },
                                           "mode": {
-                                            "Type": "Int",
+                                            "Type": "String",
                                             "Optional": true,
                                             "Description": "Optional: mode bits to use on this file, must be a value between 0 and 0777. If not specified, the volume defaultMode will be used. This might be in conflict with other options that affect the file mode, like fsGroup, and the result can be other mode bits set."
                                           },
@@ -17236,12 +17864,12 @@
                                   "Type": "SchemaInfo",
                                   "Info": {
                                     "default_mode": {
-                                      "Type": "Int",
+                                      "Type": "String",
                                       "Optional": true,
                                       "Description": "Optional: mode bits to use on created files by default. Must be a value between 0 and 0777. Defaults to 0644. Directories within the path are not affected by this setting. This might be in conflict with other options that affect the file mode, like fsGroup, and the result can be other mode bits set.",
                                       "Default": {
-                                        "Type": "int",
-                                        "Value": "420"
+                                        "Type": "string",
+                                        "Value": "0644"
                                       }
                                     },
                                     "items": {
@@ -17257,7 +17885,7 @@
                                             "Description": "The key to project."
                                           },
                                           "mode": {
-                                            "Type": "Int",
+                                            "Type": "String",
                                             "Optional": true,
                                             "Description": "Optional: mode bits to use on this file, must be a value between 0 and 0777. If not specified, the volume defaultMode will be used. This might be in conflict with other options that affect the file mode, like fsGroup, and the result can be other mode bits set."
                                           },
@@ -17325,7 +17953,6 @@
                     "Optional": true,
                     "Description": "Optional duration in seconds the pod needs to terminate gracefully. May be decreased in delete request. Value must be non-negative integer. The value zero indicates delete immediately. If this value is nil, the default grace period will be used instead. The grace period is the duration in seconds after the processes running in the pod are sent a termination signal and the time when the processes are forcibly halted with a kill signal. Set this value longer than the expected cleanup time for your process.",
                     "Computed": true,
-                    "DefaultFunc": "UNKNOWN",
                     "ConflictsWith": [
                       "spec.0.template.0.spec",
                       "spec.0.template.0.metadata"
@@ -17533,9 +18160,13 @@
                             "Type": "SchemaInfo",
                             "Info": {
                               "default_mode": {
-                                "Type": "Int",
+                                "Type": "String",
                                 "Optional": true,
-                                "Description": "Optional: mode bits to use on created files by default. Must be a value between 0 and 0777. Defaults to 0644. Directories within the path are not affected by this setting. This might be in conflict with other options that affect the file mode, like fsGroup, and the result can be other mode bits set."
+                                "Description": "Optional: mode bits to use on created files by default. Must be a value between 0 and 0777. Defaults to 0644. Directories within the path are not affected by this setting. This might be in conflict with other options that affect the file mode, like fsGroup, and the result can be other mode bits set.",
+                                "Default": {
+                                  "Type": "string",
+                                  "Value": "0644"
+                                }
                               },
                               "items": {
                                 "Type": "List",
@@ -17550,7 +18181,7 @@
                                       "Description": "The key to project."
                                     },
                                     "mode": {
-                                      "Type": "Int",
+                                      "Type": "String",
                                       "Optional": true,
                                       "Description": "Optional: mode bits to use on this file, must be a value between 0 and 0777. If not specified, the volume defaultMode will be used. This might be in conflict with other options that affect the file mode, like fsGroup, and the result can be other mode bits set."
                                     },
@@ -17579,9 +18210,13 @@
                             "Type": "SchemaInfo",
                             "Info": {
                               "default_mode": {
-                                "Type": "Int",
+                                "Type": "String",
                                 "Optional": true,
-                                "Description": "Optional: mode bits to use on created files by default. Must be a value between 0 and 0777. Defaults to 0644. Directories within the path are not affected by this setting. This might be in conflict with other options that affect the file mode, like fsGroup, and the result can be other mode bits set."
+                                "Description": "Optional: mode bits to use on created files by default. Must be a value between 0 and 0777. Defaults to 0644. Directories within the path are not affected by this setting. This might be in conflict with other options that affect the file mode, like fsGroup, and the result can be other mode bits set.",
+                                "Default": {
+                                  "Type": "string",
+                                  "Value": "0644"
+                                }
                               },
                               "items": {
                                 "Type": "List",
@@ -17616,7 +18251,7 @@
                                       }
                                     },
                                     "mode": {
-                                      "Type": "Int",
+                                      "Type": "String",
                                       "Optional": true,
                                       "Description": "Optional: mode bits to use on this file, must be a value between 0 and 0777. If not specified, the volume defaultMode will be used. This might be in conflict with other options that affect the file mode, like fsGroup, and the result can be other mode bits set."
                                     },
@@ -18138,12 +18773,12 @@
                             "Type": "SchemaInfo",
                             "Info": {
                               "default_mode": {
-                                "Type": "Int",
+                                "Type": "String",
                                 "Optional": true,
                                 "Description": "Optional: mode bits to use on created files by default. Must be a value between 0 and 0777. Defaults to 0644. Directories within the path are not affected by this setting. This might be in conflict with other options that affect the file mode, like fsGroup, and the result can be other mode bits set.",
                                 "Default": {
-                                  "Type": "int",
-                                  "Value": "420"
+                                  "Type": "string",
+                                  "Value": "0644"
                                 }
                               },
                               "items": {
@@ -18159,7 +18794,7 @@
                                       "Description": "The key to project."
                                     },
                                     "mode": {
-                                      "Type": "Int",
+                                      "Type": "String",
                                       "Optional": true,
                                       "Description": "Optional: mode bits to use on this file, must be a value between 0 and 0777. If not specified, the volume defaultMode will be used. This might be in conflict with other options that affect the file mode, like fsGroup, and the result can be other mode bits set."
                                     },
@@ -18509,9 +19144,10 @@
         }
       },
       "role_ref": {
-        "Type": "Map",
+        "Type": "List",
         "Required": true,
         "Description": "RoleRef references the Role for this binding",
+        "MaxItems": 1,
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
@@ -18523,11 +19159,7 @@
             "kind": {
               "Type": "String",
               "Required": true,
-              "Description": "The kind of resource.",
-              "Default": {
-                "Type": "string",
-                "Value": "Role"
-              }
+              "Description": "The kind of resource."
             },
             "name": {
               "Type": "String",
@@ -18882,11 +19514,7 @@
       "automount_service_account_token": {
         "Type": "Bool",
         "Optional": true,
-        "Description": "True to enable automatic mounting of the service account token",
-        "Default": {
-          "Type": "bool",
-          "Value": "false"
-        }
+        "Description": "True to enable automatic mounting of the service account token"
       },
       "default_secret_name": {
         "Type": "String",
@@ -19184,7 +19812,7 @@
                           "Optional": true,
                           "Description": "Prefix, used by the server, to generate a unique name ONLY IF the `name` field has not been provided. This value will also be combined with a unique suffix. Read more: https://github.com/kubernetes/community/blob/master/contributors/devel/api-conventions.md#idempotency",
                           "ConflictsWith": [
-                            "metadata.name"
+                            "metadata.0.name"
                           ]
                         },
                         "generation": {
@@ -19207,7 +19835,7 @@
                           "Description": "Name of the stateful set, must be unique. Cannot be updated. More info: http://kubernetes.io/docs/user-guide/identifiers#names",
                           "Computed": true,
                           "ConflictsWith": [
-                            "metadata.generate_name"
+                            "metadata.0.generate_name"
                           ]
                         },
                         "resource_version": {
@@ -20232,29 +20860,114 @@
                             }
                           }
                         },
+                        "dns_config": {
+                          "Type": "List",
+                          "Optional": true,
+                          "Description": "Specifies the DNS parameters of a pod. Parameters specified here will be merged to the generated DNS configuration based on DNSPolicy. Optional: Defaults to empty",
+                          "MaxItems": 1,
+                          "Elem": {
+                            "Type": "SchemaInfo",
+                            "Info": {
+                              "nameservers": {
+                                "Type": "List",
+                                "Optional": true,
+                                "Description": "A list of DNS name server IP addresses. This will be appended to the base nameservers generated from DNSPolicy. Duplicated nameservers will be removed.",
+                                "Elem": {
+                                  "Type": "SchemaElements",
+                                  "ElementsType": "String"
+                                }
+                              },
+                              "option": {
+                                "Type": "List",
+                                "Optional": true,
+                                "Description": "A list of DNS resolver options. This will be merged with the base options generated from DNSPolicy. Duplicated entries will be removed. Resolution options given in Options will override those that appear in the base DNSPolicy.",
+                                "Elem": {
+                                  "Type": "SchemaInfo",
+                                  "Info": {
+                                    "name": {
+                                      "Type": "String",
+                                      "Required": true,
+                                      "Description": "Name of the option."
+                                    },
+                                    "value": {
+                                      "Type": "String",
+                                      "Optional": true,
+                                      "Description": "Value of the option. Optional: Defaults to empty."
+                                    }
+                                  }
+                                }
+                              },
+                              "searches": {
+                                "Type": "List",
+                                "Optional": true,
+                                "Description": "A list of DNS search domains for host-name lookup. This will be appended to the base search paths generated from DNSPolicy. Duplicated search paths will be removed.",
+                                "Elem": {
+                                  "Type": "SchemaElements",
+                                  "ElementsType": "String"
+                                }
+                              }
+                            }
+                          }
+                        },
                         "dns_policy": {
                           "Type": "String",
                           "Optional": true,
-                          "Description": "Set DNS policy for containers within the pod. One of 'ClusterFirst' or 'Default'. Defaults to 'ClusterFirst'.",
-                          "DefaultFunc": "UNKNOWN"
+                          "Description": "Set DNS policy for containers within the pod. Valid values are 'ClusterFirstWithHostNet', 'ClusterFirst', 'Default' or 'None'. DNS parameters given in DNSConfig will be merged with the policy selected with DNSPolicy. To have DNS options set along with hostNetwork, you have to specify DNS policy explicitly to 'ClusterFirstWithHostNet'. Optional: Defaults to 'ClusterFirst', see [Kubernetes reference](https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy).",
+                          "Default": {
+                            "Type": "string",
+                            "Value": "ClusterFirst"
+                          }
+                        },
+                        "host_aliases": {
+                          "Type": "List",
+                          "Optional": true,
+                          "Description": "List of hosts and IPs that will be injected into the pod's hosts file if specified. Optional: Defaults to empty.",
+                          "Elem": {
+                            "Type": "SchemaInfo",
+                            "Info": {
+                              "hostnames": {
+                                "Type": "List",
+                                "Required": true,
+                                "Description": "Hostnames for the IP address.",
+                                "Elem": {
+                                  "Type": "SchemaElements",
+                                  "ElementsType": "String"
+                                }
+                              },
+                              "ip": {
+                                "Type": "String",
+                                "Required": true,
+                                "Description": "IP address of the host file entry."
+                              }
+                            }
+                          }
                         },
                         "host_ipc": {
                           "Type": "Bool",
                           "Optional": true,
-                          "Description": "Use the host's ipc namespace. Optional: Default to false.",
-                          "DefaultFunc": "UNKNOWN"
+                          "Description": "Use the host's ipc namespace. Optional: Defaults to false.",
+                          "Default": {
+                            "Type": "bool",
+                            "Value": "false"
+                          }
                         },
                         "host_network": {
                           "Type": "Bool",
                           "Optional": true,
                           "Description": "Host networking requested for this pod. Use the host's network namespace. If this option is set, the ports that will be used must be specified.",
-                          "DefaultFunc": "UNKNOWN"
+                          "Default": {
+                            "Type": "bool",
+                            "Value": "false"
+                          }
                         },
                         "host_pid": {
                           "Type": "Bool",
                           "Optional": true,
                           "Description": "Use the host's pid namespace.",
-                          "DefaultFunc": "UNKNOWN"
+                          "Default": {
+                            "Type": "bool",
+                            "Value": "false"
+                          }
                         },
                         "hostname": {
                           "Type": "String",
@@ -21284,7 +21997,10 @@
                           "Type": "String",
                           "Optional": true,
                           "Description": "Restart policy for all containers within the pod. One of Always, OnFailure, Never. More info: http://kubernetes.io/docs/user-guide/pod-states#restartpolicy.",
-                          "DefaultFunc": "UNKNOWN"
+                          "Default": {
+                            "Type": "string",
+                            "Value": "Always"
+                          }
                         },
                         "security_context": {
                           "Type": "List",
@@ -21367,7 +22083,10 @@
                           "Type": "Int",
                           "Optional": true,
                           "Description": "Optional duration in seconds the pod needs to terminate gracefully. May be decreased in delete request. Value must be non-negative integer. The value zero indicates delete immediately. If this value is nil, the default grace period will be used instead. The grace period is the duration in seconds after the processes running in the pod are sent a termination signal and the time when the processes are forcibly halted with a kill signal. Set this value longer than the expected cleanup time for your process.",
-                          "DefaultFunc": "UNKNOWN"
+                          "Default": {
+                            "Type": "int",
+                            "Value": "30"
+                          }
                         },
                         "volume": {
                           "Type": "List",
@@ -21564,9 +22283,13 @@
                                   "Type": "SchemaInfo",
                                   "Info": {
                                     "default_mode": {
-                                      "Type": "Int",
+                                      "Type": "String",
                                       "Optional": true,
-                                      "Description": "Optional: mode bits to use on created files by default. Must be a value between 0 and 0777. Defaults to 0644. Directories within the path are not affected by this setting. This might be in conflict with other options that affect the file mode, like fsGroup, and the result can be other mode bits set."
+                                      "Description": "Optional: mode bits to use on created files by default. Must be a value between 0 and 0777. Defaults to 0644. Directories within the path are not affected by this setting. This might be in conflict with other options that affect the file mode, like fsGroup, and the result can be other mode bits set.",
+                                      "Default": {
+                                        "Type": "string",
+                                        "Value": "0644"
+                                      }
                                     },
                                     "items": {
                                       "Type": "List",
@@ -21581,7 +22304,7 @@
                                             "Description": "The key to project."
                                           },
                                           "mode": {
-                                            "Type": "Int",
+                                            "Type": "String",
                                             "Optional": true,
                                             "Description": "Optional: mode bits to use on this file, must be a value between 0 and 0777. If not specified, the volume defaultMode will be used. This might be in conflict with other options that affect the file mode, like fsGroup, and the result can be other mode bits set."
                                           },
@@ -21610,9 +22333,13 @@
                                   "Type": "SchemaInfo",
                                   "Info": {
                                     "default_mode": {
-                                      "Type": "Int",
+                                      "Type": "String",
                                       "Optional": true,
-                                      "Description": "Optional: mode bits to use on created files by default. Must be a value between 0 and 0777. Defaults to 0644. Directories within the path are not affected by this setting. This might be in conflict with other options that affect the file mode, like fsGroup, and the result can be other mode bits set."
+                                      "Description": "Optional: mode bits to use on created files by default. Must be a value between 0 and 0777. Defaults to 0644. Directories within the path are not affected by this setting. This might be in conflict with other options that affect the file mode, like fsGroup, and the result can be other mode bits set.",
+                                      "Default": {
+                                        "Type": "string",
+                                        "Value": "0644"
+                                      }
                                     },
                                     "items": {
                                       "Type": "List",
@@ -21647,7 +22374,7 @@
                                             }
                                           },
                                           "mode": {
-                                            "Type": "Int",
+                                            "Type": "String",
                                             "Optional": true,
                                             "Description": "Optional: mode bits to use on this file, must be a value between 0 and 0777. If not specified, the volume defaultMode will be used. This might be in conflict with other options that affect the file mode, like fsGroup, and the result can be other mode bits set."
                                           },
@@ -22169,12 +22896,12 @@
                                   "Type": "SchemaInfo",
                                   "Info": {
                                     "default_mode": {
-                                      "Type": "Int",
+                                      "Type": "String",
                                       "Optional": true,
                                       "Description": "Optional: mode bits to use on created files by default. Must be a value between 0 and 0777. Defaults to 0644. Directories within the path are not affected by this setting. This might be in conflict with other options that affect the file mode, like fsGroup, and the result can be other mode bits set.",
                                       "Default": {
-                                        "Type": "int",
-                                        "Value": "420"
+                                        "Type": "string",
+                                        "Value": "0644"
                                       }
                                     },
                                     "items": {
@@ -22190,7 +22917,7 @@
                                             "Description": "The key to project."
                                           },
                                           "mode": {
-                                            "Type": "Int",
+                                            "Type": "String",
                                             "Optional": true,
                                             "Description": "Optional: mode bits to use on this file, must be a value between 0 and 0777. If not specified, the volume defaultMode will be used. This might be in conflict with other options that affect the file mode, like fsGroup, and the result can be other mode bits set."
                                           },
@@ -22471,6 +23198,15 @@
       }
     },
     "kubernetes_storage_class": {
+      "allow_volume_expansion": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Indicates whether the storage class allow volume expand",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
       "metadata": {
         "Type": "List",
         "Required": true,
@@ -22493,7 +23229,7 @@
               "Optional": true,
               "Description": "Prefix, used by the server, to generate a unique name ONLY IF the `name` field has not been provided. This value will also be combined with a unique suffix. Read more: https://github.com/kubernetes/community/blob/master/contributors/devel/api-conventions.md#idempotency",
               "ConflictsWith": [
-                "metadata.name"
+                "metadata.0.name"
               ]
             },
             "generation": {
@@ -22516,7 +23252,7 @@
               "Description": "Name of the storage class, must be unique. Cannot be updated. More info: http://kubernetes.io/docs/user-guide/identifiers#names",
               "Computed": true,
               "ConflictsWith": [
-                "metadata.generate_name"
+                "metadata.0.generate_name"
               ]
             },
             "resource_version": {
