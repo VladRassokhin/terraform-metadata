@@ -57,6 +57,10 @@ process_repository() {
   pkg_name="$name"
   provider_args=""
 
+  if [[ "$pkg_name" == "terraform" ]]; then
+    # Ignoring deprecated provider
+    continue;
+  fi
   if [[ "$pkg_name" == "azure-classic" ]]; then
     pkg_name="azure"
   fi
