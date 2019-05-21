@@ -2,7 +2,7 @@
   ".schema_version": "1",
   "name": "nutanix",
   "type": "provider",
-  "version": "v1.0.0",
+  "version": "v1.0.1",
   "provider": {
     "endpoint": {
       "Type": "String",
@@ -32,11 +32,22 @@
         "Value": "9440"
       }
     },
+    "proxy_url": {
+      "Type": "String",
+      "Optional": true,
+      "DefaultFunc": "ENV(NUTANIX_PROXY_URL)"
+    },
     "username": {
       "Type": "String",
       "Required": true,
       "Description": "User name for Nutanix Prism. Could be\nlocal cluster auth (e.g. 'admin') or directory auth.",
       "DefaultFunc": "ENV(NUTANIX_USERNAME)"
+    },
+    "wait_timeout": {
+      "Type": "Int",
+      "Optional": true,
+      "Description": "Set if you know that the creation o update of a resource may take long time (minutes)",
+      "DefaultFunc": "ENV(NUTANIX_WAIT_TIMEOUT)"
     }
   },
   "resources": {
@@ -138,28 +149,13 @@
           }
         }
       },
-      "cluster_reference": {
-        "Type": "Map",
-        "Optional": true,
-        "Computed": true,
-        "Elem": {
-          "Type": "SchemaInfo",
-          "Info": {
-            "kind": {
-              "Type": "String",
-              "Required": true
-            },
-            "name": {
-              "Type": "String",
-              "Optional": true,
-              "Computed": true
-            },
-            "uuid": {
-              "Type": "String",
-              "Required": true
-            }
-          }
-        }
+      "cluster_name": {
+        "Type": "String",
+        "Computed": true
+      },
+      "cluster_uuid": {
+        "Type": "String",
+        "Computed": true
       },
       "description": {
         "Type": "String",
@@ -331,26 +327,11 @@
       },
       "cluster_name": {
         "Type": "String",
-        "Optional": true,
         "Computed": true
       },
-      "cluster_reference": {
-        "Type": "Map",
-        "Optional": true,
-        "Computed": true,
-        "Elem": {
-          "Type": "SchemaInfo",
-          "Info": {
-            "kind": {
-              "Type": "String",
-              "Required": true
-            },
-            "uuid": {
-              "Type": "String",
-              "Required": true
-            }
-          }
-        }
+      "cluster_uuid": {
+        "Type": "String",
+        "Required": true
       },
       "default_gateway_ip": {
         "Type": "String",
@@ -657,26 +638,11 @@
       },
       "cluster_name": {
         "Type": "String",
-        "Optional": true,
         "Computed": true
       },
-      "cluster_reference": {
-        "Type": "Map",
-        "Optional": true,
-        "Computed": true,
-        "Elem": {
-          "Type": "SchemaInfo",
-          "Info": {
-            "kind": {
-              "Type": "String",
-              "Required": true
-            },
-            "uuid": {
-              "Type": "String",
-              "Required": true
-            }
-          }
-        }
+      "cluster_uuid": {
+        "Type": "String",
+        "Required": true
       },
       "description": {
         "Type": "String",
@@ -690,18 +656,21 @@
           "Type": "SchemaInfo",
           "Info": {
             "data_source_reference": {
-              "Type": "List",
+              "Type": "Map",
               "Optional": true,
+              "Computed": true,
               "Elem": {
                 "Type": "SchemaInfo",
                 "Info": {
                   "kind": {
                     "Type": "String",
-                    "Optional": true
+                    "Optional": true,
+                    "Computed": true
                   },
                   "uuid": {
                     "Type": "String",
-                    "Optional": true
+                    "Optional": true,
+                    "Computed": true
                   }
                 }
               }
@@ -709,26 +678,32 @@
             "device_properties": {
               "Type": "List",
               "Optional": true,
+              "Computed": true,
+              "MaxItems": 1,
               "Elem": {
                 "Type": "SchemaInfo",
                 "Info": {
                   "device_type": {
                     "Type": "String",
-                    "Optional": true
+                    "Optional": true,
+                    "Computed": true
                   },
                   "disk_address": {
-                    "Type": "List",
+                    "Type": "Map",
                     "Optional": true,
+                    "Computed": true,
                     "Elem": {
                       "Type": "SchemaInfo",
                       "Info": {
                         "adapter_type": {
                           "Type": "String",
-                          "Optional": true
+                          "Optional": true,
+                          "Computed": true
                         },
                         "device_index": {
                           "Type": "Int",
-                          "Optional": true
+                          "Optional": true,
+                          "Computed": true
                         }
                       }
                     }
@@ -738,33 +713,40 @@
             },
             "disk_size_bytes": {
               "Type": "Int",
-              "Optional": true
+              "Optional": true,
+              "Computed": true
             },
             "disk_size_mib": {
               "Type": "Int",
-              "Optional": true
+              "Optional": true,
+              "Computed": true
             },
             "uuid": {
               "Type": "String",
-              "Optional": true
+              "Optional": true,
+              "Computed": true
             },
             "volume_group_reference": {
-              "Type": "List",
+              "Type": "Map",
               "Optional": true,
+              "Computed": true,
               "Elem": {
                 "Type": "SchemaInfo",
                 "Info": {
                   "kind": {
                     "Type": "String",
-                    "Optional": true
+                    "Optional": true,
+                    "Computed": true
                   },
                   "name": {
                     "Type": "String",
-                    "Optional": true
+                    "Optional": true,
+                    "Computed": true
                   },
                   "uuid": {
                     "Type": "String",
-                    "Optional": true
+                    "Optional": true,
+                    "Computed": true
                   }
                 }
               }
@@ -952,6 +934,20 @@
         "Type": "String",
         "Required": true
       },
+      "ngt_credentials": {
+        "Type": "Map",
+        "Optional": true,
+        "Computed": true
+      },
+      "ngt_enabled_capability_list": {
+        "Type": "List",
+        "Optional": true,
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
       "nic_list": {
         "Type": "List",
         "Optional": true,
@@ -959,10 +955,6 @@
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
-            "floating_ip": {
-              "Type": "String",
-              "Computed": true
-            },
             "ip_endpoint_list": {
               "Type": "List",
               "Optional": true,
@@ -981,6 +973,14 @@
                     "Computed": true
                   }
                 }
+              }
+            },
+            "is_connected": {
+              "Type": "String",
+              "Optional": true,
+              "Default": {
+                "Type": "string",
+                "Value": "true"
               }
             },
             "mac_address": {
@@ -1026,32 +1026,101 @@
               "Optional": true,
               "Computed": true
             },
-            "subnet_reference": {
-              "Type": "Map",
+            "subnet_name": {
+              "Type": "String",
               "Optional": true,
+              "Computed": true
+            },
+            "subnet_uuid": {
+              "Type": "String",
+              "Optional": true
+            },
+            "uuid": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            }
+          }
+        }
+      },
+      "nic_list_status": {
+        "Type": "List",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "floating_ip": {
+              "Type": "String",
+              "Computed": true
+            },
+            "ip_endpoint_list": {
+              "Type": "List",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "ip": {
+                    "Type": "String",
+                    "Computed": true
+                  },
+                  "type": {
+                    "Type": "String",
+                    "Computed": true
+                  }
+                }
+              }
+            },
+            "is_connected": {
+              "Type": "String",
+              "Computed": true
+            },
+            "mac_address": {
+              "Type": "String",
+              "Computed": true
+            },
+            "model": {
+              "Type": "String",
+              "Computed": true
+            },
+            "network_function_chain_reference": {
+              "Type": "Map",
               "Computed": true,
               "Elem": {
                 "Type": "SchemaInfo",
                 "Info": {
                   "kind": {
                     "Type": "String",
-                    "Required": true
+                    "Computed": true
+                  },
+                  "name": {
+                    "Type": "String",
+                    "Computed": true
                   },
                   "uuid": {
                     "Type": "String",
-                    "Required": true
+                    "Computed": true
                   }
                 }
               }
             },
-            "subnet_reference_name": {
+            "network_function_nic_type": {
               "Type": "String",
-              "Optional": true,
+              "Computed": true
+            },
+            "nic_type": {
+              "Type": "String",
+              "Computed": true
+            },
+            "subnet_name": {
+              "Type": "String",
+              "Computed": true
+            },
+            "subnet_uuid": {
+              "Type": "String",
               "Computed": true
             },
             "uuid": {
               "Type": "String",
-              "Optional": true,
               "Computed": true
             }
           }
@@ -1083,24 +1152,20 @@
               "Type": "String",
               "Computed": true
             },
-            "enabled_capability_list": {
-              "Type": "List",
-              "Optional": true,
-              "Computed": true,
-              "Elem": {
-                "Type": "SchemaElements",
-                "ElementsType": "String"
-              }
-            },
             "guest_os_version": {
               "Type": "String",
               "Computed": true
             },
             "is_reachable": {
-              "Type": "Bool",
+              "Type": "String",
               "Computed": true
             },
             "iso_mount_state": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "ngt_state": {
               "Type": "String",
               "Optional": true,
               "Computed": true
@@ -1112,14 +1177,15 @@
             },
             "version": {
               "Type": "String",
+              "Optional": true,
               "Computed": true
             },
             "vm_mobility_drivers_installed": {
-              "Type": "Bool",
+              "Type": "String",
               "Computed": true
             },
             "vss_snapshot_capable": {
-              "Type": "Bool",
+              "Type": "String",
               "Computed": true
             }
           }
@@ -1204,6 +1270,25 @@
           }
         }
       },
+      "serial_port_list": {
+        "Type": "List",
+        "Optional": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "index": {
+              "Type": "Int",
+              "Optional": true,
+              "Computed": true
+            },
+            "is_connected": {
+              "Type": "Bool",
+              "Optional": true,
+              "Computed": true
+            }
+          }
+        }
+      },
       "should_fail_on_script_failure": {
         "Type": "Bool",
         "Optional": true,
@@ -1221,6 +1306,32 @@
     }
   },
   "data-sources": {
+    "nutanix_category_key": {
+      "api_version": {
+        "Type": "String",
+        "Computed": true
+      },
+      "description": {
+        "Type": "String",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true
+      },
+      "system_defined": {
+        "Type": "Bool",
+        "Computed": true
+      },
+      "values": {
+        "Type": "List",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      }
+    },
     "nutanix_cluster": {
       "analysis_vm_efficiency_map": {
         "Type": "Map",
@@ -2510,24 +2621,11 @@
           }
         }
       },
-      "cluster_reference": {
-        "Type": "Map",
-        "Computed": true,
-        "Elem": {
-          "Type": "SchemaInfo",
-          "Info": {
-            "kind": {
-              "Type": "String",
-              "Computed": true
-            },
-            "uuid": {
-              "Type": "String",
-              "Computed": true
-            }
-          }
-        }
+      "cluster_name": {
+        "Type": "String",
+        "Computed": true
       },
-      "cluster_reference_name": {
+      "cluster_uuid": {
         "Type": "String",
         "Computed": true
       },
@@ -2705,26 +2803,13 @@
         "Optional": true,
         "Computed": true
       },
-      "cluster_reference": {
-        "Type": "Map",
-        "Computed": true,
-        "Elem": {
-          "Type": "SchemaInfo",
-          "Info": {
-            "kind": {
-              "Type": "String",
-              "Computed": true
-            },
-            "name": {
-              "Type": "String",
-              "Computed": true
-            },
-            "uuid": {
-              "Type": "String",
-              "Computed": true
-            }
-          }
-        }
+      "cluster_name": {
+        "Type": "String",
+        "Computed": true
+      },
+      "cluster_uuid": {
+        "Type": "String",
+        "Computed": true
       },
       "default_gateway_ip": {
         "Type": "String",
@@ -3032,24 +3117,11 @@
         "Optional": true,
         "Computed": true
       },
-      "cluster_reference": {
-        "Type": "Map",
-        "Computed": true,
-        "Elem": {
-          "Type": "SchemaInfo",
-          "Info": {
-            "kind": {
-              "Type": "String",
-              "Computed": true
-            },
-            "uuid": {
-              "Type": "String",
-              "Computed": true
-            }
-          }
-        }
+      "cluster_name": {
+        "Type": "String",
+        "Computed": true
       },
-      "cluster_reference_name": {
+      "cluster_uuid": {
         "Type": "String",
         "Computed": true
       },
@@ -3095,7 +3167,7 @@
                     "Computed": true
                   },
                   "disk_address": {
-                    "Type": "List",
+                    "Type": "Map",
                     "Computed": true,
                     "Elem": {
                       "Type": "SchemaInfo",
@@ -3339,6 +3411,18 @@
         "Type": "String",
         "Computed": true
       },
+      "ngt_credentials": {
+        "Type": "Map",
+        "Computed": true
+      },
+      "ngt_enabled_capability_list": {
+        "Type": "List",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
       "nic_list": {
         "Type": "List",
         "Computed": true,
@@ -3403,24 +3487,11 @@
               "Type": "String",
               "Computed": true
             },
-            "subnet_reference": {
-              "Type": "Map",
-              "Computed": true,
-              "Elem": {
-                "Type": "SchemaInfo",
-                "Info": {
-                  "kind": {
-                    "Type": "String",
-                    "Computed": true
-                  },
-                  "uuid": {
-                    "Type": "String",
-                    "Computed": true
-                  }
-                }
-              }
+            "subnet_name": {
+              "Type": "String",
+              "Computed": true
             },
-            "subnet_reference_name": {
+            "subnet_uuid": {
               "Type": "String",
               "Computed": true
             },
@@ -3453,23 +3524,19 @@
               "Type": "String",
               "Computed": true
             },
-            "enabled_capability_list": {
-              "Type": "List",
-              "Computed": true,
-              "Elem": {
-                "Type": "SchemaElements",
-                "ElementsType": "String"
-              }
-            },
             "guest_os_version": {
               "Type": "String",
               "Computed": true
             },
             "is_reachable": {
-              "Type": "Bool",
+              "Type": "String",
               "Computed": true
             },
             "iso_mount_state": {
+              "Type": "String",
+              "Computed": true
+            },
+            "ngt_state": {
               "Type": "String",
               "Computed": true
             },
@@ -3482,11 +3549,11 @@
               "Computed": true
             },
             "vm_mobility_drivers_installed": {
-              "Type": "Bool",
+              "Type": "String",
               "Computed": true
             },
             "vss_snapshot_capable": {
-              "Type": "Bool",
+              "Type": "String",
               "Computed": true
             }
           }
@@ -3558,6 +3625,23 @@
             },
             "uuid": {
               "Type": "String",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "serial_port_list": {
+        "Type": "List",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "index": {
+              "Type": "Int",
+              "Computed": true
+            },
+            "is_connected": {
+              "Type": "Bool",
               "Computed": true
             }
           }

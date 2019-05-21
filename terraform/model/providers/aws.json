@@ -2,7 +2,7 @@
   ".schema_version": "1",
   "name": "aws",
   "type": "provider",
-  "version": "v2.8.0",
+  "version": "v2.11.0",
   "provider": {
     "access_key": {
       "Type": "String",
@@ -628,6 +628,14 @@
               "Type": "string"
             }
           },
+          "managedblockchain": {
+            "Type": "String",
+            "Optional": true,
+            "Description": "Use this to override the default service endpoint URL",
+            "Default": {
+              "Type": "string"
+            }
+          },
           "mediaconnect": {
             "Type": "String",
             "Optional": true,
@@ -966,6 +974,14 @@
             }
           },
           "workspaces": {
+            "Type": "String",
+            "Optional": true,
+            "Description": "Use this to override the default service endpoint URL",
+            "Default": {
+              "Type": "string"
+            }
+          },
+          "xray": {
             "Type": "String",
             "Optional": true,
             "Description": "Use this to override the default service endpoint URL",
@@ -4736,6 +4752,10 @@
       },
       "schema": {
         "Type": "String",
+        "Optional": true
+      },
+      "tags": {
+        "Type": "Map",
         "Optional": true
       },
       "uris": {
@@ -11291,6 +11311,20 @@
         }
       }
     },
+    "aws_db_instance_role_association": {
+      "db_instance_identifier": {
+        "Type": "String",
+        "Required": true
+      },
+      "feature_name": {
+        "Type": "String",
+        "Required": true
+      },
+      "role_arn": {
+        "Type": "String",
+        "Required": true
+      }
+    },
     "aws_db_option_group": {
       "__timeouts__": [
         "delete"
@@ -15483,6 +15517,10 @@
           }
         }
       },
+      "arn": {
+        "Type": "String",
+        "Computed": true
+      },
       "description": {
         "Type": "String",
         "Optional": true
@@ -15490,12 +15528,20 @@
       "name": {
         "Type": "String",
         "Required": true
+      },
+      "tags": {
+        "Type": "Map",
+        "Optional": true
       }
     },
     "aws_elastic_beanstalk_application_version": {
       "application": {
         "Type": "String",
         "Required": true
+      },
+      "arn": {
+        "Type": "String",
+        "Computed": true
       },
       "bucket": {
         "Type": "String",
@@ -15520,6 +15566,10 @@
       "name": {
         "Type": "String",
         "Required": true
+      },
+      "tags": {
+        "Type": "Map",
+        "Optional": true
       }
     },
     "aws_elastic_beanstalk_configuration_template": {
@@ -17139,12 +17189,94 @@
       "core_instance_count": {
         "Type": "Int",
         "Optional": true,
-        "Computed": true
+        "Computed": true,
+        "ConflictsWith": [
+          "core_instance_group"
+        ],
+        "Deprecated": "use `core_instance_group` configuration block `instance_count` argument instead"
+      },
+      "core_instance_group": {
+        "Type": "List",
+        "Optional": true,
+        "Computed": true,
+        "MaxItems": 1,
+        "ConflictsWith": [
+          "core_instance_count",
+          "core_instance_type",
+          "instance_group"
+        ],
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "autoscaling_policy": {
+              "Type": "String",
+              "Optional": true
+            },
+            "bid_price": {
+              "Type": "String",
+              "Optional": true
+            },
+            "ebs_config": {
+              "Type": "Set",
+              "Optional": true,
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "iops": {
+                    "Type": "Int",
+                    "Optional": true
+                  },
+                  "size": {
+                    "Type": "Int",
+                    "Required": true
+                  },
+                  "type": {
+                    "Type": "String",
+                    "Required": true
+                  },
+                  "volumes_per_instance": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "int",
+                      "Value": "1"
+                    }
+                  }
+                }
+              }
+            },
+            "id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "instance_count": {
+              "Type": "Int",
+              "Optional": true,
+              "Default": {
+                "Type": "int",
+                "Value": "1"
+              }
+            },
+            "instance_type": {
+              "Type": "String",
+              "Required": true
+            },
+            "name": {
+              "Type": "String",
+              "Optional": true
+            }
+          }
+        }
       },
       "core_instance_type": {
         "Type": "String",
         "Optional": true,
-        "Computed": true
+        "Computed": true,
+        "ConflictsWith": [
+          "core_instance_group"
+        ],
+        "Deprecated": "use `core_instance_group` configuration block `instance_type` argument instead"
       },
       "custom_ami_id": {
         "Type": "String",
@@ -17200,6 +17332,11 @@
         "Type": "Set",
         "Optional": true,
         "Computed": true,
+        "ConflictsWith": [
+          "core_instance_group",
+          "master_instance_group"
+        ],
+        "Deprecated": "use `master_instance_group` configuration block, `core_instance_group` configuration block, and `aws_emr_instance_group` resource(s) instead",
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
@@ -17307,10 +17444,75 @@
         "Type": "String",
         "Optional": true
       },
+      "master_instance_group": {
+        "Type": "List",
+        "Optional": true,
+        "Computed": true,
+        "MaxItems": 1,
+        "ConflictsWith": [
+          "master_instance_type",
+          "instance_group"
+        ],
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "bid_price": {
+              "Type": "String",
+              "Optional": true
+            },
+            "ebs_config": {
+              "Type": "Set",
+              "Optional": true,
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "iops": {
+                    "Type": "Int",
+                    "Optional": true
+                  },
+                  "size": {
+                    "Type": "Int",
+                    "Required": true
+                  },
+                  "type": {
+                    "Type": "String",
+                    "Required": true
+                  },
+                  "volumes_per_instance": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "int",
+                      "Value": "1"
+                    }
+                  }
+                }
+              }
+            },
+            "id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "instance_type": {
+              "Type": "String",
+              "Required": true
+            },
+            "name": {
+              "Type": "String",
+              "Optional": true
+            }
+          }
+        }
+      },
       "master_instance_type": {
         "Type": "String",
         "Optional": true,
-        "Computed": true
+        "Computed": true,
+        "ConflictsWith": [
+          "master_instance_group"
+        ],
+        "Deprecated": "use `master_instance_group` configuration block `instance_type` argument instead"
       },
       "master_public_dns": {
         "Type": "String",
@@ -17404,6 +17606,14 @@
       }
     },
     "aws_emr_instance_group": {
+      "autoscaling_policy": {
+        "Type": "String",
+        "Optional": true
+      },
+      "bid_price": {
+        "Type": "String",
+        "Optional": true
+      },
       "cluster_id": {
         "Type": "String",
         "Required": true
@@ -17411,6 +17621,7 @@
       "ebs_config": {
         "Type": "Set",
         "Optional": true,
+        "Computed": true,
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
@@ -17428,7 +17639,11 @@
             },
             "volumes_per_instance": {
               "Type": "Int",
-              "Optional": true
+              "Optional": true,
+              "Default": {
+                "Type": "int",
+                "Value": "1"
+              }
             }
           }
         }
@@ -17442,7 +17657,7 @@
         "Optional": true,
         "Default": {
           "Type": "int",
-          "Value": "0"
+          "Value": "1"
         }
       },
       "instance_type": {
@@ -18481,10 +18696,11 @@
       "allocated_capacity": {
         "Type": "Int",
         "Optional": true,
-        "Default": {
-          "Type": "int",
-          "Value": "10"
-        }
+        "Computed": true,
+        "ConflictsWith": [
+          "max_capacity"
+        ],
+        "Deprecated": "Please use attribute `max_capacity' instead. This attribute might be removed in future releases."
       },
       "command": {
         "Type": "List",
@@ -18542,6 +18758,14 @@
             }
           }
         }
+      },
+      "max_capacity": {
+        "Type": "Float",
+        "Optional": true,
+        "Computed": true,
+        "ConflictsWith": [
+          "allocated_capacity"
+        ]
       },
       "max_retries": {
         "Type": "Int",
@@ -20877,6 +21101,10 @@
       "status": {
         "Type": "String",
         "Computed": true
+      },
+      "tags": {
+        "Type": "Map",
+        "Optional": true
       },
       "version": {
         "Type": "Int",
@@ -28525,6 +28753,11 @@
         "Type": "String",
         "Required": true
       },
+      "parent_id": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
       "role_name": {
         "Type": "String",
         "Optional": true
@@ -28535,11 +28768,44 @@
       }
     },
     "aws_organizations_organization": {
+      "accounts": {
+        "Type": "List",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "arn": {
+              "Type": "String",
+              "Computed": true
+            },
+            "email": {
+              "Type": "String",
+              "Computed": true
+            },
+            "id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "name": {
+              "Type": "String",
+              "Computed": true
+            }
+          }
+        }
+      },
       "arn": {
         "Type": "String",
         "Computed": true
       },
       "aws_service_access_principals": {
+        "Type": "Set",
+        "Optional": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "enabled_policy_types": {
         "Type": "Set",
         "Optional": true,
         "Elem": {
@@ -28566,6 +28832,83 @@
       "master_account_id": {
         "Type": "String",
         "Computed": true
+      },
+      "roots": {
+        "Type": "List",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "arn": {
+              "Type": "String",
+              "Computed": true
+            },
+            "id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "name": {
+              "Type": "String",
+              "Computed": true
+            },
+            "policy_types": {
+              "Type": "List",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "status": {
+                    "Type": "String",
+                    "Computed": true
+                  },
+                  "type": {
+                    "Type": "String",
+                    "Computed": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "aws_organizations_organizational_unit": {
+      "accounts": {
+        "Type": "List",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "arn": {
+              "Type": "String",
+              "Computed": true
+            },
+            "email": {
+              "Type": "String",
+              "Computed": true
+            },
+            "id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "name": {
+              "Type": "String",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "arn": {
+        "Type": "String",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true
+      },
+      "parent_id": {
+        "Type": "String",
+        "Required": true
       }
     },
     "aws_organizations_policy": {
@@ -29126,6 +29469,14 @@
       "cluster_resource_id": {
         "Type": "String",
         "Computed": true
+      },
+      "copy_tags_to_snapshot": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
       },
       "database_name": {
         "Type": "String",
@@ -32632,6 +32983,16 @@
         "Required": true
       }
     },
+    "aws_ses_email_identity": {
+      "arn": {
+        "Type": "String",
+        "Computed": true
+      },
+      "email": {
+        "Type": "String",
+        "Required": true
+      }
+    },
     "aws_ses_event_destination": {
       "cloudwatch_destination": {
         "Type": "Set",
@@ -33020,6 +33381,16 @@
         "Optional": true
       }
     },
+    "aws_shield_protection": {
+      "name": {
+        "Type": "String",
+        "Required": true
+      },
+      "resource_arn": {
+        "Type": "String",
+        "Required": true
+      }
+    },
     "aws_simpledb_domain": {
       "name": {
         "Type": "String",
@@ -33195,6 +33566,10 @@
       },
       "sqs_success_feedback_sample_rate": {
         "Type": "Int",
+        "Optional": true
+      },
+      "tags": {
+        "Type": "Map",
         "Optional": true
       }
     },
@@ -34123,6 +34498,10 @@
       "registration_limit": {
         "Type": "Int",
         "Optional": true
+      },
+      "tags": {
+        "Type": "Map",
+        "Optional": true
       }
     },
     "aws_ssm_association": {
@@ -34370,6 +34749,10 @@
       "start_date": {
         "Type": "String",
         "Optional": true
+      },
+      "tags": {
+        "Type": "Map",
+        "Optional": true
       }
     },
     "aws_ssm_maintenance_window_target": {
@@ -34541,6 +34924,14 @@
         "Type": "Map",
         "Optional": true
       },
+      "tier": {
+        "Type": "String",
+        "Optional": true,
+        "Default": {
+          "Type": "string",
+          "Value": "Standard"
+        }
+      },
       "type": {
         "Type": "String",
         "Required": true
@@ -34663,6 +35054,10 @@
           "Type": "SchemaElements",
           "ElementsType": "String"
         }
+      },
+      "tags": {
+        "Type": "Map",
+        "Optional": true
       }
     },
     "aws_ssm_patch_group": {
@@ -37393,6 +37788,64 @@
         "Type": "String",
         "Computed": true
       }
+    },
+    "aws_xray_sampling_rule": {
+      "arn": {
+        "Type": "String",
+        "Computed": true
+      },
+      "attributes": {
+        "Type": "Map",
+        "Optional": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "fixed_rate": {
+        "Type": "Float",
+        "Required": true
+      },
+      "host": {
+        "Type": "String",
+        "Required": true
+      },
+      "http_method": {
+        "Type": "String",
+        "Required": true
+      },
+      "priority": {
+        "Type": "Int",
+        "Required": true
+      },
+      "reservoir_size": {
+        "Type": "Int",
+        "Required": true
+      },
+      "resource_arn": {
+        "Type": "String",
+        "Required": true
+      },
+      "rule_name": {
+        "Type": "String",
+        "Optional": true
+      },
+      "service_name": {
+        "Type": "String",
+        "Required": true
+      },
+      "service_type": {
+        "Type": "String",
+        "Required": true
+      },
+      "url_path": {
+        "Type": "String",
+        "Required": true
+      },
+      "version": {
+        "Type": "Int",
+        "Required": true
+      }
     }
   },
   "data-sources": {
@@ -38418,6 +38871,22 @@
       }
     },
     "aws_availability_zones": {
+      "blacklisted_names": {
+        "Type": "Set",
+        "Optional": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "blacklisted_zone_ids": {
+        "Type": "Set",
+        "Optional": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
       "names": {
         "Type": "List",
         "Computed": true,
@@ -39035,6 +39504,10 @@
         "Computed": true
       },
       "replicate_source_db": {
+        "Type": "String",
+        "Computed": true
+      },
+      "resource_id": {
         "Type": "String",
         "Computed": true
       },
@@ -39774,6 +40247,42 @@
         "Required": true
       },
       "vpn_connection_id": {
+        "Type": "String",
+        "Required": true
+      }
+    },
+    "aws_ecr_image": {
+      "image_digest": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "image_pushed_at": {
+        "Type": "Int",
+        "Computed": true
+      },
+      "image_size_in_bytes": {
+        "Type": "Int",
+        "Computed": true
+      },
+      "image_tag": {
+        "Type": "String",
+        "Optional": true
+      },
+      "image_tags": {
+        "Type": "List",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "registry_id": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "repository_name": {
         "Type": "String",
         "Required": true
       }
@@ -41901,6 +42410,64 @@
         }
       }
     },
+    "aws_lambda_layer_version": {
+      "arn": {
+        "Type": "String",
+        "Computed": true
+      },
+      "compatible_runtime": {
+        "Type": "String",
+        "Optional": true,
+        "ConflictsWith": [
+          "version"
+        ]
+      },
+      "compatible_runtimes": {
+        "Type": "Set",
+        "Computed": true,
+        "MaxItems": 5,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "created_date": {
+        "Type": "String",
+        "Computed": true
+      },
+      "description": {
+        "Type": "String",
+        "Computed": true
+      },
+      "layer_arn": {
+        "Type": "String",
+        "Computed": true
+      },
+      "layer_name": {
+        "Type": "String",
+        "Required": true
+      },
+      "license_info": {
+        "Type": "String",
+        "Computed": true
+      },
+      "source_code_hash": {
+        "Type": "String",
+        "Computed": true
+      },
+      "source_code_size": {
+        "Type": "Int",
+        "Computed": true
+      },
+      "version": {
+        "Type": "Int",
+        "Optional": true,
+        "Computed": true,
+        "ConflictsWith": [
+          "compatible_runtimes"
+        ]
+      }
+    },
     "aws_launch_configuration": {
       "associate_public_ip_address": {
         "Type": "Bool",
@@ -43351,6 +43918,53 @@
       "service_code": {
         "Type": "String",
         "Required": true
+      }
+    },
+    "aws_ram_resource_share": {
+      "arn": {
+        "Type": "String",
+        "Computed": true
+      },
+      "filter": {
+        "Type": "Set",
+        "Optional": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "name": {
+              "Type": "String",
+              "Required": true
+            },
+            "values": {
+              "Type": "List",
+              "Required": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
+      "id": {
+        "Type": "String",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true
+      },
+      "resource_owner": {
+        "Type": "String",
+        "Required": true
+      },
+      "status": {
+        "Type": "String",
+        "Computed": true
+      },
+      "tags": {
+        "Type": "Map",
+        "Computed": true
       }
     },
     "aws_rds_cluster": {

@@ -2,7 +2,7 @@
   ".schema_version": "1",
   "name": "vault",
   "type": "provider",
-  "version": "v1.7.0",
+  "version": "v1.8.0",
   "provider": {
     "address": {
       "Type": "String",
@@ -307,7 +307,7 @@
       "listing_visibility": {
         "Type": "String",
         "Optional": true,
-        "Description": "Speficies whether to show this mount in the UI-specific listing endpoint"
+        "Description": "Specifies whether to show this mount in the UI-specific listing endpoint"
       },
       "local": {
         "Type": "Bool",
@@ -2584,6 +2584,11 @@
         "Optional": true,
         "Description": "The value against which to match the iss claim in a JWT"
       },
+      "default_role": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The default role to use if none is provided during login"
+      },
       "description": {
         "Type": "String",
         "Optional": true,
@@ -2607,6 +2612,16 @@
           "ElementsType": "String"
         }
       },
+      "oidc_client_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Client ID used for OIDC"
+      },
+      "oidc_client_secret": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Client Secret used for OIDC"
+      },
       "oidc_discovery_ca_pem": {
         "Type": "String",
         "Optional": true,
@@ -2625,9 +2640,80 @@
           "Type": "string",
           "Value": "jwt"
         }
+      },
+      "tune": {
+        "Type": "Set",
+        "Optional": true,
+        "Computed": true,
+        "MaxItems": 1,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "audit_non_hmac_request_keys": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Specifies the list of keys that will not be HMAC'd by audit devices in the request data object.",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "audit_non_hmac_response_keys": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Specifies the list of keys that will not be HMAC'd by audit devices in the response data object.",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "default_lease_ttl": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Specifies the default time-to-live duration. This overrides the global default. A value of 0 is equivalent to the system default TTL"
+            },
+            "listing_visibility": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Specifies whether to show this mount in the UI-specific listing endpoint. Valid values are \"unauth\" or \"hidden\". If not set, behaves like \"hidden\"."
+            },
+            "max_lease_ttl": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Specifies the maximum time-to-live duration. This overrides the global default. A value of 0 are equivalent and set to the system max TTL."
+            },
+            "passthrough_request_headers": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "List of headers to whitelist and pass from the request to the backend.",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
+      "type": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Type of backend. Can be either 'jwt' or 'oidc'",
+        "Default": {
+          "Type": "string",
+          "Value": "jwt"
+        }
       }
     },
     "vault_jwt_auth_backend_role": {
+      "allowed_redirect_uris": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "The list of allowed values for redirect_uri during OIDC logins.",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
       "backend": {
         "Type": "String",
         "Optional": true,
@@ -2655,10 +2741,20 @@
           "ElementsType": "String"
         }
       },
+      "bound_claims": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "Map of claims/values to match against. The expected value may be a single string or a list of strings."
+      },
       "bound_subject": {
         "Type": "String",
         "Optional": true,
         "Description": "If set, requires that the sub claim matches this value."
+      },
+      "claim_mappings": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "Map of claims (keys) to be copied to specified metadata fields (values)."
       },
       "groups_claim": {
         "Type": "String",
@@ -2680,6 +2776,15 @@
         "Type": "Int",
         "Optional": true,
         "Description": "Number of times issued tokens can be used. Setting this to 0 or leaving it unset means unlimited uses."
+      },
+      "oidc_scopes": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "List of OIDC scopes to be used with an OIDC role. The standard scope \"openid\" is automatically included and need not be specified.",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       },
       "period": {
         "Type": "Int",
@@ -3229,6 +3334,15 @@
           "ElementsType": "String"
         }
       },
+      "auto_renew": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "If enabled, a new certificate will be generated if the expiration is within min_seconds_remaining",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
       "backend": {
         "Type": "String",
         "Required": true,
@@ -3254,6 +3368,11 @@
         "Optional": true,
         "Description": "Flag to exclude CN from SANs."
       },
+      "expiration": {
+        "Type": "Int",
+        "Description": "The certificate expiration.",
+        "Computed": true
+      },
       "format": {
         "Type": "String",
         "Optional": true,
@@ -3276,6 +3395,15 @@
         "Type": "String",
         "Description": "The issuing CA.",
         "Computed": true
+      },
+      "min_seconds_remaining": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Generate a new certificate when the expiration is within this number of seconds",
+        "Default": {
+          "Type": "int",
+          "Value": "604800"
+        }
       },
       "name": {
         "Type": "String",
@@ -3331,6 +3459,28 @@
         "Type": "String",
         "Required": true,
         "Description": "The key and certificate PEM bundle."
+      }
+    },
+    "vault_pki_secret_backend_config_urls": {
+      "backend": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The path of the PKI secret backend the resource belongs to."
+      },
+      "crl_distribution_points": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Specifies the URL values for the CRL Distribution Points field. This can be a comma-separated string list."
+      },
+      "issuing_certificates": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Specifies the URL values for the Issuing Certificate field. This can be a comma-separated string list."
+      },
+      "ocsp_servers": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Specifies the URL values for the OCSP Servers field. This can be a comma-separated string list."
       }
     },
     "vault_pki_secret_backend_intermediate_cert_request": {
@@ -3466,6 +3616,15 @@
         "Type": "String",
         "Required": true,
         "Description": "Type of intermediate to create. Must be either \"exported\" or \"internal\"."
+      },
+      "uri_sans": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "List of alternative URIs.",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       }
     },
     "vault_pki_secret_backend_intermediate_set_signed": {
@@ -4091,6 +4250,15 @@
           "ElementsType": "String"
         }
       },
+      "auto_renew": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "If enabled, a new certificate will be generated if the expiration is within min_seconds_remaining",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
       "backend": {
         "Type": "String",
         "Required": true,
@@ -4121,6 +4289,11 @@
         "Optional": true,
         "Description": "Flag to exclude CN from SANs."
       },
+      "expiration": {
+        "Type": "Int",
+        "Description": "The certificate expiration.",
+        "Computed": true
+      },
       "format": {
         "Type": "String",
         "Optional": true,
@@ -4143,6 +4316,15 @@
         "Type": "String",
         "Description": "The issuing CA.",
         "Computed": true
+      },
+      "min_seconds_remaining": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Generate a new certificate when the expiration is within this number of seconds",
+        "Default": {
+          "Type": "int",
+          "Value": "604800"
+        }
       },
       "name": {
         "Type": "String",
