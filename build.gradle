@@ -1,0 +1,66 @@
+plugins {
+    id 'com.jfrog.bintray' version '1.8.4'
+}
+
+apply plugin: 'java'
+apply plugin: 'maven-publish'
+
+group = 'com.github.vladrassokhin'
+
+def versionPrefix = '0.1'
+if (System.hasProperty('build.number')) {
+    version = "${versionPrefix}.${System.getProperty('build.number')}"
+} else {
+    version = "${versionPrefix}.SNAPSHOT"
+}
+
+processResources {
+    doLast {
+        print "${outputs.files.asPath}"
+        fileTree(dir: outputs.files.asPath, include: '**/*.json').each {
+            file -> file.text = groovy.json.JsonOutput.toJson(new groovy.json.JsonSlurper().parse(file))
+        }
+    }
+}
+sourceSets.main.resources { srcDir 'terraform' }
+jar {
+    includeEmptyDirs false
+    eachFile { details ->
+        details.path = "terraform/$details.path"
+    }
+}
+
+publishing {
+    publications {
+        metadata(MavenPublication) {
+            from components.java
+            groupId = project.group
+            artifactId = project.archivesBaseName
+            version = project.version
+        }
+    }
+}
+
+bintray {
+    user = System.getenv('BINTRAY_USER')
+    key = System.getenv('BINTRAY_KEY')
+
+    publications = ['metadata']
+    publish = true
+
+    pkg {
+        userOrg = 'vladrassokhin'
+        repo = 'maven'
+
+        name = 'terraform-metadata'
+
+        licenses = ['Apache-2.0']
+        vcsUrl = 'https://github.com/VladRassokhin/terraform-metadata.git'
+
+        version {
+            name = project.version
+            desc = "Terraform Metadata v${project.version}"
+            released  = new Date()
+        }
+    }
+}
