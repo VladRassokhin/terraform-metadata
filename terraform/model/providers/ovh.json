@@ -2,7 +2,7 @@
   ".schema_version": "1",
   "name": "ovh",
   "type": "provider",
-  "version": "v0.3.0",
+  "version": "v0.5.0",
   "provider": {
     "application_key": {
       "Type": "String",
@@ -251,6 +251,20 @@
         "Required": true
       }
     },
+    "ovh_ip_reverse": {
+      "ip": {
+        "Type": "String",
+        "Required": true
+      },
+      "ipreverse": {
+        "Type": "String",
+        "Optional": true
+      },
+      "reverse": {
+        "Type": "String",
+        "Required": true
+      }
+    },
     "ovh_iploadbalancing_http_route": {
       "action": {
         "Type": "Set",
@@ -323,6 +337,20 @@
       "sub_field": {
         "Type": "String",
         "Optional": true
+      }
+    },
+    "ovh_iploadbalancing_refresh": {
+      "keepers": {
+        "Type": "List",
+        "Required": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "service_name": {
+        "Type": "String",
+        "Required": true
       }
     },
     "ovh_iploadbalancing_tcp_farm": {
@@ -472,6 +500,68 @@
           "Type": "int",
           "Value": "1"
         }
+      }
+    },
+    "ovh_iploadbalancing_tcp_frontend": {
+      "allowed_source": {
+        "Type": "Set",
+        "Optional": true,
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "dedicated_ipfo": {
+        "Type": "Set",
+        "Optional": true,
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "default_farm_id": {
+        "Type": "Int",
+        "Optional": true,
+        "Computed": true
+      },
+      "default_ssl_id": {
+        "Type": "Int",
+        "Optional": true,
+        "Computed": true
+      },
+      "disabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "display_name": {
+        "Type": "String",
+        "Optional": true
+      },
+      "port": {
+        "Type": "String",
+        "Required": true
+      },
+      "service_name": {
+        "Type": "String",
+        "Required": true
+      },
+      "ssl": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "zone": {
+        "Type": "String",
+        "Required": true
       }
     },
     "ovh_publiccloud_private_network": {
@@ -665,45 +755,6 @@
     }
   },
   "data-sources": {
-    "ovh_bank_account": {
-      "default": {
-        "Type": "Bool",
-        "Computed": true
-      },
-      "description": {
-        "Type": "String",
-        "Computed": true
-      },
-      "description_regexp": {
-        "Type": "String",
-        "Optional": true,
-        "Default": {
-          "Type": "string",
-          "Value": ".*"
-        }
-      },
-      "state": {
-        "Type": "String",
-        "Optional": true,
-        "Computed": true
-      },
-      "use_default": {
-        "Type": "Bool",
-        "Optional": true,
-        "Default": {
-          "Type": "bool",
-          "Value": "false"
-        }
-      },
-      "use_oldest": {
-        "Type": "Bool",
-        "Optional": true,
-        "Default": {
-          "Type": "bool",
-          "Value": "false"
-        }
-      }
-    },
     "ovh_cloud_region": {
       "continentCode": {
         "Type": "String",
@@ -763,52 +814,6 @@
         "Type": "String",
         "Required": true,
         "DefaultFunc": "ENV(OVH_PROJECT_ID)"
-      }
-    },
-    "ovh_credit_card": {
-      "default": {
-        "Type": "Bool",
-        "Computed": true
-      },
-      "description": {
-        "Type": "String",
-        "Computed": true
-      },
-      "description_regexp": {
-        "Type": "String",
-        "Optional": true,
-        "Default": {
-          "Type": "string",
-          "Value": ".*"
-        }
-      },
-      "state": {
-        "Type": "String",
-        "Computed": true
-      },
-      "states": {
-        "Type": "Set",
-        "Optional": true,
-        "Elem": {
-          "Type": "SchemaElements",
-          "ElementsType": "String"
-        }
-      },
-      "use_default": {
-        "Type": "Bool",
-        "Optional": true,
-        "Default": {
-          "Type": "bool",
-          "Value": "false"
-        }
-      },
-      "use_last_to_expire": {
-        "Type": "Bool",
-        "Optional": true,
-        "Default": {
-          "Type": "bool",
-          "Value": "false"
-        }
       }
     },
     "ovh_domain_zone": {
@@ -916,6 +921,91 @@
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
+        }
+      }
+    },
+    "ovh_me_paymentmean_bankaccount": {
+      "default": {
+        "Type": "Bool",
+        "Computed": true
+      },
+      "description": {
+        "Type": "String",
+        "Computed": true
+      },
+      "description_regexp": {
+        "Type": "String",
+        "Optional": true,
+        "Default": {
+          "Type": "string",
+          "Value": ".*"
+        }
+      },
+      "state": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "use_default": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "use_oldest": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      }
+    },
+    "ovh_me_paymentmean_creditcard": {
+      "default": {
+        "Type": "Bool",
+        "Computed": true
+      },
+      "description": {
+        "Type": "String",
+        "Computed": true
+      },
+      "description_regexp": {
+        "Type": "String",
+        "Optional": true,
+        "Default": {
+          "Type": "string",
+          "Value": ".*"
+        }
+      },
+      "state": {
+        "Type": "String",
+        "Computed": true
+      },
+      "states": {
+        "Type": "Set",
+        "Optional": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "use_default": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "use_last_to_expire": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
         }
       }
     },

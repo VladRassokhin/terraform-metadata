@@ -2,7 +2,7 @@
   ".schema_version": "1",
   "name": "aws",
   "type": "provider",
-  "version": "v2.11.0",
+  "version": "v2.12.0",
   "provider": {
     "access_key": {
       "Type": "String",
@@ -8214,6 +8214,14 @@
               "Type": "String",
               "Optional": true
             },
+            "modes": {
+              "Type": "List",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
             "type": {
               "Type": "String",
               "Optional": true,
@@ -11187,6 +11195,24 @@
         "Type": "String",
         "Optional": true
       },
+      "performance_insights_enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "performance_insights_kms_key_id": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "performance_insights_retention_period": {
+        "Type": "Int",
+        "Optional": true,
+        "Computed": true
+      },
       "port": {
         "Type": "Int",
         "Optional": true,
@@ -13393,6 +13419,29 @@
           "ElementsType": "String"
         }
       },
+      "associated_gateway_id": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true,
+        "ConflictsWith": [
+          "associated_gateway_owner_account_id",
+          "proposal_id",
+          "vpn_gateway_id"
+        ]
+      },
+      "associated_gateway_owner_account_id": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true,
+        "ConflictsWith": [
+          "associated_gateway_id",
+          "vpn_gateway_id"
+        ]
+      },
+      "associated_gateway_type": {
+        "Type": "String",
+        "Computed": true
+      },
       "dx_gateway_association_id": {
         "Type": "String",
         "Computed": true
@@ -13401,9 +13450,27 @@
         "Type": "String",
         "Required": true
       },
+      "dx_gateway_owner_account_id": {
+        "Type": "String",
+        "Computed": true
+      },
+      "proposal_id": {
+        "Type": "String",
+        "Optional": true,
+        "ConflictsWith": [
+          "associated_gateway_id",
+          "vpn_gateway_id"
+        ]
+      },
       "vpn_gateway_id": {
         "Type": "String",
-        "Required": true
+        "Optional": true,
+        "ConflictsWith": [
+          "associated_gateway_id",
+          "associated_gateway_owner_account_id",
+          "proposal_id"
+        ],
+        "Deprecated": "use 'associated_gateway_id' argument instead"
       }
     },
     "aws_dx_gateway_association_proposal": {
@@ -13416,6 +13483,21 @@
           "ElementsType": "String"
         }
       },
+      "associated_gateway_id": {
+        "Type": "String",
+        "Optional": true,
+        "ConflictsWith": [
+          "vpn_gateway_id"
+        ]
+      },
+      "associated_gateway_owner_account_id": {
+        "Type": "String",
+        "Computed": true
+      },
+      "associated_gateway_type": {
+        "Type": "String",
+        "Computed": true
+      },
       "dx_gateway_id": {
         "Type": "String",
         "Required": true
@@ -13426,7 +13508,11 @@
       },
       "vpn_gateway_id": {
         "Type": "String",
-        "Required": true
+        "Optional": true,
+        "ConflictsWith": [
+          "associated_gateway_id"
+        ],
+        "Deprecated": "use 'associated_gateway_id' argument instead"
       }
     },
     "aws_dx_hosted_private_virtual_interface": {
@@ -22237,6 +22323,14 @@
           "Value": "NONE"
         }
       },
+      "enforce_consumer_deletion": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
       "kms_key_id": {
         "Type": "String",
         "Optional": true
@@ -25096,6 +25190,132 @@
       "tags": {
         "Type": "Map",
         "Optional": true
+      }
+    },
+    "aws_msk_cluster": {
+      "arn": {
+        "Type": "String",
+        "Computed": true
+      },
+      "bootstrap_brokers": {
+        "Type": "String",
+        "Computed": true
+      },
+      "broker_node_group_info": {
+        "Type": "List",
+        "Required": true,
+        "MaxItems": 1,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "az_distribution": {
+              "Type": "String",
+              "Optional": true,
+              "Default": {
+                "Type": "string",
+                "Value": "DEFAULT"
+              }
+            },
+            "client_subnets": {
+              "Type": "List",
+              "Required": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "ebs_volume_size": {
+              "Type": "Int",
+              "Required": true
+            },
+            "instance_type": {
+              "Type": "String",
+              "Required": true
+            },
+            "security_groups": {
+              "Type": "List",
+              "Required": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
+      "cluster_name": {
+        "Type": "String",
+        "Required": true
+      },
+      "encryption_info": {
+        "Type": "List",
+        "Optional": true,
+        "Computed": true,
+        "MaxItems": 1,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "encryption_at_rest_kms_key_arn": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            }
+          }
+        }
+      },
+      "enhanced_monitoring": {
+        "Type": "String",
+        "Optional": true,
+        "Default": {
+          "Type": "string",
+          "Value": "DEFAULT"
+        }
+      },
+      "kafka_version": {
+        "Type": "String",
+        "Required": true
+      },
+      "number_of_broker_nodes": {
+        "Type": "Int",
+        "Required": true
+      },
+      "tags": {
+        "Type": "Map",
+        "Optional": true
+      },
+      "zookeeper_connect_string": {
+        "Type": "String",
+        "Computed": true
+      }
+    },
+    "aws_msk_configuration": {
+      "arn": {
+        "Type": "String",
+        "Computed": true
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true
+      },
+      "kafka_versions": {
+        "Type": "Set",
+        "Required": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "latest_revision": {
+        "Type": "Int",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true
+      },
+      "server_properties": {
+        "Type": "String",
+        "Required": true
       }
     },
     "aws_nat_gateway": {
@@ -34756,6 +34976,14 @@
       }
     },
     "aws_ssm_maintenance_window_target": {
+      "description": {
+        "Type": "String",
+        "Optional": true
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true
+      },
       "owner_information": {
         "Type": "String",
         "Optional": true
@@ -43574,6 +43802,37 @@
             }
           }
         }
+      }
+    },
+    "aws_msk_cluster": {
+      "arn": {
+        "Type": "String",
+        "Computed": true
+      },
+      "bootstrap_brokers": {
+        "Type": "String",
+        "Computed": true
+      },
+      "cluster_name": {
+        "Type": "String",
+        "Required": true
+      },
+      "kafka_version": {
+        "Type": "String",
+        "Computed": true
+      },
+      "number_of_broker_nodes": {
+        "Type": "Int",
+        "Computed": true
+      },
+      "tags": {
+        "Type": "Map",
+        "Optional": true,
+        "Computed": true
+      },
+      "zookeeper_connect_string": {
+        "Type": "String",
+        "Computed": true
       }
     },
     "aws_nat_gateway": {
