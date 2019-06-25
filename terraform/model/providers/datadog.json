@@ -2,7 +2,7 @@
   ".schema_version": "1",
   "name": "datadog",
   "type": "provider",
-  "version": "v1.9.0",
+  "version": "v2.0.1",
   "provider": {
     "api_key": {
       "Type": "String",
@@ -24,15 +24,18 @@
     "datadog_downtime": {
       "active": {
         "Type": "Bool",
-        "Optional": true
+        "Optional": true,
+        "Description": "When true indicates this downtime is being actively applied"
       },
       "disabled": {
         "Type": "Bool",
-        "Optional": true
+        "Optional": true,
+        "Description": "When true indicates this downtime is not being applied"
       },
       "end": {
         "Type": "Int",
-        "Optional": true
+        "Optional": true,
+        "Description": "Optionally specify an end date when this downtime should expire"
       },
       "end_date": {
         "Type": "String",
@@ -43,15 +46,24 @@
       },
       "message": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Description": "An optional message to provide when creating the downtime, can include notification handles"
       },
       "monitor_id": {
         "Type": "Int",
-        "Optional": true
+        "Optional": true,
+        "Description": "When specified, this downtime will only apply to this monitor",
+        "ConflictsWith": [
+          "monitor_tags"
+        ]
       },
       "monitor_tags": {
         "Type": "List",
         "Optional": true,
+        "Description": "A list of monitor tags (up to 25), i.e. tags that are applied directly to monitors to which the downtime applies",
+        "ConflictsWith": [
+          "monitor_id"
+        ],
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -60,6 +72,7 @@
       "recurrence": {
         "Type": "List",
         "Optional": true,
+        "Description": "Optional recurring schedule for this downtime",
         "MaxItems": 1,
         "Elem": {
           "Type": "SchemaInfo",
@@ -100,6 +113,7 @@
       "scope": {
         "Type": "List",
         "Required": true,
+        "Description": "specify the group scope to which this downtime applies. For everything use '*'",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -107,7 +121,8 @@
       },
       "start": {
         "Type": "Int",
-        "Optional": true
+        "Optional": true,
+        "Description": "Specify when this downtime should start"
       },
       "start_date": {
         "Type": "String",
@@ -115,6 +130,15 @@
         "ConflictsWith": [
           "start"
         ]
+      },
+      "timezone": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The timezone for the downtime, default UTC",
+        "Default": {
+          "Type": "string",
+          "Value": "UTC"
+        }
       }
     },
     "datadog_integration_aws": {
@@ -290,7 +314,11 @@
       },
       "no_data_timeframe": {
         "Type": "Int",
-        "Optional": true
+        "Optional": true,
+        "Default": {
+          "Type": "int",
+          "Value": "10"
+        }
       },
       "notify_audit": {
         "Type": "Bool",
@@ -323,12 +351,13 @@
       "silenced": {
         "Type": "Map",
         "Optional": true,
+        "Deprecated": "use Downtime Resource instead",
         "Elem": {
           "Value": "Int"
         }
       },
       "tags": {
-        "Type": "List",
+        "Type": "Set",
         "Optional": true,
         "Elem": {
           "Type": "SchemaElements",
@@ -576,7 +605,7 @@
               "Optional": true,
               "Elem": {
                 "Type": "SchemaElements",
-                "ElementsType": "Int"
+                "ElementsType": "String"
               }
             },
             "must_show_breakdown": {
@@ -806,6 +835,11 @@
                                 "Required": true,
                                 "Description": "Comparator (\u003c, \u003e, etc)"
                               },
+                              "custom_bg_color": {
+                                "Type": "String",
+                                "Optional": true,
+                                "Description": "Custom  background color (e.g., #205081)"
+                              },
                               "invert": {
                                 "Type": "Bool",
                                 "Optional": true
@@ -833,6 +867,10 @@
                         },
                         "limit": {
                           "Type": "Int",
+                          "Optional": true
+                        },
+                        "metadata_json": {
+                          "Type": "String",
                           "Optional": true
                         },
                         "metric": {
@@ -1017,6 +1055,10 @@
         "Default": {
           "Type": "string"
         }
+      },
+      "monitor_id": {
+        "Type": "Int",
+        "Computed": true
       },
       "name": {
         "Type": "String",
@@ -1243,6 +1285,10 @@
                     "Type": "Bool",
                     "Optional": true,
                     "Description": "Decides whether to represent increases as good or bad in change graphs."
+                  },
+                  "metadata_json": {
+                    "Type": "String",
+                    "Optional": true
                   },
                   "order_by": {
                     "Type": "String",

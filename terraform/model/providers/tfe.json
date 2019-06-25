@@ -2,21 +2,19 @@
   ".schema_version": "1",
   "name": "tfe",
   "type": "provider",
-  "version": "v0.9.0",
+  "version": "v0.10.0",
   "provider": {
     "hostname": {
       "Type": "String",
       "Optional": true,
       "Description": "The Terraform Enterprise hostname to connect to. Defaults to app.terraform.io.",
-      "Default": {
-        "Type": "string",
-        "Value": "app.terraform.io"
-      }
+      "DefaultFunc": "ENV(TFE_HOSTNAME)"
     },
     "token": {
       "Type": "String",
       "Optional": true,
-      "Description": "The token used to authenticate with Terraform Enterprise. We recommend omitting\nthe token which can be set as credentials in the CLI config file."
+      "Description": "The token used to authenticate with Terraform Enterprise. We recommend omitting\nthe token which can be set as credentials in the CLI config file.",
+      "DefaultFunc": "ENV(TFE_TOKEN)"
     }
   },
   "resources": {
@@ -115,12 +113,57 @@
         "Type": "String",
         "Required": true
       },
+      "policies_path": {
+        "Type": "String",
+        "Optional": true,
+        "ConflictsWith": [
+          "policy_ids"
+        ]
+      },
       "policy_ids": {
         "Type": "Set",
-        "Required": true,
+        "Optional": true,
+        "ConflictsWith": [
+          "vcs_repo",
+          "policies_path"
+        ],
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
+        }
+      },
+      "vcs_repo": {
+        "Type": "List",
+        "Optional": true,
+        "MaxItems": 1,
+        "MinItems": 1,
+        "ConflictsWith": [
+          "policy_ids"
+        ],
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "branch": {
+              "Type": "String",
+              "Optional": true
+            },
+            "identifier": {
+              "Type": "String",
+              "Required": true
+            },
+            "ingress_submodules": {
+              "Type": "Bool",
+              "Optional": true,
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
+              }
+            },
+            "oauth_token_id": {
+              "Type": "String",
+              "Required": true
+            }
+          }
         }
       },
       "workspace_external_ids": {
@@ -288,6 +331,14 @@
         "Type": "String",
         "Computed": true
       },
+      "file_triggers_enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
       "name": {
         "Type": "String",
         "Required": true
@@ -315,6 +366,14 @@
         "Type": "String",
         "Optional": true,
         "Computed": true
+      },
+      "trigger_prefixes": {
+        "Type": "List",
+        "Optional": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       },
       "vcs_repo": {
         "Type": "List",
@@ -398,6 +457,10 @@
         "Type": "String",
         "Computed": true
       },
+      "file_triggers_enabled": {
+        "Type": "Bool",
+        "Computed": true
+      },
       "name": {
         "Type": "String",
         "Required": true
@@ -417,6 +480,14 @@
       "terraform_version": {
         "Type": "String",
         "Computed": true
+      },
+      "trigger_prefixes": {
+        "Type": "List",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       },
       "vcs_repo": {
         "Type": "List",
