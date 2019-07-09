@@ -32,14 +32,15 @@ update_or_clone() {
   fi
 }
 
-if [[ -z "$SKIP_UPDATE" ]]; then
+if [[ -z "${SKIP_UPDATE:-}" ]]; then
   while IFS= read -r p; do
     update_or_clone "$p" &
-  done <"$CUR/providers.list.full"
+  done < <(grep '^terraform-provider-' <"$CUR/providers.list.full")
 fi
 
 pushd "$GOPATH/src/github.com/terraform-providers" >/dev/null
 
+sleep 1 # fix logs
 echo
 echo "========================================"
 echo "Waiting for update processes to finish"
@@ -73,7 +74,7 @@ process_repository() {
   if output=$(git -C "$location" status --untracked-files=no --porcelain) && [[ -n "$output" ]]; then
     echo "git working copy is not clear, cannot proceed"
     echo "$full_name" >>"$CUR/failure.txt"
-    exit 2
+    return 2
   fi
 
   pushd "$location" >/dev/null
@@ -81,11 +82,8 @@ process_repository() {
   echo "Preparing $full_name"
 
   # All tags:
-  echo "Repository newest and latest tags:"
-  git tag -l --sort=-v:refname | (
-    head
-    tail
-  )
+  echo "Repository newest tags:"
+  git tag -l --sort=-v:refname | head
   latest=$(git tag -l --sort=-v:refname | head -n 1)
   if [[ -z "$latest" ]]; then
     echo "There's no tags in $full_name, will use current state"
@@ -94,6 +92,11 @@ process_repository() {
   fi
 
   [[ -n "$latest" ]] && git checkout -q "$latest"
+
+  if ! git rev-parse HEAD &>/dev/null; then
+    echo "'git rev-parse HEAD' failed, skipping $name"
+    return
+  fi
 
   revision="$(git describe --tags)"
   if [[ -n "$latest" ]] && [[ "$revision" != "$latest" ]]; then
@@ -114,7 +117,7 @@ process_repository() {
     >generate-schema/generate-schema.go
 
   echo "Generating schema for $full_name"
-  if [[ "$KILL_CPU" == "1" ]]; then
+  if [[ "${KILL_CPU:-}" == "1" ]]; then
     (
       generate_one "$full_name" "$CUR"
     ) &
@@ -133,7 +136,7 @@ while IFS= read -r p; do
   fi
 
   process_repository "$p"
-done <"$CUR/providers.list.full"
+done < <(grep '^terraform-provider-' <"$CUR/providers.list.full")
 
 echo
 echo "========================================"
