@@ -13,5 +13,5 @@ get_pages() {
 }
 
 get_pages >providers.list.full
-grep -- '^terraform-provider-' providers.list.full | awk '{print substr($0, 20)}' >providers.list
+grep -- '^terraform-provider-' providers.list.full | awk '{print substr($0, 20)}' | sort >providers.list
 popd >/dev/null
