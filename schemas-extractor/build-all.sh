@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+set -euo pipefail
+IFS=$'\n\t'
+
 if [[ ! -f 'providers.list.full' ]]; then
   echo "File 'providers.list.full' required to operate"
   exit 1
@@ -22,16 +25,18 @@ update_or_clone() {
   location="$GOPATH/src/github.com/terraform-providers/$name"
   if [[ -d "$location" ]]; then
     echo "Updating $name"
-    git -C "$location" pull >/dev/null || echo "ERROR: Failed to update '$name'"
+    git -C "$location" pull >/dev/null 2>&1 || echo "ERROR: Failed to update '$name'"
   else
     echo "Cloning $name"
-    git clone --quiet "https://github.com/terraform-providers/$name.git" "$location" >/dev/null
+    git clone --quiet "https://github.com/terraform-providers/$name.git" "$location" >/dev/null 2>&1
   fi
 }
 
-[[ -z "$SKIP_UPDATE" ]] && for p in $(cat "$CUR/providers.list.full"); do
-  update_or_clone "$p" &
-done
+if [[ -z "$SKIP_UPDATE" ]]; then
+  while IFS= read -r p; do
+    update_or_clone "$p" &
+  done <"$CUR/providers.list.full"
+fi
 
 pushd "$GOPATH/src/github.com/terraform-providers" >/dev/null
 
@@ -43,10 +48,7 @@ echo "All providers updated"
 echo
 
 generate_one() {
-  go run generate-schema/generate-schema.go
-  if [[ $? -ne 0 ]]; then
-     echo "$1" >> "$2/failure.txt"
-  fi
+  go run generate-schema/generate-schema.go || echo "$1" >>"$2/failure.txt"
   echo "Finished $1"
 }
 
@@ -59,7 +61,7 @@ process_repository() {
 
   if [[ "$pkg_name" == "terraform" ]]; then
     # Ignoring deprecated provider
-    continue;
+    return
   fi
   if [[ "$pkg_name" == "azure-classic" ]]; then
     pkg_name="azure"
@@ -68,9 +70,9 @@ process_repository() {
     provider_args="prvdr.ProviderConfig"
   fi
 
-  if output=$(git -C "$location" status --untracked-files=no --porcelain) && [[ ! -z "$output" ]]; then
+  if output=$(git -C "$location" status --untracked-files=no --porcelain) && [[ -n "$output" ]]; then
     echo "git working copy is not clear, cannot proceed"
-    echo "$full_name" >> "$CUR/failure.txt"
+    echo "$full_name" >>"$CUR/failure.txt"
     exit 2
   fi
 
@@ -79,8 +81,11 @@ process_repository() {
   echo "Preparing $full_name"
 
   # All tags:
-  echo "Repository all tags:"
-  echo "$(git tag -l --sort=-v:refname | (head; tail))"
+  echo "Repository newest and latest tags:"
+  git tag -l --sort=-v:refname | (
+    head
+    tail
+  )
   latest=$(git tag -l --sort=-v:refname | head -n 1)
   if [[ -z "$latest" ]]; then
     echo "There's no tags in $full_name, will use current state"
@@ -90,7 +95,6 @@ process_repository() {
 
   [[ -n "$latest" ]] && git checkout -q "$latest"
 
-
   revision="$(git describe --tags)"
   if [[ -n "$latest" ]] && [[ "$revision" != "$latest" ]]; then
     echo "WARN: 'git describe' and tag mismatch: '$revision' vs '$latest', will use '$latest'"
@@ -99,20 +103,21 @@ process_repository() {
 
   rm -rf generate-schema
   mkdir generate-schema
-  cat "$CUR/template/generate-schema.go" | sed \
+  sed \
     -e "s/__FULL_NAME__/$full_name/g" \
     -e "s/__NAME__/${name}/g" \
     -e "s/__PKG_NAME__/${pkg_name}/g" \
     -e "s/__REVISION__/$revision/g" \
     -e "s/__PROVIDER_ARGS__/$provider_args/g" \
     -e "s~__OUT__~$out~g" \
-    > generate-schema/generate-schema.go
+    "$CUR/template/generate-schema.go" \
+    >generate-schema/generate-schema.go
 
   echo "Generating schema for $full_name"
   if [[ "$KILL_CPU" == "1" ]]; then
-  (
-    generate_one "$full_name" "$CUR"
-  )&
+    (
+      generate_one "$full_name" "$CUR"
+    ) &
   else
     generate_one "$full_name" "$CUR"
   fi
@@ -122,13 +127,13 @@ process_repository() {
   popd >/dev/null
 }
 
-for p in $(cat "$CUR/providers.list.full"); do
+while IFS= read -r p; do
   if [[ "$p" == "terraform-provider-scaffolding" ]]; then
     continue
   fi
 
   process_repository "$p"
-done
+done <"$CUR/providers.list.full"
 
 echo
 echo "========================================"
@@ -141,4 +146,3 @@ echo "Everything done!"
 echo
 
 popd >/dev/null
-
