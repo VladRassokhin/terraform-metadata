@@ -1,7 +1,7 @@
-Terraform Metadata
+Metadata for HashiCorp Terraform
 ========
 
-This repository contains some metadata for [Terraform](https://www.terraform.io):
+This repository contains some metadata for HashiCorp [Terraform](https://www.terraform.io) tool:
  * Providers
  * Providsioners
  * Resources
