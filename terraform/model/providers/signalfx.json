@@ -1,0 +1,1892 @@
+{
+  ".schema_version": "1",
+  "name": "signalfx",
+  "type": "provider",
+  "version": "v4.0.0",
+  "provider": {
+    "api_url": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "API URL for your SignalFx org, may include a realm",
+      "Default": {
+        "Type": "string",
+        "Value": "https://api.signalfx.com"
+      }
+    },
+    "auth_token": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "SignalFx auth token",
+      "DefaultFunc": "ENV(SFX_AUTH_TOKEN)"
+    },
+    "custom_app_url": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "Application URL for your SignalFx org, often customzied for organizations using SSO",
+      "Default": {
+        "Type": "string",
+        "Value": "https://app.signalfx.com"
+      }
+    }
+  },
+  "resources": {
+    "signalfx_dashboard": {
+      "chart": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Chart ID and layout information for the charts in the dashboard",
+        "ConflictsWith": [
+          "column",
+          "grid"
+        ],
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "chart_id": {
+              "Type": "String",
+              "Required": true,
+              "Description": "ID of the chart to display"
+            },
+            "column": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "The column to show the chart in (zero-based); this value always represents the leftmost column of the chart. (between 0 and 11)"
+            },
+            "height": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "How many rows the chart should take up. (greater than or equal to 1)",
+              "Default": {
+                "Type": "int",
+                "Value": "1"
+              }
+            },
+            "row": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "The row to show the chart in (zero-based); if height \u003e 1, this value represents the topmost row of the chart. (greater than or equal to 0)"
+            },
+            "width": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "How many columns (out of a total of 12) the chart should take up. (between 1 and 12)",
+              "Default": {
+                "Type": "int",
+                "Value": "12"
+              }
+            }
+          }
+        }
+      },
+      "charts_resolution": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Specifies the chart data display resolution for charts in this dashboard. Value can be one of \"default\", \"low\", \"high\", or \"highest\". default by default",
+        "Default": {
+          "Type": "string",
+          "Value": "default"
+        }
+      },
+      "column": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Column layout. Charts listed, will be placed in a single column with the same width and height",
+        "MaxItems": 1,
+        "ConflictsWith": [
+          "grid",
+          "chart"
+        ],
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "chart_ids": {
+              "Type": "List",
+              "Required": true,
+              "Description": "Charts to use for the column",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "column": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "Column number for the layout",
+              "Default": {
+                "Type": "int",
+                "Value": "0"
+              }
+            },
+            "height": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "How many rows each chart should take up. (greater than or equal to 1)",
+              "Default": {
+                "Type": "int",
+                "Value": "1"
+              }
+            },
+            "width": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "Number of columns (out of a total of 12) each chart should take up. (between 1 and 12)",
+              "Default": {
+                "Type": "int",
+                "Value": "12"
+              }
+            }
+          }
+        }
+      },
+      "dashboard_group": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The ID of the dashboard group that contains the dashboard. If an ID is not provided during creation, the dashboard will be placed in a newly created dashboard group"
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Description of the dashboard (Optional)"
+      },
+      "end_time": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Seconds since epoch to end the visualization",
+        "ConflictsWith": [
+          "time_range"
+        ]
+      },
+      "event_overlay": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Event overlay to add to charts",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "color": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Color to use"
+            },
+            "label": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The text displaying in the dropdown menu used to select this event overlay as an active overlay for the dashboard."
+            },
+            "line": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "(false by default) Whether a vertical line should be displayed in the plot at the time the event occurs",
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
+              }
+            },
+            "signal": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Search term used to define events"
+            },
+            "source": {
+              "Type": "List",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "negated": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Description": "(false by default) Whether this filter should be a \"not\" filter",
+                    "Default": {
+                      "Type": "bool",
+                      "Value": "false"
+                    }
+                  },
+                  "property": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "A metric time series dimension or property name"
+                  },
+                  "values": {
+                    "Type": "Set",
+                    "Required": true,
+                    "Description": "List of strings (which will be treated as an OR filter on the property)",
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  }
+                }
+              }
+            },
+            "type": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Source for this event's data. Can be \"eventTimeSeries\" (default) or \"detectorEvents\".",
+              "Default": {
+                "Type": "string",
+                "Value": "eventTimeSeries"
+              }
+            }
+          }
+        }
+      },
+      "filter": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Filter to apply to each chart in the dashboard",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "apply_if_exist": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "If true, this filter will also match data that does not have the specified property",
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
+              }
+            },
+            "negated": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "(false by default) Whether this filter should be a \"not\" filter",
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
+              }
+            },
+            "property": {
+              "Type": "String",
+              "Required": true,
+              "Description": "A metric time series dimension or property name"
+            },
+            "values": {
+              "Type": "Set",
+              "Required": true,
+              "Description": "List of strings (which will be treated as an OR filter on the property)",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
+      "grid": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Grid dashboard layout. Charts listed will be placed in a grid by row with the same width and height. If a chart can't fit in a row, it will be placed automatically in the next row",
+        "MaxItems": 1,
+        "ConflictsWith": [
+          "column",
+          "chart"
+        ],
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "chart_ids": {
+              "Type": "List",
+              "Required": true,
+              "Description": "Charts to use for the grid",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "height": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "How many rows each chart should take up. (greater than or equal to 1)",
+              "Default": {
+                "Type": "int",
+                "Value": "1"
+              }
+            },
+            "width": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "Number of columns (out of a total of 12) each chart should take up. (between 1 and 12)",
+              "Default": {
+                "Type": "int",
+                "Value": "12"
+              }
+            }
+          }
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the dashboard"
+      },
+      "selected_event_overlay": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Event overlay added to charts by default to charts",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "signal": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Search term used to define events"
+            },
+            "source": {
+              "Type": "List",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "negated": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Description": "(false by default) Whether this filter should be a \"not\" filter",
+                    "Default": {
+                      "Type": "bool",
+                      "Value": "false"
+                    }
+                  },
+                  "property": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "A metric time series dimension or property name"
+                  },
+                  "values": {
+                    "Type": "Set",
+                    "Required": true,
+                    "Description": "List of strings (which will be treated as an OR filter on the property)",
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  }
+                }
+              }
+            },
+            "type": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Source for this event's data. Can be \"eventTimeSeries\" (default) or \"detectorEvents\".",
+              "Default": {
+                "Type": "string",
+                "Value": "eventTimeSeries"
+              }
+            }
+          }
+        }
+      },
+      "start_time": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Seconds since epoch to start the visualization",
+        "ConflictsWith": [
+          "time_range"
+        ]
+      },
+      "time_range": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "From when to display data. SignalFx time syntax (e.g. -5m, -1h)",
+        "ConflictsWith": [
+          "start_time",
+          "end_time"
+        ]
+      },
+      "url": {
+        "Type": "String",
+        "Description": "URL of the dashboard",
+        "Computed": true
+      },
+      "variable": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Dashboard variable to apply to each chart in the dashboard",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "alias": {
+              "Type": "String",
+              "Required": true,
+              "Description": "An alias for the dashboard variable. This text will appear as the label for the dropdown field on the dashboard"
+            },
+            "apply_if_exist": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "If true, this variable will also match data that does not have the specified property",
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
+              }
+            },
+            "description": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Variable description"
+            },
+            "property": {
+              "Type": "String",
+              "Required": true,
+              "Description": "A metric time series dimension or property name"
+            },
+            "replace_only": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "If true, this variable will only apply to charts with a filter on the named property.",
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
+              }
+            },
+            "restricted_suggestions": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "If true, this variable may only be set to the values listed in preferredSuggestions. and only these values will appear in autosuggestion menus. false by default",
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
+              }
+            },
+            "value_required": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Determines whether a value is required for this variable (and therefore whether it will be possible to view this dashboard without this filter applied). false by default",
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
+              }
+            },
+            "values": {
+              "Type": "Set",
+              "Optional": true,
+              "Description": "List of strings (which will be treated as an OR filter on the property)",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "values_suggested": {
+              "Type": "Set",
+              "Optional": true,
+              "Description": "A list of strings of suggested values for this variable; these suggestions will receive priority when values are autosuggested for this variable",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      }
+    },
+    "signalfx_dashboard_group": {
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Description of the dashboard group"
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the dashboard group"
+      },
+      "teams": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Team IDs to associate the dashboard group to",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      }
+    },
+    "signalfx_detector": {
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Description of the detector"
+      },
+      "disable_sampling": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "(false by default) When false, samples a subset of the output MTS in the visualization.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "end_time": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Seconds since epoch. Used for visualization",
+        "ConflictsWith": [
+          "time_range"
+        ]
+      },
+      "max_delay": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "How long (in seconds) to wait for late datapoints. Max value 900s (15m)"
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the detector"
+      },
+      "program_text": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Signalflow program text for the detector. More info at \"https://developers.signalfx.com/docs/signalflow-overview\""
+      },
+      "rule": {
+        "Type": "Set",
+        "Required": true,
+        "Description": "Set of rules used for alerting",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "description": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Description of the rule"
+            },
+            "detect_label": {
+              "Type": "String",
+              "Required": true,
+              "Description": "A detect label which matches a detect label within the program text"
+            },
+            "disabled": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "(default: false) When true, notifications and events will not be generated for the detect label",
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
+              }
+            },
+            "notifications": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "List of strings specifying where notifications will be sent when an incident occurs. See https://developers.signalfx.com/v2/docs/detector-model#notifications-models for more info",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "parameterized_body": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Custom notification message body when an alert is triggered. See https://developers.signalfx.com/v2/reference#detector-model for more info"
+            },
+            "parameterized_subject": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Custom notification message subject when an alert is triggered. See https://d    evelopers.signalfx.com/v2/reference#detector-model for more info"
+            },
+            "runbook_url": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "URL of page to consult when an alert is triggered"
+            },
+            "severity": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The severity of the rule, must be one of: Critical, Warning, Major, Minor, Info"
+            },
+            "tip": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Plain text suggested first course of action, such as a command to execute."
+            }
+          }
+        }
+      },
+      "show_data_markers": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "(false by default) When true, markers will be drawn for each datapoint within the visualization.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "show_event_lines": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "(false by default) When true, vertical lines will be drawn for each triggered event within the visualization.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "start_time": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Seconds since epoch. Used for visualization",
+        "ConflictsWith": [
+          "time_range"
+        ]
+      },
+      "teams": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Team IDs to associate the detector to",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "time_range": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Seconds to display in the visualization. This is a rolling range from the current time. Example: 8600 = `-1h`",
+        "ConflictsWith": [
+          "start_time",
+          "end_time"
+        ]
+      },
+      "url": {
+        "Type": "String",
+        "Description": "URL of the detector",
+        "Computed": true
+      }
+    },
+    "signalfx_event_feed_chart": {
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Description of the chart (Optional)"
+      },
+      "end_time": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Seconds since epoch to end the visualization",
+        "ConflictsWith": [
+          "time_range"
+        ]
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the chart"
+      },
+      "program_text": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Signalflow program text for the chart. More info at \"https://developers.signalfx.com/docs/signalflow-overview\""
+      },
+      "start_time": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Seconds since epoch to start the visualization",
+        "ConflictsWith": [
+          "time_range"
+        ]
+      },
+      "time_range": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Seconds to display in the visualization. This is a rolling range from the current time. Example: 8600 = `-1h`",
+        "ConflictsWith": [
+          "start_time",
+          "end_time"
+        ]
+      },
+      "url": {
+        "Type": "String",
+        "Description": "URL of the chart",
+        "Computed": true
+      }
+    },
+    "signalfx_gcp_integration": {
+      "enabled": {
+        "Type": "Bool",
+        "Required": true,
+        "Description": "Whether the integration is enabled or not"
+      },
+      "last_updated": {
+        "Type": "Float",
+        "Description": "Latest timestamp the resource was updated",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the integration"
+      },
+      "poll_rate": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "GCP poll rate"
+      },
+      "project_service_keys": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "GCP project service keys",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "project_id": {
+              "Type": "String",
+              "Required": true
+            },
+            "project_key": {
+              "Type": "String",
+              "Required": true
+            }
+          }
+        }
+      },
+      "services": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "GCP enabled services",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "synced": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether the resource in the provider and SignalFx are identical or not. Used internally for syncing.",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      }
+    },
+    "signalfx_heatmap_chart": {
+      "color_range": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Values and color for the color range. Example: colorRange : { min : 0, max : 100, color : \"blue\" }",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "color": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The color range to use. Must be either \"gray\", \"blue\", \"navy\", \"orange\", \"yellow\", \"magenta\", \"purple\", \"violet\", \"lilac\", \"green\", \"aquamarine\""
+            },
+            "max_value": {
+              "Type": "Float",
+              "Optional": true,
+              "Description": "The maximum value within the coloring range",
+              "Default": {
+                "Type": "float64",
+                "Value": "3.4028234663852886e+38"
+              }
+            },
+            "min_value": {
+              "Type": "Float",
+              "Optional": true,
+              "Description": "The minimum value within the coloring range",
+              "Default": {
+                "Type": "float64",
+                "Value": "-3.4028234663852886e+38"
+              }
+            }
+          }
+        }
+      },
+      "color_scale": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Single color range including both the color to display for that range and the borders of the range",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "color": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The color to use. Must be either \"gray\", \"blue\", \"navy\", \"orange\", \"yellow\", \"magenta\", \"purple\", \"violet\", \"lilac\", \"green\", \"aquamarine\""
+            },
+            "gt": {
+              "Type": "Float",
+              "Optional": true,
+              "Description": "Indicates the lower threshold non-inclusive value for this range",
+              "Default": {
+                "Type": "float64",
+                "Value": "3.4028234663852886e+38"
+              }
+            },
+            "gte": {
+              "Type": "Float",
+              "Optional": true,
+              "Description": "Indicates the lower threshold inclusive value for this range",
+              "Default": {
+                "Type": "float64",
+                "Value": "3.4028234663852886e+38"
+              }
+            },
+            "lt": {
+              "Type": "Float",
+              "Optional": true,
+              "Description": "Indicates the upper threshold non-inculsive value for this range",
+              "Default": {
+                "Type": "float64",
+                "Value": "3.4028234663852886e+38"
+              }
+            },
+            "lte": {
+              "Type": "Float",
+              "Optional": true,
+              "Description": "Indicates the upper threshold inclusive value for this range",
+              "Default": {
+                "Type": "float64",
+                "Value": "3.4028234663852886e+38"
+              }
+            }
+          }
+        }
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Description of the chart (Optional)"
+      },
+      "disable_sampling": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "(false by default) If false, samples a subset of the output MTS, which improves UI performance",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "group_by": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Properties to group by in the heatmap (in nesting order)",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "hide_timestamp": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "(false by default) Whether to show the timestamp in the chart",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "max_delay": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "How long (in seconds) to wait for late datapoints"
+      },
+      "minimum_resolution": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The minimum resolution (in seconds) to use for computing the underlying program"
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the chart"
+      },
+      "program_text": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Signalflow program text for the chart. More info at \"https://developers.signalfx.com/docs/signalflow-overview\""
+      },
+      "refresh_interval": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "How often (in seconds) to refresh the values of the heatmap"
+      },
+      "sort_by": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The property to use when sorting the elements. Must be prepended with + for ascending or - for descending (e.g. -foo)"
+      },
+      "unit_prefix": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "(Metric by default) Must be \"Metric\" or \"Binary\"",
+        "Default": {
+          "Type": "string",
+          "Value": "Metric"
+        }
+      },
+      "url": {
+        "Type": "String",
+        "Description": "URL of the chart",
+        "Computed": true
+      }
+    },
+    "signalfx_integration": {
+      "api_key": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "PagerDuty API key",
+        "ConflictsWith": [
+          "webhook_url",
+          "poll_rate",
+          "services",
+          "project_service_keys"
+        ]
+      },
+      "enabled": {
+        "Type": "Bool",
+        "Required": true,
+        "Description": "Whether the integration is enabled or not"
+      },
+      "last_updated": {
+        "Type": "Float",
+        "Description": "Latest timestamp the resource was updated",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the integration"
+      },
+      "poll_rate": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "GCP poll rate",
+        "ConflictsWith": [
+          "api_key",
+          "webhook_url"
+        ]
+      },
+      "project_service_keys": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "GCP project service keys",
+        "ConflictsWith": [
+          "api_key",
+          "webhook_url"
+        ],
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "project_id": {
+              "Type": "String",
+              "Required": true
+            },
+            "project_key": {
+              "Type": "String",
+              "Required": true
+            }
+          }
+        }
+      },
+      "services": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "GCP enabled services",
+        "ConflictsWith": [
+          "api_key",
+          "webhook_url"
+        ],
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "synced": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether the resource in the provider and SignalFx are identical or not. Used internally for syncing.",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "type": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Type of the integration"
+      },
+      "webhook_url": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Slack Incoming Webhook URL",
+        "ConflictsWith": [
+          "api_key",
+          "poll_rate",
+          "services",
+          "project_service_keys"
+        ]
+      }
+    },
+    "signalfx_list_chart": {
+      "color_by": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "(Metric by default) Must be \"Metric\" or \"Dimension\"",
+        "Default": {
+          "Type": "string",
+          "Value": "Dimension"
+        }
+      },
+      "color_scale": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Single color range including both the color to display for that range and the borders of the range",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "color": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The color to use. Must be either \"gray\", \"blue\", \"navy\", \"orange\", \"yellow\", \"magenta\", \"purple\", \"violet\", \"lilac\", \"green\", \"aquamarine\""
+            },
+            "gt": {
+              "Type": "Float",
+              "Optional": true,
+              "Description": "Indicates the lower threshold non-inclusive value for this range",
+              "Default": {
+                "Type": "float64",
+                "Value": "3.4028234663852886e+38"
+              }
+            },
+            "gte": {
+              "Type": "Float",
+              "Optional": true,
+              "Description": "Indicates the lower threshold inclusive value for this range",
+              "Default": {
+                "Type": "float64",
+                "Value": "3.4028234663852886e+38"
+              }
+            },
+            "lt": {
+              "Type": "Float",
+              "Optional": true,
+              "Description": "Indicates the upper threshold non-inculsive value for this range",
+              "Default": {
+                "Type": "float64",
+                "Value": "3.4028234663852886e+38"
+              }
+            },
+            "lte": {
+              "Type": "Float",
+              "Optional": true,
+              "Description": "Indicates the upper threshold inclusive value for this range",
+              "Default": {
+                "Type": "float64",
+                "Value": "3.4028234663852886e+38"
+              }
+            }
+          }
+        }
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Description of the chart (Optional)"
+      },
+      "disable_sampling": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "(false by default) If false, samples a subset of the output MTS, which improves UI performance",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "last_updated": {
+        "Type": "Float",
+        "Description": "Latest timestamp the resource was updated",
+        "Computed": true
+      },
+      "legend_fields_to_hide": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "List of properties that shouldn't be displayed in the chart legend (i.e. dimension names)",
+        "ConflictsWith": [
+          "legend_options_fields"
+        ],
+        "Deprecated": "Please use legend_options_fields",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "legend_options_fields": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "List of property and enabled flags to control the order and presence of datatable labels in a chart.",
+        "ConflictsWith": [
+          "legend_fields_to_hide"
+        ],
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "enabled": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "(true by default) Determines if this property is displayed in the data table.",
+              "Default": {
+                "Type": "bool",
+                "Value": "true"
+              }
+            },
+            "property": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The name of a property to hide or show in the data table."
+            }
+          }
+        }
+      },
+      "max_delay": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "How long (in seconds) to wait for late datapoints"
+      },
+      "max_precision": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Maximum number of digits to display when rounding values up or down"
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the chart"
+      },
+      "program_text": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Signalflow program text for the chart. More info at \"https://developers.signalfx.com/docs/signalflow-overview\""
+      },
+      "refresh_interval": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "How often (in seconds) to refresh the values of the list"
+      },
+      "secondary_visualization": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "(false by default) What kind of secondary visualization to show (None, Radial, Linear, Sparkline)",
+        "Default": {
+          "Type": "string",
+          "Value": "Sparkline"
+        }
+      },
+      "sort_by": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The property to use when sorting the elements. Use 'value' if you want to sort by value. Must be prepended with + for ascending or - for descending (e.g. -foo)"
+      },
+      "unit_prefix": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "(Metric by default) Must be \"Metric\" or \"Binary\"",
+        "Default": {
+          "Type": "string",
+          "Value": "Metric"
+        }
+      },
+      "url": {
+        "Type": "String",
+        "Description": "URL of the chart",
+        "Computed": true
+      },
+      "viz_options": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Plot-level customization options, associated with a publish statement",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "color": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Color to use"
+            },
+            "label": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The label used in the publish statement that displays the plot (metric time series data) you want to customize"
+            },
+            "value_prefix": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "An arbitrary prefix to display with the value of this plot"
+            },
+            "value_suffix": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "An arbitrary suffix to display with the value of this plot"
+            },
+            "value_unit": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "A unit to attach to this plot. Units support automatic scaling (eg thousands of bytes will be displayed as kilobytes)"
+            }
+          }
+        }
+      }
+    },
+    "signalfx_pagerduty_integration": {
+      "api_key": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "PagerDuty API key"
+      },
+      "enabled": {
+        "Type": "Bool",
+        "Required": true,
+        "Description": "Whether the integration is enabled or not"
+      },
+      "last_updated": {
+        "Type": "Float",
+        "Description": "Latest timestamp the resource was updated",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the integration"
+      },
+      "synced": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether the resource in the provider and SignalFx are identical or not. Used internally for syncing.",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      }
+    },
+    "signalfx_single_value_chart": {
+      "color_by": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "(Metric by default) Must be \"Metric\", \"Dimension\", or \"Scale\". \"Scale\" maps to Color by Value in the UI",
+        "Default": {
+          "Type": "string",
+          "Value": "Metric"
+        }
+      },
+      "color_scale": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Single color range including both the color to display for that range and the borders of the range",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "color": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The color to use. Must be either \"gray\", \"blue\", \"navy\", \"orange\", \"yellow\", \"magenta\", \"purple\", \"violet\", \"lilac\", \"green\", \"aquamarine\""
+            },
+            "gt": {
+              "Type": "Float",
+              "Optional": true,
+              "Description": "Indicates the lower threshold non-inclusive value for this range",
+              "Default": {
+                "Type": "float64",
+                "Value": "3.4028234663852886e+38"
+              }
+            },
+            "gte": {
+              "Type": "Float",
+              "Optional": true,
+              "Description": "Indicates the lower threshold inclusive value for this range",
+              "Default": {
+                "Type": "float64",
+                "Value": "3.4028234663852886e+38"
+              }
+            },
+            "lt": {
+              "Type": "Float",
+              "Optional": true,
+              "Description": "Indicates the upper threshold non-inculsive value for this range",
+              "Default": {
+                "Type": "float64",
+                "Value": "3.4028234663852886e+38"
+              }
+            },
+            "lte": {
+              "Type": "Float",
+              "Optional": true,
+              "Description": "Indicates the upper threshold inclusive value for this range",
+              "Default": {
+                "Type": "float64",
+                "Value": "3.4028234663852886e+38"
+              }
+            }
+          }
+        }
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Description of the chart (Optional)"
+      },
+      "is_timestamp_hidden": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "(false by default) Whether to hide the timestamp in the chart",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "max_delay": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "How long (in seconds) to wait for late datapoints"
+      },
+      "max_precision": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The maximum precision to for values displayed in the list"
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the chart"
+      },
+      "program_text": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Signalflow program text for the chart. More info at \"https://developers.signalfx.com/docs/signalflow-overview\""
+      },
+      "refresh_interval": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "How often (in seconds) to refresh the values of the list"
+      },
+      "secondary_visualization": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "(false by default) What kind of secondary visualization to show (None, Radial, Linear, Sparkline)",
+        "Default": {
+          "Type": "string",
+          "Value": "None"
+        }
+      },
+      "show_spark_line": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "(false by default) Whether to show a trend line below the current value",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "unit_prefix": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "(Metric by default) Must be \"Metric\" or \"Binary\"",
+        "Default": {
+          "Type": "string",
+          "Value": "Metric"
+        }
+      },
+      "url": {
+        "Type": "String",
+        "Description": "URL of the chart",
+        "Computed": true
+      },
+      "viz_options": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Plot-level customization options, associated with a publish statement",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "color": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Color to use"
+            },
+            "label": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The label used in the publish statement that displays the plot (metric time series data) you want to customize"
+            },
+            "value_prefix": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "An arbitrary prefix to display with the value of this plot"
+            },
+            "value_suffix": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "An arbitrary suffix to display with the value of this plot"
+            },
+            "value_unit": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "A unit to attach to this plot. Units support automatic scaling (eg thousands of bytes will be displayed as kilobytes)"
+            }
+          }
+        }
+      }
+    },
+    "signalfx_slack_integration": {
+      "enabled": {
+        "Type": "Bool",
+        "Required": true,
+        "Description": "Whether the integration is enabled or not"
+      },
+      "last_updated": {
+        "Type": "Float",
+        "Description": "Latest timestamp the resource was updated",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the integration"
+      },
+      "synced": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether the resource in the provider and SignalFx are identical or not. Used internally for syncing.",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "webhook_url": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Slack Webhook URL for integration"
+      }
+    },
+    "signalfx_text_chart": {
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Description of the chart (Optional)"
+      },
+      "markdown": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Markdown text to display. More info at: https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet"
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the chart"
+      },
+      "url": {
+        "Type": "String",
+        "Description": "URL of the chart",
+        "Computed": true
+      }
+    },
+    "signalfx_time_chart": {
+      "axes_include_zero": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Force y-axes to always show zero"
+      },
+      "axes_precision": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Force a specific number of significant digits in the y-axis",
+        "Default": {
+          "Type": "int",
+          "Value": "3"
+        }
+      },
+      "axis_left": {
+        "Type": "Set",
+        "Optional": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "high_watermark": {
+              "Type": "Float",
+              "Optional": true,
+              "Description": "A line to draw as a high watermark",
+              "Default": {
+                "Type": "float64",
+                "Value": "3.4028234663852886e+38"
+              }
+            },
+            "high_watermark_label": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "A label to attach to the high watermark line"
+            },
+            "label": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Label of the left axis"
+            },
+            "low_watermark": {
+              "Type": "Float",
+              "Optional": true,
+              "Description": "A line to draw as a low watermark",
+              "Default": {
+                "Type": "float64",
+                "Value": "-3.4028234663852886e+38"
+              }
+            },
+            "low_watermark_label": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "A label to attach to the low watermark line"
+            },
+            "max_value": {
+              "Type": "Float",
+              "Optional": true,
+              "Description": "The maximum value for the left axis",
+              "Default": {
+                "Type": "float64",
+                "Value": "3.4028234663852886e+38"
+              }
+            },
+            "min_value": {
+              "Type": "Float",
+              "Optional": true,
+              "Description": "The minimum value for the left axis",
+              "Default": {
+                "Type": "float64",
+                "Value": "-3.4028234663852886e+38"
+              }
+            },
+            "watermarks": {
+              "Type": "Set",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "label": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Label to display associated with the watermark line"
+                  },
+                  "value": {
+                    "Type": "Float",
+                    "Required": true,
+                    "Description": "Axis value where the watermark line will be displayed"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "axis_right": {
+        "Type": "Set",
+        "Optional": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "high_watermark": {
+              "Type": "Float",
+              "Optional": true,
+              "Description": "A line to draw as a high watermark",
+              "Default": {
+                "Type": "float64",
+                "Value": "1.7976931348623157e+308"
+              }
+            },
+            "high_watermark_label": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "A label to attach to the high watermark line"
+            },
+            "label": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Label of the right axis"
+            },
+            "low_watermark": {
+              "Type": "Float",
+              "Optional": true,
+              "Description": "A line to draw as a low watermark",
+              "Default": {
+                "Type": "float64",
+                "Value": "-1.7976931348623157e+308"
+              }
+            },
+            "low_watermark_label": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "A label to attach to the low watermark line"
+            },
+            "max_value": {
+              "Type": "Float",
+              "Optional": true,
+              "Description": "The maximum value for the right axis",
+              "Default": {
+                "Type": "float64",
+                "Value": "1.7976931348623157e+308"
+              }
+            },
+            "min_value": {
+              "Type": "Float",
+              "Optional": true,
+              "Description": "The minimum value for the right axis",
+              "Default": {
+                "Type": "float64",
+                "Value": "-1.7976931348623157e+308"
+              }
+            },
+            "watermarks": {
+              "Type": "Set",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "label": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Label to display associated with the watermark line"
+                  },
+                  "value": {
+                    "Type": "Float",
+                    "Required": true,
+                    "Description": "Axis value where the watermark line will be displayed"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "color_by": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "(Dimension by default) Must be \"Dimension\" or \"Metric\"",
+        "Default": {
+          "Type": "string",
+          "Value": "Dimension"
+        }
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Description of the chart"
+      },
+      "disable_sampling": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "(false by default) If false, samples a subset of the output MTS, which improves UI performance",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "end_time": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Seconds since epoch to end the visualization",
+        "ConflictsWith": [
+          "time_range"
+        ]
+      },
+      "histogram_options": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Options specific to Histogram charts",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "color_theme": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Base color theme to use for the graph."
+            }
+          }
+        }
+      },
+      "legend_fields_to_hide": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "List of properties that shouldn't be displayed in the chart legend (i.e. dimension names)",
+        "ConflictsWith": [
+          "legend_options_fields"
+        ],
+        "Deprecated": "Please use legend_options_fields",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "legend_options_fields": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "List of property and enabled flags to control the order and presence of datatable labels in a chart.",
+        "ConflictsWith": [
+          "legend_fields_to_hide"
+        ],
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "enabled": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "(true by default) Determines if this property is displayed in the data table.",
+              "Default": {
+                "Type": "bool",
+                "Value": "true"
+              }
+            },
+            "property": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The name of a property to hide or show in the data table."
+            }
+          }
+        }
+      },
+      "max_delay": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "How long (in seconds) to wait for late datapoints"
+      },
+      "minimum_resolution": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The minimum resolution (in seconds) to use for computing the underlying program"
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the chart"
+      },
+      "on_chart_legend_dimension": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Dimension to show in the on-chart legend. On-chart legend is off unless a dimension is specified. Allowed: 'metric', 'plot_label' and any dimension."
+      },
+      "plot_type": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "(LineChart by default) The default plot display style for the visualization. Must be \"LineChart\", \"AreaChart\", \"ColumnChart\", or \"Histogram\"",
+        "Default": {
+          "Type": "string",
+          "Value": "LineChart"
+        }
+      },
+      "program_text": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Signalflow program text for the chart. More info at \"https://developers.signalfx.com/docs/signalflow-overview\""
+      },
+      "show_data_markers": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "(false by default) Show markers (circles) for each datapoint used to draw line or area charts",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "show_event_lines": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "(false by default) Whether vertical highlight lines should be drawn in the visualizations at times when events occurred"
+      },
+      "stacked": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "(false by default) Whether area and bar charts in the visualization should be stacked",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "start_time": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Seconds since epoch to start the visualization",
+        "ConflictsWith": [
+          "time_range"
+        ]
+      },
+      "tags": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Tags associated with the chart",
+        "Deprecated": "signalfx_time_chart.tags is being removed in the next release",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "time_range": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Seconds to display in the visualization. This is a rolling range from the current time. Example: 8600 = `-1h`",
+        "ConflictsWith": [
+          "start_time",
+          "end_time"
+        ]
+      },
+      "timezone": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The property value is a string that denotes the geographic region associated with the time zone, (e.g. Australia/Sydney)",
+        "Default": {
+          "Type": "string",
+          "Value": "UTC"
+        }
+      },
+      "unit_prefix": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "(Metric by default) Must be \"Metric\" or \"Binary\"",
+        "Default": {
+          "Type": "string",
+          "Value": "Metric"
+        }
+      },
+      "url": {
+        "Type": "String",
+        "Description": "URL of the chart",
+        "Computed": true
+      },
+      "viz_options": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Plot-level customization options, associated with a publish statement",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "axis": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The Y-axis associated with values for this plot. Must be either \"right\" or \"left\""
+            },
+            "color": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Color to use"
+            },
+            "label": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The label used in the publish statement that displays the plot (metric time series data) you want to customize"
+            },
+            "plot_type": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "(Chart plot_type by default) The visualization style to use. Must be \"LineChart\", \"AreaChart\", \"ColumnChart\", or \"Histogram\""
+            },
+            "value_prefix": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "An arbitrary prefix to display with the value of this plot"
+            },
+            "value_suffix": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "An arbitrary suffix to display with the value of this plot"
+            },
+            "value_unit": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "A unit to attach to this plot. Units support automatic scaling (eg thousands of bytes will be displayed as kilobytes)"
+            }
+          }
+        }
+      }
+    }
+  },
+  "data-sources": {}
+}

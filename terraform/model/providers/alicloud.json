@@ -2,7 +2,7 @@
   ".schema_version": "1",
   "name": "alicloud",
   "type": "provider",
-  "version": "v1.48.0",
+  "version": "v1.51.0",
   "provider": {
     "access_key": {
       "Type": "String",
@@ -266,6 +266,14 @@
               "Type": "string"
             }
           },
+          "ons": {
+            "Type": "String",
+            "Optional": true,
+            "Description": "Use this to override the default endpoint URL constructed from the `region`. It's typically used to connect to custom ONS endpoints.",
+            "Default": {
+              "Type": "string"
+            }
+          },
           "oss": {
             "Type": "String",
             "Optional": true,
@@ -353,6 +361,11 @@
       "Optional": true,
       "Deprecated": "Field 'ots_instance_name' has been deprecated from provider version 1.10.0. New field 'instance_name' of resource 'alicloud_ots_table' instead."
     },
+    "profile": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "The profile for API operations. If not set, the default profile created with `aliyun configure` will be used."
+    },
     "region": {
       "Type": "String",
       "Required": true,
@@ -370,6 +383,11 @@
       "Optional": true,
       "Description": "security token. A security token is only required if you are using Security Token Service.",
       "DefaultFunc": "ENV(ALICLOUD_SECURITY_TOKEN)"
+    },
+    "shared_credentials_file": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "The path to the shared credentials file. If not set this defaults to ~/.aliyun/config.json"
     }
   },
   "resources": {
@@ -1259,6 +1277,10 @@
           "Value": "String"
         }
       },
+      "effective_interval": {
+        "Type": "String",
+        "Optional": true
+      },
       "enabled": {
         "Type": "Bool",
         "Optional": true,
@@ -1270,6 +1292,7 @@
       "end_time": {
         "Type": "Int",
         "Optional": true,
+        "Deprecated": "Field 'end_time' has been deprecated from provider version 1.50.0. New field 'effective_interval' instead.",
         "Default": {
           "Type": "int",
           "Value": "24"
@@ -1285,7 +1308,8 @@
       },
       "notify_type": {
         "Type": "Int",
-        "Optional": true
+        "Optional": true,
+        "Removed": "Field 'notify_type' has been removed from provider version 1.50.0."
       },
       "operator": {
         "Type": "String",
@@ -1318,6 +1342,7 @@
       "start_time": {
         "Type": "Int",
         "Optional": true,
+        "Deprecated": "Field 'start_time' has been deprecated from provider version 1.50.0. New field 'effective_interval' instead.",
         "Default": {
           "Type": "int",
           "Value": "0"
@@ -1725,6 +1750,14 @@
           "Value": "false"
         }
       },
+      "force_update": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
       "image_id": {
         "Type": "String",
         "Optional": true
@@ -1970,7 +2003,6 @@
       "vswitch_ids": {
         "Type": "List",
         "Optional": true,
-        "Computed": true,
         "MaxItems": 3,
         "Elem": {
           "Type": "SchemaElements",
@@ -3071,7 +3103,10 @@
       },
       "encrypted": {
         "Type": "Bool",
-        "Optional": true
+        "Optional": true,
+        "ConflictsWith": [
+          "snapshot_id"
+        ]
       },
       "name": {
         "Type": "String",
@@ -3083,7 +3118,10 @@
       },
       "snapshot_id": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "ConflictsWith": [
+          "encrypted"
+        ]
       },
       "status": {
         "Type": "String",
@@ -3181,6 +3219,10 @@
       }
     },
     "alicloud_drds_instance": {
+      "__timeouts__": [
+        "create",
+        "delete"
+      ],
       "description": {
         "Type": "String",
         "Required": true
@@ -3745,7 +3787,6 @@
       "db_instance_ids": {
         "Type": "Set",
         "Optional": true,
-        "MinItems": 1,
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -3786,6 +3827,7 @@
       "removal_policies": {
         "Type": "Set",
         "Optional": true,
+        "Computed": true,
         "MaxItems": 2,
         "MinItems": 1,
         "Elem": {
@@ -5867,6 +5909,28 @@
         "Required": true
       }
     },
+    "alicloud_ons_instance": {
+      "instance_status": {
+        "Type": "Int",
+        "Computed": true
+      },
+      "instance_type": {
+        "Type": "Int",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true
+      },
+      "release_time": {
+        "Type": "String",
+        "Computed": true
+      },
+      "remark": {
+        "Type": "String",
+        "Optional": true
+      }
+    },
     "alicloud_oss_bucket": {
       "acl": {
         "Type": "String",
@@ -5881,7 +5945,7 @@
         "Optional": true,
         "Default": {
           "Type": "string",
-          "Value": "tf-oss-bucket-20190625111935159800000002"
+          "Value": "tf-oss-bucket-20190709073628008400000002"
         }
       },
       "cors_rule": {
@@ -6568,6 +6632,7 @@
         "ConflictsWith": [
           "document"
         ],
+        "Deprecated": "Field 'statement' has been deprecated from version 1.49.0, and use field 'document' to replace. ",
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
@@ -6604,6 +6669,7 @@
         "ConflictsWith": [
           "document"
         ],
+        "Deprecated": "Field 'version' has been deprecated from version 1.49.0, and use field 'document' to replace. ",
         "Default": {
           "Type": "string",
           "Value": "1"
@@ -6648,6 +6714,7 @@
         "ConflictsWith": [
           "document"
         ],
+        "Deprecated": "Field 'ram_users' has been deprecated from version 1.49.0, and use field 'document' to replace. ",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -6660,6 +6727,7 @@
         "ConflictsWith": [
           "document"
         ],
+        "Deprecated": "Field 'services' has been deprecated from version 1.49.0, and use field 'document' to replace. ",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -6671,6 +6739,7 @@
         "ConflictsWith": [
           "document"
         ],
+        "Deprecated": "Field 'version' has been deprecated from version 1.49.0, and use field 'document' to replace. ",
         "Default": {
           "Type": "string",
           "Value": "1"
@@ -7007,6 +7076,14 @@
           "Value": "1"
         }
       },
+      "delete_protection": {
+        "Type": "String",
+        "Optional": true,
+        "Default": {
+          "Type": "string",
+          "Value": "off"
+        }
+      },
       "instance_charge_type": {
         "Type": "String",
         "Optional": true,
@@ -7166,7 +7243,7 @@
         "Optional": true,
         "Default": {
           "Type": "string",
-          "Value": "tf-lb-20190625111935159800000001"
+          "Value": "tf-lb-20190709073628008300000001"
         }
       },
       "period": {
@@ -7547,6 +7624,14 @@
       }
     },
     "alicloud_slb_rule": {
+      "cookie": {
+        "Type": "String",
+        "Optional": true
+      },
+      "cookie_timeout": {
+        "Type": "Int",
+        "Optional": true
+      },
       "domain": {
         "Type": "String",
         "Optional": true
@@ -7554,6 +7639,71 @@
       "frontend_port": {
         "Type": "Int",
         "Required": true
+      },
+      "health_check": {
+        "Type": "String",
+        "Optional": true,
+        "Default": {
+          "Type": "alicloud.FlagType",
+          "Value": "on"
+        }
+      },
+      "health_check_connect_port": {
+        "Type": "Int",
+        "Optional": true,
+        "Computed": true
+      },
+      "health_check_domain": {
+        "Type": "String",
+        "Optional": true
+      },
+      "health_check_http_code": {
+        "Type": "String",
+        "Optional": true,
+        "Default": {
+          "Type": "alicloud.HealthCheckHttpCodeType",
+          "Value": "http_2xx"
+        }
+      },
+      "health_check_interval": {
+        "Type": "Int",
+        "Optional": true,
+        "Default": {
+          "Type": "int",
+          "Value": "2"
+        }
+      },
+      "health_check_timeout": {
+        "Type": "Int",
+        "Optional": true,
+        "Default": {
+          "Type": "int",
+          "Value": "5"
+        }
+      },
+      "health_check_uri": {
+        "Type": "String",
+        "Optional": true,
+        "Default": {
+          "Type": "string",
+          "Value": "/"
+        }
+      },
+      "healthy_threshold": {
+        "Type": "Int",
+        "Optional": true,
+        "Default": {
+          "Type": "int",
+          "Value": "3"
+        }
+      },
+      "listener_sync": {
+        "Type": "String",
+        "Optional": true,
+        "Default": {
+          "Type": "string",
+          "Value": "on"
+        }
       },
       "load_balancer_id": {
         "Type": "String",
@@ -7567,9 +7717,37 @@
           "Value": "tf-slb-rule"
         }
       },
+      "scheduler": {
+        "Type": "String",
+        "Optional": true,
+        "Default": {
+          "Type": "alicloud.SchedulerType",
+          "Value": "wrr"
+        }
+      },
       "server_group_id": {
         "Type": "String",
         "Required": true
+      },
+      "sticky_session": {
+        "Type": "String",
+        "Optional": true,
+        "Default": {
+          "Type": "alicloud.FlagType",
+          "Value": "off"
+        }
+      },
+      "sticky_session_type": {
+        "Type": "String",
+        "Optional": true
+      },
+      "unhealthy_threshold": {
+        "Type": "Int",
+        "Optional": true,
+        "Default": {
+          "Type": "int",
+          "Value": "3"
+        }
       },
       "url": {
         "Type": "String",
@@ -7632,6 +7810,14 @@
                 "ElementsType": "String"
               }
             },
+            "type": {
+              "Type": "String",
+              "Optional": true,
+              "Default": {
+                "Type": "string",
+                "Value": "ecs"
+              }
+            },
             "weight": {
               "Type": "Int",
               "Optional": true,
@@ -7645,6 +7831,10 @@
       }
     },
     "alicloud_snapshot": {
+      "__timeouts__": [
+        "create",
+        "delete"
+      ],
       "description": {
         "Type": "String",
         "Optional": true
@@ -8050,7 +8240,7 @@
         "Optional": true,
         "Default": {
           "Type": "string",
-          "Value": "tf-vpn-20190625111935159900000003"
+          "Value": "tf-vpn-20190709073628008400000003"
         }
       },
       "period": {
@@ -8256,9 +8446,25 @@
           }
         }
       },
+      "ids": {
+        "Type": "List",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
       "name_regex": {
         "Type": "String",
         "Optional": true
+      },
+      "names": {
+        "Type": "List",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       },
       "output_file": {
         "Type": "String",
@@ -8315,9 +8521,25 @@
           }
         }
       },
+      "ids": {
+        "Type": "List",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
       "name_regex": {
         "Type": "String",
         "Optional": true
+      },
+      "names": {
+        "Type": "List",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       },
       "output_file": {
         "Type": "String",
@@ -9446,6 +9668,10 @@
     },
     "alicloud_db_instance_classes": {
       "category": {
+        "Type": "String",
+        "Optional": true
+      },
+      "db_instance_class": {
         "Type": "String",
         "Optional": true
       },
@@ -11330,6 +11556,10 @@
               "Type": "String",
               "Computed": true
             },
+            "os_name_en": {
+              "Type": "String",
+              "Computed": true
+            },
             "os_type": {
               "Type": "String",
               "Computed": true
@@ -11876,6 +12106,107 @@
       "status": {
         "Type": "String",
         "Optional": true
+      }
+    },
+    "alicloud_kvstore_instance_classes": {
+      "architecture": {
+        "Type": "String",
+        "Optional": true
+      },
+      "engine": {
+        "Type": "String",
+        "Optional": true
+      },
+      "engine_version": {
+        "Type": "String",
+        "Optional": true
+      },
+      "instance_charge_type": {
+        "Type": "String",
+        "Optional": true,
+        "Default": {
+          "Type": "alicloud.PayType",
+          "Value": "PrePaid"
+        }
+      },
+      "instance_classes": {
+        "Type": "List",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "node_type": {
+        "Type": "String",
+        "Optional": true
+      },
+      "output_file": {
+        "Type": "String",
+        "Optional": true
+      },
+      "package_type": {
+        "Type": "String",
+        "Optional": true
+      },
+      "performance_type": {
+        "Type": "String",
+        "Optional": true
+      },
+      "storage_type": {
+        "Type": "String",
+        "Optional": true
+      },
+      "zone_id": {
+        "Type": "String",
+        "Required": true
+      }
+    },
+    "alicloud_kvstore_instance_engines": {
+      "engine": {
+        "Type": "String",
+        "Optional": true
+      },
+      "engine_version": {
+        "Type": "String",
+        "Optional": true
+      },
+      "instance_charge_type": {
+        "Type": "String",
+        "Optional": true,
+        "Default": {
+          "Type": "alicloud.PayType",
+          "Value": "PrePaid"
+        }
+      },
+      "instance_engines": {
+        "Type": "List",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "engine": {
+              "Type": "String",
+              "Computed": true
+            },
+            "engine_version": {
+              "Type": "String",
+              "Computed": true
+            },
+            "zone_id": {
+              "Type": "String",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "output_file": {
+        "Type": "String",
+        "Optional": true
+      },
+      "zone_id": {
+        "Type": "String",
+        "Required": true
       }
     },
     "alicloud_kvstore_instances": {
@@ -13242,6 +13573,14 @@
       "name_regex": {
         "Type": "String",
         "Optional": true
+      },
+      "names": {
+        "Type": "List",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       },
       "output_file": {
         "Type": "String",
@@ -15162,8 +15501,7 @@
       },
       "source_disk_type": {
         "Type": "String",
-        "Optional": true,
-        "Computed": true
+        "Optional": true
       },
       "status": {
         "Type": "String",
@@ -15187,8 +15525,7 @@
       },
       "usage": {
         "Type": "String",
-        "Optional": true,
-        "Computed": true
+        "Optional": true
       }
     },
     "alicloud_snat_entries": {

@@ -2,7 +2,7 @@
   ".schema_version": "1",
   "name": "fastly",
   "type": "provider",
-  "version": "v0.6.1",
+  "version": "v0.8.0",
   "provider": {
     "api_key": {
       "Type": "String",
@@ -125,6 +125,11 @@
               "Type": "String",
               "Required": true,
               "Description": "A name for this Backend"
+            },
+            "override_host": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The hostname to override the Host header"
             },
             "port": {
               "Type": "Int",
@@ -309,6 +314,110 @@
           }
         }
       },
+      "blobstoragelogging": {
+        "Type": "Set",
+        "Optional": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "account_name": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The unique Azure Blob Storage namespace in which your data objects are stored"
+            },
+            "container": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The name of the Azure Blob Storage container in which to store logs"
+            },
+            "format": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Apache-style string or VCL variables to use for log formatting (default: `%h %l %u %t \"%r\" %\u003es %b`)",
+              "Default": {
+                "Type": "string",
+                "Value": "%h %l %u %t \"%r\" %\u003es %b"
+              }
+            },
+            "format_version": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "The version of the custom logging format used for the configured endpoint. Can be either 1 or 2. (default: 2)",
+              "Default": {
+                "Type": "int",
+                "Value": "2"
+              }
+            },
+            "gzip_level": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "The Gzip compression level (default: 0)",
+              "Default": {
+                "Type": "int",
+                "Value": "0"
+              }
+            },
+            "message_type": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "How the message should be formatted (default: `classic`)",
+              "Default": {
+                "Type": "string",
+                "Value": "classic"
+              }
+            },
+            "name": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The unique name of the Azure Blob Storage logging endpoint"
+            },
+            "path": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The path to upload logs to. Must end with a trailing slash"
+            },
+            "period": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "How frequently the logs should be transferred, in seconds (default: 3600)",
+              "Default": {
+                "Type": "int",
+                "Value": "3600"
+              }
+            },
+            "placement": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Where in the generated VCL the logging call should be placed"
+            },
+            "public_key": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The PGP public key that Fastly will use to encrypt your log files before writing them to disk"
+            },
+            "response_condition": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The name of the condition to apply"
+            },
+            "sas_token": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The Azure shared access signature providing write access to the blob service objects",
+              "DefaultFunc": "ENV(FASTLY_AZURE_SHARED_ACCESS_SIGNATURE)"
+            },
+            "timestamp_format": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "strftime specified timestamp formatting (default: `%Y-%m-%dT%H:%M:%S.000`)",
+              "Default": {
+                "Type": "string",
+                "Value": "%Y-%m-%dT%H:%M:%S.000"
+              }
+            }
+          }
+        }
+      },
       "cache_setting": {
         "Type": "Set",
         "Optional": true,
@@ -344,6 +453,15 @@
               "Description": "The 'Time To Live' for the object"
             }
           }
+        }
+      },
+      "comment": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "A personal freeform descriptive note",
+        "Default": {
+          "Type": "string",
+          "Value": "Managed by Terraform"
         }
       },
       "condition": {
@@ -1214,6 +1332,59 @@
           }
         }
       },
+      "splunk": {
+        "Type": "Set",
+        "Optional": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "format": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Apache-style string or VCL variables to use for log formatting (default: `%h %l %u %t \"%r\" %\u003es %b`)",
+              "Default": {
+                "Type": "string",
+                "Value": "%h %l %u %t \"%r\" %\u003es %b"
+              }
+            },
+            "format_version": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "The version of the custom logging format used for the configured endpoint. Can be either 1 or 2. (default: 2)",
+              "Default": {
+                "Type": "int",
+                "Value": "2"
+              }
+            },
+            "name": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The unique name of the Splunk logging endpoint"
+            },
+            "placement": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Where in the generated VCL the logging call should be placed"
+            },
+            "response_condition": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The name of the condition to apply"
+            },
+            "token": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The Splunk token to be used for authentication",
+              "DefaultFunc": "ENV(FASTLY_SPLUNK_TOKEN)"
+            },
+            "url": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The Splunk URL to stream logs to"
+            }
+          }
+        }
+      },
       "sumologic": {
         "Type": "Set",
         "Optional": true,
@@ -1401,6 +1572,11 @@
             }
           }
         }
+      },
+      "version_comment": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "A personal freeform descriptive note"
       }
     }
   },
