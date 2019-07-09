@@ -104,6 +104,15 @@ process_repository() {
     revision="$latest"
   fi
 
+  if [ -f "$out/$name.json" ] && command -v jq &>/dev/null; then
+    current="$(jq -r '.version' "$out/$name.json")"
+    echo "Version in existing schema: $current"
+    if [[ "$current" == "$revision" ]]; then
+      echo "Version in existing schema is same as desired, skipping generation"
+      return
+    fi
+  fi
+
   rm -rf generate-schema
   mkdir generate-schema
   sed \
