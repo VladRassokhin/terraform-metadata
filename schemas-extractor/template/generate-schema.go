@@ -96,10 +96,7 @@ func export(v *schema.Schema) SchemaDefinition {
 	item.ConflictsWith = v.ConflictsWith
 	item.Deprecated = v.Deprecated
 	item.Removed = v.Removed
-
-	if v.Elem != nil {
-		item.Elem = exportValue(v.Elem, fmt.Sprintf("%T", v.Elem))
-	}
+	item.IsBlock = false
 
 	if defValue := v.Default; defValue != nil {
 		item.Default = exportValue(defValue, fmt.Sprintf("%T", defValue))
@@ -113,6 +110,43 @@ func export(v *schema.Schema) SchemaDefinition {
 			item.DefaultFunc = "UNKNOWN"
 		}
 	}
+
+	// Logic from schemaMap.CoreConfigSchema:
+	if v.Elem == nil {
+		return item
+	}
+	if v.Type == schema.TypeMap {
+		elem := &schema.Schema{
+			Type: schema.TypeString,
+		}
+		item.Elem = exportValue(elem, fmt.Sprintf("%T", elem))
+		return item
+	}
+	item.Elem = exportValue(v.Elem, fmt.Sprintf("%T", v.Elem))
+
+	switch v.ConfigMode {
+	case schema.SchemaConfigModeAttr:
+		return item
+	case schema.SchemaConfigModeBlock:
+		item.IsBlock = true
+		return item
+	default: // SchemaConfigModeAuto, or any other invalid value
+		if v.Computed && !v.Optional {
+			// Computed-only schemas are always handled as attributes,
+			// because they never appear in configuration.
+			return item
+		}
+		switch v.Elem.(type) {
+		case *schema.Schema, schema.ValueType:
+			item.IsBlock = false
+		case *schema.Resource:
+			item.IsBlock = true
+		default:
+			// Should never happen for a valid schema
+			panic(fmt.Errorf("invalid Schema.Elem %#v; need *Schema or *Resource", v.Elem))
+		}
+	}
+
 	return item
 }
 
@@ -199,6 +233,8 @@ type SchemaDefinition struct {
 
 	Deprecated string `json:",omitempty"`
 	Removed    string `json:",omitempty"`
+
+	IsBlock bool `json:",omitempty"`
 
 	Default *SchemaElement `json:",omitempty"`
 	Elem    *SchemaElement `json:",omitempty"`
