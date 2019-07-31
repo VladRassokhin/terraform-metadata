@@ -2,7 +2,7 @@
   ".schema_version": "1",
   "name": "alicloud",
   "type": "provider",
-  "version": "v1.51.0",
+  "version": "v1.52.2",
   "provider": {
     "access_key": {
       "Type": "String",
@@ -388,6 +388,15 @@
       "Type": "String",
       "Optional": true,
       "Description": "The path to the shared credentials file. If not set this defaults to ~/.aliyun/config.json"
+    },
+    "skip_region_validation": {
+      "Type": "Bool",
+      "Optional": true,
+      "Description": "Skip static validation of region ID. Used by users of alternative AlibabaCloud-like APIs or users w/ access to regions that are not public (yet).",
+      "Default": {
+        "Type": "bool",
+        "Value": "false"
+      }
     }
   },
   "resources": {
@@ -1040,7 +1049,7 @@
         "Required": true
       },
       "function_args": {
-        "Type": "List",
+        "Type": "Set",
         "Required": true,
         "Elem": {
           "Type": "SchemaInfo",
@@ -1065,6 +1074,45 @@
       "cdn_type": {
         "Type": "String",
         "Required": true
+      },
+      "certificate_config": {
+        "Type": "List",
+        "Optional": true,
+        "Computed": true,
+        "MaxItems": 1,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "cert_name": {
+              "Type": "String",
+              "Optional": true
+            },
+            "cert_type": {
+              "Type": "String",
+              "Optional": true
+            },
+            "force_set": {
+              "Type": "String",
+              "Optional": true
+            },
+            "private_key": {
+              "Type": "String",
+              "Optional": true
+            },
+            "server_certificate": {
+              "Type": "String",
+              "Optional": true
+            },
+            "server_certificate_status": {
+              "Type": "String",
+              "Optional": true,
+              "Default": {
+                "Type": "string",
+                "Value": "on"
+              }
+            }
+          }
+        }
       },
       "domain_name": {
         "Type": "String",
@@ -2741,6 +2789,11 @@
       }
     },
     "alicloud_db_instance": {
+      "__timeouts__": [
+        "create",
+        "update",
+        "delete"
+      ],
       "allocate_public_connection": {
         "Type": "Bool",
         "Optional": true,
@@ -2989,6 +3042,11 @@
       }
     },
     "alicloud_db_readonly_instance": {
+      "__timeouts__": [
+        "create",
+        "update",
+        "delete"
+      ],
       "connection_string": {
         "Type": "String",
         "Computed": true
@@ -3157,6 +3215,10 @@
           "ElementsType": "String"
         }
       },
+      "domain_id": {
+        "Type": "String",
+        "Computed": true
+      },
       "group_id": {
         "Type": "String",
         "Optional": true
@@ -3317,6 +3379,11 @@
         "Required": true
       },
       "instance_type": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "private_ip_address": {
         "Type": "String",
         "Optional": true,
         "Computed": true
@@ -5945,7 +6012,7 @@
         "Optional": true,
         "Default": {
           "Type": "string",
-          "Value": "tf-oss-bucket-20190709073628008400000002"
+          "Value": "tf-oss-bucket-20190731075006837000000002"
         }
       },
       "cors_rule": {
@@ -6296,7 +6363,11 @@
     "alicloud_ots_table": {
       "deviation_cell_version_in_sec": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Default": {
+          "Type": "string",
+          "Value": "86400"
+        }
       },
       "instance_name": {
         "Type": "String",
@@ -7243,7 +7314,7 @@
         "Optional": true,
         "Default": {
           "Type": "string",
-          "Value": "tf-lb-20190709073628008300000001"
+          "Value": "tf-lb-20190731075006837000000001"
         }
       },
       "period": {
@@ -7792,7 +7863,6 @@
       "servers": {
         "Type": "Set",
         "Optional": true,
-        "MaxItems": 20,
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
@@ -7803,7 +7873,6 @@
             "server_ids": {
               "Type": "List",
               "Required": true,
-              "MaxItems": 20,
               "MinItems": 1,
               "Elem": {
                 "Type": "SchemaElements",
@@ -8240,7 +8309,7 @@
         "Optional": true,
         "Default": {
           "Type": "string",
-          "Value": "tf-vpn-20190709073628008400000003"
+          "Value": "tf-vpn-20190731075006837100000003"
         }
       },
       "period": {
@@ -8352,7 +8421,8 @@
     "alicloud_api_gateway_apis": {
       "api_id": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Deprecated": "Field 'api_id' has been deprecated from provider version 1.52.2. New field 'ids' replaces it."
       },
       "apis": {
         "Type": "List",
@@ -8393,7 +8463,7 @@
       },
       "ids": {
         "Type": "List",
-        "Computed": true,
+        "Optional": true,
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -8448,7 +8518,7 @@
       },
       "ids": {
         "Type": "List",
-        "Computed": true,
+        "Optional": true,
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -8523,7 +8593,7 @@
       },
       "ids": {
         "Type": "List",
-        "Computed": true,
+        "Optional": true,
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -8612,9 +8682,25 @@
           }
         }
       },
+      "ids": {
+        "Type": "List",
+        "Optional": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
       "name_regex": {
         "Type": "String",
         "Optional": true
+      },
+      "names": {
+        "Type": "List",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       },
       "output_file": {
         "Type": "String",
@@ -9856,6 +9942,14 @@
         "Type": "String",
         "Optional": true
       },
+      "ids": {
+        "Type": "List",
+        "Optional": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
       "instances": {
         "Type": "List",
         "Computed": true,
@@ -9952,6 +10046,14 @@
       "name_regex": {
         "Type": "String",
         "Optional": true
+      },
+      "names": {
+        "Type": "List",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       },
       "output_file": {
         "Type": "String",
@@ -10176,9 +10278,25 @@
           }
         }
       },
+      "ids": {
+        "Type": "List",
+        "Optional": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
       "name_regex": {
         "Type": "String",
         "Optional": true
+      },
+      "names": {
+        "Type": "List",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       },
       "output_file": {
         "Type": "String",
@@ -10193,6 +10311,14 @@
       "host_record_regex": {
         "Type": "String",
         "Optional": true
+      },
+      "ids": {
+        "Type": "List",
+        "Optional": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       },
       "is_locked": {
         "Type": "Bool",
@@ -10340,7 +10466,7 @@
       },
       "ids": {
         "Type": "List",
-        "Computed": true,
+        "Optional": true,
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -10385,9 +10511,25 @@
           }
         }
       },
+      "ids": {
+        "Type": "List",
+        "Optional": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
       "name_regex": {
         "Type": "String",
         "Optional": true
+      },
+      "names": {
+        "Type": "List",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       },
       "output_file": {
         "Type": "String",
@@ -10402,6 +10544,14 @@
       "host_record_regex": {
         "Type": "String",
         "Optional": true
+      },
+      "ids": {
+        "Type": "List",
+        "Optional": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       },
       "is_locked": {
         "Type": "Bool",
@@ -10486,10 +10636,17 @@
       }
     },
     "alicloud_drds_instances": {
+      "descriptions": {
+        "Type": "List",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
       "ids": {
         "Type": "List",
         "Optional": true,
-        "MinItems": 1,
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -10628,9 +10785,17 @@
         "Type": "String",
         "Optional": true
       },
-      "ids": {
+      "descriptions": {
         "Type": "List",
         "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "ids": {
+        "Type": "List",
+        "Optional": true,
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -11953,6 +12118,14 @@
         "Optional": true,
         "Computed": true
       },
+      "ids": {
+        "Type": "List",
+        "Optional": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
       "key_pairs": {
         "Type": "List",
         "Computed": true,
@@ -12212,7 +12385,7 @@
     "alicloud_kvstore_instances": {
       "ids": {
         "Type": "List",
-        "Computed": true,
+        "Optional": true,
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -12484,7 +12657,7 @@
       },
       "ids": {
         "Type": "List",
-        "Computed": true,
+        "Optional": true,
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -12641,7 +12814,7 @@
       },
       "ids": {
         "Type": "List",
-        "Computed": true,
+        "Optional": true,
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -13262,6 +13435,65 @@
         "Optional": true
       },
       "vswitch_id": {
+        "Type": "String",
+        "Optional": true
+      }
+    },
+    "alicloud_ons_instances": {
+      "ids": {
+        "Type": "List",
+        "Optional": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "instances": {
+        "Type": "List",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "instance_id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "instance_name": {
+              "Type": "String",
+              "Computed": true
+            },
+            "instance_status": {
+              "Type": "Int",
+              "Computed": true
+            },
+            "instance_type": {
+              "Type": "Int",
+              "Computed": true
+            },
+            "release_time": {
+              "Type": "Int",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "name_regex": {
+        "Type": "String",
+        "Optional": true
+      },
+      "names": {
+        "Type": "List",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "output_file": {
         "Type": "String",
         "Optional": true
       }
@@ -14654,7 +14886,7 @@
       },
       "ids": {
         "Type": "List",
-        "Computed": true,
+        "Optional": true,
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -15743,7 +15975,7 @@
       },
       "ids": {
         "Type": "List",
-        "Computed": true,
+        "Optional": true,
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -16152,7 +16384,7 @@
       },
       "ids": {
         "Type": "List",
-        "Computed": true,
+        "Optional": true,
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"

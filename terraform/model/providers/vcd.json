@@ -2,7 +2,7 @@
   ".schema_version": "1",
   "name": "vcd",
   "type": "provider",
-  "version": "v2.3.0",
+  "version": "v2.4.0",
   "provider": {
     "allow_unverified_ssl": {
       "Type": "Bool",
@@ -169,6 +169,10 @@
       }
     },
     "vcd_dnat": {
+      "description": {
+        "Type": "String",
+        "Optional": true
+      },
       "edge_gateway": {
         "Type": "String",
         "Required": true
@@ -180,10 +184,7 @@
       "icmp_sub_type": {
         "Type": "String",
         "Optional": true,
-        "Default": {
-          "Type": "string",
-          "Value": "any"
-        }
+        "Computed": true
       },
       "internal_ip": {
         "Type": "String",
@@ -195,11 +196,7 @@
       },
       "network_type": {
         "Type": "String",
-        "Optional": true,
-        "Default": {
-          "Type": "string",
-          "Value": "ext"
-        }
+        "Optional": true
       },
       "org": {
         "Type": "String",
@@ -207,18 +204,123 @@
       },
       "port": {
         "Type": "Int",
-        "Required": true
+        "Optional": true,
+        "Computed": true
       },
       "protocol": {
         "Type": "String",
         "Optional": true,
         "Default": {
           "Type": "string",
-          "Value": "TCP"
+          "Value": "tcp"
         }
       },
       "translated_port": {
         "Type": "Int",
+        "Optional": true,
+        "Computed": true
+      },
+      "vdc": {
+        "Type": "String",
+        "Optional": true
+      }
+    },
+    "vcd_edgegateway": {
+      "advanced": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "True if the gateway uses advanced networking. (Enabled by default)",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "configuration": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Configuration of the vShield edge VM for this gateway. One of: compact, full (\"Large\"), full4 (\"Quad Large\"), x-large"
+      },
+      "default_gateway_network": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "External network to be used as default gateway. Its name must be included in 'external_networks'. An empty value will skip the default gateway",
+        "Default": {
+          "Type": "string"
+        }
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true
+      },
+      "distributed_routing": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "If advanced networking enabled, also enable distributed routing",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "external_networks": {
+        "Type": "List",
+        "Required": true,
+        "Description": "A list of external networks to be used by the edge gateway",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "ha_enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enable high availability on this edge gateway",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "lb_acceleration_enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enable load balancer acceleration. (Disabled by default)",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "lb_enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enable load balancing. (Disabled by default)",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "lb_logging_enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enable load balancer logging. (Disabled by default)",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "lb_loglevel": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Log level. One of 'emergency', 'alert', 'critical', 'error', 'warning', 'notice', 'info', 'debug'. ('info' by default)",
+        "Default": {
+          "Type": "string",
+          "Value": "info"
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Required": true
+      },
+      "org": {
+        "Type": "String",
         "Optional": true
       },
       "vdc": {
@@ -545,6 +647,382 @@
         "Type": "String",
         "Required": true,
         "Description": "VM in vApp in which media will be inserted or ejected"
+      }
+    },
+    "vcd_lb_app_profile": {
+      "cookie_mode": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The mode by which the cookie should be inserted. One of 'insert', 'prefix', or 'appsession'"
+      },
+      "cookie_name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Used to uniquely identify the session the first time a client accesses the site. The load balancer refers to this cookie when connecting subsequent requests in the session, so that they all go to the same virtual server. Only applies for persistence_mechanism 'cookie'"
+      },
+      "edge_gateway": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Edge gateway name in which the LB Application Profile is located"
+      },
+      "enable_pool_side_ssl": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enable to define the certificate, CAs, or CRLs used to authenticate the load balancer from the server side",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "enable_ssl_passthrough": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enable SSL authentication to be passed through to the virtual server. Otherwise SSL authentication takes place at the destination address."
+      },
+      "expiration": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Length of time in seconds that persistence stays in effect"
+      },
+      "http_redirect_url": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The URL to which traffic that arrives at the destination address should be redirected. Only applies for types 'http' and 'https'"
+      },
+      "insert_x_forwarded_http_header": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enables 'X-Forwarded-For' header for identifying the originating IP address of a client connecting to a Web server through the load balancer. Only applies for types HTTP and HTTPS",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Unique LB Application Profile name"
+      },
+      "org": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "vCD organization in which the LB Application Profile is located"
+      },
+      "persistence_mechanism": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Persistence mechanism for the profile. One of 'cookie', 'ssl-sessionid', 'sourceip'"
+      },
+      "type": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Protocol type used to send requests to the server. One of 'tcp', 'udp', 'http' org 'https'"
+      },
+      "vdc": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "vCD virtual datacenter in which the LB Application Profile is located"
+      }
+    },
+    "vcd_lb_app_rule": {
+      "edge_gateway": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Edge gateway name in which the LB Application Rule is located"
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Unique LB Application Rule name"
+      },
+      "org": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "vCD organization in which the LB Application Rule is located"
+      },
+      "script": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The script for the application rule. Note - you may find HEREDOC useful to pass multiline strings"
+      },
+      "vdc": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "vCD virtual datacenter in which the LB Application Rule is located"
+      }
+    },
+    "vcd_lb_server_pool": {
+      "algorithm": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Balancing method for the service. One of 'ip-hash', 'round-robin', 'uri', 'leastconn', 'url', or 'httpheader'"
+      },
+      "algorithm_parameters": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Additional options for load balancing algorithm for httpheader or url algorithms"
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Server pool description"
+      },
+      "edge_gateway": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Edge gateway name in which the LB Server Pool is located"
+      },
+      "enable_transparency": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Makes client IP addresses visible to the backend servers",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "member": {
+        "Type": "List",
+        "Optional": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "condition": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Defines member state. One of enabled, drain, disabled."
+            },
+            "id": {
+              "Type": "String",
+              "Description": "Pool member id (formatted as member-xx, where xx is a number)",
+              "Computed": true
+            },
+            "ip_address": {
+              "Type": "String",
+              "Required": true,
+              "Description": "IP address of member in server pool"
+            },
+            "max_connections": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "The maximum number of concurrent connections the member can handle. If exceeded requests are queued and the load balancer waits for a connection to be released"
+            },
+            "min_connections": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "Minimum number of concurrent connections a member must always accept"
+            },
+            "monitor_port": {
+              "Type": "Int",
+              "Required": true,
+              "Description": "Port at which the member is to receive health monitor requests. Can be the same as port"
+            },
+            "name": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Name of pool member"
+            },
+            "port": {
+              "Type": "Int",
+              "Required": true,
+              "Description": "Port at which the member is to receive traffic from the load balancer"
+            },
+            "weight": {
+              "Type": "Int",
+              "Required": true,
+              "Description": "Proportion of traffic this member is to handle. Must be an integer in the range 1-256"
+            }
+          }
+        }
+      },
+      "monitor_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Load Balancer Service Monitor ID"
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Unique LB Server Pool name"
+      },
+      "org": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "vCD organization in which the LB Server Pool is located"
+      },
+      "vdc": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "vCD virtual datacenter in which the LB Server Pool is located"
+      }
+    },
+    "vcd_lb_service_monitor": {
+      "edge_gateway": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Edge gateway name in which the LB Service Monitor is located"
+      },
+      "expected": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "String that the monitor expects to match in the status line of the http or https response (for example, HTTP/1.1)"
+      },
+      "extension": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "Advanced monitor parameters as key=value pairs"
+      },
+      "interval": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Interval in seconds at which a server is to be monitored (defaults to 10)",
+        "Default": {
+          "Type": "int",
+          "Value": "10"
+        }
+      },
+      "max_retries": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Number of times the specified monitoring Method must fail sequentially before the server is declared down  (defaults to 3)",
+        "Default": {
+          "Type": "int",
+          "Value": "3"
+        }
+      },
+      "method": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Method to be used to detect server status. One of OPTIONS, GET, HEAD, POST, PUT, DELETE, TRACE, or CONNECT"
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Unique LB Service Monitor name"
+      },
+      "org": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "vCD organization in which the LB Service Monitor is located"
+      },
+      "receive": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "String to be matched in the response content"
+      },
+      "send": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Data to be sent"
+      },
+      "timeout": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Maximum time in seconds within which a response from the server must be received  (defaults to 15)",
+        "Default": {
+          "Type": "int",
+          "Value": "15"
+        }
+      },
+      "type": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Way in which you want to send the health check request to the server. One of http, https, tcp, icmp, or udp"
+      },
+      "url": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "URL to be used in the server status request"
+      },
+      "vdc": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "vCD virtual datacenter in which the LB Service Monitor is located"
+      }
+    },
+    "vcd_lb_virtual_server": {
+      "app_profile_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Application profile ID to be associated with the virtual server"
+      },
+      "app_rule_ids": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "List of attached application rule IDs",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "connection_limit": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Maximum concurrent connections that the virtual server can process"
+      },
+      "connection_rate_limit": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Maximum incoming new connection requests per second"
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Virtual Server description"
+      },
+      "edge_gateway": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Edge gateway name in which the LB Virtual Server is located"
+      },
+      "enable_acceleration": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enable virtual server acceleration"
+      },
+      "enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Defines if the virtual server is enabled",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "ip_address": {
+        "Type": "String",
+        "Required": true,
+        "Description": "IP address that the load balancer listens on"
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Unique Virtual Server name"
+      },
+      "org": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "vCD organization in which the LB Virtual Server is located"
+      },
+      "port": {
+        "Type": "Int",
+        "Required": true,
+        "Description": "Port number that the load balancer listens on"
+      },
+      "protocol": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Protocol that the virtual server accepts"
+      },
+      "server_pool_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The server pool that the load balancer will use"
+      },
+      "vdc": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "vCD virtual datacenter in which the LB Virtual Server is located"
       }
     },
     "vcd_network": {
@@ -978,6 +1456,123 @@
         }
       }
     },
+    "vcd_org_user": {
+      "deployed_vm_quota": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Quota of vApps that this user can deploy. A value of 0 specifies an unlimited quota.",
+        "Default": {
+          "Type": "int",
+          "Value": "10"
+        }
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The user's description"
+      },
+      "email_address": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The user's email address"
+      },
+      "enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "True if the user is enabled and can log in.",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "full_name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The user's full name"
+      },
+      "instant_messaging": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The user's telephone"
+      },
+      "is_group_role": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "True if this user has a group role.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "is_locked": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "If the user account has been locked due to too many invalid login attempts, the value will change to true (only the system can lock the user). To unlock the user re-set this flag to false."
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "User's name. Only lowercase letters allowed. Cannot be changed after creation"
+      },
+      "org": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Organization this user belongs to"
+      },
+      "password": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The user's password. This value is never returned on read. Either \"password\" or \"password_file\" must be included on creation.",
+        "ConflictsWith": [
+          "password_file"
+        ]
+      },
+      "password_file": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Name of a file containing the user's password. Either \"password_file\" or \"password\" must be included on creation.",
+        "ConflictsWith": [
+          "password"
+        ]
+      },
+      "provider_type": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Identity provider type for this this user. One of: 'INTEGRATED', 'SAML', 'OAUTH'. When empty, the default value 'INTEGRATED' is used.",
+        "Default": {
+          "Type": "string",
+          "Value": "INTEGRATED"
+        }
+      },
+      "role": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Role within the organization"
+      },
+      "stored_vm_quota": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Quota of vApps that this user can store. A value of 0 specifies an unlimited quota.",
+        "Default": {
+          "Type": "int",
+          "Value": "10"
+        }
+      },
+      "take_ownership": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Take ownership of user's objects on deletion.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "telephone": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The user's telephone"
+      }
+    },
     "vcd_org_vdc": {
       "allocation_model": {
         "Type": "String",
@@ -988,10 +1583,7 @@
         "Type": "Bool",
         "Optional": true,
         "Description": "Set to false to disallow creation of the VDC if the AllocationModel is AllocationPool or ReservationPool and the ComputeCapacity you specified is greater than what the backing Provider VDC can supply. Default is true.",
-        "Default": {
-          "Type": "bool",
-          "Value": "true"
-        }
+        "Computed": true
       },
       "compute_capacity": {
         "Type": "Set",
@@ -1013,12 +1605,26 @@
                   "allocated": {
                     "Type": "Int",
                     "Optional": true,
-                    "Description": "Capacity that is committed to be available. Value in MB or MHz. Used with AllocationPool (Allocation pool) and ReservationPool (Reservation pool)."
+                    "Description": "Capacity that is committed to be available. Value in MB or MHz. Used with AllocationPool (Allocation pool) and ReservationPool (Reservation pool).",
+                    "Computed": true
                   },
                   "limit": {
                     "Type": "Int",
                     "Optional": true,
-                    "Description": "Capacity limit relative to the value specified for Allocation. It must not be less than that value. If it is greater than that value, it implies over provisioning. A value of 0 specifies unlimited units. Value in MB or MHz. Used with AllocationVApp (Pay as you go)."
+                    "Description": "Capacity limit relative to the value specified for Allocation. It must not be less than that value. If it is greater than that value, it implies over provisioning. A value of 0 specifies unlimited units. Value in MB or MHz. Used with AllocationVApp (Pay as you go).",
+                    "Computed": true
+                  },
+                  "overhead": {
+                    "Type": "Int",
+                    "Computed": true
+                  },
+                  "reserved": {
+                    "Type": "Int",
+                    "Computed": true
+                  },
+                  "used": {
+                    "Type": "Int",
+                    "Computed": true
                   }
                 }
               }
@@ -1034,12 +1640,26 @@
                   "allocated": {
                     "Type": "Int",
                     "Optional": true,
-                    "Description": "Capacity that is committed to be available. Value in MB or MHz. Used with AllocationPool (Allocation pool) and ReservationPool (Reservation pool)."
+                    "Description": "Capacity that is committed to be available. Value in MB or MHz. Used with AllocationPool (Allocation pool) and ReservationPool (Reservation pool).",
+                    "Computed": true
                   },
                   "limit": {
                     "Type": "Int",
                     "Optional": true,
-                    "Description": "Capacity limit relative to the value specified for Allocation. It must not be less than that value. If it is greater than that value, it implies over provisioning. A value of 0 specifies unlimited units. Value in MB or MHz. Used with AllocationVApp (Pay as you go)."
+                    "Description": "Capacity limit relative to the value specified for Allocation. It must not be less than that value. If it is greater than that value, it implies over provisioning. A value of 0 specifies unlimited units. Value in MB or MHz. Used with AllocationVApp (Pay as you go).",
+                    "Computed": true
+                  },
+                  "overhead": {
+                    "Type": "Int",
+                    "Computed": true
+                  },
+                  "reserved": {
+                    "Type": "Int",
+                    "Computed": true
+                  },
+                  "used": {
+                    "Type": "Int",
+                    "Computed": true
                   }
                 }
               }
@@ -1050,12 +1670,14 @@
       "cpu_guaranteed": {
         "Type": "Float",
         "Optional": true,
-        "Description": "Percentage of allocated CPU resources guaranteed to vApps deployed in this VDC. For example, if this value is 0.75, then 75% of allocated resources are guaranteed. Required when AllocationModel is AllocationVApp or AllocationPool. Value defaults to 1.0 if the element is empty."
+        "Description": "Percentage of allocated CPU resources guaranteed to vApps deployed in this VDC. For example, if this value is 0.75, then 75% of allocated resources are guaranteed. Required when AllocationModel is AllocationVApp or AllocationPool. If the element is empty, vCD sets a value",
+        "Computed": true
       },
       "cpu_speed": {
         "Type": "Int",
         "Optional": true,
-        "Description": "Specifies the clock frequency, in Megahertz, for any virtual CPU that is allocated to a VM. A VM with 2 vCPUs will consume twice as much of this value. Ignored for ReservationPool. Required when AllocationModel is AllocationVApp or AllocationPool, and may not be less than 256 MHz. Defaults to 1000 MHz if the element is empty or missing."
+        "Description": "Specifies the clock frequency, in Megahertz, for any virtual CPU that is allocated to a VM. A VM with 2 vCPUs will consume twice as much of this value. Ignored for ReservationPool. Required when AllocationModel is AllocationVApp or AllocationPool, and may not be less than 256 MHz. Defaults to 1000 MHz if the element is empty or missing.",
+        "Computed": true
       },
       "delete_force": {
         "Type": "Bool",
@@ -1098,7 +1720,13 @@
       "memory_guaranteed": {
         "Type": "Float",
         "Optional": true,
-        "Description": "Percentage of allocated memory resources guaranteed to vApps deployed in this VDC. For example, if this value is 0.75, then 75% of allocated resources are guaranteed. Required when AllocationModel is AllocationVApp or AllocationPool. Value defaults to 1.0 if the element is empty."
+        "Description": "Percentage of allocated memory resources guaranteed to vApps deployed in this VDC. For example, if this value is 0.75, then 75% of allocated resources are guaranteed. Required when AllocationModel is AllocationVApp or AllocationPool. When Allocation model is AllocationPool minimum value is 0.2. If the element is empty, vCD sets a value.",
+        "Computed": true
+      },
+      "metadata": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "Key and value pairs for Org VDC metadata"
       },
       "name": {
         "Type": "String",
@@ -1171,6 +1799,10 @@
       }
     },
     "vcd_snat": {
+      "description": {
+        "Type": "String",
+        "Optional": true
+      },
       "edge_gateway": {
         "Type": "String",
         "Required": true
@@ -1582,5 +2214,354 @@
       }
     }
   },
-  "data-sources": {}
+  "data-sources": {
+    "vcd_lb_app_profile": {
+      "cookie_mode": {
+        "Type": "String",
+        "Description": "The mode by which the cookie should be inserted. One of 'insert', 'prefix', or 'appsession'",
+        "Computed": true
+      },
+      "cookie_name": {
+        "Type": "String",
+        "Description": "Used to uniquely identify the session the first time a client accesses the site. The load balancer refers to this cookie when connecting subsequent requests in the session, so that they all go to the same virtual server. Only applies for persistence_mechanism 'cookie'",
+        "Computed": true
+      },
+      "edge_gateway": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Edge gateway name in which the LB Application Profile is located"
+      },
+      "enable_pool_side_ssl": {
+        "Type": "Bool",
+        "Description": "Enable to define the certificate, CAs, or CRLs used to authenticate the load balancer from the server side",
+        "Computed": true
+      },
+      "enable_ssl_passthrough": {
+        "Type": "Bool",
+        "Description": "Enable SSL authentication to be passed through to the virtual server. Otherwise SSL authentication takes place at the destination address.",
+        "Computed": true
+      },
+      "expiration": {
+        "Type": "Int",
+        "Description": "Length of time in seconds that persistence stays in effect",
+        "Computed": true
+      },
+      "http_redirect_url": {
+        "Type": "String",
+        "Description": "The URL to which traffic that arrives at the destination address should be redirected. Only applies for types HTTP and HTTPS",
+        "Computed": true
+      },
+      "insert_x_forwarded_http_header": {
+        "Type": "Bool",
+        "Description": "Enables 'X-Forwarded-For' header for identifying the originating IP address of a client connecting to a Web server through the load balancer. Only applies for types HTTP and HTTPS",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "LB Application Profile name for lookup"
+      },
+      "org": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "vCD organization in which the LB Application Profile is located"
+      },
+      "persistence_mechanism": {
+        "Type": "String",
+        "Description": "Persistence mechanism for the profile. One of 'cookie', 'ssl-sessionid', 'sourceip'",
+        "Computed": true
+      },
+      "type": {
+        "Type": "String",
+        "Description": "Protocol type used to send requests to the server. One of 'TCP', 'UDP', 'HTTP' org 'HTTPS'",
+        "Computed": true
+      },
+      "vdc": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "vCD virtual datacenter in which the LB Application Profile is located"
+      }
+    },
+    "vcd_lb_app_rule": {
+      "edge_gateway": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Edge gateway name in which the LB Application Rule is located"
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "LB Application Rule name for lookup"
+      },
+      "org": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "vCD organization in which the LB Application Rule is located"
+      },
+      "script": {
+        "Type": "String",
+        "Description": "The script for the LB Application Rule. Each line will be terminated by newlines (\n)",
+        "Computed": true
+      },
+      "vdc": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "vCD virtual datacenter in which the LB Application Rule is located"
+      }
+    },
+    "vcd_lb_server_pool": {
+      "algorithm": {
+        "Type": "String",
+        "Description": "Balancing method for the service",
+        "Computed": true
+      },
+      "algorithm_parameters": {
+        "Type": "String",
+        "Description": "Additional options for load balancing algorithm for http-header or url algorithms",
+        "Computed": true
+      },
+      "description": {
+        "Type": "String",
+        "Description": "Server pool description",
+        "Computed": true
+      },
+      "edge_gateway": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Edge gateway name in which the LB Server Pool is located"
+      },
+      "enable_transparency": {
+        "Type": "Bool",
+        "Description": "Makes client IP addresses visible to the backend servers",
+        "Computed": true
+      },
+      "member": {
+        "Type": "List",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "condition": {
+              "Type": "String",
+              "Description": "Defines member state. One of enabled, drain, disabled.",
+              "Computed": true
+            },
+            "id": {
+              "Type": "String",
+              "Description": "Pool member id (formatted as member-xx, where xx is a number)",
+              "Computed": true
+            },
+            "ip_address": {
+              "Type": "String",
+              "Description": "IP address of member in server pool",
+              "Computed": true
+            },
+            "max_connections": {
+              "Type": "Int",
+              "Description": "The maximum number of concurrent connections the member can handle. If exceeded requests are queued and the load balancer waits for a connection to be released",
+              "Computed": true
+            },
+            "min_connections": {
+              "Type": "Int",
+              "Description": "Minimum number of concurrent connections a member must always accept",
+              "Computed": true
+            },
+            "monitor_port": {
+              "Type": "Int",
+              "Description": "Port at which the member is to receive health monitor requests. Can be the same as port",
+              "Computed": true
+            },
+            "name": {
+              "Type": "String",
+              "Description": "Name of pool member",
+              "Computed": true
+            },
+            "port": {
+              "Type": "Int",
+              "Description": "Port at which the member is to receive traffic from the load balancer",
+              "Computed": true
+            },
+            "weight": {
+              "Type": "Int",
+              "Description": "Proportion of traffic this member is to handle. Must be an integer in the range 1-256",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "monitor_id": {
+        "Type": "String",
+        "Description": "Load Balancer Service Monitor ID",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Server Pool name for lookup"
+      },
+      "org": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "vCD organization in which the LB Server Pool is located"
+      },
+      "vdc": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "vCD virtual datacenter in which the LB Server Pool is located"
+      }
+    },
+    "vcd_lb_service_monitor": {
+      "edge_gateway": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Edge gateway name in which the LB Service Monitor is located"
+      },
+      "expected": {
+        "Type": "String",
+        "Description": "String that the monitor expects to match in the status line of the http or https response (for example, HTTP/1.1)",
+        "Computed": true
+      },
+      "extension": {
+        "Type": "Map",
+        "Description": "Advanced monitor parameters as key=value pairs",
+        "Computed": true
+      },
+      "interval": {
+        "Type": "Int",
+        "Description": "Interval in seconds at which a server is to be monitored",
+        "Computed": true
+      },
+      "max_retries": {
+        "Type": "Int",
+        "Description": "Number of times the specified monitoring Method must fail sequentially before the server is declared down",
+        "Computed": true
+      },
+      "method": {
+        "Type": "String",
+        "Description": "Method to be used to detect server status. One of OPTIONS, GET, HEAD, POST, PUT, DELETE, TRACE, or CONNECT",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "LB Service Monitor name"
+      },
+      "org": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "vCD organization in which the LB Service Monitor is located"
+      },
+      "receive": {
+        "Type": "String",
+        "Description": "String to be matched in the response content",
+        "Computed": true
+      },
+      "send": {
+        "Type": "String",
+        "Description": "Data to be sent",
+        "Computed": true
+      },
+      "timeout": {
+        "Type": "Int",
+        "Description": "Maximum time in seconds within which a response from the server must be received",
+        "Computed": true
+      },
+      "type": {
+        "Type": "String",
+        "Description": "Way in which you want to send the health check request to the server. One of http, https, tcp, icmp, or udp",
+        "Computed": true
+      },
+      "url": {
+        "Type": "String",
+        "Description": "URL to be used in the server status request",
+        "Computed": true
+      },
+      "vdc": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "vCD virtual datacenter in which the LB Service Monitor is located"
+      }
+    },
+    "vcd_lb_virtual_server": {
+      "app_profile_id": {
+        "Type": "String",
+        "Description": "Application profile ID to be associated with the virtual server",
+        "Computed": true
+      },
+      "app_rule_ids": {
+        "Type": "List",
+        "Description": "List of attached application rule IDs",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "connection_limit": {
+        "Type": "Int",
+        "Description": "Maximum concurrent connections that the virtual server can process",
+        "Computed": true
+      },
+      "connection_rate_limit": {
+        "Type": "Int",
+        "Description": "Maximum incoming new connection requests per second",
+        "Computed": true
+      },
+      "description": {
+        "Type": "String",
+        "Description": "Virtual Server description",
+        "Computed": true
+      },
+      "edge_gateway": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Edge gateway name in which the Virtual Server is located"
+      },
+      "enable_acceleration": {
+        "Type": "Bool",
+        "Description": "Enable virtual server acceleration",
+        "Computed": true
+      },
+      "enabled": {
+        "Type": "Bool",
+        "Description": "Defines if the virtual server is enabled",
+        "Computed": true
+      },
+      "ip_address": {
+        "Type": "String",
+        "Description": "IP address that the load balancer listens on",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Virtual Server name for lookup"
+      },
+      "org": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "vCD organization in which the Virtual Server is located"
+      },
+      "port": {
+        "Type": "Int",
+        "Description": "Port number that the load balancer listens on",
+        "Computed": true
+      },
+      "protocol": {
+        "Type": "String",
+        "Description": "Protocol that the virtual server accepts",
+        "Computed": true
+      },
+      "server_pool_id": {
+        "Type": "String",
+        "Description": "The server pool that the load balancer will use",
+        "Computed": true
+      },
+      "vdc": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "vCD virtual datacenter in which the Virtual Server is located"
+      }
+    }
+  }
 }
