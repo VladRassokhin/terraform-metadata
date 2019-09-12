@@ -1,0 +1,821 @@
+{
+  ".schema_version": "1",
+  "name": "exoscale",
+  "type": "provider",
+  "version": "v0.12.1",
+  "provider": {
+    "compute_endpoint": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "Exoscale CloudStack API endpoint (by default: https://api.exoscale.ch/compute)",
+      "DefaultFunc": "MENV(EXOSCALE_ENDPOINT,EXOSCALE_COMPUTE_ENDPOINT,CLOUDSTACK_ENDPOINT)"
+    },
+    "config": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "CloudStack ini configuration filename (by default: cloudstack.ini)",
+      "DefaultFunc": "MENV(EXOSCALE_CONFIG,CLOUDSTACK_CONFIG)"
+    },
+    "delay": {
+      "Type": "Int",
+      "Optional": true,
+      "Deprecated": "Does nothing"
+    },
+    "dns_endpoint": {
+      "Type": "String",
+      "Required": true,
+      "Description": "Exoscale DNS API endpoint (by default: https://api.exoscale.ch/dns)",
+      "DefaultFunc": "ENV(EXOSCALE_DNS_ENDPOINT)"
+    },
+    "gzip_user_data": {
+      "Type": "Bool",
+      "Optional": true,
+      "Description": "Defines if the user-data of compute instances should be gzipped (by default: true)",
+      "DefaultFunc": "ENV(EXOSCALE_GZIP_USER_DATA)"
+    },
+    "key": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "Exoscale API key",
+      "DefaultFunc": "MENV(EXOSCALE_KEY,EXOSCALE_API_KEY,CLOUDSTACK_KEY,CLOUDSTACK_API_KEY)"
+    },
+    "profile": {
+      "Type": "String",
+      "Optional": true,
+      "Deprecated": "Use region instead"
+    },
+    "region": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "CloudStack ini configuration section name (by default: cloudstack)",
+      "DefaultFunc": "MENV(EXOSCALE_PROFILE,EXOSCALE_REGION,CLOUDSTACK_PROFILE,CLOUDSTACK_REGION)"
+    },
+    "secret": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "Exoscale API secret",
+      "DefaultFunc": "MENV(EXOSCALE_SECRET,EXOSCALE_SECRET_KEY,EXOSCALE_API_SECRET,CLOUDSTACK_SECRET,CLOUDSTACK_SECRET_KEY)"
+    },
+    "timeout": {
+      "Type": "Float",
+      "Required": true,
+      "Description": "Timeout in seconds for waiting on compute resources to become available (by default: 300)",
+      "DefaultFunc": "ENV(EXOSCALE_TIMEOUT)"
+    },
+    "token": {
+      "Type": "String",
+      "Optional": true,
+      "Deprecated": "Use key instead"
+    }
+  },
+  "resources": {
+    "exoscale_affinity": {
+      "__timeouts__": [
+        "create",
+        "read",
+        "delete"
+      ],
+      "description": {
+        "Type": "String",
+        "Optional": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true
+      },
+      "type": {
+        "Type": "String",
+        "Optional": true,
+        "Default": {
+          "Type": "string",
+          "Value": "host anti-affinity"
+        }
+      },
+      "virtual_machine_ids": {
+        "Type": "Set",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      }
+    },
+    "exoscale_compute": {
+      "__timeouts__": [
+        "create",
+        "read",
+        "update",
+        "delete"
+      ],
+      "affinity_group_ids": {
+        "Type": "Set",
+        "Optional": true,
+        "Computed": true,
+        "ConflictsWith": [
+          "affinity_groups"
+        ],
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "affinity_groups": {
+        "Type": "Set",
+        "Optional": true,
+        "Computed": true,
+        "ConflictsWith": [
+          "affinity_group_ids"
+        ],
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "disk_size": {
+        "Type": "Int",
+        "Required": true
+      },
+      "display_name": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "gateway": {
+        "Type": "String",
+        "Computed": true
+      },
+      "ip4": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Request an IPv4 address on the default NIC",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "ip6": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Request an IPv6 address on the default NIC",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "ip6_address": {
+        "Type": "String",
+        "Computed": true
+      },
+      "ip6_cidr": {
+        "Type": "String",
+        "Computed": true
+      },
+      "ip_address": {
+        "Type": "String",
+        "Computed": true
+      },
+      "key_pair": {
+        "Type": "String",
+        "Required": true
+      },
+      "keyboard": {
+        "Type": "String",
+        "Optional": true
+      },
+      "name": {
+        "Type": "String",
+        "Computed": true
+      },
+      "password": {
+        "Type": "String",
+        "Computed": true
+      },
+      "security_group_ids": {
+        "Type": "Set",
+        "Optional": true,
+        "Computed": true,
+        "ConflictsWith": [
+          "security_groups"
+        ],
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "security_groups": {
+        "Type": "Set",
+        "Optional": true,
+        "Computed": true,
+        "ConflictsWith": [
+          "security_group_ids"
+        ],
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "size": {
+        "Type": "String",
+        "Optional": true,
+        "Default": {
+          "Type": "string",
+          "Value": "Medium"
+        }
+      },
+      "state": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "tags": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "Map of tags (key: value)",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "template": {
+        "Type": "String",
+        "Required": true
+      },
+      "user_data": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "cloud-init configuration"
+      },
+      "user_data_base64": {
+        "Type": "Bool",
+        "Description": "was the cloud-init configuration base64 encoded",
+        "Computed": true
+      },
+      "username": {
+        "Type": "String",
+        "Computed": true
+      },
+      "zone": {
+        "Type": "String",
+        "Required": true
+      }
+    },
+    "exoscale_domain": {
+      "__timeouts__": [
+        "create",
+        "read",
+        "delete"
+      ],
+      "auto_renew": {
+        "Type": "Bool",
+        "Computed": true
+      },
+      "expires_on": {
+        "Type": "String",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true
+      },
+      "state": {
+        "Type": "String",
+        "Computed": true
+      },
+      "token": {
+        "Type": "String",
+        "Computed": true
+      }
+    },
+    "exoscale_domain_record": {
+      "__timeouts__": [
+        "create",
+        "read",
+        "update",
+        "delete"
+      ],
+      "content": {
+        "Type": "String",
+        "Required": true
+      },
+      "domain": {
+        "Type": "String",
+        "Required": true
+      },
+      "hostname": {
+        "Type": "String",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true
+      },
+      "prio": {
+        "Type": "Int",
+        "Optional": true,
+        "Computed": true
+      },
+      "record_type": {
+        "Type": "String",
+        "Required": true
+      },
+      "ttl": {
+        "Type": "Int",
+        "Optional": true,
+        "Computed": true
+      }
+    },
+    "exoscale_ipaddress": {
+      "__timeouts__": [
+        "create",
+        "read",
+        "update",
+        "delete"
+      ],
+      "healthcheck_interval": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Healthcheck probing interval in seconds"
+      },
+      "healthcheck_mode": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Healthcheck probing mode"
+      },
+      "healthcheck_path": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Healthcheck probe HTTP request path, must be specified in \"http\" mode"
+      },
+      "healthcheck_port": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Healthcheck service port to probe"
+      },
+      "healthcheck_strikes_fail": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Number of unsuccessful healthcheck probes before considering the target unhealthy"
+      },
+      "healthcheck_strikes_ok": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Number of successful healthcheck probes before considering the target healthy"
+      },
+      "healthcheck_timeout": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Time in seconds before considering a healthcheck probing failed"
+      },
+      "ip_address": {
+        "Type": "String",
+        "Computed": true
+      },
+      "tags": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "Map of tags (key: value)",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "zone": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the zone"
+      }
+    },
+    "exoscale_network": {
+      "__timeouts__": [
+        "create",
+        "read",
+        "update",
+        "delete"
+      ],
+      "display_text": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "end_ip": {
+        "Type": "String",
+        "Optional": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true
+      },
+      "netmask": {
+        "Type": "String",
+        "Optional": true
+      },
+      "network_offering": {
+        "Type": "String",
+        "Required": true
+      },
+      "start_ip": {
+        "Type": "String",
+        "Optional": true
+      },
+      "tags": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "Map of tags (key: value)",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "zone": {
+        "Type": "String",
+        "Required": true
+      }
+    },
+    "exoscale_nic": {
+      "__timeouts__": [
+        "create",
+        "read",
+        "update",
+        "delete"
+      ],
+      "compute_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "gateway": {
+        "Type": "String",
+        "Computed": true
+      },
+      "ip_address": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "IP address",
+        "Computed": true
+      },
+      "mac_address": {
+        "Type": "String",
+        "Computed": true
+      },
+      "netmask": {
+        "Type": "String",
+        "Computed": true
+      },
+      "network_id": {
+        "Type": "String",
+        "Required": true
+      }
+    },
+    "exoscale_secondary_ipaddress": {
+      "__timeouts__": [
+        "create",
+        "read",
+        "delete"
+      ],
+      "compute_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "ip_address": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Elastic IP address"
+      },
+      "network_id": {
+        "Type": "String",
+        "Computed": true
+      },
+      "nic_id": {
+        "Type": "String",
+        "Computed": true
+      }
+    },
+    "exoscale_security_group": {
+      "__timeouts__": [
+        "create",
+        "read",
+        "delete"
+      ],
+      "description": {
+        "Type": "String",
+        "Optional": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true
+      },
+      "tags": {
+        "Type": "Map",
+        "Optional": true,
+        "Removed": "Tags cannot be set on security groups for the time being"
+      }
+    },
+    "exoscale_security_group_rule": {
+      "__timeouts__": [
+        "create",
+        "read",
+        "delete"
+      ],
+      "cidr": {
+        "Type": "String",
+        "Optional": true,
+        "ConflictsWith": [
+          "user_security_group"
+        ]
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true
+      },
+      "end_port": {
+        "Type": "Int",
+        "Optional": true,
+        "ConflictsWith": [
+          "icmp_type",
+          "icmp_code"
+        ]
+      },
+      "icmp_code": {
+        "Type": "Int",
+        "Optional": true,
+        "ConflictsWith": [
+          "start_port",
+          "end_port"
+        ]
+      },
+      "icmp_type": {
+        "Type": "Int",
+        "Optional": true,
+        "ConflictsWith": [
+          "start_port",
+          "end_port"
+        ]
+      },
+      "protocol": {
+        "Type": "String",
+        "Optional": true,
+        "Default": {
+          "Type": "string",
+          "Value": "TCP"
+        }
+      },
+      "security_group": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true,
+        "ConflictsWith": [
+          "security_group_id"
+        ]
+      },
+      "security_group_id": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true,
+        "ConflictsWith": [
+          "security_group"
+        ]
+      },
+      "start_port": {
+        "Type": "Int",
+        "Optional": true,
+        "ConflictsWith": [
+          "icmp_type",
+          "icmp_code"
+        ]
+      },
+      "type": {
+        "Type": "String",
+        "Required": true
+      },
+      "user_security_group": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true,
+        "ConflictsWith": [
+          "cidr",
+          "user_security_group_id"
+        ]
+      },
+      "user_security_group_id": {
+        "Type": "String",
+        "Optional": true,
+        "ConflictsWith": [
+          "cidr",
+          "user_security_group"
+        ]
+      }
+    },
+    "exoscale_security_group_rules": {
+      "__timeouts__": [
+        "create",
+        "read",
+        "update",
+        "delete"
+      ],
+      "egress": {
+        "Type": "Set",
+        "Optional": true,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "cidr_list": {
+              "Type": "Set",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "description": {
+              "Type": "String",
+              "Optional": true
+            },
+            "icmp_code": {
+              "Type": "Int",
+              "Optional": true
+            },
+            "icmp_type": {
+              "Type": "Int",
+              "Optional": true
+            },
+            "ids": {
+              "Type": "Set",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "ports": {
+              "Type": "Set",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "protocol": {
+              "Type": "String",
+              "Optional": true,
+              "Default": {
+                "Type": "string",
+                "Value": "TCP"
+              }
+            },
+            "user_security_group_list": {
+              "Type": "Set",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
+      "ingress": {
+        "Type": "Set",
+        "Optional": true,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "cidr_list": {
+              "Type": "Set",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "description": {
+              "Type": "String",
+              "Optional": true
+            },
+            "icmp_code": {
+              "Type": "Int",
+              "Optional": true
+            },
+            "icmp_type": {
+              "Type": "Int",
+              "Optional": true
+            },
+            "ids": {
+              "Type": "Set",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "ports": {
+              "Type": "Set",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "protocol": {
+              "Type": "String",
+              "Optional": true,
+              "Default": {
+                "Type": "string",
+                "Value": "TCP"
+              }
+            },
+            "user_security_group_list": {
+              "Type": "Set",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
+      "security_group": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true,
+        "ConflictsWith": [
+          "security_group_id"
+        ]
+      },
+      "security_group_id": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true,
+        "ConflictsWith": [
+          "security_group"
+        ]
+      }
+    },
+    "exoscale_ssh_keypair": {
+      "__timeouts__": [
+        "create",
+        "read",
+        "delete"
+      ],
+      "fingerprint": {
+        "Type": "String",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true
+      },
+      "private_key": {
+        "Type": "String",
+        "Computed": true
+      },
+      "public_key": {
+        "Type": "String",
+        "Optional": true
+      }
+    }
+  },
+  "data-sources": {
+    "exoscale_compute_template": {
+      "filter": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Template filter to apply",
+        "Default": {
+          "Type": "string",
+          "Value": "featured"
+        }
+      },
+      "id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "ID of the template",
+        "ConflictsWith": [
+          "name"
+        ]
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Name of the template",
+        "ConflictsWith": [
+          "id"
+        ]
+      },
+      "username": {
+        "Type": "String",
+        "Description": "Username for logging into a compute instance based on this template",
+        "Computed": true
+      },
+      "zone": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the zone"
+      }
+    }
+  }
+}

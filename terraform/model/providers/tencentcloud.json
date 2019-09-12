@@ -2,7 +2,7 @@
   ".schema_version": "1",
   "name": "tencentcloud",
   "type": "provider",
-  "version": "v1.14.0",
+  "version": "v1.18.0",
   "provider": {
     "region": {
       "Type": "String",
@@ -31,6 +31,7 @@
         "Required": true,
         "MaxItems": 100,
         "MinItems": 1,
+        "IsBlock": true,
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
@@ -184,6 +185,7 @@
         "Optional": true,
         "Description": "Configurations of data disk.",
         "MaxItems": 11,
+        "IsBlock": true,
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
@@ -383,6 +385,7 @@
         "ConflictsWith": [
           "load_balancer_ids"
         ],
+        "IsBlock": true,
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
@@ -396,7 +399,7 @@
               "Required": true,
               "Description": "ID of available load balancers."
             },
-            "location_id": {
+            "rule_id": {
               "Type": "String",
               "Optional": true,
               "Description": "ID of forwarding rules."
@@ -405,6 +408,7 @@
               "Type": "List",
               "Required": true,
               "Description": "Attribute list of target rules.",
+              "IsBlock": true,
               "Elem": {
                 "Type": "SchemaInfo",
                 "Info": {
@@ -870,6 +874,346 @@
         "Description": "Limitation of region."
       }
     },
+    "tencentcloud_clb_attachment": {
+      "clb_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Id of the clb."
+      },
+      "listener_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Id of the clb listener."
+      },
+      "protocol_type": {
+        "Type": "String",
+        "Description": "Type of protocol within the listener.",
+        "Computed": true
+      },
+      "rule_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Id of the clb listener rule. Only supports listeners of 'HTTPS' and 'HTTP' protocol."
+      },
+      "targets": {
+        "Type": "Set",
+        "Required": true,
+        "Description": "Information of the backends to be attached.",
+        "MaxItems": 100,
+        "MinItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "instance_id": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Id of the backend server."
+            },
+            "port": {
+              "Type": "Int",
+              "Required": true,
+              "Description": "Port of the backend server."
+            },
+            "weight": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "Forwarding weight of the backend service, the range of [0, 100], defaults to 10.",
+              "Default": {
+                "Type": "int",
+                "Value": "10"
+              }
+            }
+          }
+        }
+      }
+    },
+    "tencentcloud_clb_instance": {
+      "clb_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the CLB. The name can only contain Chinese characters, English letters, numbers, underscore and hyphen '-'."
+      },
+      "clb_vips": {
+        "Type": "List",
+        "Description": "The virtual service address table of the CLB.",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "network_type": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Type of CLB instance, and available values include 'OPEN' and 'INTERNAL'."
+      },
+      "project_id": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Id of the project within the CLB instance, '0' - Default Project.",
+        "Default": {
+          "Type": "int",
+          "Value": "0"
+        }
+      },
+      "security_groups": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Security groups of the CLB instance. Only supports 'OPEN' CLBs.",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "subnet_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Subnet id of the CLB. Effective only for CLB within the VPC. Only supports 'INTERNAL' CLBs."
+      },
+      "tags": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "The available tags within this CLB."
+      },
+      "target_region_info_region": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Region information of backend services are attached the CLB instance. Only supports 'OPEN' CLBs.",
+        "Computed": true
+      },
+      "target_region_info_vpc_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Vpc information of backend services are attached the CLB instance. Only supports 'OPEN' CLBs.",
+        "Computed": true
+      },
+      "vpc_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "VPC id of the CLB.",
+        "Computed": true
+      }
+    },
+    "tencentcloud_clb_listener": {
+      "certificate_ca_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Id of the client certificate. NOTES: Only supports listeners of 'HTTPS' and 'TCP_SSL' protocol and must be set when the ssl mode is 'MUTUAL'."
+      },
+      "certificate_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Id of the server certificate. NOTES: Only supports listeners of 'HTTPS' and 'TCP_SSL' protocol and must be set when it is available."
+      },
+      "certificate_ssl_mode": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Type of certificate, and available values inclue 'UNIDIRECTIONAL', 'MUTUAL'. NOTES: Only supports listeners of 'HTTPS' and 'TCP_SSL' protocol and must be set when it is available."
+      },
+      "clb_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Id of the CLB."
+      },
+      "health_check_health_num": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Health threshold of health check, and the default is 3. If a success result is returned for the health check for 3 consecutive times, the backend CVM is identified as healthy. The value range is 2-10. NOTES: TCP/UDP/TCP_SSL listener allows direct configuration, HTTP/HTTPS listener needs to be configured in tencentcloud_clb_listener_rule.",
+        "Computed": true
+      },
+      "health_check_interval_time": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Interval time of health check. The value range is 5-300 sec, and the default is 5 sec. NOTES: TCP/UDP/TCP_SSL listener allows direct configuration, HTTP/HTTPS listener needs to be configured in tencentcloud_clb_listener_rule.",
+        "Computed": true
+      },
+      "health_check_switch": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Indicates whether health check is enabled.",
+        "Computed": true
+      },
+      "health_check_time_out": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Response timeout of health check. The value range is 2-60 sec, and the default is 2 sec. Response timeout needs to be less than check interval. NOTES: Only supports listeners of 'TCP','UDP','TCP_SSL' protocol.",
+        "Computed": true
+      },
+      "health_check_unhealth_num": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Unhealth threshold of health check, and the default is 3. If a success result is returned for the health check 3 consecutive times, the CVM is identified as unhealthy. The value range is 2-10. NOTES: TCP/UDP/TCP_SSL listener allows direct configuration, HTTP/HTTPS listener needs to be configured in tencentcloud_clb_listener_rule.",
+        "Computed": true
+      },
+      "listener_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the CLB listener, and available values can only be Chinese characters, English letters, numbers, underscore and hyphen '-'."
+      },
+      "port": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Port of the CLB listener."
+      },
+      "protocol": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Type of protocol within the listener, and available values include 'TCP', 'UDP', 'HTTP', 'HTTPS' and 'TCP_SSL'."
+      },
+      "scheduler": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Scheduling method of the CLB listener, and available values include 'WRR' and 'LEAST_CONN'. The default is 'WRR'. NOTES: The listener of HTTP and 'HTTPS' protocol additionally supports the 'IP Hash' method. NOTES: TCP/UDP/TCP_SSL listener allows direct configuration, HTTP/HTTPS listener needs to be configured in tencentcloud_clb_listener_rule.",
+        "Default": {
+          "Type": "string",
+          "Value": "WRR"
+        }
+      },
+      "session_expire_time": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Time of session persistence within the CLB listener. NOTES: Available when scheduler is specified as 'WRR', and not available when listener protocol is 'TCP_SSL'. NOTES: TCP/UDP/TCP_SSL listener allows direct configuration, HTTP/HTTPS listener needs to be configured in tencentcloud_clb_listener_rule."
+      },
+      "sni_switch": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Indicates whether SNI is enabled, and only supported with protocol 'HTTPS'. If enabled, you can set a certificate for each rule in `tencentcloud_clb_listener_rule`, otherwise all rules have a certificate."
+      }
+    },
+    "tencentcloud_clb_listener_rule": {
+      "certificate_ca_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Id of the client certificate. NOTES: Only supports listeners of 'HTTPS' protocol."
+      },
+      "certificate_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Id of the server certificate. NOTES: Only supports listeners of 'HTTPS' protocol."
+      },
+      "certificate_ssl_mode": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Type of certificate, and available values inclue 'UNIDIRECTIONAL', 'MUTUAL'. NOTES: Only supports listeners of 'HTTPS' protocol."
+      },
+      "clb_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Id of CLB instance."
+      },
+      "domain": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Domain name of the listener rule."
+      },
+      "health_check_health_num": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Health threshold of health check, and the default is 3. If a success result is returned for the health check 3 consecutive times, indicates that the forwarding is normal. The value range is 2-10. NOTES: TCP/UDP/TCP_SSL listener allows direct configuration, HTTP/HTTPS listener needs to be configured in tencentcloud_clb_listener_rule.",
+        "Computed": true
+      },
+      "health_check_http_code": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "HTTP Status Code. The default is 31 and value range is 1-31. '0b0001' means the return value '1xx' is health. '0b0010' means the return value '2xx' is health. '0b0100' means the return value '3xx' is health. '0b1000' means the return value '4xx' is health. 0b10000 means the return value '5xx' is health. If you want multiple return codes to indicate health, need to add the corresponding values. NOTES: The 'HTTP' health check of the 'TCP' listener only supports specifying one health check status code. NOTES: Only supports listeners of 'HTTP' and 'HTTPS' protocol.",
+        "Computed": true
+      },
+      "health_check_http_domain": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Domain name of health check. NOTES: Only supports listeners of 'HTTP' and 'HTTPS' protocol.",
+        "Computed": true
+      },
+      "health_check_http_method": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Methods of health check. NOTES: Only supports listeners of 'HTTP' and 'HTTPS' protocol. The default is 'HEAD', the available value include 'HEAD' and 'GET'.",
+        "Computed": true
+      },
+      "health_check_http_path": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Path of health check. NOTES: Only supports listeners of 'HTTP' and 'HTTPS' protocol.",
+        "Computed": true
+      },
+      "health_check_interval_time": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Interval time of health check. The value range is 5-300 sec, and the default is 5 sec. NOTES: TCP/UDP/TCP_SSL listener allows direct configuration, HTTP/HTTPS listener needs to be configured in tencentcloud_clb_listener_rule.",
+        "Computed": true
+      },
+      "health_check_switch": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Indicates whether health check is enabled.",
+        "Computed": true
+      },
+      "health_check_unhealth_num": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Unhealth threshold of health check, and the default is 3. If the unhealth result is returned 3 consecutive times, indicates that the forwarding is abnormal. The value range is 2-10.  NOTES: TCP/UDP/TCP_SSL listener allows direct configuration, HTTP/HTTPS listener needs to be configured in tencentcloud_clb_listener_rule.",
+        "Computed": true
+      },
+      "listener_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Id of CLB listener."
+      },
+      "scheduler": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Scheduling method of the CLB listener rules, and available values include 'WRR', 'IP HASH' and 'LEAST_CONN'. The default is 'WRR'.  NOTES: TCP/UDP/TCP_SSL listener allows direct configuration, HTTP/HTTPS listener needs to be configured in tencentcloud_clb_listener_rule.",
+        "Default": {
+          "Type": "string",
+          "Value": "WRR"
+        }
+      },
+      "session_expire_time": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Time of session persistence within the CLB listener. NOTES: Available when scheduler is specified as 'WRR', and not available when listener protocol is 'TCP_SSL'.  NOTES: TCP/UDP/TCP_SSL listener allows direct configuration, HTTP/HTTPS listener needs to be configured in tencentcloud_clb_listener_rule."
+      },
+      "url": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Url of the listener rule."
+      }
+    },
+    "tencentcloud_clb_redirection": {
+      "clb_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Id of CLB instance."
+      },
+      "is_auto_rewrite": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Indicates whether automatic forwarding is enable, default is false. If enabled, the source listener and location should be empty, the target listener must be https protocol and port is 443."
+      },
+      "source_listener_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Id of source listener.",
+        "Computed": true
+      },
+      "source_rule_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Rule id of source listener.",
+        "Computed": true
+      },
+      "target_listener_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Id of source listener."
+      },
+      "target_rule_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Rule id of target listener."
+      }
+    },
     "tencentcloud_container_cluster": {
       "bandwidth": {
         "Type": "Int",
@@ -1141,6 +1485,7 @@
         "Type": "List",
         "Optional": true,
         "Description": "A rule of Cross-Origin Resource Sharing (documented below).",
+        "IsBlock": true,
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
@@ -1192,6 +1537,7 @@
         "Type": "List",
         "Optional": true,
         "Description": " A configuration of object lifecycle management (documented below).",
+        "IsBlock": true,
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
@@ -1200,6 +1546,7 @@
               "Optional": true,
               "Description": "Specifies a period in the object's expire (documented below).",
               "MaxItems": 1,
+              "IsBlock": true,
               "Elem": {
                 "Type": "SchemaInfo",
                 "Info": {
@@ -1225,6 +1572,7 @@
               "Type": "Set",
               "Optional": true,
               "Description": "Specifies a period in the object's transitions (documented below).",
+              "IsBlock": true,
               "Elem": {
                 "Type": "SchemaInfo",
                 "Info": {
@@ -1254,6 +1602,7 @@
         "Optional": true,
         "Description": "A website object(documented below).",
         "MaxItems": 1,
+        "IsBlock": true,
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
@@ -1501,33 +1850,45 @@
       }
     },
     "tencentcloud_dnat": {
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Description of the nat forward."
+      },
       "elastic_ip": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "Network address of the eip."
       },
       "elastic_port": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": " Port of the eip."
       },
       "nat_id": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "ID of the nat."
       },
       "private_ip": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "Network address of the backend service."
       },
       "private_port": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "Port of intranet."
       },
       "protocol": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "Type of the network protocol, the available values include： TCP and UDP."
       },
       "vpc_id": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "ID of the vpc."
       }
     },
     "tencentcloud_eip": {
@@ -1576,34 +1937,655 @@
         ]
       }
     },
+    "tencentcloud_gaap_certificate": {
+      "begin_time": {
+        "Type": "String",
+        "Description": "Beginning time of the certificate.",
+        "Computed": true
+      },
+      "content": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Content of the certificate, and URL encoding. When the certificate is basic authentication, use the `user:xxx password:xxx` format, where the password is encrypted with `htpasswd` or `openssl`; When the certificate is `CA` or `SSL`, the format is `pem`."
+      },
+      "create_time": {
+        "Type": "String",
+        "Description": "Creation time of the certificate.",
+        "Computed": true
+      },
+      "end_time": {
+        "Type": "String",
+        "Description": "Ending time of the certificate.",
+        "Computed": true
+      },
+      "issuer_cn": {
+        "Type": "String",
+        "Description": "Issuer name of the certificate.",
+        "Computed": true
+      },
+      "key": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Key of the `CA` or `SSL` certificate."
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Name of the certificate.",
+        "Default": {
+          "Type": "string"
+        }
+      },
+      "subject_cn": {
+        "Type": "String",
+        "Description": "Subject name of the certificate.",
+        "Computed": true
+      },
+      "type": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Type of the certificate. Available values include: `BASIC`,`CLIENT`,`SERVER`,`REALSERVER` and `PROXY`; `BASIC` means basic certificate; `CLIENT` means client CA certificate; `SERVER` means server SSL certificate; `REALSERVER` means realserver CA certificate; `PROXY` means proxy SSL certificate."
+      }
+    },
+    "tencentcloud_gaap_http_domain": {
+      "basic_auth": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Indicates whether basic authentication is enable, default is `false`.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "basic_auth_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "ID of the basic authentication."
+      },
+      "certificate_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "ID of the server certificate, default value is `default`.",
+        "Default": {
+          "Type": "string",
+          "Value": "default"
+        }
+      },
+      "client_certificate_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "ID of the client certificate, default value is `default`.",
+        "Default": {
+          "Type": "string",
+          "Value": "default"
+        }
+      },
+      "domain": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Forward domain of the layer7 listener."
+      },
+      "gaap_auth": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Indicates whether SSL certificate authentication is enable, default is `false`.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "gaap_auth_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "ID of the SSL certificate."
+      },
+      "listener_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "ID of the layer7 listener."
+      },
+      "realserver_auth": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Indicates whether realserver authentication is enable, default is `false`.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "realserver_certificate_domain": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "CA certificate domain of the realserver."
+      },
+      "realserver_certificate_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "CA certificate ID of the realserver."
+      }
+    },
+    "tencentcloud_gaap_http_rule": {
+      "connect_timeout": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Timeout of the health check response, default is 2s.",
+        "Default": {
+          "Type": "int",
+          "Value": "2"
+        }
+      },
+      "domain": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Forward rule domain of the layer7 listener."
+      },
+      "health_check": {
+        "Type": "Bool",
+        "Required": true,
+        "Description": "Indicates whether health check is enable."
+      },
+      "health_check_method": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Method of the health check. Available values includes `GET` and `HEAD`.",
+        "Default": {
+          "Type": "string",
+          "Value": "HEAD"
+        }
+      },
+      "health_check_path": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Path of health check. Maximum length is 80.",
+        "Default": {
+          "Type": "string",
+          "Value": "/"
+        }
+      },
+      "health_check_status_codes": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Return code of confirmed normal. Available values includes `100`,`200`,`300`,`400` and `500`.",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "Int"
+        }
+      },
+      "interval": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Interval of the health check, default is 5s.",
+        "Default": {
+          "Type": "int",
+          "Value": "5"
+        }
+      },
+      "listener_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "ID of the layer7 listener."
+      },
+      "path": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Path of the forward rule. Maximum length is 80."
+      },
+      "realserver_type": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Type of the realserver, and the available values include `IP`,`DOMAIN`."
+      },
+      "realservers": {
+        "Type": "Set",
+        "Required": true,
+        "Description": "An information list of GAAP realserver. Each element contains the following attributes:",
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "id": {
+              "Type": "String",
+              "Required": true,
+              "Description": "ID of the GAAP realserver."
+            },
+            "ip": {
+              "Type": "String",
+              "Required": true,
+              "Description": "IP of the GAAP realserver."
+            },
+            "port": {
+              "Type": "Int",
+              "Required": true,
+              "Description": "Port of the GAAP realserver."
+            },
+            "weight": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "Scheduling weight, default is 1. The range of values is [1,100].",
+              "Default": {
+                "Type": "int",
+                "Value": "1"
+              }
+            }
+          }
+        }
+      },
+      "scheduler": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Scheduling policy of the layer4 listener, default is `rr`. Available values include `rr`,`wrr` and `lc`.",
+        "Default": {
+          "Type": "string",
+          "Value": "rr"
+        }
+      }
+    },
+    "tencentcloud_gaap_layer4_listener": {
+      "connect_timeout": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Timeout of the health check response, should less than interval, default is 2s. NOTES: Only supports listeners of `TCP` protocol and require less than `interval`.",
+        "Default": {
+          "Type": "int",
+          "Value": "2"
+        }
+      },
+      "create_time": {
+        "Type": "String",
+        "Description": "Creation time of the layer4 listener.",
+        "Computed": true
+      },
+      "health_check": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Indicates whether health check is enable, default is false. NOTES: Only supports listeners of `TCP` protocol.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "interval": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Interval of the health check, default is 5s. NOTES: Only supports listeners of `TCP` protocol.",
+        "Default": {
+          "Type": "int",
+          "Value": "5"
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the layer4 listener, the maximum length is 30."
+      },
+      "port": {
+        "Type": "Int",
+        "Required": true,
+        "Description": "Port of the layer4 listener."
+      },
+      "protocol": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Protocol of the layer4 listener, and the available values include `TCP` and `UDP`."
+      },
+      "proxy_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "ID of the GAAP proxy."
+      },
+      "realserver_bind_set": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "An information list of GAAP realserver. Each element contains the following attributes:",
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "id": {
+              "Type": "String",
+              "Required": true,
+              "Description": "ID of the GAAP realserver."
+            },
+            "ip": {
+              "Type": "String",
+              "Required": true,
+              "Description": "IP of the GAAP realserver."
+            },
+            "port": {
+              "Type": "Int",
+              "Required": true,
+              "Description": "Port of the GAAP realserver."
+            },
+            "weight": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "Scheduling weight, default is 1. The range of values is [1,100].",
+              "Default": {
+                "Type": "int",
+                "Value": "1"
+              }
+            }
+          }
+        }
+      },
+      "realserver_type": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Type of the realserver, and the available values include `IP`,`DOMAIN`. NOTES: when the `protocol` is specified as `TCP` and the `scheduler` is specified as `wrr`, the item can only be set to `IP`."
+      },
+      "scheduler": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Scheduling policy of the layer4 listener, default is `rr`. Available values include `rr`,`wrr` and `lc`.",
+        "Default": {
+          "Type": "string",
+          "Value": "rr"
+        }
+      },
+      "status": {
+        "Type": "Int",
+        "Description": "Status of the layer4 listener.",
+        "Computed": true
+      }
+    },
+    "tencentcloud_gaap_layer7_listener": {
+      "auth_type": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Authentication type of the layer7 listener. `0` is one-way authentication and `1` is mutual authentication. NOTES: Only supports listeners of `HTTPS` protocol."
+      },
+      "certificate_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Certificate ID of the layer7 listener. NOTES: Only supports listeners of `HTTPS` protocol.",
+        "Default": {
+          "Type": "string"
+        }
+      },
+      "client_certificate_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "ID of the client certificate. Set only when `auth_type` is specified as mutual authentication.  NOTES: Only supports listeners of `HTTPS` protocol.",
+        "Default": {
+          "Type": "string"
+        }
+      },
+      "create_time": {
+        "Type": "String",
+        "Description": "Creation time of the layer7 listener.",
+        "Computed": true
+      },
+      "forward_protocol": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Protocol type of the forwarding, the available values include `HTTP` and `HTTPS`. NOTES: Only supports listeners of `HTTPS` protocol."
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the layer7 listener, the maximum length is 30."
+      },
+      "port": {
+        "Type": "Int",
+        "Required": true,
+        "Description": "Port of the layer7 listener."
+      },
+      "protocol": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Protocol of the layer7 listener, and the available values include `HTTP` and `HTTPS`."
+      },
+      "proxy_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "ID of the GAAP proxy."
+      },
+      "status": {
+        "Type": "Int",
+        "Description": "Status of the layer7 listener.",
+        "Computed": true
+      }
+    },
+    "tencentcloud_gaap_proxy": {
+      "access_region": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Access region of the GAAP proxy. The available values include `NorthChina`, `EastChina`, `SouthChina`, `SouthwestChina`, `Hongkong`, `SL_TAIWAN`, `SoutheastAsia`, `Korea`, `SL_India`, `SL_Australia`, `Europe`, `SL_UK`, `SL_SouthAmerica`, `NorthAmerica`, `SL_MiddleUSA`, `Canada`, `SL_VIET`, `WestIndia`, `Thailand`, `Virginia`, `Russia`, `Japan`, `SL_Indonesia`"
+      },
+      "bandwidth": {
+        "Type": "Int",
+        "Required": true,
+        "Description": "Maximum bandwidth of the GAAP proxy, unit is Mbps. The available values include `10`,`20`,`50`,`100`,`200`,`500`,`1000`."
+      },
+      "concurrent": {
+        "Type": "Int",
+        "Required": true,
+        "Description": "Maximum concurrency of the GAAP proxy, unit is 10k. The available values include `2`,`5`,`10`,`20`,`30`,`40`,`50`,`60`,`70`,`80`,`90`,`100`."
+      },
+      "create_time": {
+        "Type": "String",
+        "Description": "Creation time of the GAAP proxy.",
+        "Computed": true
+      },
+      "domain": {
+        "Type": "String",
+        "Description": "Access domain of the GAAP proxy.",
+        "Computed": true
+      },
+      "enable": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Indicates whether GAAP proxy is enabled, default is true.",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "forward_ip": {
+        "Type": "String",
+        "Description": "Forwarding IP of the GAAP proxy.",
+        "Computed": true
+      },
+      "ip": {
+        "Type": "String",
+        "Description": "Access IP of the GAAP proxy.",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the GAAP proxy, the maximum length is 30."
+      },
+      "project_id": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "ID of the project within the GAAP proxy, '0' means is Default Project.",
+        "Default": {
+          "Type": "int",
+          "Value": "0"
+        }
+      },
+      "realserver_region": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Region of the GAAP realserver. The available values include `NorthChina`, `EastChina`, `SouthChina`, `SouthwestChina`, `Hongkong`, `SL_TAIWAN`, `SoutheastAsia`, `Korea`, `SL_India`, `SL_Australia`, `Europe`, `SL_UK`, `SL_SouthAmerica`, `NorthAmerica`, `SL_MiddleUSA`, `Canada`, `SL_VIET`, `WestIndia`, `Thailand`, `Virginia`, `Russia`, `Japan`, `SL_Indonesia`"
+      },
+      "scalable": {
+        "Type": "Bool",
+        "Description": "Indicates whether GAAP proxy can scalable.",
+        "Computed": true
+      },
+      "status": {
+        "Type": "String",
+        "Description": "Status of the GAAP proxy.",
+        "Computed": true
+      },
+      "support_protocols": {
+        "Type": "List",
+        "Description": "Supported protocols of the GAAP proxy.",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "tags": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "Tags of the GAAP proxy."
+      }
+    },
+    "tencentcloud_gaap_realserver": {
+      "domain": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Domain of the GAAP realserver, conflict with `ip`.",
+        "ConflictsWith": [
+          "ip"
+        ]
+      },
+      "ip": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "IP of the GAAP realserver, conflict with `domain`.",
+        "ConflictsWith": [
+          "domain"
+        ]
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the GAAP realserver, the maximum length is 30."
+      },
+      "project_id": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "ID of the project within the GAAP realserver, '0' means is Default Project.",
+        "Default": {
+          "Type": "int",
+          "Value": "0"
+        }
+      },
+      "tags": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "Tags of the GAAP realserver."
+      }
+    },
+    "tencentcloud_gaap_security_policy": {
+      "action": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Default policy, the available values includes `ACCEPT` and `DROP`."
+      },
+      "enable": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Indicates whether policy is enable, default is true.",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "proxy_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "ID of the GAAP proxy."
+      }
+    },
+    "tencentcloud_gaap_security_rule": {
+      "action": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Policy of the rule, the available values includes `ACCEPT` and `DROP`."
+      },
+      "cidr_ip": {
+        "Type": "String",
+        "Required": true,
+        "Description": "A network address block of the request source."
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Name of the security policy rule. Maximum length is 30.",
+        "Default": {
+          "Type": "string"
+        }
+      },
+      "policy_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "ID of the security policy."
+      },
+      "port": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Target port. Available values includes `80`,`80,443`,`3306-20000`.",
+        "Default": {
+          "Type": "string",
+          "Value": "ALL"
+        }
+      },
+      "protocol": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Protocol of the security policy rule. Default is `ALL`, the available values includes `TCP`,`UDP` and `ALL`.",
+        "Default": {
+          "Type": "string",
+          "Value": "ALL"
+        }
+      }
+    },
     "tencentcloud_instance": {
       "allocate_public_ip": {
         "Type": "Bool",
         "Optional": true,
-        "Computed": true
+        "Description": "Associate a public ip address with an instance in a VPC or Classic. Boolean value, Default is false.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
       },
       "availability_zone": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "The available zone that the CVM instance locates at."
+      },
+      "create_time": {
+        "Type": "String",
+        "Description": "Create time of the instance.",
+        "Computed": true
       },
       "data_disks": {
         "Type": "List",
         "Optional": true,
+        "Description": "Settings for data disk.",
         "Computed": true,
+        "MaxItems": 10,
+        "IsBlock": true,
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
+            "data_disk_id": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Data disk snapshot ID used to initialize the data disk. When data disk type is `LOCAL_BASIC` and `LOCAL_SSD`, disk id is not supported.",
+              "Computed": true
+            },
             "data_disk_size": {
               "Type": "Int",
-              "Optional": true
+              "Required": true,
+              "Description": "Size of the system disk. Value range: [50, 16000], and unit is GB."
             },
             "data_disk_type": {
               "Type": "String",
-              "Optional": true
+              "Required": true,
+              "Description": "Type of the data disk. Valid values are `LOCAL_BASIC`, `LOCAL_SSD`, `CLOUD_BASIC`, `CLOUD_SSD` and `CLOUD_PREMIUM`. NOTE: `LOCAL_BASIC` and `LOCAL_SSD` are deprecated."
             },
             "delete_with_instance": {
               "Type": "Bool",
               "Optional": true,
+              "Description": "Decides whether the disk is deleted with instance(only applied to cloud disk), default to true.",
               "Default": {
                 "Type": "bool",
                 "Value": "true"
@@ -1614,35 +2596,60 @@
       },
       "disable_monitor_service": {
         "Type": "Bool",
-        "Optional": true
+        "Optional": true,
+        "Description": "Disable enhance service for monitor, it is enabled by default. When this options is set, monitor agent won't be installed.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
       },
       "disable_security_service": {
         "Type": "Bool",
-        "Optional": true
+        "Optional": true,
+        "Description": "Disable enhance service for security, it is enabled by default. When this options is set, security agent won't be installed.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "expired_time": {
+        "Type": "String",
+        "Description": "Expired time of the instance.",
+        "Computed": true
       },
       "hostname": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Description": "The hostname of CVM."
       },
       "image_id": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "The Image to use for the instance. Change 'image_id' will case instance destroy and re-created."
       },
       "instance_charge_type": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Description": "The charge type of instance. Valid values are `PREPAID`, `POSTPAID_BY_HOUR` and `SPOTPAID`, The default is `POSTPAID_BY_HOUR`.",
+        "Default": {
+          "Type": "string",
+          "Value": "POSTPAID_BY_HOUR"
+        }
       },
       "instance_charge_type_prepaid_period": {
         "Type": "Int",
-        "Optional": true
+        "Optional": true,
+        "Description": "The tenancy (time unit is month) of the prepaid instance, NOTE: it only works when instance_charge_type is set to `PREPAID`. Valid values are 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 24, 36."
       },
       "instance_charge_type_prepaid_renew_flag": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Description": "When enabled, the CVM instance will be renew automatically when it reach the end of the prepaid tenancy. Valid values are `NOTIFY_AND_AUTO_RENEW`, `NOTIFY_AND_MANUAL_RENEW` and `DISABLE_NOTIFY_AND_MANUAL_RENEW`. NOTE: it only works when instance_charge_type is set to `PREPAID`."
       },
       "instance_name": {
         "Type": "String",
         "Optional": true,
+        "Description": "The name of the CVM. The max length of instance_name is 60, and default value is `Terrafrom-CVM-Instance`.",
         "Default": {
           "Type": "string",
           "Value": "Terrafrom-CVM-Instance"
@@ -1650,46 +2657,77 @@
       },
       "instance_status": {
         "Type": "String",
+        "Description": "Current status of the instance.",
         "Computed": true
       },
       "instance_type": {
         "Type": "String",
         "Optional": true,
+        "Description": "The type of instance to start.",
         "Computed": true
       },
       "internet_charge_type": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Description": "Internet charge type of the instance, Valid values are `BANDWIDTH_PREPAID`, `TRAFFIC_POSTPAID_BY_HOUR`, `BANDWIDTH_POSTPAID_BY_HOUR` and `BANDWIDTH_PACKAGE`. The default is `TRAFFIC_POSTPAID_BY_HOUR`.",
+        "Default": {
+          "Type": "string",
+          "Value": "TRAFFIC_POSTPAID_BY_HOUR"
+        }
       },
       "internet_max_bandwidth_out": {
         "Type": "Int",
-        "Optional": true
+        "Optional": true,
+        "Description": "Maximum outgoing bandwidth to the public network, measured in Mbps (Mega bit per second). Value range: [0, 100], If this value is not specified, then automatically sets it to 0 Mbps.",
+        "Default": {
+          "Type": "int",
+          "Value": "0"
+        }
       },
       "key_name": {
         "Type": "String",
         "Optional": true,
+        "Description": "The key pair to use for the instance, it looks like skey-16jig7tx.",
         "Computed": true
       },
       "password": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Description": "Password to an instance. In order to take effect new password, the instance will be restarted after modifying the password."
       },
       "private_ip": {
         "Type": "String",
         "Optional": true,
+        "Description": "The private ip to be assigned to this instance, must be in the provided subnet and available.",
         "Computed": true
       },
       "project_id": {
         "Type": "Int",
-        "Optional": true
+        "Optional": true,
+        "Description": "The project CVM belongs to, default to 0.",
+        "Default": {
+          "Type": "int",
+          "Value": "0"
+        }
       },
       "public_ip": {
         "Type": "String",
+        "Description": "Public ip of the instance.",
         "Computed": true
+      },
+      "running_flag": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Set instance to running or stop. Default value is true, the instance will shutdown when flag is false.",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
       },
       "security_groups": {
         "Type": "Set",
         "Optional": true,
+        "Description": "A list of security group ids to associate with.",
         "Computed": true,
         "Elem": {
           "Type": "SchemaElements",
@@ -1699,25 +2737,42 @@
       "subnet_id": {
         "Type": "String",
         "Optional": true,
+        "Description": "The id of a VPC subnetwork. If you want to create instances in VPC network, this parameter must be set.",
+        "Computed": true
+      },
+      "system_disk_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "System disk snapshot ID used to initialize the system disk. When system disk type is `LOCAL_BASIC` and `LOCAL_SSD`, disk id is not supported.",
         "Computed": true
       },
       "system_disk_size": {
         "Type": "Int",
         "Optional": true,
-        "Computed": true
+        "Description": "Size of the system disk. Value range: [50, 1000], and unit is GB. Default is 50GB.",
+        "Default": {
+          "Type": "int",
+          "Value": "50"
+        }
       },
       "system_disk_type": {
         "Type": "String",
         "Optional": true,
-        "Computed": true
+        "Description": "Type of the system disk. Valid values are `LOCAL_BASIC`, `LOCAL_SSD`, `CLOUD_BASIC`, `CLOUD_SSD` and `CLOUD_PREMIUM`, default value is `CLOUD_BASIC`. NOTE: `LOCAL_BASIC` and `LOCAL_SSD` are deprecated.",
+        "Default": {
+          "Type": "string",
+          "Value": "CLOUD_BASIC"
+        }
       },
       "tags": {
         "Type": "Map",
-        "Optional": true
+        "Optional": true,
+        "Description": "A mapping of tags to assign to the resource. For tag limits, please refer to [Use Limits](https://intl.cloud.tencent.com/document/product/651/13354)."
       },
       "user_data": {
         "Type": "String",
         "Optional": true,
+        "Description": "The user data to be specified into this instance. Must be encrypted in base64 format and limited in 16 KB.",
         "ConflictsWith": [
           "user_data_raw"
         ]
@@ -1725,6 +2780,7 @@
       "user_data_raw": {
         "Type": "String",
         "Optional": true,
+        "Description": "The user data to be specified into this instance, plain text. Conflicts with `user_data`. Limited in 16 KB after encrypted in base64 format.",
         "ConflictsWith": [
           "user_data"
         ]
@@ -1732,6 +2788,7 @@
       "vpc_id": {
         "Type": "String",
         "Optional": true,
+        "Description": "The id of a VPC network. If you want to create instances in VPC network, this parameter must be set.",
         "Computed": true
       }
     },
@@ -1743,6 +2800,682 @@
       "public_key": {
         "Type": "String",
         "Optional": true
+      }
+    },
+    "tencentcloud_kubernetes_cluster": {
+      "cluster_cidr": {
+        "Type": "String",
+        "Required": true,
+        "Description": "A network address block of the cluster. Different from vpc cidr and cidr of other clusters within this vpc. Must be in  10./192.168/172.[16-31] segments."
+      },
+      "cluster_deploy_type": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Deployment type of the cluster, the available values include: 'MANAGED_CLUSTER' and 'INDEPENDENT_CLUSTER', Default is 'MANAGED_CLUSTER'.",
+        "Default": {
+          "Type": "string",
+          "Value": "MANAGED_CLUSTER"
+        }
+      },
+      "cluster_desc": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Description of the cluster."
+      },
+      "cluster_ipvs": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Indicates whether ipvs is enabled. Default is true.",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "cluster_max_pod_num": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The maximum number of Pods per node in the cluster. Default is 256. Must be a multiple of 16 and large than 32.",
+        "Default": {
+          "Type": "int",
+          "Value": "256"
+        }
+      },
+      "cluster_max_service_num": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The maximum number of services in the cluster. Default is 256. Must be a multiple of 16.",
+        "Default": {
+          "Type": "int",
+          "Value": "256"
+        }
+      },
+      "cluster_name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Name of the cluster."
+      },
+      "cluster_node_num": {
+        "Type": "Int",
+        "Description": "Number of nodes in the cluster.",
+        "Computed": true
+      },
+      "cluster_os": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Operating system of the cluster, the available values include: 'centos7.2x86_64' and 'ubuntu16.04.1 LTSx86_64'. Default is 'ubuntu16.04.1 LTSx86_64'.",
+        "Default": {
+          "Type": "string",
+          "Value": "ubuntu16.04.1 LTSx86_64"
+        }
+      },
+      "cluster_version": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Version of the cluster, Default is '1.10.5'.",
+        "Default": {
+          "Type": "string",
+          "Value": "1.10.5"
+        }
+      },
+      "container_runtime": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Runtime type of the cluster, the available values include: 'docker' and 'containerd'. Default is 'docker'.",
+        "Default": {
+          "Type": "string",
+          "Value": "docker"
+        }
+      },
+      "ignore_cluster_cidr_conflict": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Indicates whether to ignore the cluster cidr conflict error. Default is false.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "master_config": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Deploy the machine configuration information of the 'MASTER_ETCD' service, and create \u003c=7 units for common users.",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "availability_zone": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Indicates which availability zone will be used."
+            },
+            "count": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "Number of cvm.",
+              "Default": {
+                "Type": "int",
+                "Value": "1"
+              }
+            },
+            "data_disk": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Configurations of data disk.",
+              "MaxItems": 11,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "disk_size": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Description": "Volume of disk in GB. Default is 0.",
+                    "Default": {
+                      "Type": "int",
+                      "Value": "0"
+                    }
+                  },
+                  "disk_type": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Types of disk，available values: CLOUD_PREMIUM and CLOUD_SSD.",
+                    "Default": {
+                      "Type": "string",
+                      "Value": "CLOUD_PREMIUM"
+                    }
+                  },
+                  "snapshot_id": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Data disk snapshot ID."
+                  }
+                }
+              }
+            },
+            "enhanced_monitor_service": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "To specify whether to enable cloud monitor service. Default is TRUE.",
+              "Default": {
+                "Type": "bool",
+                "Value": "true"
+              }
+            },
+            "enhanced_security_service": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "To specify whether to enable cloud security service. Default is TRUE.",
+              "Default": {
+                "Type": "bool",
+                "Value": "true"
+              }
+            },
+            "instance_name": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Name of the CVMs.",
+              "Default": {
+                "Type": "string",
+                "Value": "sub machine of tke"
+              }
+            },
+            "instance_type": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Specified types of CVM instance."
+            },
+            "internet_charge_type": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Charge types for network traffic. Available values include TRAFFIC_POSTPAID_BY_HOUR.",
+              "Default": {
+                "Type": "string",
+                "Value": "TRAFFIC_POSTPAID_BY_HOUR"
+              }
+            },
+            "internet_max_bandwidth_out": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "Max bandwidth of Internet access in Mbps. Default is 0.",
+              "Default": {
+                "Type": "int",
+                "Value": "0"
+              }
+            },
+            "key_ids": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "ID list of keys.",
+              "MaxItems": 1,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "password": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Password to access."
+            },
+            "public_ip_assigned": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Specify whether to assign an Internet IP address."
+            },
+            "security_group_ids": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Security groups to which a CVM instance belongs.",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "subnet_id": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Private network ID."
+            },
+            "system_disk_size": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "Volume of system disk in GB. Default is 50.",
+              "Default": {
+                "Type": "int",
+                "Value": "50"
+              }
+            },
+            "system_disk_type": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Type of a CVM disk, and available values include CLOUD_PREMIUM and CLOUD_SSD. Default is CLOUD_PREMIUM.",
+              "Default": {
+                "Type": "string",
+                "Value": "CLOUD_PREMIUM"
+              }
+            },
+            "user_data": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "ase64-encoded User Data text, the length limit is 16KB."
+            }
+          }
+        }
+      },
+      "project_id": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Project ID, default value is 0."
+      },
+      "vpc_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Vpc Id of the cluster."
+      },
+      "worker_config": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Deploy the machine configuration information of the 'WORKER' service, and create \u003c=20 units for common users. The other 'WORK' service are added by 'tencentcloud_kubernetes_worker'.",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "availability_zone": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Indicates which availability zone will be used."
+            },
+            "count": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "Number of cvm.",
+              "Default": {
+                "Type": "int",
+                "Value": "1"
+              }
+            },
+            "data_disk": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Configurations of data disk.",
+              "MaxItems": 11,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "disk_size": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Description": "Volume of disk in GB. Default is 0.",
+                    "Default": {
+                      "Type": "int",
+                      "Value": "0"
+                    }
+                  },
+                  "disk_type": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Types of disk，available values: CLOUD_PREMIUM and CLOUD_SSD.",
+                    "Default": {
+                      "Type": "string",
+                      "Value": "CLOUD_PREMIUM"
+                    }
+                  },
+                  "snapshot_id": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Data disk snapshot ID."
+                  }
+                }
+              }
+            },
+            "enhanced_monitor_service": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "To specify whether to enable cloud monitor service. Default is TRUE.",
+              "Default": {
+                "Type": "bool",
+                "Value": "true"
+              }
+            },
+            "enhanced_security_service": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "To specify whether to enable cloud security service. Default is TRUE.",
+              "Default": {
+                "Type": "bool",
+                "Value": "true"
+              }
+            },
+            "instance_name": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Name of the CVMs.",
+              "Default": {
+                "Type": "string",
+                "Value": "sub machine of tke"
+              }
+            },
+            "instance_type": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Specified types of CVM instance."
+            },
+            "internet_charge_type": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Charge types for network traffic. Available values include TRAFFIC_POSTPAID_BY_HOUR.",
+              "Default": {
+                "Type": "string",
+                "Value": "TRAFFIC_POSTPAID_BY_HOUR"
+              }
+            },
+            "internet_max_bandwidth_out": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "Max bandwidth of Internet access in Mbps. Default is 0.",
+              "Default": {
+                "Type": "int",
+                "Value": "0"
+              }
+            },
+            "key_ids": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "ID list of keys.",
+              "MaxItems": 1,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "password": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Password to access."
+            },
+            "public_ip_assigned": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Specify whether to assign an Internet IP address."
+            },
+            "security_group_ids": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Security groups to which a CVM instance belongs.",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "subnet_id": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Private network ID."
+            },
+            "system_disk_size": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "Volume of system disk in GB. Default is 50.",
+              "Default": {
+                "Type": "int",
+                "Value": "50"
+              }
+            },
+            "system_disk_type": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Type of a CVM disk, and available values include CLOUD_PREMIUM and CLOUD_SSD. Default is CLOUD_PREMIUM.",
+              "Default": {
+                "Type": "string",
+                "Value": "CLOUD_PREMIUM"
+              }
+            },
+            "user_data": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "ase64-encoded User Data text, the length limit is 16KB."
+            }
+          }
+        }
+      },
+      "worker_instances_list": {
+        "Type": "List",
+        "Description": "An information list of cvm within the 'WORKER' clusters. Each element contains the following attributes:",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "failed_reason": {
+              "Type": "String",
+              "Description": "Information of the cvm when it is failed.",
+              "Computed": true
+            },
+            "instance_id": {
+              "Type": "String",
+              "Description": "ID of the cvm.",
+              "Computed": true
+            },
+            "instance_role": {
+              "Type": "String",
+              "Description": "Role of the cvm.",
+              "Computed": true
+            },
+            "instance_state": {
+              "Type": "String",
+              "Description": "State of the cvm.",
+              "Computed": true
+            }
+          }
+        }
+      }
+    },
+    "tencentcloud_kubernetes_scale_worker": {
+      "cluster_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "ID of the cluster."
+      },
+      "worker_config": {
+        "Type": "List",
+        "Required": true,
+        "Description": "Deploy the machine configuration information of the 'WORK' service, and create \u003c=20 units for common users. ",
+        "MaxItems": 1,
+        "MinItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "availability_zone": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Indicates which availability zone will be used."
+            },
+            "count": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "Number of cvm.",
+              "Default": {
+                "Type": "int",
+                "Value": "1"
+              }
+            },
+            "data_disk": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Configurations of data disk.",
+              "MaxItems": 11,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "disk_size": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Description": "Volume of disk in GB. Default is 0.",
+                    "Default": {
+                      "Type": "int",
+                      "Value": "0"
+                    }
+                  },
+                  "disk_type": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Types of disk，available values: CLOUD_PREMIUM and CLOUD_SSD.",
+                    "Default": {
+                      "Type": "string",
+                      "Value": "CLOUD_PREMIUM"
+                    }
+                  },
+                  "snapshot_id": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Data disk snapshot ID."
+                  }
+                }
+              }
+            },
+            "enhanced_monitor_service": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "To specify whether to enable cloud monitor service. Default is TRUE.",
+              "Default": {
+                "Type": "bool",
+                "Value": "true"
+              }
+            },
+            "enhanced_security_service": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "To specify whether to enable cloud security service. Default is TRUE.",
+              "Default": {
+                "Type": "bool",
+                "Value": "true"
+              }
+            },
+            "instance_name": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Name of the CVMs.",
+              "Default": {
+                "Type": "string",
+                "Value": "sub machine of tke"
+              }
+            },
+            "instance_type": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Specified types of CVM instance."
+            },
+            "internet_charge_type": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Charge types for network traffic. Available values include TRAFFIC_POSTPAID_BY_HOUR.",
+              "Default": {
+                "Type": "string",
+                "Value": "TRAFFIC_POSTPAID_BY_HOUR"
+              }
+            },
+            "internet_max_bandwidth_out": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "Max bandwidth of Internet access in Mbps. Default is 0.",
+              "Default": {
+                "Type": "int",
+                "Value": "0"
+              }
+            },
+            "key_ids": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "ID list of keys.",
+              "MaxItems": 1,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "password": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Password to access."
+            },
+            "public_ip_assigned": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Specify whether to assign an Internet IP address."
+            },
+            "security_group_ids": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Security groups to which a CVM instance belongs.",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "subnet_id": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Private network ID."
+            },
+            "system_disk_size": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "Volume of system disk in GB. Default is 50.",
+              "Default": {
+                "Type": "int",
+                "Value": "50"
+              }
+            },
+            "system_disk_type": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Type of a CVM disk, and available values include CLOUD_PREMIUM and CLOUD_SSD. Default is CLOUD_PREMIUM.",
+              "Default": {
+                "Type": "string",
+                "Value": "CLOUD_PREMIUM"
+              }
+            },
+            "user_data": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "ase64-encoded User Data text, the length limit is 16KB."
+            }
+          }
+        }
+      },
+      "worker_instances_list": {
+        "Type": "List",
+        "Description": "An information list of kubernetes cluster 'WORKER' . Each element contains the following attributes:",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "failed_reason": {
+              "Type": "String",
+              "Description": "Information of the cvm when it is failed.",
+              "Computed": true
+            },
+            "instance_id": {
+              "Type": "String",
+              "Description": "ID of the cvm.",
+              "Computed": true
+            },
+            "instance_role": {
+              "Type": "String",
+              "Description": "Role of the cvm.",
+              "Computed": true
+            },
+            "instance_state": {
+              "Type": "String",
+              "Description": "State of the cvm.",
+              "Computed": true
+            }
+          }
+        }
       }
     },
     "tencentcloud_lb": {
@@ -2018,10 +3751,10 @@
       "backup_model": {
         "Type": "String",
         "Optional": true,
-        "Description": "Backup method. Supported values include: physical - physical backup, and logical - logical backup.",
+        "Description": "Backup method. Supported values include: 'physical' - physical backup",
         "Default": {
           "Type": "string",
-          "Value": "logical"
+          "Value": "physical"
         }
       },
       "backup_time": {
@@ -2330,7 +4063,8 @@
     "tencentcloud_nat_gateway": {
       "assigned_eip_set": {
         "Type": "Set",
-        "Required": true,
+        "Optional": true,
+        "Description": "EIP arrays bound to the gateway. The value of at least 1.",
         "MaxItems": 10,
         "MinItems": 1,
         "Elem": {
@@ -2340,19 +4074,31 @@
       },
       "bandwidth": {
         "Type": "Int",
-        "Required": true
+        "Optional": true,
+        "Description": "The maximum public network output bandwidth of nat gateway (unit: Mbps), the available values include： 20,50,100,200,500,1000,2000,5000. Default is 100.",
+        "Default": {
+          "Type": "int",
+          "Value": "100"
+        }
       },
       "max_concurrent": {
         "Type": "Int",
-        "Required": true
+        "Optional": true,
+        "Description": "The upper limit of concurrent connection of nat gateway, the available values include : 1000000,3000000,10000000, Default is 1000000.",
+        "Default": {
+          "Type": "int",
+          "Value": "1000000"
+        }
       },
       "name": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "Name of the nat gateway."
       },
       "vpc_id": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "ID of the vpc."
       }
     },
     "tencentcloud_redis_backup_config": {
@@ -2585,9 +4331,7 @@
         "Type": "String",
         "Optional": true,
         "Description": "Description of the security group rule.",
-        "Default": {
-          "Type": "string"
-        }
+        "Computed": true
       },
       "ip_protocol": {
         "Type": "String",
@@ -2624,6 +4368,79 @@
         "Type": "String",
         "Required": true,
         "Description": "Type of the security group rule, the available value include `ingress` and `egress`."
+      }
+    },
+    "tencentcloud_ssl_certificate": {
+      "begin_time": {
+        "Type": "String",
+        "Description": "Beginning time of the SSL certificate.",
+        "Computed": true
+      },
+      "cert": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Content of the SSL certificate. Not allowed newline at the start and end."
+      },
+      "create_time": {
+        "Type": "String",
+        "Description": "Creation time of the SSL certificate.",
+        "Computed": true
+      },
+      "domain": {
+        "Type": "String",
+        "Description": "Primary domain of the SSL certificate.",
+        "Computed": true
+      },
+      "end_time": {
+        "Type": "String",
+        "Description": "Ending time of the SSL certificate.",
+        "Computed": true
+      },
+      "key": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Key of the SSL certificate and required when certificate type is `SVR`. Not allowed newline at the start and end."
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Name of the SSL certificate.",
+        "Default": {
+          "Type": "string"
+        }
+      },
+      "product_zh_name": {
+        "Type": "String",
+        "Description": "Certificate authority.",
+        "Computed": true
+      },
+      "project_id": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Project ID of the SSL certificate. Default is `0`.",
+        "Default": {
+          "Type": "int",
+          "Value": "0"
+        }
+      },
+      "status": {
+        "Type": "Int",
+        "Description": "Status of the SSL certificate.",
+        "Computed": true
+      },
+      "subject_names": {
+        "Type": "List",
+        "Description": "ALL domains included in the SSL certificate. Including the primary domain name.",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "type": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Type of the SSL certificate. Available values includes: `CA` and `SVR`."
       }
     },
     "tencentcloud_subnet": {
@@ -3526,6 +5343,522 @@
         "Description": "Used to save results."
       }
     },
+    "tencentcloud_clb_attachments": {
+      "attachment_list": {
+        "Type": "List",
+        "Description": "A list of cloud load redirection configurations. Each element contains the following attributes:",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "clb_id": {
+              "Type": "String",
+              "Description": "Id of the CLB.",
+              "Computed": true
+            },
+            "listener_id": {
+              "Type": "String",
+              "Description": "ID of the CLB listener.",
+              "Computed": true
+            },
+            "protocol_type": {
+              "Type": "String",
+              "Description": "Type of protocol within the listener, and available values include 'TCP', 'UDP', 'HTTP', 'HTTPS' and 'TCP_SSL'.NOTES: TCP_SSL is testing internally, please apply if you need to use.",
+              "Computed": true
+            },
+            "rule_id": {
+              "Type": "String",
+              "Description": "Id of the CLB listener rule.",
+              "Computed": true
+            },
+            "targets": {
+              "Type": "Set",
+              "Description": "Information of the backends to be attached.",
+              "Computed": true,
+              "MaxItems": 100,
+              "MinItems": 1,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "instance_id": {
+                    "Type": "String",
+                    "Description": "Id of the backend server.",
+                    "Computed": true
+                  },
+                  "port": {
+                    "Type": "Int",
+                    "Description": "Port of the backend server.",
+                    "Computed": true
+                  },
+                  "weight": {
+                    "Type": "Int",
+                    "Description": "Forwarding weight of the backend service, the range of [0, 100], defaults to 10.",
+                    "Computed": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "clb_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Id of the CLB to be queried."
+      },
+      "listener_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Id of the CLB listener to be queried."
+      },
+      "result_output_file": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Used to save results."
+      },
+      "rule_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Id of the CLB listener rule. If the protocol of listener is HTTP/HTTPS, this para is required."
+      }
+    },
+    "tencentcloud_clb_instances": {
+      "clb_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Id of the CLB to be queried."
+      },
+      "clb_list": {
+        "Type": "List",
+        "Description": "A list of cloud load balancers. Each element contains the following attributes:",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "clb_id": {
+              "Type": "String",
+              "Description": "Id of CLB.",
+              "Computed": true
+            },
+            "clb_name": {
+              "Type": "String",
+              "Description": "Name of CLB.",
+              "Computed": true
+            },
+            "clb_vips": {
+              "Type": "List",
+              "Description": "The virtual service address table of the CLB.",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "create_time": {
+              "Type": "String",
+              "Description": "Creation time of the CLB",
+              "Computed": true
+            },
+            "network_type": {
+              "Type": "String",
+              "Description": "Types of CLB.",
+              "Computed": true
+            },
+            "project_id": {
+              "Type": "Int",
+              "Description": "Id of the project.",
+              "Computed": true
+            },
+            "security_groups": {
+              "Type": "List",
+              "Description": "Id of the security groups.",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "status": {
+              "Type": "Int",
+              "Description": "The status of CLB.",
+              "Computed": true
+            },
+            "status_time": {
+              "Type": "String",
+              "Description": "Latest state transition time of CLB.",
+              "Computed": true
+            },
+            "subnet_id": {
+              "Type": "String",
+              "Description": "Id of the subnet",
+              "Computed": true
+            },
+            "tags": {
+              "Type": "Map",
+              "Description": "The available tags within this CLB.",
+              "Computed": true
+            },
+            "target_region_info_region": {
+              "Type": "String",
+              "Description": "Region information of backend service are attached the CLB.",
+              "Computed": true
+            },
+            "target_region_info_vpc_id": {
+              "Type": "String",
+              "Description": "VpcId information of backend service are attached the CLB.",
+              "Computed": true
+            },
+            "vpc_id": {
+              "Type": "String",
+              "Description": "Id of the VPC",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "clb_name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Name of the CLB to be queried."
+      },
+      "network_type": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Type of CLB instance, and available values include 'OPEN' and 'INTERNAL'"
+      },
+      "project_id": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Project id of the CLB."
+      },
+      "result_output_file": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Used to save results."
+      }
+    },
+    "tencentcloud_clb_listener_rules": {
+      "clb_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Id of the CLB to be queried."
+      },
+      "domain": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Domain name of the forwarding rule to be queried."
+      },
+      "listener_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Id of the CLB listener to be queried."
+      },
+      "result_output_file": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Used to save results."
+      },
+      "rule_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Id of the forwarding rule to be queried."
+      },
+      "rule_list": {
+        "Type": "List",
+        "Description": "A list of forward rules of listeners. Each element contains the following attributes:",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "certificate_ca_id": {
+              "Type": "String",
+              "Description": "Id of the client certificate. NOTES: Only supports listeners of 'HTTPS' and 'TCP_SSL' protocol.",
+              "Computed": true
+            },
+            "certificate_id": {
+              "Type": "String",
+              "Description": "Id of the server certificate. NOTES: Only supports listeners of 'HTTPS'  and 'TCP_SSL' protocol.",
+              "Computed": true
+            },
+            "certificate_ssl_mode": {
+              "Type": "String",
+              "Description": "Type of SSL Mode, and available values inclue 'UNIDIRECTIONAL', 'MUTUAL'.NOTES: Only supports listeners of 'HTTPS'  and 'TCP_SSL' protocol.",
+              "Computed": true
+            },
+            "clb_id": {
+              "Type": "String",
+              "Description": "Id of the CLB.",
+              "Computed": true
+            },
+            "domain": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Domain of the rule."
+            },
+            "health_check_health_num": {
+              "Type": "Int",
+              "Description": "Health threshold of health check, and the default is 3. If a success result is returned for the health check three consecutive times, the CVM is identified as healthy. The value range is 2-10. NOTES: TCP/UDP/TCP_SSL listener allows direct configuration, HTTP/HTTPS listener needs to be configured in tencentcloud_clb_listener_rule.",
+              "Computed": true
+            },
+            "health_check_http_code": {
+              "Type": "Int",
+              "Description": "HTTP Status Code. The default is 31 and value range is 1-31. '0b0001' means the return value '1xx' is health. '0b0010' means the return value '2xx' is health. '0b0100' means the return value '3xx' is health. '0b1000' means the return value 4xx is health. '0b10000' means the return value '5xx' is health. If you want multiple return codes to indicate health, need to add the corresponding values. NOTES: The 'HTTP' health check of the 'TCP' listener only supports specifying one health check status code. NOTES: Only supports listeners of 'HTTP' and 'HTTPS' protocol.",
+              "Computed": true
+            },
+            "health_check_http_domain": {
+              "Type": "String",
+              "Description": "Domain name of health check. NOTES: Only supports listeners of 'HTTPS' and 'HTTP' protocol.",
+              "Computed": true
+            },
+            "health_check_http_method": {
+              "Type": "String",
+              "Description": "Methods of health check. NOTES: Only supports listeners of 'HTTPS' and 'HTTP' protocol. The default is 'HEAD', the available value include 'HEAD' and 'GET'.",
+              "Computed": true
+            },
+            "health_check_http_path": {
+              "Type": "String",
+              "Description": "Path of health check. NOTES: Only supports listeners of 'HTTPS' and 'HTTP' protocol.",
+              "Computed": true
+            },
+            "health_check_interval_time": {
+              "Type": "Int",
+              "Description": "Interval time of health check. The value range is 5-300 sec, and the default is 5 sec. NOTES: TCP/UDP/TCP_SSL listener allows direct configuration, HTTP/HTTPS listener needs to be configured in tencentcloud_clb_listener_rule.",
+              "Computed": true
+            },
+            "health_check_switch": {
+              "Type": "Bool",
+              "Description": "Indicates whether health check is enabled.",
+              "Computed": true
+            },
+            "health_check_unhealth_num": {
+              "Type": "Int",
+              "Description": "Unhealth threshold of health check, and the default is 3. If a success result is returned for the health check three consecutive times, the CVM is identified as unhealthy. The value range is 2-10. NOTES: TCP/UDP/TCP_SSL listener allows direct configuration, HTTP/HTTPS listener needs to be configured in tencentcloud_clb_listener_rule.",
+              "Computed": true
+            },
+            "listener_id": {
+              "Type": "String",
+              "Description": "Id of the listener.",
+              "Computed": true
+            },
+            "rule_id": {
+              "Type": "String",
+              "Description": "Id of the rule.",
+              "Computed": true
+            },
+            "scheduler": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Scheduling method of the CLB listener, and available values include 'WRR', 'IP_HASH' and 'LEAST_CONN'. The default is 'WRR'. NOTES: TCP/UDP/TCP_SSL listener allows direct configuration, HTTP/HTTPS listener needs to be configured in tencentcloud_clb_listener_rule.",
+              "Computed": true
+            },
+            "session_expire_time": {
+              "Type": "Int",
+              "Description": "Time of session persistence within the CLB listener. NOTES: Available when scheduler is specified as 'WRR'. NOTES: TCP/UDP/TCP_SSL listener allows direct configuration, HTTP/HTTPS listener needs to be configured in tencentcloud_clb_listener_rule.",
+              "Computed": true
+            },
+            "url": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Url of the rule."
+            }
+          }
+        }
+      },
+      "scheduler": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Scheduling method of the forwarding rule of thr CLB listener, and available values include 'WRR' , 'IP HASH' and 'LEAST_CONN'. The default is 'WRR'."
+      },
+      "url": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Url of the forwarding rule to be queried."
+      }
+    },
+    "tencentcloud_clb_listeners": {
+      "clb_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Id of the CLB to be queried."
+      },
+      "listener_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Id of the listener to be queried."
+      },
+      "listener_list": {
+        "Type": "List",
+        "Description": "A list of listeners of cloud load balancers. Each element contains the following attributes:",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "certificate_ca_id": {
+              "Type": "String",
+              "Description": "Id of the client certificate. It must be set when SSLMode is 'mutual'. NOTES: only supported by listeners of 'HTTPS' and 'TCP_SSL' protocol .",
+              "Computed": true
+            },
+            "certificate_id": {
+              "Type": "String",
+              "Description": "Id of the server certificate. It must be set when protocol is 'HTTPS' or 'TCP_SSL'. NOTES: only supported by listeners of 'HTTPS' and 'TCP_SSL' protocol and must be set when it is available.",
+              "Computed": true
+            },
+            "certificate_ssl_mode": {
+              "Type": "String",
+              "Description": "Type of certificate, and available values inclue 'UNIDIRECTIONAL', 'MUTUAL'. NOTES: Only supports listeners of 'HTTPS' and 'TCP_SSL' protocol and must be set when it is available.",
+              "Computed": true
+            },
+            "clb_id": {
+              "Type": "String",
+              "Description": "Id of the CLB.",
+              "Computed": true
+            },
+            "health_check_health_num": {
+              "Type": "Int",
+              "Description": "Health threshold of health check, and the default is 3. If a success result is returned for the health check three consecutive times, the CVM is identified as healthy. The value range is 2-10. NOTES: TCP/UDP/TCP_SSL listener allows direct configuration, HTTP/HTTPS listener needs to be configured in tencentcloud_clb_listener_rule.",
+              "Computed": true
+            },
+            "health_check_interval_time": {
+              "Type": "Int",
+              "Description": "Interval time of health check. The value range is 5-300 sec, and the default is 5 sec. NOTES: TCP/UDP/TCP_SSL listener allows direct configuration, HTTP/HTTPS listener needs to be configured in tencentcloud_clb_listener_rule.",
+              "Computed": true
+            },
+            "health_check_switch": {
+              "Type": "Bool",
+              "Description": "Indicates whether health check is enabled.",
+              "Computed": true
+            },
+            "health_check_time_out": {
+              "Type": "Int",
+              "Description": "Response timeout of health check. The value range is 2-60 sec, and the default is 2 sec. Response timeout needs to be less than check interval. NOTES: TCP/UDP/TCP_SSL listener allows direct configuration.",
+              "Computed": true
+            },
+            "health_check_unhealth_num": {
+              "Type": "Int",
+              "Description": "Unhealth threshold of health check, and the default is 3. If a success result is returned for the health check three consecutive times, the CVM is identified as unhealthy. The value range is 2-10. NOTES: TCP/UDP/TCP_SSL listener allows direct configuration, HTTP/HTTPS listener needs to be configured in tencentcloud_clb_listener_rule.",
+              "Computed": true
+            },
+            "listener_id": {
+              "Type": "String",
+              "Description": "Id of the listener.",
+              "Computed": true
+            },
+            "listener_name": {
+              "Type": "String",
+              "Description": "Name of the CLB listener.",
+              "Computed": true
+            },
+            "port": {
+              "Type": "Int",
+              "Description": "Port of the CLB listener.",
+              "Computed": true
+            },
+            "protocol": {
+              "Type": "String",
+              "Description": "Protocol of the listener. Available values are 'HTTP', 'HTTPS', 'TCP', 'UDP', 'TCP_SSL'.",
+              "Computed": true
+            },
+            "scheduler": {
+              "Type": "String",
+              "Description": "Scheduling method of the CLB listener, and available values include 'WRR' and 'LEAST_CONN'. The default is 'WRR'. NOTES: The listener of 'HTTP' and 'HTTPS' protocol additionally supports the 'IP HASH' method. NOTES: TCP/UDP/TCP_SSL listener allows direct configuration, HTTP/HTTPS listener needs to be configured in tencentcloud_clb_listener_rule.",
+              "Computed": true
+            },
+            "session_expire_time": {
+              "Type": "Int",
+              "Description": "Time of session persistence within the CLB listener. NOTES: TCP/UDP/TCP_SSL listener allows direct configuration, HTTP/HTTPS listener needs to be configured in tencentcloud_clb_listener_rule.",
+              "Computed": true
+            },
+            "sni_switch": {
+              "Type": "Bool",
+              "Description": "Indicates whether SNI is enabled. NOTES: Only supported by 'HTTPS' protocol.",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "port": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Port of the CLB listener."
+      },
+      "protocol": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Type of protocol within the listener, and available values include 'TCP', 'UDP', 'HTTP', 'HTTPS' and 'TCP_SSL'."
+      },
+      "result_output_file": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Used to save results."
+      }
+    },
+    "tencentcloud_clb_redirections": {
+      "clb_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Id of the CLB to be queried."
+      },
+      "redirection_list": {
+        "Type": "List",
+        "Description": "A list of cloud load redirection configurations. Each element contains the following attributes:",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "clb_id": {
+              "Type": "String",
+              "Description": "Id of the CLB.",
+              "Computed": true
+            },
+            "source_listener_id": {
+              "Type": "String",
+              "Description": "Id of source listener.",
+              "Computed": true
+            },
+            "source_rule_id": {
+              "Type": "String",
+              "Description": "Rule id of source listener.",
+              "Computed": true
+            },
+            "target_listener_id": {
+              "Type": "String",
+              "Description": "Id of target listener.",
+              "Computed": true
+            },
+            "target_rule_id": {
+              "Type": "String",
+              "Description": "Rule id of target listener.",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "result_output_file": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Used to save results."
+      },
+      "source_listener_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Id of source listener to be queried."
+      },
+      "source_rule_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Rule id of source listener to be queried."
+      },
+      "target_listener_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Id of target listener to be queried."
+      },
+      "target_rule_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Rule id of target listener to be queried."
+      }
+    },
     "tencentcloud_container_cluster_instances": {
       "cluster_id": {
         "Type": "String",
@@ -4215,10 +6548,103 @@
         "Description": "Used to save results."
       }
     },
+    "tencentcloud_dnats": {
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Description of the nat forward."
+      },
+      "dnat_list": {
+        "Type": "List",
+        "Description": "Information list of the dnats.",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "description": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Description of the nat forward."
+            },
+            "elastic_ip": {
+              "Type": "String",
+              "Description": "Network address of the eip.",
+              "Computed": true
+            },
+            "elastic_port": {
+              "Type": "String",
+              "Description": " Port of the eip.",
+              "Computed": true
+            },
+            "nat_id": {
+              "Type": "String",
+              "Description": "ID of the nat.",
+              "Computed": true
+            },
+            "private_ip": {
+              "Type": "String",
+              "Description": "Network address of the backend service.",
+              "Computed": true
+            },
+            "private_port": {
+              "Type": "String",
+              "Description": "Port of intranet.",
+              "Computed": true
+            },
+            "protocol": {
+              "Type": "String",
+              "Description": "Type of the network protocol, the available values include： TCP and UDP.",
+              "Computed": true
+            },
+            "vpc_id": {
+              "Type": "String",
+              "Description": "ID of the vpc.",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "elastic_ip": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Network address of the eip."
+      },
+      "elastic_port": {
+        "Type": "String",
+        "Optional": true,
+        "Description": " Port of the eip."
+      },
+      "nat_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "ID of the nat."
+      },
+      "private_ip": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Network address of the backend service."
+      },
+      "private_port": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Port of intranet."
+      },
+      "result_output_file": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Used to save results."
+      },
+      "vpc_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "ID of the vpc."
+      }
+    },
     "tencentcloud_eip": {
       "filter": {
         "Type": "Set",
         "Optional": true,
+        "IsBlock": true,
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
@@ -4258,10 +6684,821 @@
         "Computed": true
       }
     },
+    "tencentcloud_gaap_certificates": {
+      "certificates": {
+        "Type": "List",
+        "Description": "An information list of certificate. Each element contains the following attributes:",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "begin_time": {
+              "Type": "String",
+              "Description": "Beginning time of the certificate.",
+              "Computed": true
+            },
+            "create_time": {
+              "Type": "String",
+              "Description": "Creation time of the certificate.",
+              "Computed": true
+            },
+            "end_time": {
+              "Type": "String",
+              "Description": "Ending time of the certificate.",
+              "Computed": true
+            },
+            "id": {
+              "Type": "String",
+              "Description": "ID of the certificate.",
+              "Computed": true
+            },
+            "issuer_cn": {
+              "Type": "String",
+              "Description": "Issuer name of the certificate.",
+              "Computed": true
+            },
+            "name": {
+              "Type": "String",
+              "Description": "Name of the certificate.",
+              "Computed": true
+            },
+            "subject_cn": {
+              "Type": "String",
+              "Description": "Subject name of the certificate.",
+              "Computed": true
+            },
+            "type": {
+              "Type": "String",
+              "Description": "Type of the certificate.",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "ID of the certificate to be queried."
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Name of the certificate to be queried."
+      },
+      "result_output_file": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Used to save results."
+      },
+      "type": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Type of the certificate to be queried. Available values include: `BASIC`,`CLIENT`,`SERVER`,`REALSERVER` and `PROXY`; `BASIC` means basic certificate; `CLIENT` means client CA certificate; `SERVER` means server SSL certificate; `REALSERVER` means realserver CA certificate; `PROXY` means proxy SSL certificate."
+      }
+    },
+    "tencentcloud_gaap_http_domains": {
+      "domain": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Forward domain of the layer7 listener to be queried."
+      },
+      "domains": {
+        "Type": "List",
+        "Description": "An information list of forward domain of the layer7 listeners. Each element contains the following attributes:",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "basic_auth": {
+              "Type": "Bool",
+              "Description": "Indicates whether basic authentication is enable",
+              "Computed": true
+            },
+            "basic_auth_id": {
+              "Type": "String",
+              "Description": "ID of the basic authentication.",
+              "Computed": true
+            },
+            "certificate_id": {
+              "Type": "String",
+              "Description": "ID of the server certificate",
+              "Computed": true
+            },
+            "client_certificate_id": {
+              "Type": "String",
+              "Description": "ID of the client certificate",
+              "Computed": true
+            },
+            "domain": {
+              "Type": "String",
+              "Description": "Forward domain of the layer7 listener.",
+              "Computed": true
+            },
+            "gaap_auth": {
+              "Type": "Bool",
+              "Description": "Indicates whether SSL certificate authentication is enable.",
+              "Computed": true
+            },
+            "gaap_auth_id": {
+              "Type": "String",
+              "Description": "ID of the SSL certificate.",
+              "Computed": true
+            },
+            "realserver_auth": {
+              "Type": "Bool",
+              "Description": "Indicates whether realserver authentication is enable",
+              "Computed": true
+            },
+            "realserver_certificate_domain": {
+              "Type": "String",
+              "Description": "CA certificate domain of the realserver.",
+              "Computed": true
+            },
+            "realserver_certificate_id": {
+              "Type": "String",
+              "Description": "CA certificate ID of the realserver.",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "listener_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "ID of the layer7 listener to be queried."
+      },
+      "result_output_file": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Used to save results."
+      }
+    },
+    "tencentcloud_gaap_http_rules": {
+      "domain": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Forward domain of the layer7 listener to be queried."
+      },
+      "listener_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "ID of the layer7 listener to be queried."
+      },
+      "path": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Path of the forward rule to be queried."
+      },
+      "result_output_file": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Used to save results."
+      },
+      "rules": {
+        "Type": "Set",
+        "Description": "An information list of forward rule of the layer7 listeners. Each element contains the following attributes:",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "connect_timeout": {
+              "Type": "Int",
+              "Description": "Timeout of the health check response.",
+              "Computed": true
+            },
+            "domain": {
+              "Type": "String",
+              "Description": "Forward domain of the layer7 listener.",
+              "Computed": true
+            },
+            "health_check": {
+              "Type": "Bool",
+              "Description": "Indicates whether health check is enable.",
+              "Computed": true
+            },
+            "health_check_method": {
+              "Type": "String",
+              "Description": "Method of the health check.",
+              "Computed": true
+            },
+            "health_check_path": {
+              "Type": "String",
+              "Description": "Path of health check.",
+              "Computed": true
+            },
+            "health_check_status_codes": {
+              "Type": "List",
+              "Description": "Return code of confirmed normal.",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "Int"
+              }
+            },
+            "id": {
+              "Type": "String",
+              "Description": "ID of the forward rule.",
+              "Computed": true
+            },
+            "interval": {
+              "Type": "Int",
+              "Description": "Interval of the health check.",
+              "Computed": true
+            },
+            "listener_id": {
+              "Type": "String",
+              "Description": "ID of the layer7 listener.",
+              "Computed": true
+            },
+            "path": {
+              "Type": "String",
+              "Description": "Path of the forward rule.",
+              "Computed": true
+            },
+            "realserver_type": {
+              "Type": "String",
+              "Description": "Type of the realserver.",
+              "Computed": true
+            },
+            "realservers": {
+              "Type": "List",
+              "Description": "An information list of GAAP realserver. Each element contains the following attributes:",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "domain": {
+                    "Type": "String",
+                    "Description": "Domain of the GAAP realserver.",
+                    "Computed": true
+                  },
+                  "id": {
+                    "Type": "String",
+                    "Description": "ID of the GAAP realserver.",
+                    "Computed": true
+                  },
+                  "ip": {
+                    "Type": "String",
+                    "Description": "IP of the GAAP realserver.",
+                    "Computed": true
+                  },
+                  "port": {
+                    "Type": "Int",
+                    "Description": "Port of the GAAP realserver.",
+                    "Computed": true
+                  },
+                  "status": {
+                    "Type": "Int",
+                    "Description": "Status of the GAAP realserver.",
+                    "Computed": true
+                  },
+                  "weight": {
+                    "Type": "Int",
+                    "Description": "Scheduling weight.",
+                    "Computed": true
+                  }
+                }
+              }
+            },
+            "scheduler": {
+              "Type": "String",
+              "Description": "Scheduling policy of the layer4 listener.",
+              "Computed": true
+            }
+          }
+        }
+      }
+    },
+    "tencentcloud_gaap_layer4_listeners": {
+      "listener_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "ID of the layer4 listener to be queried."
+      },
+      "listener_name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Name of the layer4 listener to be queried."
+      },
+      "listeners": {
+        "Type": "List",
+        "Description": "An information list of layer4 listeners. Each element contains the following attributes:",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "connect_timeout": {
+              "Type": "Int",
+              "Description": "Timeout of the health check response.",
+              "Computed": true
+            },
+            "create_time": {
+              "Type": "String",
+              "Description": "Creation time of the layer4 listener.",
+              "Computed": true
+            },
+            "health_check": {
+              "Type": "Bool",
+              "Description": "Indicates whether health check is enable.",
+              "Computed": true
+            },
+            "id": {
+              "Type": "String",
+              "Description": "ID of the layer4 listener.",
+              "Computed": true
+            },
+            "interval": {
+              "Type": "Int",
+              "Description": "Interval of the health check",
+              "Computed": true
+            },
+            "name": {
+              "Type": "String",
+              "Description": "Name of the layer4 listener.",
+              "Computed": true
+            },
+            "port": {
+              "Type": "Int",
+              "Description": "Port of the layer4 listener.",
+              "Computed": true
+            },
+            "protocol": {
+              "Type": "String",
+              "Description": "Protocol of the layer4 listener.",
+              "Computed": true
+            },
+            "realserver_type": {
+              "Type": "String",
+              "Description": "Type of the realserver.",
+              "Computed": true
+            },
+            "scheduler": {
+              "Type": "String",
+              "Description": "Scheduling policy of the layer4 listener.",
+              "Computed": true
+            },
+            "status": {
+              "Type": "Int",
+              "Description": "Status of the layer4 listener.",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "port": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Port of the layer4 listener to be queried."
+      },
+      "protocol": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Protocol of the layer4 listener to be queried, and the available values include `TCP` and `UDP`."
+      },
+      "proxy_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "ID of the GAAP proxy to be queried."
+      },
+      "result_output_file": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Used to save results."
+      }
+    },
+    "tencentcloud_gaap_layer7_listeners": {
+      "listener_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "ID of the layer7 listener to be queried."
+      },
+      "listener_name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Name of the layer7 listener to be queried."
+      },
+      "listeners": {
+        "Type": "List",
+        "Description": "An information list of layer7 listeners. Each element contains the following attributes:",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "auth_type": {
+              "Type": "Int",
+              "Description": "Authentication type of the layer7 listener. `0` is one-way authentication and `1` is mutual authentication.",
+              "Computed": true
+            },
+            "certificate_id": {
+              "Type": "String",
+              "Description": "Certificate ID of the layer7 listener.",
+              "Computed": true
+            },
+            "client_certificate_id": {
+              "Type": "String",
+              "Description": "ID of the client certificate.",
+              "Computed": true
+            },
+            "create_time": {
+              "Type": "String",
+              "Description": "Creation time of the layer7 listener.",
+              "Computed": true
+            },
+            "forward_protocol": {
+              "Type": "String",
+              "Description": "Protocol type of the forwarding.",
+              "Computed": true
+            },
+            "id": {
+              "Type": "String",
+              "Description": "ID of the layer7 listener.",
+              "Computed": true
+            },
+            "name": {
+              "Type": "String",
+              "Description": "Name of the layer7 listener.",
+              "Computed": true
+            },
+            "port": {
+              "Type": "Int",
+              "Description": "Port of the layer7 listener.",
+              "Computed": true
+            },
+            "protocol": {
+              "Type": "String",
+              "Description": "Protocol of the layer7 listener.",
+              "Computed": true
+            },
+            "status": {
+              "Type": "Int",
+              "Description": "Status of the layer7 listener.",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "port": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Port of the layer7 listener to be queried."
+      },
+      "protocol": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Protocol of the layer7 listener to be queried, and the available values include `HTTP` and `HTTPS`."
+      },
+      "proxy_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "ID of the GAAP proxy to be queried."
+      },
+      "result_output_file": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Used to save results."
+      }
+    },
+    "tencentcloud_gaap_proxies": {
+      "access_region": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Access region of the GAAP proxy to be queried. Conflict with `ids`.",
+        "ConflictsWith": [
+          "ids"
+        ]
+      },
+      "ids": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "ID of the GAAP proxy to be queried. Conflict with `project_id`,`access_region`,`realserver_region`.",
+        "ConflictsWith": [
+          "project_id",
+          "access_region",
+          "realserver_region"
+        ],
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "project_id": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Project ID of the GAAP proxy to be queried. Conflict with `ids`.",
+        "ConflictsWith": [
+          "ids"
+        ]
+      },
+      "proxies": {
+        "Type": "List",
+        "Description": "An information list of GAAP proxy. Each element contains the following attributes:",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "access_region": {
+              "Type": "String",
+              "Description": "Access region of the GAAP proxy.",
+              "Computed": true
+            },
+            "bandwidth": {
+              "Type": "Int",
+              "Description": "Maximum bandwidth of the GAAP proxy, unit is Mbps.",
+              "Computed": true
+            },
+            "concurrent": {
+              "Type": "Int",
+              "Description": "Maximum concurrency of the GAAP proxy, unit is 10k.",
+              "Computed": true
+            },
+            "create_time": {
+              "Type": "String",
+              "Description": "Creation time of the GAAP proxy.",
+              "Computed": true
+            },
+            "domain": {
+              "Type": "String",
+              "Description": "Access domain of the GAAP proxy.",
+              "Computed": true
+            },
+            "forward_ip": {
+              "Type": "String",
+              "Description": "Forwarding IP of the GAAP proxy.",
+              "Computed": true
+            },
+            "id": {
+              "Type": "String",
+              "Description": "ID of the GAAP proxy.",
+              "Computed": true
+            },
+            "ip": {
+              "Type": "String",
+              "Description": "Access domain of the GAAP proxy.",
+              "Computed": true
+            },
+            "name": {
+              "Type": "String",
+              "Description": "Name of the GAAP proxy.",
+              "Computed": true
+            },
+            "policy_id": {
+              "Type": "String",
+              "Description": "Security policy ID of the GAAP proxy.",
+              "Computed": true
+            },
+            "project_id": {
+              "Type": "Int",
+              "Description": "ID of the project within the GAAP proxy, '0' means is Default Project.",
+              "Computed": true
+            },
+            "realserver_region": {
+              "Type": "String",
+              "Description": "Region of the GAAP realserver.",
+              "Computed": true
+            },
+            "scalable": {
+              "Type": "Bool",
+              "Description": "Indicates whether GAAP proxy can scalable.",
+              "Computed": true
+            },
+            "status": {
+              "Type": "String",
+              "Description": "Status of the GAAP proxy.",
+              "Computed": true
+            },
+            "support_protocols": {
+              "Type": "List",
+              "Description": "Supported protocols of the GAAP proxy.",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "tags": {
+              "Type": "Map",
+              "Description": "Tags of the GAAP proxy.",
+              "Computed": true
+            },
+            "version": {
+              "Type": "String",
+              "Description": "Version of the GAAP proxy.",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "realserver_region": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Region of the GAAP realserver to be queried. Conflict with `ids`.",
+        "ConflictsWith": [
+          "ids"
+        ]
+      },
+      "result_output_file": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Used to save results."
+      },
+      "tags": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "Tags of the GAAP proxy to be queried. Support up to 5, display the information as long as it matches one."
+      }
+    },
+    "tencentcloud_gaap_realservers": {
+      "domain": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Domain of the GAAP realserver to be queried, conflict with `ip`.",
+        "ConflictsWith": [
+          "ip"
+        ]
+      },
+      "ip": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "IP of the GAAP realserver to be queried, conflict with `domain`.",
+        "ConflictsWith": [
+          "domain"
+        ]
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Name of the GAAP realserver to be queried, the maximum length is 30."
+      },
+      "project_id": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "ID of the project within the GAAP realserver to be queried, default is '-1' means all projects."
+      },
+      "realservers": {
+        "Type": "List",
+        "Description": "An information list of GAAP realserver. Each element contains the following attributes:",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "domain": {
+              "Type": "String",
+              "Description": "Domain of the GAAP realserver.",
+              "Computed": true
+            },
+            "id": {
+              "Type": "String",
+              "Description": "ID of the GAAP realserver.",
+              "Computed": true
+            },
+            "ip": {
+              "Type": "String",
+              "Description": "IP of the GAAP realserver.",
+              "Computed": true
+            },
+            "name": {
+              "Type": "String",
+              "Description": "Name of the GAAP realserver.",
+              "Computed": true
+            },
+            "project_id": {
+              "Type": "Int",
+              "Description": "ID of the project within the GAAP realserver.",
+              "Computed": true
+            },
+            "tags": {
+              "Type": "Map",
+              "Description": "Tags of the GAAP realserver.",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "result_output_file": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Used to save results."
+      },
+      "tags": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "Tags of the GAAP proxy to be queried. Support up to 5, display the information as long as it matches one."
+      }
+    },
+    "tencentcloud_gaap_security_policies": {
+      "action": {
+        "Type": "String",
+        "Description": "Default policy.",
+        "Computed": true
+      },
+      "id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "ID of the security policy to be queried."
+      },
+      "proxy_id": {
+        "Type": "String",
+        "Description": "ID of the GAAP proxy.",
+        "Computed": true
+      },
+      "result_output_file": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Used to save results."
+      },
+      "status": {
+        "Type": "String",
+        "Description": "Status of the security policy.",
+        "Computed": true
+      }
+    },
+    "tencentcloud_gaap_security_rules": {
+      "action": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Policy of the rule to be queried."
+      },
+      "cidr_ip": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "A network address block of the request source to be queried."
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Name of the security policy rule to be queried."
+      },
+      "policy_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "ID of the security policy to be queried."
+      },
+      "port": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Port of the security policy rule to be queried."
+      },
+      "protocol": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Protocol of the security policy rule to be queried."
+      },
+      "result_output_file": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Used to save results."
+      },
+      "rule_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "ID of the security policy rules to be queried."
+      },
+      "rules": {
+        "Type": "List",
+        "Description": "An information list of security policy rule. Each element contains the following attributes:",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "action": {
+              "Type": "String",
+              "Description": "Policy of the rule.",
+              "Computed": true
+            },
+            "cidr_ip": {
+              "Type": "String",
+              "Description": "A network address block of the request source.",
+              "Computed": true
+            },
+            "id": {
+              "Type": "String",
+              "Description": "ID of the security policy rule.",
+              "Computed": true
+            },
+            "name": {
+              "Type": "String",
+              "Description": "Name of the security policy rule.",
+              "Computed": true
+            },
+            "port": {
+              "Type": "String",
+              "Description": "Port of the security policy rule.",
+              "Computed": true
+            },
+            "protocol": {
+              "Type": "String",
+              "Description": "Protocol of the security policy rule.",
+              "Computed": true
+            }
+          }
+        }
+      }
+    },
     "tencentcloud_image": {
       "filter": {
         "Type": "Set",
         "Optional": true,
+        "IsBlock": true,
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
@@ -4305,6 +7542,7 @@
       "filter": {
         "Type": "Set",
         "Optional": true,
+        "IsBlock": true,
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
@@ -4357,6 +7595,139 @@
         "Optional": true
       }
     },
+    "tencentcloud_kubernetes_clusters": {
+      "cluster_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": " ID of the cluster. Conflict with cluster_name, can not be set at the same time.",
+        "ConflictsWith": [
+          "cluster_name"
+        ]
+      },
+      "cluster_name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Name of the cluster. Conflict with cluster_id, can not be set at the same time.",
+        "ConflictsWith": [
+          "cluster_id"
+        ]
+      },
+      "list": {
+        "Type": "List",
+        "Description": "An information  list of kubernetes clusters . Each element contains the following attributes:",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "cluster_cidr": {
+              "Type": "String",
+              "Description": "A network address block of the cluster. Different from vpc cidr and cidr of other clusters within this vpc.",
+              "Computed": true
+            },
+            "cluster_deploy_type": {
+              "Type": "String",
+              "Description": "Deployment type of the cluster.",
+              "Computed": true
+            },
+            "cluster_desc": {
+              "Type": "String",
+              "Description": "Description of the cluster",
+              "Computed": true
+            },
+            "cluster_ipvs": {
+              "Type": "Bool",
+              "Description": " Indicates whether ipvs is enabled.",
+              "Computed": true
+            },
+            "cluster_max_pod_num": {
+              "Type": "Int",
+              "Description": "The maximum number of Pods per node in the cluster.",
+              "Computed": true
+            },
+            "cluster_max_service_num": {
+              "Type": "Int",
+              "Description": "The maximum number of services in the cluster.",
+              "Computed": true
+            },
+            "cluster_name": {
+              "Type": "String",
+              "Description": "Name of the cluster.",
+              "Computed": true
+            },
+            "cluster_node_num": {
+              "Type": "Int",
+              "Description": "Number of nodes in the  cluster.",
+              "Computed": true
+            },
+            "cluster_os": {
+              "Type": "String",
+              "Description": "Operating system of the cluster.",
+              "Computed": true
+            },
+            "cluster_version": {
+              "Type": "String",
+              "Description": " Version of the cluster.",
+              "Computed": true
+            },
+            "container_runtime": {
+              "Type": "String",
+              "Description": "Container runtime of the cluster.",
+              "Computed": true
+            },
+            "ignore_cluster_cidr_conflict": {
+              "Type": "Bool",
+              "Description": "Indicates whether to ignore the cluster cidr conflict error.",
+              "Computed": true
+            },
+            "project_id": {
+              "Type": "Int",
+              "Description": "Project Id of the cluster.",
+              "Computed": true
+            },
+            "vpc_id": {
+              "Type": "String",
+              "Description": "Vpc Id of the cluster.",
+              "Computed": true
+            },
+            "worker_instances_list": {
+              "Type": "List",
+              "Description": "An information list of cvm within the WORKER clusters. Each element contains the following attributes.",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "failed_reason": {
+                    "Type": "String",
+                    "Description": "Information of the cvm when it is failed.",
+                    "Computed": true
+                  },
+                  "instance_id": {
+                    "Type": "String",
+                    "Description": "ID of the cvm.",
+                    "Computed": true
+                  },
+                  "instance_role": {
+                    "Type": "String",
+                    "Description": "Role of the cvm.",
+                    "Computed": true
+                  },
+                  "instance_state": {
+                    "Type": "String",
+                    "Description": "State of the cvm.",
+                    "Computed": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "result_output_file": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Used to save results."
+      }
+    },
     "tencentcloud_mongodb_instances": {
       "cluster_type": {
         "Type": "Int",
@@ -4370,6 +7741,7 @@
       },
       "instance_list": {
         "Type": "List",
+        "Description": "A list of instances. Each element contains the following attributes:",
         "Computed": true,
         "Elem": {
           "Type": "SchemaInfo",
@@ -4481,6 +7853,7 @@
       },
       "list": {
         "Type": "List",
+        "Description": "A list of zone config. Each element contains the following attributes:",
         "Computed": true,
         "Elem": {
           "Type": "SchemaInfo",
@@ -5061,6 +8434,82 @@
         "Description": "Used to store results."
       }
     },
+    "tencentcloud_nat_gateways": {
+      "id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "ID of the nat gateway."
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Name of the nat gateway."
+      },
+      "nats": {
+        "Type": "List",
+        "Description": "Information list of the dedicated tunnels.",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "assigned_eip_set": {
+              "Type": "List",
+              "Description": "EIP arrays bound to the gateway. The value of at least 1.",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "bandwidth": {
+              "Type": "Int",
+              "Description": "The maximum public network output bandwidth of nat gateway (unit: Mbps), the available values include： 20,50,100,200,500,1000,2000,5000. Default is 100.",
+              "Computed": true
+            },
+            "create_time": {
+              "Type": "String",
+              "Description": "Create time of the nat gateway.",
+              "Computed": true
+            },
+            "id": {
+              "Type": "String",
+              "Description": "ID of the nat gateway.",
+              "Computed": true
+            },
+            "max_concurrent": {
+              "Type": "Int",
+              "Description": "The upper limit of concurrent connection of nat gateway, the available values include : 1000000,3000000,10000000, Default is 1000000.",
+              "Computed": true
+            },
+            "name": {
+              "Type": "String",
+              "Description": "Name of the nat gateway.",
+              "Computed": true
+            },
+            "state": {
+              "Type": "Int",
+              "Description": "State of the nat gateway.",
+              "Computed": true
+            },
+            "vpc_id": {
+              "Type": "String",
+              "Description": "ID of the vpc.",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "result_output_file": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Used to save results."
+      },
+      "vpc_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "ID of the vpc."
+      }
+    },
     "tencentcloud_nats": {
       "bandwidth": {
         "Type": "Int",
@@ -5420,6 +8869,102 @@
             }
           }
         }
+      }
+    },
+    "tencentcloud_ssl_certificates": {
+      "certificates": {
+        "Type": "List",
+        "Description": "An information list of certificate. Each element contains the following attributes:",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "begin_time": {
+              "Type": "String",
+              "Description": "Beginning time of the SSL certificate.",
+              "Computed": true
+            },
+            "cert": {
+              "Type": "String",
+              "Description": "Content of the SSL certificate.",
+              "Computed": true
+            },
+            "create_time": {
+              "Type": "String",
+              "Description": "Creation time of the SSL certificate.",
+              "Computed": true
+            },
+            "domain": {
+              "Type": "String",
+              "Description": "Primary domain of the SSL certificate.",
+              "Computed": true
+            },
+            "end_time": {
+              "Type": "String",
+              "Description": "Ending time of the SSL certificate.",
+              "Computed": true
+            },
+            "id": {
+              "Type": "String",
+              "Description": "ID of the SSL certificate.",
+              "Computed": true
+            },
+            "name": {
+              "Type": "String",
+              "Description": "Name of the SSL certificate.",
+              "Computed": true
+            },
+            "product_zh_name": {
+              "Type": "String",
+              "Description": "Certificate authority.",
+              "Computed": true
+            },
+            "project_id": {
+              "Type": "Int",
+              "Description": "Project ID of the SSL certificate.",
+              "Computed": true
+            },
+            "status": {
+              "Type": "Int",
+              "Description": "Status of the SSL certificate.",
+              "Computed": true
+            },
+            "subject_names": {
+              "Type": "List",
+              "Description": "ALL domains included in the SSL certificate. Including the primary domain name.",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "type": {
+              "Type": "String",
+              "Description": "Type of the SSL certificate.",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "ID of the SSL certificate to be queried."
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Name of the SSL certificate to be queried."
+      },
+      "result_output_file": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Used to save results."
+      },
+      "type": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Type of the SSL certificate to be queried. Available values includes: `CA` and `SVR`."
       }
     },
     "tencentcloud_subnet": {
