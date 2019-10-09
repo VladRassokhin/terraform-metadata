@@ -2,8 +2,14 @@
   ".schema_version": "1",
   "name": "avi",
   "type": "provider",
-  "version": "v0.1.2",
+  "version": "v18.2.5",
   "provider": {
+    "avi_api_timeout": {
+      "Type": "Int",
+      "Optional": true,
+      "Description": "Session timeout for Avi Controller.",
+      "DefaultFunc": "ENV(AVI_API_TIMEOUT)"
+    },
     "avi_authtoken": {
       "Type": "String",
       "Optional": true,
@@ -393,6 +399,14 @@
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
+            "anon_auth": {
+              "Type": "Bool",
+              "Optional": true,
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
+              }
+            },
             "format": {
               "Type": "String",
               "Optional": true,
@@ -400,6 +414,16 @@
                 "Type": "string",
                 "Value": "SYSLOG_LEGACY"
               }
+            },
+            "pkiprofile_ref": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "ssl_key_and_certificate_ref": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
             },
             "syslog_server": {
               "Type": "String",
@@ -582,6 +606,30 @@
               "Default": {
                 "Type": "int",
                 "Value": "514"
+              }
+            },
+            "format_config": {
+              "Type": "Set",
+              "Optional": true,
+              "Computed": true,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "format": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "included_fields": {
+                    "Type": "List",
+                    "Optional": true,
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  }
+                }
               }
             },
             "log_types_to_send": {
@@ -1504,12 +1552,12 @@
                 "Value": "true"
               }
             },
-            "authoritative_domain_names": {
-              "Type": "List",
+            "admin_email": {
+              "Type": "String",
               "Optional": true,
-              "Elem": {
-                "Type": "SchemaElements",
-                "ElementsType": "String"
+              "Default": {
+                "Type": "string",
+                "Value": "hostmaster"
               }
             },
             "dns_over_tcp_enabled": {
@@ -1518,6 +1566,31 @@
               "Default": {
                 "Type": "bool",
                 "Value": "true"
+              }
+            },
+            "dns_zones": {
+              "Type": "List",
+              "Optional": true,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "admin_email": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "domain_name": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "name_server": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  }
+                }
               }
             },
             "domain_names": {
@@ -1556,6 +1629,11 @@
                 "Type": "string",
                 "Value": "DNS_ERROR_RESPONSE_NONE"
               }
+            },
+            "name_server": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
             },
             "negative_caching_ttl": {
               "Type": "Int",
@@ -4605,6 +4683,14 @@
                 "Value": "true"
               }
             },
+            "disable_sni_hostname_check": {
+              "Type": "Bool",
+              "Optional": true,
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
+              }
+            },
             "enable_fire_and_forget": {
               "Type": "Bool",
               "Optional": true,
@@ -4677,6 +4763,14 @@
                 "Value": "false"
               }
             },
+            "http_upstream_buffer_size": {
+              "Type": "Int",
+              "Optional": true,
+              "Default": {
+                "Type": "int",
+                "Value": "0"
+              }
+            },
             "httponly_enabled": {
               "Type": "Bool",
               "Optional": true,
@@ -4723,6 +4817,38 @@
               "Default": {
                 "Type": "int",
                 "Value": "0"
+              }
+            },
+            "max_http2_concurrent_streams_per_connection": {
+              "Type": "Int",
+              "Optional": true,
+              "Default": {
+                "Type": "int",
+                "Value": "128"
+              }
+            },
+            "max_http2_control_frames_per_connection": {
+              "Type": "Int",
+              "Optional": true,
+              "Default": {
+                "Type": "int",
+                "Value": "1000"
+              }
+            },
+            "max_http2_empty_data_frames_per_connection": {
+              "Type": "Int",
+              "Optional": true,
+              "Default": {
+                "Type": "int",
+                "Value": "1000"
+              }
+            },
+            "max_http2_queued_frames_to_client_per_connection": {
+              "Type": "Int",
+              "Optional": true,
+              "Default": {
+                "Type": "int",
+                "Value": "1000"
               }
             },
             "max_keepalive_requests": {
@@ -4792,6 +4918,14 @@
               "Default": {
                 "Type": "int",
                 "Value": "30000"
+              }
+            },
+            "reset_conn_http_on_ssl_port": {
+              "Type": "Bool",
+              "Optional": true,
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
               }
             },
             "respond_with_100_continue": {
@@ -6136,6 +6270,14 @@
         "Optional": true,
         "Computed": true
       },
+      "dns_resolution_on_se": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
       "docker_configuration": {
         "Type": "Set",
         "Optional": true,
@@ -6275,14 +6417,6 @@
                     "Default": {
                       "Type": "string",
                       "Value": "avinetworks/se"
-                    }
-                  },
-                  "se_repository_push": {
-                    "Type": "Bool",
-                    "Optional": true,
-                    "Default": {
-                      "Type": "bool",
-                      "Value": "false"
                     }
                   },
                   "username": {
@@ -7412,14 +7546,6 @@
                       "Value": "avinetworks/se"
                     }
                   },
-                  "se_repository_push": {
-                    "Type": "Bool",
-                    "Optional": true,
-                    "Default": {
-                      "Type": "bool",
-                      "Value": "false"
-                    }
-                  },
                   "username": {
                     "Type": "String",
                     "Optional": true,
@@ -7697,6 +7823,11 @@
                 }
               }
             },
+            "se_priority_class": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
             "se_restart_batch_size": {
               "Type": "Int",
               "Optional": true,
@@ -7757,7 +7888,7 @@
               "Optional": true,
               "Default": {
                 "Type": "bool",
-                "Value": "false"
+                "Value": "true"
               }
             },
             "use_controller_image": {
@@ -7807,6 +7938,73 @@
                   "type": {
                     "Type": "String",
                     "Required": true
+                  }
+                }
+              }
+            },
+            "vip_next_hops": {
+              "Type": "List",
+              "Optional": true,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "if_name": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "nexthop": {
+                    "Type": "Set",
+                    "Optional": true,
+                    "Computed": true,
+                    "IsBlock": true,
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "addr": {
+                          "Type": "String",
+                          "Required": true
+                        },
+                        "type": {
+                          "Type": "String",
+                          "Required": true
+                        }
+                      }
+                    }
+                  },
+                  "subnet": {
+                    "Type": "Set",
+                    "Optional": true,
+                    "Computed": true,
+                    "IsBlock": true,
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "ip_addr": {
+                          "Type": "Set",
+                          "Required": true,
+                          "IsBlock": true,
+                          "Elem": {
+                            "Type": "SchemaInfo",
+                            "Info": {
+                              "addr": {
+                                "Type": "String",
+                                "Required": true
+                              },
+                              "type": {
+                                "Type": "String",
+                                "Required": true
+                              }
+                            }
+                          }
+                        },
+                        "mask": {
+                          "Type": "Int",
+                          "Required": true
+                        }
+                      }
+                    }
                   }
                 }
               }
@@ -7985,14 +8183,6 @@
                     "Default": {
                       "Type": "string",
                       "Value": "avinetworks/se"
-                    }
-                  },
-                  "se_repository_push": {
-                    "Type": "Bool",
-                    "Optional": true,
-                    "Default": {
-                      "Type": "bool",
-                      "Value": "false"
                     }
                   },
                   "username": {
@@ -8819,6 +9009,14 @@
                       "Value": "360"
                     }
                   },
+                  "default_minimum_api_timeout": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "int",
+                      "Value": "60"
+                    }
+                  },
                   "dns_refresh_period": {
                     "Type": "Int",
                     "Optional": true,
@@ -9008,6 +9206,14 @@
                     "Default": {
                       "Type": "int",
                       "Value": "360"
+                    }
+                  },
+                  "shared_ssl_certificates": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "bool",
+                      "Value": "false"
                     }
                   },
                   "ssl_certificate_expiry_warning_days": {
@@ -9435,6 +9641,65 @@
         "Computed": true
       }
     },
+    "avi_controllerportalregistration": {
+      "asset": {
+        "Type": "Set",
+        "Optional": true,
+        "Computed": true,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "asset_id": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            }
+          }
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "portal_auth": {
+        "Type": "Set",
+        "Optional": true,
+        "Computed": true,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "access_token": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "instance_url": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "jwt_token": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            }
+          }
+        }
+      },
+      "tenant_ref": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "uuid": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      }
+    },
     "avi_controllerproperties": {
       "allow_ip_forwarding": {
         "Type": "Bool",
@@ -9562,6 +9827,14 @@
         "Default": {
           "Type": "int",
           "Value": "360"
+        }
+      },
+      "default_minimum_api_timeout": {
+        "Type": "Int",
+        "Optional": true,
+        "Default": {
+          "Type": "int",
+          "Value": "60"
         }
       },
       "dns_refresh_period": {
@@ -9755,6 +10028,14 @@
           "Value": "360"
         }
       },
+      "shared_ssl_certificates": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
       "ssl_certificate_expiry_warning_days": {
         "Type": "List",
         "Optional": true,
@@ -9927,6 +10208,26 @@
         "Computed": true
       }
     },
+    "avi_customerportalinfo": {
+      "polling_interval": {
+        "Type": "Int",
+        "Optional": true,
+        "Default": {
+          "Type": "int",
+          "Value": "10"
+        }
+      },
+      "portal_url": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "uuid": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      }
+    },
     "avi_customipamdnsprofile": {
       "name": {
         "Type": "String",
@@ -10037,6 +10338,68 @@
                           "Default": {
                             "Type": "bool",
                             "Value": "true"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "dns_rate_limit": {
+                    "Type": "Set",
+                    "Optional": true,
+                    "Computed": true,
+                    "IsBlock": true,
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "action": {
+                          "Type": "Set",
+                          "Optional": true,
+                          "Computed": true,
+                          "IsBlock": true,
+                          "Elem": {
+                            "Type": "SchemaInfo",
+                            "Info": {
+                              "type": {
+                                "Type": "String",
+                                "Optional": true,
+                                "Default": {
+                                  "Type": "string",
+                                  "Value": "DNS_RL_ACTION_NONE"
+                                }
+                              }
+                            }
+                          }
+                        },
+                        "burst_size": {
+                          "Type": "Int",
+                          "Optional": true,
+                          "Default": {
+                            "Type": "int",
+                            "Value": "0"
+                          }
+                        },
+                        "count": {
+                          "Type": "Int",
+                          "Optional": true,
+                          "Default": {
+                            "Type": "int",
+                            "Value": "0"
+                          }
+                        },
+                        "fine_grain": {
+                          "Type": "Bool",
+                          "Optional": true,
+                          "Default": {
+                            "Type": "bool",
+                            "Value": "false"
+                          }
+                        },
+                        "period": {
+                          "Type": "Int",
+                          "Optional": true,
+                          "Default": {
+                            "Type": "int",
+                            "Value": "1"
                           }
                         }
                       }
@@ -11466,6 +11829,11 @@
                     "Optional": true,
                     "Computed": true
                   },
+                  "hostname": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
                   "ip": {
                     "Type": "Set",
                     "Optional": true,
@@ -11646,6 +12014,14 @@
         "Default": {
           "Type": "string",
           "Value": "GSLB_SERVICE_ALGORITHM_PRIORITY"
+        }
+      },
+      "resolve_cname": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
         }
       },
       "site_persistence_enabled": {
@@ -14701,6 +15077,283 @@
         "Computed": true
       }
     },
+    "avi_image": {
+      "controller_info": {
+        "Type": "Set",
+        "Optional": true,
+        "Computed": true,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "build": {
+              "Type": "Set",
+              "Optional": true,
+              "Computed": true,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "build_no": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "date": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "min_version": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "patch_version": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "product": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "product_name": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "tag": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "version": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  }
+                }
+              }
+            },
+            "hash": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "patch": {
+              "Type": "Set",
+              "Optional": true,
+              "Computed": true,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "patch_type": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "reboot": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Computed": true
+                  }
+                }
+              }
+            },
+            "path": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            }
+          }
+        }
+      },
+      "migrations": {
+        "Type": "Set",
+        "Optional": true,
+        "Computed": true,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "api_version": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "controller_host_min_free_disk_size": {
+              "Type": "Int",
+              "Optional": true,
+              "Default": {
+                "Type": "int",
+                "Value": "10"
+              }
+            },
+            "controller_min_free_disk_size": {
+              "Type": "Int",
+              "Optional": true,
+              "Default": {
+                "Type": "int",
+                "Value": "10"
+              }
+            },
+            "max_active_versions": {
+              "Type": "Int",
+              "Optional": true,
+              "Default": {
+                "Type": "int",
+                "Value": "2"
+              }
+            },
+            "se_host_min_free_disk_size": {
+              "Type": "Int",
+              "Optional": true,
+              "Default": {
+                "Type": "int",
+                "Value": "5"
+              }
+            },
+            "se_min_free_disk_size": {
+              "Type": "Int",
+              "Optional": true,
+              "Default": {
+                "Type": "int",
+                "Value": "5"
+              }
+            },
+            "versions": {
+              "Type": "List",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "se_info": {
+        "Type": "Set",
+        "Optional": true,
+        "Computed": true,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "build": {
+              "Type": "Set",
+              "Optional": true,
+              "Computed": true,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "build_no": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "date": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "min_version": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "patch_version": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "product": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "product_name": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "tag": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "version": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  }
+                }
+              }
+            },
+            "hash": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "patch": {
+              "Type": "Set",
+              "Optional": true,
+              "Computed": true,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "patch_type": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "reboot": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Computed": true
+                  }
+                }
+              }
+            },
+            "path": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            }
+          }
+        }
+      },
+      "status": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "tenant_ref": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "type": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "uuid": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      }
+    },
     "avi_ipaddrgroup": {
       "addrs": {
         "Type": "List",
@@ -16733,6 +17386,14 @@
                       "Value": "0"
                     }
                   },
+                  "keepalive_in_halfclose_state": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "bool",
+                      "Value": "true"
+                    }
+                  },
                   "max_retransmissions": {
                     "Type": "Int",
                     "Optional": true,
@@ -17311,6 +17972,14 @@
                       "Value": "300"
                     }
                   },
+                  "tcp_reset_timeout": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "int",
+                      "Value": "1"
+                    }
+                  },
                   "udp_idle_timeout": {
                     "Type": "Int",
                     "Optional": true,
@@ -17320,6 +17989,14 @@
                     }
                   }
                 }
+              }
+            },
+            "graceful_restart": {
+              "Type": "Bool",
+              "Optional": true,
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
               }
             },
             "nat_policy_ref": {
@@ -19213,6 +19890,48 @@
         "Computed": true
       }
     },
+    "avi_portalfileupload": {
+      "case_id": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "error": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "file_path": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "s3_directory": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "status": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "tenant_ref": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "uuid": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      }
+    },
     "avi_prioritylabels": {
       "cloud_ref": {
         "Type": "String",
@@ -19730,6 +20449,81 @@
                 "Value": "true"
               }
             },
+            "seagent_statecache_properties": {
+              "Type": "Set",
+              "Optional": true,
+              "Computed": true,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "sc_batch_buffer_flush_limit": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "int",
+                      "Value": "300"
+                    }
+                  },
+                  "sc_shard_cleanup_max_time": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "int",
+                      "Value": "900"
+                    }
+                  },
+                  "sc_state_ring_batch_dequeue_limit": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "int",
+                      "Value": "300"
+                    }
+                  },
+                  "sc_states_flush_interval": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "int",
+                      "Value": "100"
+                    }
+                  },
+                  "sc_stream_check_interval": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "int",
+                      "Value": "5000"
+                    }
+                  },
+                  "sc_thread_q_batch_dequeue_limit": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "int",
+                      "Value": "100"
+                    }
+                  },
+                  "sc_thread_q_max_size": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "int",
+                      "Value": "4096"
+                    }
+                  },
+                  "sc_thread_sleep_interval": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "int",
+                      "Value": "10"
+                    }
+                  }
+                }
+              }
+            },
             "send_se_ready_timeout": {
               "Type": "Int",
               "Optional": true,
@@ -19771,6 +20565,14 @@
               }
             },
             "vnic_probe_interval": {
+              "Type": "Int",
+              "Optional": true,
+              "Default": {
+                "Type": "int",
+                "Value": "5"
+              }
+            },
+            "vnic_rpc_retry_interval": {
               "Type": "Int",
               "Optional": true,
               "Default": {
@@ -20000,38 +20802,6 @@
                 "Value": "512"
               }
             },
-            "se_rum_sampling_nav_interval": {
-              "Type": "Int",
-              "Optional": true,
-              "Default": {
-                "Type": "int",
-                "Value": "1"
-              }
-            },
-            "se_rum_sampling_nav_percent": {
-              "Type": "Int",
-              "Optional": true,
-              "Default": {
-                "Type": "int",
-                "Value": "1"
-              }
-            },
-            "se_rum_sampling_res_interval": {
-              "Type": "Int",
-              "Optional": true,
-              "Default": {
-                "Type": "int",
-                "Value": "2"
-              }
-            },
-            "se_rum_sampling_res_percent": {
-              "Type": "Int",
-              "Optional": true,
-              "Default": {
-                "Type": "int",
-                "Value": "100"
-              }
-            },
             "ssl_sess_cache_per_vs": {
               "Type": "Int",
               "Optional": true,
@@ -20067,6 +20837,14 @@
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
+            "admin_ssh_enabled": {
+              "Type": "Bool",
+              "Optional": true,
+              "Default": {
+                "Type": "bool",
+                "Value": "true"
+              }
+            },
             "app_headers": {
               "Type": "List",
               "Optional": true,
@@ -22154,14 +22932,6 @@
           "Value": "false"
         }
       },
-      "advertise_backend_networks": {
-        "Type": "Bool",
-        "Optional": true,
-        "Default": {
-          "Type": "bool",
-          "Value": "false"
-        }
-      },
       "aggressive_failure_detection": {
         "Type": "Bool",
         "Optional": true,
@@ -22268,7 +23038,7 @@
         "Optional": true,
         "Default": {
           "Type": "int",
-          "Value": "10"
+          "Value": "60"
         }
       },
       "buffer_se": {
@@ -22473,28 +23243,12 @@
           "Value": "false"
         }
       },
-      "enable_routing": {
-        "Type": "Bool",
-        "Optional": true,
-        "Default": {
-          "Type": "bool",
-          "Value": "false"
-        }
-      },
-      "enable_vip_on_all_interfaces": {
+      "enable_pcap_tx_ring": {
         "Type": "Bool",
         "Optional": true,
         "Default": {
           "Type": "bool",
           "Value": "true"
-        }
-      },
-      "enable_vmac": {
-        "Type": "Bool",
-        "Optional": true,
-        "Default": {
-          "Type": "bool",
-          "Value": "false"
         }
       },
       "ephemeral_portrange_end": {
@@ -22521,42 +23275,6 @@
         "Default": {
           "Type": "int",
           "Value": "0"
-        }
-      },
-      "floating_intf_ip": {
-        "Type": "List",
-        "Optional": true,
-        "IsBlock": true,
-        "Elem": {
-          "Type": "SchemaInfo",
-          "Info": {
-            "addr": {
-              "Type": "String",
-              "Required": true
-            },
-            "type": {
-              "Type": "String",
-              "Required": true
-            }
-          }
-        }
-      },
-      "floating_intf_ip_se_2": {
-        "Type": "List",
-        "Optional": true,
-        "IsBlock": true,
-        "Elem": {
-          "Type": "SchemaInfo",
-          "Info": {
-            "addr": {
-              "Type": "String",
-              "Required": true
-            },
-            "type": {
-              "Type": "String",
-              "Required": true
-            }
-          }
         }
       },
       "flow_table_new_syn_max_entries": {
@@ -23246,6 +23964,14 @@
           "Value": "1500"
         }
       },
+      "se_kni_burst_factor": {
+        "Type": "Int",
+        "Optional": true,
+        "Default": {
+          "Type": "int",
+          "Value": "0"
+        }
+      },
       "se_lro": {
         "Type": "Bool",
         "Optional": true,
@@ -23283,7 +24009,15 @@
         "Optional": true,
         "Default": {
           "Type": "int",
-          "Value": "65536"
+          "Value": "69632"
+        }
+      },
+      "se_pcap_qdisc_bypass": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
         }
       },
       "se_pcap_reinit_frequency": {
@@ -23318,12 +24052,36 @@
           "Value": "1501"
         }
       },
-      "se_routing": {
-        "Type": "Bool",
+      "se_rum_sampling_nav_interval": {
+        "Type": "Int",
         "Optional": true,
         "Default": {
-          "Type": "bool",
-          "Value": "true"
+          "Type": "int",
+          "Value": "1"
+        }
+      },
+      "se_rum_sampling_nav_percent": {
+        "Type": "Int",
+        "Optional": true,
+        "Default": {
+          "Type": "int",
+          "Value": "1"
+        }
+      },
+      "se_rum_sampling_res_interval": {
+        "Type": "Int",
+        "Optional": true,
+        "Default": {
+          "Type": "int",
+          "Value": "2"
+        }
+      },
+      "se_rum_sampling_res_percent": {
+        "Type": "Int",
+        "Optional": true,
+        "Default": {
+          "Type": "int",
+          "Value": "100"
         }
       },
       "se_sb_dedicated_core": {
@@ -24442,6 +25200,14 @@
           "ElementsType": "String"
         }
       },
+      "ciphersuites": {
+        "Type": "String",
+        "Optional": true,
+        "Default": {
+          "Type": "string",
+          "Value": "TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256"
+        }
+      },
       "description": {
         "Type": "String",
         "Optional": true,
@@ -24451,6 +25217,14 @@
         "Type": "String",
         "Optional": true,
         "Computed": true
+      },
+      "enable_early_data": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
       },
       "enable_ssl_session_reuse": {
         "Type": "Bool",
@@ -26583,6 +27357,788 @@
         "Computed": true
       }
     },
+    "avi_upgradestatusinfo": {
+      "duration": {
+        "Type": "Int",
+        "Optional": true,
+        "Computed": true
+      },
+      "enable_patch_rollback": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "enable_rollback": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "end_time": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "enqueue_time": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "image_ref": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "node_type": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "obj_cloud_ref": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "params": {
+        "Type": "Set",
+        "Optional": true,
+        "Computed": true,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "image_ref": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "patch_ref": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "se_group_options": {
+              "Type": "Set",
+              "Optional": true,
+              "Computed": true,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "action_on_error": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "string",
+                      "Value": "SUSPEND_UPGRADE_OPS_ON_ERROR"
+                    }
+                  },
+                  "disruptive": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "bool",
+                      "Value": "false"
+                    }
+                  }
+                }
+              }
+            },
+            "se_group_resume_options": {
+              "Type": "Set",
+              "Optional": true,
+              "Computed": true,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "action_on_error": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "string",
+                      "Value": "SUSPEND_UPGRADE_OPS_ON_ERROR"
+                    }
+                  },
+                  "skip_suspended": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "bool",
+                      "Value": "false"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch_image_ref": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "patch_version": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "previous_image_ref": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "previous_patch_image_ref": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "previous_patch_version": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "previous_version": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "se_upgrade_events": {
+        "Type": "List",
+        "Optional": true,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "from_se_ref": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "num_se": {
+              "Type": "Int",
+              "Optional": true,
+              "Computed": true
+            },
+            "num_se_group": {
+              "Type": "Int",
+              "Optional": true,
+              "Computed": true
+            },
+            "num_vs": {
+              "Type": "Int",
+              "Optional": true,
+              "Computed": true
+            },
+            "reason": {
+              "Type": "List",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "se_group_ha_mode": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "se_group_ref": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "se_ref": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "task": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "to_se_ref": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "traffic_status": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "vs_ref": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            }
+          }
+        }
+      },
+      "seg_status": {
+        "Type": "Set",
+        "Optional": true,
+        "Computed": true,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "controller_version": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "disrupted_vs_ref": {
+              "Type": "List",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "duration": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "end_time": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "enqueue_time": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "ha_mode": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "in_progress": {
+              "Type": "Bool",
+              "Optional": true,
+              "Computed": true
+            },
+            "notes": {
+              "Type": "List",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "num_se": {
+              "Type": "Int",
+              "Optional": true,
+              "Computed": true
+            },
+            "num_se_with_no_vs": {
+              "Type": "Int",
+              "Optional": true,
+              "Computed": true
+            },
+            "num_se_with_vs_not_scaledout": {
+              "Type": "Int",
+              "Optional": true,
+              "Computed": true
+            },
+            "num_se_with_vs_scaledout": {
+              "Type": "Int",
+              "Optional": true,
+              "Computed": true
+            },
+            "num_vs": {
+              "Type": "Int",
+              "Optional": true,
+              "Computed": true
+            },
+            "num_vs_disrupted": {
+              "Type": "Int",
+              "Optional": true,
+              "Computed": true
+            },
+            "progress": {
+              "Type": "Int",
+              "Optional": true,
+              "Computed": true
+            },
+            "reason": {
+              "Type": "List",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "request_time": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "se_already_upgraded_at_start": {
+              "Type": "List",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "se_disconnected_at_start": {
+              "Type": "List",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "se_group_name": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "se_group_uuid": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "se_ip_missing_at_start": {
+              "Type": "List",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "se_poweredoff_at_start": {
+              "Type": "List",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "se_reboot_in_progress_ref": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "se_upgrade_completed": {
+              "Type": "List",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "se_upgrade_errors": {
+              "Type": "List",
+              "Optional": true,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "from_se_ref": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "num_se": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "num_se_group": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "num_vs": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "reason": {
+                    "Type": "List",
+                    "Optional": true,
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  },
+                  "se_group_ha_mode": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "se_group_ref": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "se_ref": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "task": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "to_se_ref": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "traffic_status": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "vs_ref": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  }
+                }
+              }
+            },
+            "se_upgrade_failed": {
+              "Type": "List",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "se_upgrade_in_progress": {
+              "Type": "List",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "se_upgrade_not_started": {
+              "Type": "List",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "se_upgrade_skip_suspended": {
+              "Type": "List",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "se_upgrade_suspended": {
+              "Type": "List",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "se_with_no_vs": {
+              "Type": "List",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "se_with_vs_not_scaledout": {
+              "Type": "List",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "se_with_vs_scaledout": {
+              "Type": "List",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "start_time": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "state": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "tenant_ref": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "thread": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "traffic_status": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "vs_errors": {
+              "Type": "List",
+              "Optional": true,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "reason": {
+                    "Type": "List",
+                    "Optional": true,
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  },
+                  "se_group_ha_mode": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "se_group_ref": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "tenant_ref": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "traffic_status": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "vip_id": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "vs_ref": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  }
+                }
+              }
+            },
+            "vs_migrate_in_progress_ref": {
+              "Type": "List",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "vs_scalein_in_progress_ref": {
+              "Type": "List",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "vs_scaleout_in_progress_ref": {
+              "Type": "List",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "worker": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            }
+          }
+        }
+      },
+      "start_time": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "state": {
+        "Type": "Set",
+        "Optional": true,
+        "Computed": true,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "last_changed_time": {
+              "Type": "Set",
+              "Optional": true,
+              "Computed": true,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "secs": {
+                    "Type": "Int",
+                    "Required": true
+                  },
+                  "usecs": {
+                    "Type": "Int",
+                    "Required": true
+                  }
+                }
+              }
+            },
+            "reason": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "state": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            }
+          }
+        }
+      },
+      "system": {
+        "Type": "Bool",
+        "Optional": true,
+        "Computed": true
+      },
+      "tasks_completed": {
+        "Type": "Int",
+        "Optional": true,
+        "Computed": true
+      },
+      "tenant_ref": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "total_tasks": {
+        "Type": "Int",
+        "Optional": true,
+        "Computed": true
+      },
+      "upgrade_events": {
+        "Type": "List",
+        "Optional": true,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "nodes_events": {
+              "Type": "List",
+              "Optional": true,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "duration": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "end_time": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "ip": {
+                    "Type": "Set",
+                    "Optional": true,
+                    "Computed": true,
+                    "IsBlock": true,
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "addr": {
+                          "Type": "String",
+                          "Required": true
+                        },
+                        "type": {
+                          "Type": "String",
+                          "Required": true
+                        }
+                      }
+                    }
+                  },
+                  "message": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "start_time": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "status": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "bool",
+                      "Value": "false"
+                    }
+                  }
+                }
+              }
+            },
+            "task": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            }
+          }
+        }
+      },
+      "upgrade_ops": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "uuid": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "version": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      }
+    },
     "avi_useraccount": {
       "email": {
         "Type": "String",
@@ -28616,6 +30172,11 @@
                 }
               }
             },
+            "metadata": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
             "ns": {
               "Type": "List",
               "Optional": true,
@@ -28735,6 +30296,11 @@
         }
       },
       "tenant_ref": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "test_se_datastore_level_1_ref": {
         "Type": "String",
         "Optional": true,
         "Computed": true
@@ -29506,18 +31072,12 @@
                   "hold_time": {
                     "Type": "Int",
                     "Optional": true,
-                    "Default": {
-                      "Type": "int",
-                      "Value": "180"
-                    }
+                    "Computed": true
                   },
                   "keepalive_interval": {
                     "Type": "Int",
                     "Optional": true,
-                    "Default": {
-                      "Type": "int",
-                      "Value": "60"
-                    }
+                    "Computed": true
                   },
                   "local_as": {
                     "Type": "Int",
@@ -30688,6 +32248,11 @@
                       }
                     }
                   },
+                  "description": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
                   "match_element": {
                     "Type": "String",
                     "Optional": true,
@@ -30818,6 +32383,11 @@
                               }
                             }
                           }
+                        },
+                        "description": {
+                          "Type": "String",
+                          "Optional": true,
+                          "Computed": true
                         },
                         "match_element": {
                           "Type": "String",
@@ -31024,6 +32594,11 @@
                       }
                     }
                   },
+                  "description": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
                   "match_element": {
                     "Type": "String",
                     "Optional": true,
@@ -31154,6 +32729,11 @@
                               }
                             }
                           }
+                        },
+                        "description": {
+                          "Type": "String",
+                          "Optional": true,
+                          "Computed": true
                         },
                         "match_element": {
                           "Type": "String",
@@ -31375,6 +32955,11 @@
                       }
                     }
                   },
+                  "description": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
                   "match_element": {
                     "Type": "String",
                     "Optional": true,
@@ -31505,6 +33090,11 @@
                               }
                             }
                           }
+                        },
+                        "description": {
+                          "Type": "String",
+                          "Optional": true,
+                          "Computed": true
                         },
                         "match_element": {
                           "Type": "String",
@@ -31666,6 +33256,11 @@
                       }
                     }
                   },
+                  "description": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
                   "match_element": {
                     "Type": "String",
                     "Optional": true,
@@ -31796,6 +33391,11 @@
                               }
                             }
                           }
+                        },
+                        "description": {
+                          "Type": "String",
+                          "Optional": true,
+                          "Computed": true
                         },
                         "match_element": {
                           "Type": "String",
@@ -32387,7 +33987,7 @@
         "Optional": true,
         "Default": {
           "Type": "string",
-          "Value": "WAF_ACTION_NO_OP"
+          "Value": "WAF_ACTION_ALLOW_PARAMETER"
         }
       },
       "is_learning_group": {
@@ -32758,7 +34358,7 @@
               "Optional": true,
               "Default": {
                 "Type": "bool",
-                "Value": "false"
+                "Value": "true"
               }
             },
             "ignore_incomplete_request_body_error": {
@@ -33314,6 +34914,14 @@
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
+            "anon_auth": {
+              "Type": "Bool",
+              "Optional": true,
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
+              }
+            },
             "format": {
               "Type": "String",
               "Optional": true,
@@ -33321,6 +34929,16 @@
                 "Type": "string",
                 "Value": "SYSLOG_LEGACY"
               }
+            },
+            "pkiprofile_ref": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "ssl_key_and_certificate_ref": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
             },
             "syslog_server": {
               "Type": "String",
@@ -33459,6 +35077,30 @@
               "Default": {
                 "Type": "int",
                 "Value": "514"
+              }
+            },
+            "format_config": {
+              "Type": "Set",
+              "Optional": true,
+              "Computed": true,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "format": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "included_fields": {
+                    "Type": "List",
+                    "Optional": true,
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  }
+                }
               }
             },
             "log_types_to_send": {
@@ -34137,12 +35779,12 @@
                 "Value": "true"
               }
             },
-            "authoritative_domain_names": {
-              "Type": "List",
+            "admin_email": {
+              "Type": "String",
               "Optional": true,
-              "Elem": {
-                "Type": "SchemaElements",
-                "ElementsType": "String"
+              "Default": {
+                "Type": "string",
+                "Value": "hostmaster"
               }
             },
             "dns_over_tcp_enabled": {
@@ -34151,6 +35793,31 @@
               "Default": {
                 "Type": "bool",
                 "Value": "true"
+              }
+            },
+            "dns_zones": {
+              "Type": "List",
+              "Optional": true,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "admin_email": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "domain_name": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "name_server": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  }
+                }
               }
             },
             "domain_names": {
@@ -34189,6 +35856,11 @@
                 "Type": "string",
                 "Value": "DNS_ERROR_RESPONSE_NONE"
               }
+            },
+            "name_server": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
             },
             "negative_caching_ttl": {
               "Type": "Int",
@@ -37234,6 +38906,14 @@
                 "Value": "true"
               }
             },
+            "disable_sni_hostname_check": {
+              "Type": "Bool",
+              "Optional": true,
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
+              }
+            },
             "enable_fire_and_forget": {
               "Type": "Bool",
               "Optional": true,
@@ -37306,6 +38986,14 @@
                 "Value": "false"
               }
             },
+            "http_upstream_buffer_size": {
+              "Type": "Int",
+              "Optional": true,
+              "Default": {
+                "Type": "int",
+                "Value": "0"
+              }
+            },
             "httponly_enabled": {
               "Type": "Bool",
               "Optional": true,
@@ -37352,6 +39040,38 @@
               "Default": {
                 "Type": "int",
                 "Value": "0"
+              }
+            },
+            "max_http2_concurrent_streams_per_connection": {
+              "Type": "Int",
+              "Optional": true,
+              "Default": {
+                "Type": "int",
+                "Value": "128"
+              }
+            },
+            "max_http2_control_frames_per_connection": {
+              "Type": "Int",
+              "Optional": true,
+              "Default": {
+                "Type": "int",
+                "Value": "1000"
+              }
+            },
+            "max_http2_empty_data_frames_per_connection": {
+              "Type": "Int",
+              "Optional": true,
+              "Default": {
+                "Type": "int",
+                "Value": "1000"
+              }
+            },
+            "max_http2_queued_frames_to_client_per_connection": {
+              "Type": "Int",
+              "Optional": true,
+              "Default": {
+                "Type": "int",
+                "Value": "1000"
               }
             },
             "max_keepalive_requests": {
@@ -37421,6 +39141,14 @@
               "Default": {
                 "Type": "int",
                 "Value": "30000"
+              }
+            },
+            "reset_conn_http_on_ssl_port": {
+              "Type": "Bool",
+              "Optional": true,
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
               }
             },
             "respond_with_100_continue": {
@@ -38695,6 +40423,10 @@
         "Type": "String",
         "Computed": true
       },
+      "dns_resolution_on_se": {
+        "Type": "Bool",
+        "Computed": true
+      },
       "docker_configuration": {
         "Type": "Set",
         "Computed": true,
@@ -38832,14 +40564,6 @@
                     "Default": {
                       "Type": "string",
                       "Value": "avinetworks/se"
-                    }
-                  },
-                  "se_repository_push": {
-                    "Type": "Bool",
-                    "Optional": true,
-                    "Default": {
-                      "Type": "bool",
-                      "Value": "false"
                     }
                   },
                   "username": {
@@ -39942,14 +41666,6 @@
                       "Value": "avinetworks/se"
                     }
                   },
-                  "se_repository_push": {
-                    "Type": "Bool",
-                    "Optional": true,
-                    "Default": {
-                      "Type": "bool",
-                      "Value": "false"
-                    }
-                  },
                   "username": {
                     "Type": "String",
                     "Optional": true,
@@ -40227,6 +41943,11 @@
                 }
               }
             },
+            "se_priority_class": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
             "se_restart_batch_size": {
               "Type": "Int",
               "Optional": true,
@@ -40287,7 +42008,7 @@
               "Optional": true,
               "Default": {
                 "Type": "bool",
-                "Value": "false"
+                "Value": "true"
               }
             },
             "use_controller_image": {
@@ -40337,6 +42058,73 @@
                   "type": {
                     "Type": "String",
                     "Required": true
+                  }
+                }
+              }
+            },
+            "vip_next_hops": {
+              "Type": "List",
+              "Optional": true,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "if_name": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "nexthop": {
+                    "Type": "Set",
+                    "Optional": true,
+                    "Computed": true,
+                    "IsBlock": true,
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "addr": {
+                          "Type": "String",
+                          "Required": true
+                        },
+                        "type": {
+                          "Type": "String",
+                          "Required": true
+                        }
+                      }
+                    }
+                  },
+                  "subnet": {
+                    "Type": "Set",
+                    "Optional": true,
+                    "Computed": true,
+                    "IsBlock": true,
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "ip_addr": {
+                          "Type": "Set",
+                          "Required": true,
+                          "IsBlock": true,
+                          "Elem": {
+                            "Type": "SchemaInfo",
+                            "Info": {
+                              "addr": {
+                                "Type": "String",
+                                "Required": true
+                              },
+                              "type": {
+                                "Type": "String",
+                                "Required": true
+                              }
+                            }
+                          }
+                        },
+                        "mask": {
+                          "Type": "Int",
+                          "Required": true
+                        }
+                      }
+                    }
                   }
                 }
               }
@@ -40507,14 +42295,6 @@
                     "Default": {
                       "Type": "string",
                       "Value": "avinetworks/se"
-                    }
-                  },
-                  "se_repository_push": {
-                    "Type": "Bool",
-                    "Optional": true,
-                    "Default": {
-                      "Type": "bool",
-                      "Value": "false"
                     }
                   },
                   "username": {
@@ -41316,6 +43096,14 @@
                       "Value": "360"
                     }
                   },
+                  "default_minimum_api_timeout": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "int",
+                      "Value": "60"
+                    }
+                  },
                   "dns_refresh_period": {
                     "Type": "Int",
                     "Optional": true,
@@ -41505,6 +43293,14 @@
                     "Default": {
                       "Type": "int",
                       "Value": "360"
+                    }
+                  },
+                  "shared_ssl_certificates": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "bool",
+                      "Value": "false"
                     }
                   },
                   "ssl_certificate_expiry_warning_days": {
@@ -41925,6 +43721,61 @@
         "Computed": true
       }
     },
+    "avi_controllerportalregistration": {
+      "asset": {
+        "Type": "Set",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "asset_id": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            }
+          }
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "portal_auth": {
+        "Type": "Set",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "access_token": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "instance_url": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "jwt_token": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            }
+          }
+        }
+      },
+      "tenant_ref": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "uuid": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      }
+    },
     "avi_controllerproperties": {
       "allow_ip_forwarding": {
         "Type": "Bool",
@@ -41987,6 +43838,10 @@
         "Computed": true
       },
       "dead_se_detection_timer": {
+        "Type": "Int",
+        "Computed": true
+      },
+      "default_minimum_api_timeout": {
         "Type": "Int",
         "Computed": true
       },
@@ -42090,6 +43945,10 @@
         "Type": "Int",
         "Computed": true
       },
+      "shared_ssl_certificates": {
+        "Type": "Bool",
+        "Computed": true
+      },
       "ssl_certificate_expiry_warning_days": {
         "Type": "List",
         "Computed": true,
@@ -42185,6 +44044,21 @@
       "tenant_ref": {
         "Type": "String",
         "Optional": true,
+        "Computed": true
+      },
+      "uuid": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      }
+    },
+    "avi_customerportalinfo": {
+      "polling_interval": {
+        "Type": "Int",
+        "Computed": true
+      },
+      "portal_url": {
+        "Type": "String",
         "Computed": true
       },
       "uuid": {
@@ -42298,6 +44172,68 @@
                           "Default": {
                             "Type": "bool",
                             "Value": "true"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "dns_rate_limit": {
+                    "Type": "Set",
+                    "Optional": true,
+                    "Computed": true,
+                    "IsBlock": true,
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "action": {
+                          "Type": "Set",
+                          "Optional": true,
+                          "Computed": true,
+                          "IsBlock": true,
+                          "Elem": {
+                            "Type": "SchemaInfo",
+                            "Info": {
+                              "type": {
+                                "Type": "String",
+                                "Optional": true,
+                                "Default": {
+                                  "Type": "string",
+                                  "Value": "DNS_RL_ACTION_NONE"
+                                }
+                              }
+                            }
+                          }
+                        },
+                        "burst_size": {
+                          "Type": "Int",
+                          "Optional": true,
+                          "Default": {
+                            "Type": "int",
+                            "Value": "0"
+                          }
+                        },
+                        "count": {
+                          "Type": "Int",
+                          "Optional": true,
+                          "Default": {
+                            "Type": "int",
+                            "Value": "0"
+                          }
+                        },
+                        "fine_grain": {
+                          "Type": "Bool",
+                          "Optional": true,
+                          "Default": {
+                            "Type": "bool",
+                            "Value": "false"
+                          }
+                        },
+                        "period": {
+                          "Type": "Int",
+                          "Optional": true,
+                          "Default": {
+                            "Type": "int",
+                            "Value": "1"
                           }
                         }
                       }
@@ -43667,6 +45603,11 @@
                     "Optional": true,
                     "Computed": true
                   },
+                  "hostname": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
                   "ip": {
                     "Type": "Set",
                     "Optional": true,
@@ -43830,6 +45771,10 @@
       },
       "pool_algorithm": {
         "Type": "String",
+        "Computed": true
+      },
+      "resolve_cname": {
+        "Type": "Bool",
         "Computed": true
       },
       "site_persistence_enabled": {
@@ -46823,6 +48768,275 @@
         "Computed": true
       }
     },
+    "avi_image": {
+      "controller_info": {
+        "Type": "Set",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "build": {
+              "Type": "Set",
+              "Optional": true,
+              "Computed": true,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "build_no": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "date": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "min_version": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "patch_version": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "product": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "product_name": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "tag": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "version": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  }
+                }
+              }
+            },
+            "hash": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "patch": {
+              "Type": "Set",
+              "Optional": true,
+              "Computed": true,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "patch_type": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "reboot": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Computed": true
+                  }
+                }
+              }
+            },
+            "path": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            }
+          }
+        }
+      },
+      "migrations": {
+        "Type": "Set",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "api_version": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "controller_host_min_free_disk_size": {
+              "Type": "Int",
+              "Optional": true,
+              "Default": {
+                "Type": "int",
+                "Value": "10"
+              }
+            },
+            "controller_min_free_disk_size": {
+              "Type": "Int",
+              "Optional": true,
+              "Default": {
+                "Type": "int",
+                "Value": "10"
+              }
+            },
+            "max_active_versions": {
+              "Type": "Int",
+              "Optional": true,
+              "Default": {
+                "Type": "int",
+                "Value": "2"
+              }
+            },
+            "se_host_min_free_disk_size": {
+              "Type": "Int",
+              "Optional": true,
+              "Default": {
+                "Type": "int",
+                "Value": "5"
+              }
+            },
+            "se_min_free_disk_size": {
+              "Type": "Int",
+              "Optional": true,
+              "Default": {
+                "Type": "int",
+                "Value": "5"
+              }
+            },
+            "versions": {
+              "Type": "List",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "se_info": {
+        "Type": "Set",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "build": {
+              "Type": "Set",
+              "Optional": true,
+              "Computed": true,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "build_no": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "date": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "min_version": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "patch_version": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "product": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "product_name": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "tag": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "version": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  }
+                }
+              }
+            },
+            "hash": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "patch": {
+              "Type": "Set",
+              "Optional": true,
+              "Computed": true,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "patch_type": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "reboot": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Computed": true
+                  }
+                }
+              }
+            },
+            "path": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            }
+          }
+        }
+      },
+      "status": {
+        "Type": "String",
+        "Computed": true
+      },
+      "tenant_ref": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "type": {
+        "Type": "String",
+        "Computed": true
+      },
+      "uuid": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      }
+    },
     "avi_ipaddrgroup": {
       "addrs": {
         "Type": "List",
@@ -48787,6 +51001,14 @@
                       "Value": "0"
                     }
                   },
+                  "keepalive_in_halfclose_state": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "bool",
+                      "Value": "true"
+                    }
+                  },
                   "max_retransmissions": {
                     "Type": "Int",
                     "Optional": true,
@@ -49359,6 +51581,14 @@
                       "Value": "300"
                     }
                   },
+                  "tcp_reset_timeout": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "int",
+                      "Value": "1"
+                    }
+                  },
                   "udp_idle_timeout": {
                     "Type": "Int",
                     "Optional": true,
@@ -49368,6 +51598,14 @@
                     }
                   }
                 }
+              }
+            },
+            "graceful_restart": {
+              "Type": "Bool",
+              "Optional": true,
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
               }
             },
             "nat_policy_ref": {
@@ -51092,6 +53330,43 @@
         "Computed": true
       }
     },
+    "avi_portalfileupload": {
+      "case_id": {
+        "Type": "String",
+        "Computed": true
+      },
+      "error": {
+        "Type": "String",
+        "Computed": true
+      },
+      "file_path": {
+        "Type": "String",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "s3_directory": {
+        "Type": "String",
+        "Computed": true
+      },
+      "status": {
+        "Type": "String",
+        "Computed": true
+      },
+      "tenant_ref": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "uuid": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      }
+    },
     "avi_prioritylabels": {
       "cloud_ref": {
         "Type": "String",
@@ -51572,6 +53847,81 @@
                 "Value": "true"
               }
             },
+            "seagent_statecache_properties": {
+              "Type": "Set",
+              "Optional": true,
+              "Computed": true,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "sc_batch_buffer_flush_limit": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "int",
+                      "Value": "300"
+                    }
+                  },
+                  "sc_shard_cleanup_max_time": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "int",
+                      "Value": "900"
+                    }
+                  },
+                  "sc_state_ring_batch_dequeue_limit": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "int",
+                      "Value": "300"
+                    }
+                  },
+                  "sc_states_flush_interval": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "int",
+                      "Value": "100"
+                    }
+                  },
+                  "sc_stream_check_interval": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "int",
+                      "Value": "5000"
+                    }
+                  },
+                  "sc_thread_q_batch_dequeue_limit": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "int",
+                      "Value": "100"
+                    }
+                  },
+                  "sc_thread_q_max_size": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "int",
+                      "Value": "4096"
+                    }
+                  },
+                  "sc_thread_sleep_interval": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "int",
+                      "Value": "10"
+                    }
+                  }
+                }
+              }
+            },
             "send_se_ready_timeout": {
               "Type": "Int",
               "Optional": true,
@@ -51613,6 +53963,14 @@
               }
             },
             "vnic_probe_interval": {
+              "Type": "Int",
+              "Optional": true,
+              "Default": {
+                "Type": "int",
+                "Value": "5"
+              }
+            },
+            "vnic_rpc_retry_interval": {
               "Type": "Int",
               "Optional": true,
               "Default": {
@@ -51840,38 +54198,6 @@
                 "Value": "512"
               }
             },
-            "se_rum_sampling_nav_interval": {
-              "Type": "Int",
-              "Optional": true,
-              "Default": {
-                "Type": "int",
-                "Value": "1"
-              }
-            },
-            "se_rum_sampling_nav_percent": {
-              "Type": "Int",
-              "Optional": true,
-              "Default": {
-                "Type": "int",
-                "Value": "1"
-              }
-            },
-            "se_rum_sampling_res_interval": {
-              "Type": "Int",
-              "Optional": true,
-              "Default": {
-                "Type": "int",
-                "Value": "2"
-              }
-            },
-            "se_rum_sampling_res_percent": {
-              "Type": "Int",
-              "Optional": true,
-              "Default": {
-                "Type": "int",
-                "Value": "100"
-              }
-            },
             "ssl_sess_cache_per_vs": {
               "Type": "Int",
               "Optional": true,
@@ -51905,6 +54231,14 @@
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
+            "admin_ssh_enabled": {
+              "Type": "Bool",
+              "Optional": true,
+              "Default": {
+                "Type": "bool",
+                "Value": "true"
+              }
+            },
             "app_headers": {
               "Type": "List",
               "Optional": true,
@@ -53891,10 +56225,6 @@
         "Type": "Bool",
         "Computed": true
       },
-      "advertise_backend_networks": {
-        "Type": "Bool",
-        "Computed": true
-      },
       "aggressive_failure_detection": {
         "Type": "Bool",
         "Computed": true
@@ -54082,15 +56412,7 @@
         "Type": "Bool",
         "Computed": true
       },
-      "enable_routing": {
-        "Type": "Bool",
-        "Computed": true
-      },
-      "enable_vip_on_all_interfaces": {
-        "Type": "Bool",
-        "Computed": true
-      },
-      "enable_vmac": {
+      "enable_pcap_tx_ring": {
         "Type": "Bool",
         "Computed": true
       },
@@ -54109,40 +56431,6 @@
       "extra_shared_config_memory": {
         "Type": "Int",
         "Computed": true
-      },
-      "floating_intf_ip": {
-        "Type": "List",
-        "Computed": true,
-        "Elem": {
-          "Type": "SchemaInfo",
-          "Info": {
-            "addr": {
-              "Type": "String",
-              "Required": true
-            },
-            "type": {
-              "Type": "String",
-              "Required": true
-            }
-          }
-        }
-      },
-      "floating_intf_ip_se_2": {
-        "Type": "List",
-        "Computed": true,
-        "Elem": {
-          "Type": "SchemaInfo",
-          "Info": {
-            "addr": {
-              "Type": "String",
-              "Required": true
-            },
-            "type": {
-              "Type": "String",
-              "Required": true
-            }
-          }
-        }
       },
       "flow_table_new_syn_max_entries": {
         "Type": "Int",
@@ -54638,6 +56926,10 @@
         "Type": "Int",
         "Computed": true
       },
+      "se_kni_burst_factor": {
+        "Type": "Int",
+        "Computed": true
+      },
       "se_lro": {
         "Type": "Bool",
         "Computed": true
@@ -54658,6 +56950,10 @@
         "Type": "Int",
         "Computed": true
       },
+      "se_pcap_qdisc_bypass": {
+        "Type": "Bool",
+        "Computed": true
+      },
       "se_pcap_reinit_frequency": {
         "Type": "Int",
         "Computed": true
@@ -54674,8 +56970,20 @@
         "Type": "Int",
         "Computed": true
       },
-      "se_routing": {
-        "Type": "Bool",
+      "se_rum_sampling_nav_interval": {
+        "Type": "Int",
+        "Computed": true
+      },
+      "se_rum_sampling_nav_percent": {
+        "Type": "Int",
+        "Computed": true
+      },
+      "se_rum_sampling_res_interval": {
+        "Type": "Int",
+        "Computed": true
+      },
+      "se_rum_sampling_res_percent": {
+        "Type": "Int",
         "Computed": true
       },
       "se_sb_dedicated_core": {
@@ -55631,12 +57939,20 @@
           "ElementsType": "String"
         }
       },
+      "ciphersuites": {
+        "Type": "String",
+        "Computed": true
+      },
       "description": {
         "Type": "String",
         "Computed": true
       },
       "dhparam": {
         "Type": "String",
+        "Computed": true
+      },
+      "enable_early_data": {
+        "Type": "Bool",
         "Computed": true
       },
       "enable_ssl_session_reuse": {
@@ -57694,6 +60010,754 @@
         "Computed": true
       }
     },
+    "avi_upgradestatusinfo": {
+      "duration": {
+        "Type": "Int",
+        "Computed": true
+      },
+      "enable_patch_rollback": {
+        "Type": "Bool",
+        "Computed": true
+      },
+      "enable_rollback": {
+        "Type": "Bool",
+        "Computed": true
+      },
+      "end_time": {
+        "Type": "String",
+        "Computed": true
+      },
+      "enqueue_time": {
+        "Type": "String",
+        "Computed": true
+      },
+      "image_ref": {
+        "Type": "String",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "node_type": {
+        "Type": "String",
+        "Computed": true
+      },
+      "obj_cloud_ref": {
+        "Type": "String",
+        "Computed": true
+      },
+      "params": {
+        "Type": "Set",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "image_ref": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "patch_ref": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "se_group_options": {
+              "Type": "Set",
+              "Optional": true,
+              "Computed": true,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "action_on_error": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "string",
+                      "Value": "SUSPEND_UPGRADE_OPS_ON_ERROR"
+                    }
+                  },
+                  "disruptive": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "bool",
+                      "Value": "false"
+                    }
+                  }
+                }
+              }
+            },
+            "se_group_resume_options": {
+              "Type": "Set",
+              "Optional": true,
+              "Computed": true,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "action_on_error": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "string",
+                      "Value": "SUSPEND_UPGRADE_OPS_ON_ERROR"
+                    }
+                  },
+                  "skip_suspended": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "bool",
+                      "Value": "false"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch_image_ref": {
+        "Type": "String",
+        "Computed": true
+      },
+      "patch_version": {
+        "Type": "String",
+        "Computed": true
+      },
+      "previous_image_ref": {
+        "Type": "String",
+        "Computed": true
+      },
+      "previous_patch_image_ref": {
+        "Type": "String",
+        "Computed": true
+      },
+      "previous_patch_version": {
+        "Type": "String",
+        "Computed": true
+      },
+      "previous_version": {
+        "Type": "String",
+        "Computed": true
+      },
+      "se_upgrade_events": {
+        "Type": "List",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "from_se_ref": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "num_se": {
+              "Type": "Int",
+              "Optional": true,
+              "Computed": true
+            },
+            "num_se_group": {
+              "Type": "Int",
+              "Optional": true,
+              "Computed": true
+            },
+            "num_vs": {
+              "Type": "Int",
+              "Optional": true,
+              "Computed": true
+            },
+            "reason": {
+              "Type": "List",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "se_group_ha_mode": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "se_group_ref": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "se_ref": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "task": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "to_se_ref": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "traffic_status": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "vs_ref": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            }
+          }
+        }
+      },
+      "seg_status": {
+        "Type": "Set",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "controller_version": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "disrupted_vs_ref": {
+              "Type": "List",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "duration": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "end_time": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "enqueue_time": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "ha_mode": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "in_progress": {
+              "Type": "Bool",
+              "Optional": true,
+              "Computed": true
+            },
+            "notes": {
+              "Type": "List",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "num_se": {
+              "Type": "Int",
+              "Optional": true,
+              "Computed": true
+            },
+            "num_se_with_no_vs": {
+              "Type": "Int",
+              "Optional": true,
+              "Computed": true
+            },
+            "num_se_with_vs_not_scaledout": {
+              "Type": "Int",
+              "Optional": true,
+              "Computed": true
+            },
+            "num_se_with_vs_scaledout": {
+              "Type": "Int",
+              "Optional": true,
+              "Computed": true
+            },
+            "num_vs": {
+              "Type": "Int",
+              "Optional": true,
+              "Computed": true
+            },
+            "num_vs_disrupted": {
+              "Type": "Int",
+              "Optional": true,
+              "Computed": true
+            },
+            "progress": {
+              "Type": "Int",
+              "Optional": true,
+              "Computed": true
+            },
+            "reason": {
+              "Type": "List",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "request_time": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "se_already_upgraded_at_start": {
+              "Type": "List",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "se_disconnected_at_start": {
+              "Type": "List",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "se_group_name": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "se_group_uuid": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "se_ip_missing_at_start": {
+              "Type": "List",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "se_poweredoff_at_start": {
+              "Type": "List",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "se_reboot_in_progress_ref": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "se_upgrade_completed": {
+              "Type": "List",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "se_upgrade_errors": {
+              "Type": "List",
+              "Optional": true,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "from_se_ref": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "num_se": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "num_se_group": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "num_vs": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "reason": {
+                    "Type": "List",
+                    "Optional": true,
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  },
+                  "se_group_ha_mode": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "se_group_ref": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "se_ref": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "task": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "to_se_ref": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "traffic_status": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "vs_ref": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  }
+                }
+              }
+            },
+            "se_upgrade_failed": {
+              "Type": "List",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "se_upgrade_in_progress": {
+              "Type": "List",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "se_upgrade_not_started": {
+              "Type": "List",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "se_upgrade_skip_suspended": {
+              "Type": "List",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "se_upgrade_suspended": {
+              "Type": "List",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "se_with_no_vs": {
+              "Type": "List",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "se_with_vs_not_scaledout": {
+              "Type": "List",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "se_with_vs_scaledout": {
+              "Type": "List",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "start_time": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "state": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "tenant_ref": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "thread": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "traffic_status": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "vs_errors": {
+              "Type": "List",
+              "Optional": true,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "reason": {
+                    "Type": "List",
+                    "Optional": true,
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  },
+                  "se_group_ha_mode": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "se_group_ref": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "tenant_ref": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "traffic_status": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "vip_id": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "vs_ref": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  }
+                }
+              }
+            },
+            "vs_migrate_in_progress_ref": {
+              "Type": "List",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "vs_scalein_in_progress_ref": {
+              "Type": "List",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "vs_scaleout_in_progress_ref": {
+              "Type": "List",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "worker": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            }
+          }
+        }
+      },
+      "start_time": {
+        "Type": "String",
+        "Computed": true
+      },
+      "state": {
+        "Type": "Set",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "last_changed_time": {
+              "Type": "Set",
+              "Optional": true,
+              "Computed": true,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "secs": {
+                    "Type": "Int",
+                    "Required": true
+                  },
+                  "usecs": {
+                    "Type": "Int",
+                    "Required": true
+                  }
+                }
+              }
+            },
+            "reason": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "state": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            }
+          }
+        }
+      },
+      "system": {
+        "Type": "Bool",
+        "Computed": true
+      },
+      "tasks_completed": {
+        "Type": "Int",
+        "Computed": true
+      },
+      "tenant_ref": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "total_tasks": {
+        "Type": "Int",
+        "Computed": true
+      },
+      "upgrade_events": {
+        "Type": "List",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "nodes_events": {
+              "Type": "List",
+              "Optional": true,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "duration": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "end_time": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "ip": {
+                    "Type": "Set",
+                    "Optional": true,
+                    "Computed": true,
+                    "IsBlock": true,
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "addr": {
+                          "Type": "String",
+                          "Required": true
+                        },
+                        "type": {
+                          "Type": "String",
+                          "Required": true
+                        }
+                      }
+                    }
+                  },
+                  "message": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "start_time": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "status": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "bool",
+                      "Value": "false"
+                    }
+                  }
+                }
+              }
+            },
+            "task": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            }
+          }
+        }
+      },
+      "upgrade_ops": {
+        "Type": "String",
+        "Computed": true
+      },
+      "uuid": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "version": {
+        "Type": "String",
+        "Computed": true
+      }
+    },
     "avi_useraccountprofile": {
       "account_lock_timeout": {
         "Type": "Int",
@@ -59563,6 +62627,11 @@
                 }
               }
             },
+            "metadata": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
             "ns": {
               "Type": "List",
               "Optional": true,
@@ -59684,6 +62753,10 @@
       "tenant_ref": {
         "Type": "String",
         "Optional": true,
+        "Computed": true
+      },
+      "test_se_datastore_level_1_ref": {
+        "Type": "String",
         "Computed": true
       },
       "topology_policies": {
@@ -60422,18 +63495,12 @@
                   "hold_time": {
                     "Type": "Int",
                     "Optional": true,
-                    "Default": {
-                      "Type": "int",
-                      "Value": "180"
-                    }
+                    "Computed": true
                   },
                   "keepalive_interval": {
                     "Type": "Int",
                     "Optional": true,
-                    "Default": {
-                      "Type": "int",
-                      "Value": "60"
-                    }
+                    "Computed": true
                   },
                   "local_as": {
                     "Type": "Int",
@@ -61582,6 +64649,11 @@
                       }
                     }
                   },
+                  "description": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
                   "match_element": {
                     "Type": "String",
                     "Optional": true,
@@ -61712,6 +64784,11 @@
                               }
                             }
                           }
+                        },
+                        "description": {
+                          "Type": "String",
+                          "Optional": true,
+                          "Computed": true
                         },
                         "match_element": {
                           "Type": "String",
@@ -61909,6 +64986,11 @@
                       }
                     }
                   },
+                  "description": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
                   "match_element": {
                     "Type": "String",
                     "Optional": true,
@@ -62039,6 +65121,11 @@
                               }
                             }
                           }
+                        },
+                        "description": {
+                          "Type": "String",
+                          "Optional": true,
+                          "Computed": true
                         },
                         "match_element": {
                           "Type": "String",
@@ -62241,6 +65328,11 @@
                       }
                     }
                   },
+                  "description": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
                   "match_element": {
                     "Type": "String",
                     "Optional": true,
@@ -62371,6 +65463,11 @@
                               }
                             }
                           }
+                        },
+                        "description": {
+                          "Type": "String",
+                          "Optional": true,
+                          "Computed": true
                         },
                         "match_element": {
                           "Type": "String",
@@ -62531,6 +65628,11 @@
                       }
                     }
                   },
+                  "description": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
                   "match_element": {
                     "Type": "String",
                     "Optional": true,
@@ -62661,6 +65763,11 @@
                               }
                             }
                           }
+                        },
+                        "description": {
+                          "Type": "String",
+                          "Optional": true,
+                          "Computed": true
                         },
                         "match_element": {
                           "Type": "String",
@@ -63599,7 +66706,7 @@
               "Optional": true,
               "Default": {
                 "Type": "bool",
-                "Value": "false"
+                "Value": "true"
               }
             },
             "ignore_incomplete_request_body_error": {

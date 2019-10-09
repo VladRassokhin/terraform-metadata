@@ -2,7 +2,7 @@
   ".schema_version": "1",
   "name": "signalfx",
   "type": "provider",
-  "version": "v4.6.3",
+  "version": "v4.8.3",
   "provider": {
     "api_url": {
       "Type": "String",
@@ -30,11 +30,24 @@
     }
   },
   "resources": {
+    "signalfx_aws_external_integration": {
+      "external_id": {
+        "Type": "String",
+        "Description": "The SignalFx-generated AWS account ID to use with an AWS integration.",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the integration"
+      }
+    },
     "signalfx_aws_integration": {
       "auth_method": {
         "Type": "String",
-        "Optional": true,
-        "Description": "The mechanism used to authenticate with AWS. The allowed values are \"ExternalID\" or \"SecurityToken\""
+        "Description": "The mechanism used to authenticate with AWS.",
+        "Computed": true,
+        "Removed": "Use one of `signalfx_aws_external_integration` or `signalfx_aws_token_integration`"
       },
       "custom_cloudwatch_namespaces": {
         "Type": "Set",
@@ -94,23 +107,37 @@
       },
       "external_id": {
         "Type": "String",
-        "Description": "If you specify `authMethod = \"ExternalId\"` in your request to create an AWS integration object, the response object contains a value for `externalId`. Use this value and the ARN value you get from AWS to update the integration object. SignalFx can then connect to AWS using the integration object.",
-        "Computed": true
+        "Optional": true,
+        "Description": "Used with `signalfx_aws_external_integration`. Use this property to specify the external id.",
+        "ConflictsWith": [
+          "token",
+          "key"
+        ]
       },
       "import_cloud_watch": {
         "Type": "Bool",
         "Optional": true,
         "Description": "Flag that controls how SignalFx imports Cloud Watch metrics. If true, SignalFx imports Cloud Watch metrics from AWS."
       },
+      "integration_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The ID of this integration"
+      },
       "key": {
         "Type": "String",
         "Optional": true,
-        "Description": "If you specify `auth_method = \"SecurityToken\"` in your request to create an AWS integration object, use this property to specify the key."
+        "Description": "Used with `signalfx_aws_token_integration`. Use this property to specify the token.",
+        "ConflictsWith": [
+          "role_arn",
+          "external_id"
+        ]
       },
       "name": {
         "Type": "String",
-        "Required": true,
-        "Description": "Name of the integration"
+        "Description": "Name of the integration",
+        "Computed": true,
+        "Removed": "Please specify the name in `signalfx_aws_external_integration` or `signalfx_aws_integration_token`"
       },
       "namespace_sync_rule": {
         "Type": "Set",
@@ -163,7 +190,11 @@
       "role_arn": {
         "Type": "String",
         "Optional": true,
-        "Description": "Role ARN that you add to an existing AWS integration object"
+        "Description": "Used with `signalfx_aws_external_integration`. Use this property to specify the AIM role ARN.",
+        "ConflictsWith": [
+          "token",
+          "key"
+        ]
       },
       "services": {
         "Type": "Set",
@@ -177,7 +208,23 @@
       "token": {
         "Type": "String",
         "Optional": true,
-        "Description": "If you specify `auth_method = \"SecurityToken\"` in your request to create an AWS integration object, use this property to specify the token."
+        "Description": "Used with `signalfx_aws_token_integration`. Use this property to specify the token.",
+        "ConflictsWith": [
+          "role_arn",
+          "external_id"
+        ]
+      }
+    },
+    "signalfx_aws_token_integration": {
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the integration"
+      },
+      "token_id": {
+        "Type": "String",
+        "Description": "The SignalFx-generated AWS account ID to use with an AWS integration.",
+        "Computed": true
       }
     },
     "signalfx_azure_integration": {
@@ -279,7 +326,7 @@
             "width": {
               "Type": "Int",
               "Optional": true,
-              "Description": "How many columns (out of a total of 12) the chart should take up. (between 1 and 12)",
+              "Description": "How many columns (out of a total of 12, one-based) the chart should take up. (between 1 and 12)",
               "Default": {
                 "Type": "int",
                 "Value": "12"
@@ -322,7 +369,7 @@
             "column": {
               "Type": "Int",
               "Optional": true,
-              "Description": "Column number for the layout",
+              "Description": "The column to show the chart in (zero-based); this value always represents the leftmost column of the chart. (between 0 and 11)",
               "Default": {
                 "Type": "int",
                 "Value": "0"
@@ -521,7 +568,7 @@
             "width": {
               "Type": "Int",
               "Optional": true,
-              "Description": "Number of columns (out of a total of 12) each chart should take up. (between 1 and 12)",
+              "Description": "Number of columns (out of a total of 12, one-based) each chart should take up. (between 1 and 12)",
               "Default": {
                 "Type": "int",
                 "Value": "12"
@@ -833,7 +880,7 @@
       "max_delay": {
         "Type": "Int",
         "Optional": true,
-        "Description": "How long (in seconds) to wait for late datapoints. Max value 900s (15m)"
+        "Description": "How long (in seconds) to wait for late datapoints. Max value 900 (15m)"
       },
       "name": {
         "Type": "String",
@@ -939,11 +986,15 @@
       "time_range": {
         "Type": "Int",
         "Optional": true,
-        "Description": "Seconds to display in the visualization. This is a rolling range from the current time. Example: 3600 = `-1h`",
+        "Description": "Seconds to display in the visualization. This is a rolling range from the current time. Example: 3600 = `-1h`. Defaults to 3600",
         "ConflictsWith": [
           "start_time",
           "end_time"
-        ]
+        ],
+        "Default": {
+          "Type": "int",
+          "Value": "3600"
+        }
       },
       "url": {
         "Type": "String",
@@ -1047,7 +1098,11 @@
       "color_range": {
         "Type": "Set",
         "Optional": true,
-        "Description": "Values and color for the color range. Example: colorRange : { min : 0, max : 100, color : \"blue\" }",
+        "Description": "Values and color for the color range. Example: colorRange : { min : 0, max : 100, color : \"#0000ff\" }",
+        "MaxItems": 1,
+        "ConflictsWith": [
+          "color_scale"
+        ],
         "IsBlock": true,
         "Elem": {
           "Type": "SchemaInfo",
@@ -1055,7 +1110,7 @@
             "color": {
               "Type": "String",
               "Required": true,
-              "Description": "The color range to use. Must be either \"gray\", \"blue\", \"navy\", \"orange\", \"yellow\", \"magenta\", \"purple\", \"violet\", \"lilac\", \"green\", \"aquamarine\""
+              "Description": "The color range to use. The starting hex color value for data values in a heatmap chart. Specify the value as a 6-character hexadecimal value preceded by the '#' character, for example \"#ea1849\" (grass green)."
             },
             "max_value": {
               "Type": "Float",
@@ -1082,6 +1137,9 @@
         "Type": "Set",
         "Optional": true,
         "Description": "Single color range including both the color to display for that range and the borders of the range",
+        "ConflictsWith": [
+          "color_range"
+        ],
         "IsBlock": true,
         "Elem": {
           "Type": "SchemaInfo",
@@ -2271,6 +2329,23 @@
             }
           }
         }
+      }
+    },
+    "signalfx_victor_ops_integration": {
+      "enabled": {
+        "Type": "Bool",
+        "Required": true,
+        "Description": "Whether the integration is enabled or not"
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the integration"
+      },
+      "post_url": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Opsgenie API URL for integration"
       }
     }
   },

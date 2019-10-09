@@ -2,7 +2,7 @@
   ".schema_version": "1",
   "name": "ns1",
   "type": "provider",
-  "version": "v1.5.1",
+  "version": "v1.5.3",
   "provider": {
     "apikey": {
       "Type": "String",
@@ -585,6 +585,9 @@
       "additional_primaries": {
         "Type": "List",
         "Optional": true,
+        "ConflictsWith": [
+          "secondaries"
+        ],
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -594,10 +597,19 @@
         "Type": "String",
         "Computed": true
       },
+      "dnssec": {
+        "Type": "Bool",
+        "Optional": true,
+        "Computed": true
+      },
       "expiry": {
         "Type": "Int",
         "Optional": true,
-        "Computed": true
+        "Computed": true,
+        "ConflictsWith": [
+          "primary",
+          "additional_primaries"
+        ]
       },
       "hostmaster": {
         "Type": "String",
@@ -619,21 +631,78 @@
       "nx_ttl": {
         "Type": "Int",
         "Optional": true,
-        "Computed": true
+        "Computed": true,
+        "ConflictsWith": [
+          "primary",
+          "additional_primaries"
+        ]
       },
       "primary": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "ConflictsWith": [
+          "secondaries"
+        ]
       },
       "refresh": {
         "Type": "Int",
         "Optional": true,
-        "Computed": true
+        "Computed": true,
+        "ConflictsWith": [
+          "primary",
+          "additional_primaries"
+        ]
       },
       "retry": {
         "Type": "Int",
         "Optional": true,
-        "Computed": true
+        "Computed": true,
+        "ConflictsWith": [
+          "primary",
+          "additional_primaries"
+        ]
+      },
+      "secondaries": {
+        "Type": "Set",
+        "Optional": true,
+        "ConflictsWith": [
+          "primary",
+          "additional_primaries"
+        ],
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "ip": {
+              "Type": "String",
+              "Required": true
+            },
+            "networks": {
+              "Type": "Set",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "Int"
+              }
+            },
+            "notify": {
+              "Type": "Bool",
+              "Optional": true,
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
+              }
+            },
+            "port": {
+              "Type": "Int",
+              "Optional": true,
+              "Default": {
+                "Type": "int",
+                "Value": "53"
+              }
+            }
+          }
+        }
       },
       "ttl": {
         "Type": "Int",
@@ -647,6 +716,115 @@
     }
   },
   "data-sources": {
+    "ns1_dnssec": {
+      "delegation": {
+        "Type": "List",
+        "Computed": true,
+        "MaxItems": 1,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "dnskey": {
+              "Type": "List",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "algorithm": {
+                    "Type": "String",
+                    "Computed": true
+                  },
+                  "flags": {
+                    "Type": "String",
+                    "Computed": true
+                  },
+                  "protocol": {
+                    "Type": "String",
+                    "Computed": true
+                  },
+                  "public_key": {
+                    "Type": "String",
+                    "Computed": true
+                  }
+                }
+              }
+            },
+            "ds": {
+              "Type": "List",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "algorithm": {
+                    "Type": "String",
+                    "Computed": true
+                  },
+                  "flags": {
+                    "Type": "String",
+                    "Computed": true
+                  },
+                  "protocol": {
+                    "Type": "String",
+                    "Computed": true
+                  },
+                  "public_key": {
+                    "Type": "String",
+                    "Computed": true
+                  }
+                }
+              }
+            },
+            "ttl": {
+              "Type": "Int",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "keys": {
+        "Type": "List",
+        "Computed": true,
+        "MaxItems": 1,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "dnskey": {
+              "Type": "List",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "algorithm": {
+                    "Type": "String",
+                    "Computed": true
+                  },
+                  "flags": {
+                    "Type": "String",
+                    "Computed": true
+                  },
+                  "protocol": {
+                    "Type": "String",
+                    "Computed": true
+                  },
+                  "public_key": {
+                    "Type": "String",
+                    "Computed": true
+                  }
+                }
+              }
+            },
+            "ttl": {
+              "Type": "Int",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "zone": {
+        "Type": "String",
+        "Required": true
+      }
+    },
     "ns1_zone": {
       "additional_primaries": {
         "Type": "List",
@@ -658,6 +836,10 @@
       },
       "dns_servers": {
         "Type": "String",
+        "Computed": true
+      },
+      "dnssec": {
+        "Type": "Bool",
         "Computed": true
       },
       "expiry": {
@@ -695,6 +877,35 @@
       "retry": {
         "Type": "Int",
         "Computed": true
+      },
+      "secondaries": {
+        "Type": "Set",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "ip": {
+              "Type": "String",
+              "Computed": true
+            },
+            "networks": {
+              "Type": "Set",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "Int"
+              }
+            },
+            "notify": {
+              "Type": "Bool",
+              "Computed": true
+            },
+            "port": {
+              "Type": "Int",
+              "Computed": true
+            }
+          }
+        }
       },
       "ttl": {
         "Type": "Int",
