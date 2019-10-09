@@ -60,16 +60,20 @@ process_repository() {
   pkg_name="$name"
   provider_args=""
 
-  if [[ "$pkg_name" == "terraform" ]]; then
-    # Ignoring deprecated provider
+  case "$pkg_name" in
+  "terraform" | "scaffolding")
+    echo "Skipping $full_name"
     return
-  fi
-  if [[ "$pkg_name" == "azure-classic" ]]; then
+    ;;
+  "azure-classic")
     pkg_name="azure"
-  fi
-  if [[ "$pkg_name" == "oci" ]]; then
+    ;;
+  "oci")
     provider_args="prvdr.ProviderConfig"
-  fi
+    ;;
+  esac
+
+  echo "Processing $full_name"
 
   if output=$(git -C "$location" status --untracked-files=no --porcelain) && [[ -n "$output" ]]; then
     echo "git working copy is not clear, cannot proceed"
@@ -135,16 +139,12 @@ process_repository() {
   fi
 
   # Revert to previous state
-  [[ -n "$latest" ]] && git checkout -q '@{-1}'
+  [[ -n "$latest" ]] && git checkout --force -q '@{-1}'
   popd >/dev/null
 }
 
 while IFS= read -r p; do
-  if [[ "$p" == "terraform-provider-scaffolding" ]]; then
-    continue
-  fi
-
-  process_repository "$p"
+  process_repository "$p" || true
 done < <(grep '^terraform-provider-' <"$CUR/providers.list.full")
 
 echo
