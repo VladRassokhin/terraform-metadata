@@ -117,6 +117,11 @@ process_repository() {
     fi
   fi
 
+  sdk="terraform"
+  if [ -f "go.mod" ] && grep -q 'github.com/hashicorp/terraform-plugin-sdk' "go.mod"; then
+    sdk="terraform-plugin-sdk"
+  fi
+
   rm -rf generate-schema
   mkdir generate-schema
   sed \
@@ -125,6 +130,7 @@ process_repository() {
     -e "s/__PKG_NAME__/${pkg_name}/g" \
     -e "s/__REVISION__/$revision/g" \
     -e "s/__PROVIDER_ARGS__/$provider_args/g" \
+    -e "s/__SDK__/$sdk/g" \
     -e "s~__OUT__~$out~g" \
     "$CUR/template/generate-schema.go" \
     >generate-schema/generate-schema.go
