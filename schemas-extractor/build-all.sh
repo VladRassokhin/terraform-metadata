@@ -25,7 +25,7 @@ update_or_clone() {
   location="$GOPATH/src/github.com/terraform-providers/$name"
   if [[ -d "$location" ]]; then
     echo "Updating $name"
-    git -C "$location" pull >/dev/null 2>&1 || echo "ERROR: Failed to update '$name'"
+    git -C "$location" fetch --tags >/dev/null 2>&1 || echo "ERROR: Failed to update '$name'"
   else
     echo "Cloning $name"
     git clone --quiet "https://github.com/terraform-providers/$name.git" "$location" >/dev/null 2>&1
