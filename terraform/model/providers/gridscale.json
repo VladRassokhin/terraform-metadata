@@ -2,7 +2,7 @@
   ".schema_version": "1",
   "name": "gridscale",
   "type": "provider",
-  "version": "v1.0.0",
+  "version": "v1.4.0",
   "provider": {
     "api_url": {
       "Type": "String",
@@ -214,6 +214,110 @@
         "Computed": true
       }
     },
+    "gridscale_loadbalancer": {
+      "algorithm": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The algorithm used to process requests. Accepted values: roundrobin/leastconn."
+      },
+      "backend_server": {
+        "Type": "Set",
+        "Required": true,
+        "Description": "List of backend servers.",
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "host": {
+              "Type": "String",
+              "Required": true
+            },
+            "weight": {
+              "Type": "Int",
+              "Optional": true,
+              "Default": {
+                "Type": "int",
+                "Value": "100"
+              }
+            }
+          }
+        }
+      },
+      "forwarding_rule": {
+        "Type": "Set",
+        "Required": true,
+        "Description": "List of forwarding rules for the Load balancer.",
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "letsencrypt_ssl": {
+              "Type": "String",
+              "Optional": true
+            },
+            "listen_port": {
+              "Type": "Int",
+              "Required": true
+            },
+            "mode": {
+              "Type": "String",
+              "Required": true
+            },
+            "target_port": {
+              "Type": "Int",
+              "Required": true
+            }
+          }
+        }
+      },
+      "labels": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "List of labels.",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "listen_ipv4_uuid": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The UUID of the IPv4 address the Load balancer will listen to for incoming requests."
+      },
+      "listen_ipv6_uuid": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The UUID of the IPv6 address the Load balancer will listen to for incoming requests."
+      },
+      "location_uuid": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Helps to identify which datacenter an object belongs to.",
+        "Default": {
+          "Type": "string",
+          "Value": "45ed677b-3702-4b36-be2a-a2eab9827950"
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The human-readable name of the object. It supports the full UTF-8 charset, with a maximum of 64 characters"
+      },
+      "redirect_http_to_https": {
+        "Type": "Bool",
+        "Required": true,
+        "Description": "Whether the Load balancer is forced to redirect requests from HTTP to HTTPS"
+      },
+      "status": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Status indicates the status of the object.",
+        "Default": {
+          "Type": "string",
+          "Value": "active"
+        }
+      }
+    },
     "gridscale_network": {
       "__timeouts__": [
         "delete"
@@ -375,28 +479,22 @@
         "Type": "Set",
         "Optional": true,
         "MaxItems": 7,
+        "IsBlock": true,
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
             "bootdevice": {
               "Type": "Bool",
               "Optional": true,
-              "Default": {
-                "Type": "bool",
-                "Value": "false"
-              }
+              "Computed": true
             },
             "create_time": {
               "Type": "String",
               "Computed": true
             },
-            "firewall": {
-              "Type": "String",
-              "Computed": true
-            },
             "firewall_template_uuid": {
               "Type": "String",
-              "Computed": true
+              "Optional": true
             },
             "mac": {
               "Type": "String",
@@ -421,6 +519,206 @@
             "partner_uuid": {
               "Type": "String",
               "Computed": true
+            },
+            "rules_v4_in": {
+              "Type": "List",
+              "Optional": true,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "action": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "This defines what the firewall will do. Either accept or drop."
+                  },
+                  "comment": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Comment."
+                  },
+                  "dst_cidr": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Either an IPv4/6 address or and IP Network in CIDR format. If this field is empty then all IPs have access to this service."
+                  },
+                  "dst_port": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "A Number between 1 and 65535, port ranges are seperated by a colon for FTP"
+                  },
+                  "order": {
+                    "Type": "Int",
+                    "Required": true,
+                    "Description": "The order at which the firewall will compare packets against its rules, \na packet will be compared against the first rule, it will either allow it to pass or block it \nand it won t be matched against any other rules. However, if it does no match the rule, \nthen it will proceed onto rule 2. Packets that do not match any rules are blocked by default."
+                  },
+                  "protocol": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Either 'udp' or 'tcp'"
+                  },
+                  "src_cidr": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Either an IPv4/6 address or and IP Network in CIDR format. If this field is empty then this service has access to all IPs."
+                  },
+                  "src_port": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "A Number between 1 and 65535, port ranges are seperated by a colon for FTP"
+                  }
+                }
+              }
+            },
+            "rules_v4_out": {
+              "Type": "List",
+              "Optional": true,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "action": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "This defines what the firewall will do. Either accept or drop."
+                  },
+                  "comment": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Comment."
+                  },
+                  "dst_cidr": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Either an IPv4/6 address or and IP Network in CIDR format. If this field is empty then all IPs have access to this service."
+                  },
+                  "dst_port": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "A Number between 1 and 65535, port ranges are seperated by a colon for FTP"
+                  },
+                  "order": {
+                    "Type": "Int",
+                    "Required": true,
+                    "Description": "The order at which the firewall will compare packets against its rules, \na packet will be compared against the first rule, it will either allow it to pass or block it \nand it won t be matched against any other rules. However, if it does no match the rule, \nthen it will proceed onto rule 2. Packets that do not match any rules are blocked by default."
+                  },
+                  "protocol": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Either 'udp' or 'tcp'"
+                  },
+                  "src_cidr": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Either an IPv4/6 address or and IP Network in CIDR format. If this field is empty then this service has access to all IPs."
+                  },
+                  "src_port": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "A Number between 1 and 65535, port ranges are seperated by a colon for FTP"
+                  }
+                }
+              }
+            },
+            "rules_v6_in": {
+              "Type": "List",
+              "Optional": true,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "action": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "This defines what the firewall will do. Either accept or drop."
+                  },
+                  "comment": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Comment."
+                  },
+                  "dst_cidr": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Either an IPv4/6 address or and IP Network in CIDR format. If this field is empty then all IPs have access to this service."
+                  },
+                  "dst_port": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "A Number between 1 and 65535, port ranges are seperated by a colon for FTP"
+                  },
+                  "order": {
+                    "Type": "Int",
+                    "Required": true,
+                    "Description": "The order at which the firewall will compare packets against its rules, \na packet will be compared against the first rule, it will either allow it to pass or block it \nand it won t be matched against any other rules. However, if it does no match the rule, \nthen it will proceed onto rule 2. Packets that do not match any rules are blocked by default."
+                  },
+                  "protocol": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Either 'udp' or 'tcp'"
+                  },
+                  "src_cidr": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Either an IPv4/6 address or and IP Network in CIDR format. If this field is empty then this service has access to all IPs."
+                  },
+                  "src_port": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "A Number between 1 and 65535, port ranges are seperated by a colon for FTP"
+                  }
+                }
+              }
+            },
+            "rules_v6_out": {
+              "Type": "List",
+              "Optional": true,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "action": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "This defines what the firewall will do. Either accept or drop."
+                  },
+                  "comment": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Comment."
+                  },
+                  "dst_cidr": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Either an IPv4/6 address or and IP Network in CIDR format. If this field is empty then all IPs have access to this service."
+                  },
+                  "dst_port": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "A Number between 1 and 65535, port ranges are seperated by a colon for FTP"
+                  },
+                  "order": {
+                    "Type": "Int",
+                    "Required": true,
+                    "Description": "The order at which the firewall will compare packets against its rules, \na packet will be compared against the first rule, it will either allow it to pass or block it \nand it won t be matched against any other rules. However, if it does no match the rule, \nthen it will proceed onto rule 2. Packets that do not match any rules are blocked by default."
+                  },
+                  "protocol": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Either 'udp' or 'tcp'"
+                  },
+                  "src_cidr": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Either an IPv4/6 address or and IP Network in CIDR format. If this field is empty then this service has access to all IPs."
+                  },
+                  "src_port": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "A Number between 1 and 65535, port ranges are seperated by a colon for FTP"
+                  }
+                }
+              }
             }
           }
         }
@@ -432,19 +730,17 @@
         "Computed": true
       },
       "storage": {
-        "Type": "Set",
+        "Type": "List",
         "Optional": true,
+        "Description": "A list of storages attached to the server. The first storage in the list is always set as the boot storage of the server.",
         "MaxItems": 8,
+        "IsBlock": true,
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
             "bootdevice": {
               "Type": "Bool",
-              "Optional": true,
-              "Default": {
-                "Type": "bool",
-                "Value": "false"
-              }
+              "Computed": true
             },
             "bus": {
               "Type": "Int",
@@ -629,6 +925,7 @@
         "Type": "List",
         "Optional": true,
         "MaxItems": 1,
+        "IsBlock": true,
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
@@ -662,11 +959,471 @@
     }
   },
   "data-sources": {
-    "gridscale_ipv4": {},
-    "gridscale_ipv6": {},
-    "gridscale_network": {},
-    "gridscale_sshkey": {},
-    "gridscale_storage": {},
+    "gridscale_ipv4": {
+      "change_time": {
+        "Type": "String",
+        "Description": "The date and time of the last object change.",
+        "Computed": true
+      },
+      "create_time": {
+        "Type": "String",
+        "Description": "The date and time the object was initially created.",
+        "Computed": true
+      },
+      "current_price": {
+        "Type": "Float",
+        "Description": "Defines the price for the current period since the last bill.",
+        "Computed": true
+      },
+      "delete_block": {
+        "Type": "Bool",
+        "Description": "Defines if the object is administratively blocked. If true, it can not be deleted by the user.",
+        "Computed": true
+      },
+      "failover": {
+        "Type": "Bool",
+        "Description": "Sets failover mode for this IP. If true, then this IP is no longer available for DHCP and can no longer be related to any server.",
+        "Computed": true
+      },
+      "ip": {
+        "Type": "String",
+        "Description": "Defines the IP Address.",
+        "Computed": true
+      },
+      "labels": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "List of labels.",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "location_country": {
+        "Type": "String",
+        "Description": "Formatted by the 2 digit country code (ISO 3166-2) of the host country",
+        "Computed": true
+      },
+      "location_iata": {
+        "Type": "String",
+        "Description": "Uses IATA airport code, which works as a location identifier",
+        "Computed": true
+      },
+      "location_name": {
+        "Type": "String",
+        "Description": "The human-readable name of the location. It supports the full UTF-8 charset, with a maximum of 64 characters",
+        "Computed": true
+      },
+      "location_uuid": {
+        "Type": "String",
+        "Description": "Helps to identify which datacenter an object belongs to",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Description": "The human-readable name of the object. It supports the full UTF-8 charset, with a maximum of 64 characters.",
+        "Computed": true
+      },
+      "prefix": {
+        "Type": "String",
+        "Computed": true
+      },
+      "resource_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "ID of a resource"
+      },
+      "reverse_dns": {
+        "Type": "String",
+        "Description": "Defines the reverse DNS entry for the IP Address (PTR Resource Record).",
+        "Computed": true
+      },
+      "status": {
+        "Type": "String",
+        "Computed": true
+      },
+      "usage_in_minutes": {
+        "Type": "Float",
+        "Computed": true
+      }
+    },
+    "gridscale_ipv6": {
+      "change_time": {
+        "Type": "String",
+        "Description": "The date and time of the last object change.",
+        "Computed": true
+      },
+      "create_time": {
+        "Type": "String",
+        "Description": "The date and time the object was initially created.",
+        "Computed": true
+      },
+      "current_price": {
+        "Type": "Float",
+        "Description": "Defines the price for the current period since the last bill.",
+        "Computed": true
+      },
+      "delete_block": {
+        "Type": "Bool",
+        "Description": "Defines if the object is administratively blocked. If true, it can not be deleted by the user.",
+        "Computed": true
+      },
+      "failover": {
+        "Type": "Bool",
+        "Description": "Sets failover mode for this IP. If true, then this IP is no longer available for DHCP and can no longer be related to any server.",
+        "Computed": true
+      },
+      "ip": {
+        "Type": "String",
+        "Description": "Defines the IP Address.",
+        "Computed": true
+      },
+      "labels": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "List of labels.",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "location_country": {
+        "Type": "String",
+        "Description": "Formatted by the 2 digit country code (ISO 3166-2) of the host country",
+        "Computed": true
+      },
+      "location_iata": {
+        "Type": "String",
+        "Description": "Uses IATA airport code, which works as a location identifier",
+        "Computed": true
+      },
+      "location_name": {
+        "Type": "String",
+        "Description": "The human-readable name of the location. It supports the full UTF-8 charset, with a maximum of 64 characters",
+        "Computed": true
+      },
+      "location_uuid": {
+        "Type": "String",
+        "Description": "Helps to identify which datacenter an object belongs to",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Description": "The human-readable name of the object. It supports the full UTF-8 charset, with a maximum of 64 characters.",
+        "Computed": true
+      },
+      "prefix": {
+        "Type": "String",
+        "Computed": true
+      },
+      "resource_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "ID of a resource"
+      },
+      "reverse_dns": {
+        "Type": "String",
+        "Description": "Defines the reverse DNS entry for the IP Address (PTR Resource Record).",
+        "Computed": true
+      },
+      "status": {
+        "Type": "String",
+        "Computed": true
+      },
+      "usage_in_minutes": {
+        "Type": "Float",
+        "Computed": true
+      }
+    },
+    "gridscale_loadbalancer": {
+      "algorithm": {
+        "Type": "String",
+        "Description": "The algorithm used to process requests. Accepted values: roundrobin/leastconn.",
+        "Computed": true
+      },
+      "backend_server": {
+        "Type": "Set",
+        "Description": "List of backend servers.",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "host": {
+              "Type": "String",
+              "Computed": true
+            },
+            "weight": {
+              "Type": "Int",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "forwarding_rule": {
+        "Type": "Set",
+        "Description": "List of forwarding rules for the Load balancer.",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "letsencrypt_ssl": {
+              "Type": "String",
+              "Computed": true
+            },
+            "listen_port": {
+              "Type": "Int",
+              "Computed": true
+            },
+            "mode": {
+              "Type": "String",
+              "Computed": true
+            },
+            "target_port": {
+              "Type": "Int",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "labels": {
+        "Type": "Set",
+        "Description": "List of labels.",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "listen_ipv4_uuid": {
+        "Type": "String",
+        "Description": "The UUID of the IPv4 address the Load balancer will listen to for incoming requests.",
+        "Computed": true
+      },
+      "listen_ipv6_uuid": {
+        "Type": "String",
+        "Description": "The UUID of the IPv6 address the Load balancer will listen to for incoming requests.",
+        "Computed": true
+      },
+      "location_uuid": {
+        "Type": "String",
+        "Description": "Helps to identify which datacenter an object belongs to.",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Description": "The human-readable name of the object. It supports the full UTF-8 charset, with a maximum of 64 characters",
+        "Computed": true
+      },
+      "redirect_http_to_https": {
+        "Type": "Bool",
+        "Description": "Whether the Load balancer is forced to redirect requests from HTTP to HTTPS",
+        "Computed": true
+      },
+      "resource_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "ID of a resource"
+      },
+      "status": {
+        "Type": "String",
+        "Description": "Status indicates the status of the object.",
+        "Computed": true
+      }
+    },
+    "gridscale_network": {
+      "change_time": {
+        "Type": "String",
+        "Description": "The date and time of the last object change",
+        "Computed": true
+      },
+      "create_time": {
+        "Type": "String",
+        "Description": "The date and time the object was initially created",
+        "Computed": true
+      },
+      "delete_block": {
+        "Type": "Bool",
+        "Description": "If deleting this network is allowed",
+        "Computed": true
+      },
+      "l2security": {
+        "Type": "Bool",
+        "Description": "MAC spoofing protection - filters layer2 and ARP traffic based on source MAC",
+        "Computed": true
+      },
+      "labels": {
+        "Type": "Set",
+        "Description": "List of labels.",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "location_country": {
+        "Type": "String",
+        "Description": "Formatted by the 2 digit country code (ISO 3166-2) of the host country",
+        "Computed": true
+      },
+      "location_iata": {
+        "Type": "String",
+        "Description": "Uses IATA airport code, which works as a location identifier",
+        "Computed": true
+      },
+      "location_name": {
+        "Type": "String",
+        "Description": "The human-readable name of the location. It supports the full UTF-8 charset, with a maximum of 64 characters",
+        "Computed": true
+      },
+      "location_uuid": {
+        "Type": "String",
+        "Description": "Helps to identify which datacenter an object belongs to",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Description": "The human-readable name of the object. It supports the full UTF-8 charset, with a maximum of 64 characters.",
+        "Computed": true
+      },
+      "network_type": {
+        "Type": "String",
+        "Description": "The type of this network, can be mpls, breakout or network.",
+        "Computed": true
+      },
+      "resource_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "ID of a resource"
+      },
+      "status": {
+        "Type": "String",
+        "Description": "status indicates the status of the object",
+        "Computed": true
+      }
+    },
+    "gridscale_sshkey": {
+      "change_time": {
+        "Type": "String",
+        "Description": "The date and time of the last object change",
+        "Computed": true
+      },
+      "create_time": {
+        "Type": "String",
+        "Description": "The date and time the object was initially created",
+        "Computed": true
+      },
+      "labels": {
+        "Type": "Set",
+        "Description": "List of labels.",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Description": "The human-readable name of the object. It supports the full UTF-8 charset, with a maximum of 64 characters.",
+        "Computed": true
+      },
+      "resource_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "ID of a resource"
+      },
+      "sshkey": {
+        "Type": "String",
+        "Description": "sshkey_string is the OpenSSH public key string (all key types are supported =\u003e ed25519, ecdsa, dsa, rsa, rsa1)",
+        "Computed": true
+      },
+      "status": {
+        "Type": "String",
+        "Computed": true
+      }
+    },
+    "gridscale_storage": {
+      "capacity": {
+        "Type": "Int",
+        "Description": "The capacity of a storage in GB.",
+        "Computed": true
+      },
+      "change_time": {
+        "Type": "String",
+        "Description": "Defines the date and time of the last object change.",
+        "Computed": true
+      },
+      "create_time": {
+        "Type": "String",
+        "Description": "Defines the date and time the object was initially created.",
+        "Computed": true
+      },
+      "current_price": {
+        "Type": "Float",
+        "Computed": true
+      },
+      "labels": {
+        "Type": "Set",
+        "Description": "List of labels.",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "last_used_template": {
+        "Type": "String",
+        "Computed": true
+      },
+      "license_product_no": {
+        "Type": "Int",
+        "Description": "If a template has been used that requires a license key (e.g. Windows Servers) this shows the product_no of the license (see the /prices endpoint for more details).",
+        "Computed": true
+      },
+      "location_country": {
+        "Type": "String",
+        "Description": "Formatted by the 2 digit country code (ISO 3166-2) of the host country.",
+        "Computed": true
+      },
+      "location_iata": {
+        "Type": "String",
+        "Description": "Uses IATA airport code, which works as a location identifier.",
+        "Computed": true
+      },
+      "location_name": {
+        "Type": "String",
+        "Description": "The human-readable name of the location. It supports the full UTF-8 charset, with a maximum of 64 characters.",
+        "Computed": true
+      },
+      "location_uuid": {
+        "Type": "String",
+        "Description": "Helps to identify which datacenter an object belongs to.",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Description": "The human-readable name of the object. It supports the full UTF-8 charset, with a maximum of 64 characters.",
+        "Computed": true
+      },
+      "parent_uuid": {
+        "Type": "String",
+        "Computed": true
+      },
+      "resource_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "ID of a resource"
+      },
+      "status": {
+        "Type": "String",
+        "Description": "status indicates the status of the object.",
+        "Computed": true
+      },
+      "storage_type": {
+        "Type": "String",
+        "Description": "(one of storage, storage_high, storage_insane)",
+        "Computed": true
+      }
+    },
     "gridscale_template": {
       "name": {
         "Type": "String",

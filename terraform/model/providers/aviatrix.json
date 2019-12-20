@@ -2,7 +2,7 @@
   ".schema_version": "1",
   "name": "aviatrix",
   "type": "provider",
-  "version": "v2.5.0",
+  "version": "v2.8.0",
   "provider": {
     "controller_ip": {
       "Type": "String",
@@ -84,6 +84,21 @@
         "Type": "String",
         "Optional": true,
         "Description": "AWS Secret Key."
+      },
+      "awsgov_access_key": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "AWS Gov Access Key."
+      },
+      "awsgov_account_number": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "AWS Gov Account number to associate with Aviatrix account."
+      },
+      "awsgov_secret_key": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "AWS Gov Secret Key."
       },
       "cloud_type": {
         "Type": "Int",
@@ -310,6 +325,23 @@
               "Elem": {
                 "Type": "SchemaInfo",
                 "Info": {
+                  "customized_routes": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Customized Spoke VPC Routes. It allows the admin to enter non-RFC1918 routes in the VPC route table targeting the TGW.",
+                    "Default": {
+                      "Type": "string"
+                    }
+                  },
+                  "disable_local_route_propagation": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Description": "Switch to allow admin not to propagate the VPC CIDR to the security domain/TGW route table that it is being attached to.",
+                    "Default": {
+                      "Type": "bool",
+                      "Value": "false"
+                    }
+                  },
                   "vpc_account_name": {
                     "Type": "String",
                     "Required": true,
@@ -378,7 +410,51 @@
         "Description": "Name of the AWS TGW which is going to be created."
       }
     },
+    "aviatrix_aws_tgw_directconnect": {
+      "allowed_prefix": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Public IP address. Example: '40.0.0.0'."
+      },
+      "directconnect_account_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "This parameter represents the name of an Account in Aviatrix controller."
+      },
+      "dx_gateway_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "This parameter represents the name of a Direct Connect Gateway ID."
+      },
+      "security_domain_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The name of an Aviatrix security domain, to which the direct connect gateway will be attached."
+      },
+      "tgw_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "This parameter represents the name of an AWS TGW."
+      }
+    },
     "aviatrix_aws_tgw_vpc_attachment": {
+      "customized_routes": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Customized Spoke VPC Routes. It allows the admin to enter non-RFC1918 routes in the VPC route table targeting the TGW.",
+        "Default": {
+          "Type": "string"
+        }
+      },
+      "disable_local_route_propagation": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Switch to allow admin not to propagate the VPC CIDR to the security domain/TGW route table that it is being attached to.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
       "region": {
         "Type": "String",
         "Required": true,
@@ -506,6 +582,102 @@
         "Computed": true
       }
     },
+    "aviatrix_firenet": {
+      "egress_enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enable/Disable egress through firewall.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "firewall_instance_association": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "List of firewall instances to be associated with fireNet.",
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "attached": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Switch to attach/detach firewall instance to/from fireNet.",
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
+              }
+            },
+            "egress_interface": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Egress interface ID, required if it is a firewall instance.",
+              "Default": {
+                "Type": "string"
+              }
+            },
+            "firenet_gw_name": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Name of the gateway to launch the firewall instance."
+            },
+            "firewall_name": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Firewall instance name, or FQDN Gateway's gw_name, required if it is a firewall instance.",
+              "Default": {
+                "Type": "string"
+              }
+            },
+            "instance_id": {
+              "Type": "String",
+              "Required": true,
+              "Description": "ID of Firewall instance, or FQDN Gateway's gw_name."
+            },
+            "lan_interface": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Lan interface ID, required if it is a firewall instance.",
+              "Default": {
+                "Type": "string"
+              }
+            },
+            "management_interface": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Management interface ID, required if it is a firewall instance.",
+              "Default": {
+                "Type": "string"
+              }
+            },
+            "vendor_type": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Indication it is a firewall instance or FQDN gateway to be associated to fireNet. Valid values: 'Generic', 'fqdn_gateway'. Value 'fqdn_gateway' is required for FQDN gateway.",
+              "Default": {
+                "Type": "string",
+                "Value": "Generic"
+              }
+            }
+          }
+        }
+      },
+      "inspection_enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enable/Disable traffic inspection.",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "vpc_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "VPC ID."
+      }
+    },
     "aviatrix_firewall": {
       "base_log_enabled": {
         "Type": "Bool",
@@ -541,7 +713,7 @@
             "action": {
               "Type": "String",
               "Required": true,
-              "Description": "Valid values: 'allow' and 'deny'."
+              "Description": "Valid values: 'allow', 'deny' or 'force-drop'(in stateful firewall rule to allow immediate packet dropping on established sessions)."
             },
             "description": {
               "Type": "String",
@@ -586,6 +758,83 @@
             }
           }
         }
+      }
+    },
+    "aviatrix_firewall_instance": {
+      "bootstrap_bucket_name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Bootstrap bucket name."
+      },
+      "egress_interface": {
+        "Type": "String",
+        "Description": "ID of Egress Interface created.",
+        "Computed": true
+      },
+      "egress_subnet": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Egress Interface Subnet."
+      },
+      "firenet_gw_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the primary FireNet gateway."
+      },
+      "firewall_image": {
+        "Type": "String",
+        "Required": true,
+        "Description": "One of the AWS AMIs from Palo Alto Networks."
+      },
+      "firewall_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the firewall instance to be created."
+      },
+      "firewall_size": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Instance size of the firewall."
+      },
+      "iam_role": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "IAM role."
+      },
+      "instance_id": {
+        "Type": "String",
+        "Description": "ID of the firewall instance created.",
+        "Computed": true
+      },
+      "key_name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The .pem file name for SSH access to the firewall instance."
+      },
+      "lan_interface": {
+        "Type": "String",
+        "Description": "ID of Lan Interface created.",
+        "Computed": true
+      },
+      "management_interface": {
+        "Type": "String",
+        "Description": "ID of Management Interface created.",
+        "Computed": true
+      },
+      "management_subnet": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Management Interface Subnet."
+      },
+      "public_ip": {
+        "Type": "String",
+        "Description": "Management Public IP.",
+        "Computed": true
+      },
+      "vpc_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "ID of the Security VPC."
       }
     },
     "aviatrix_firewall_tag": {
@@ -807,6 +1056,15 @@
           "Value": "false"
         }
       },
+      "enable_vpn_nat": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "This field indicates whether to enable VPN NAT or not. Only supported for VPN gateway. Valid values: true, false. Default value: true.",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
       "gw_name": {
         "Type": "String",
         "Required": true,
@@ -973,7 +1231,7 @@
       "saml_enabled": {
         "Type": "Bool",
         "Optional": true,
-        "Description": "This field indicates whether enabling SAML or not.",
+        "Description": "This field indicates whether to enable SAML or not.",
         "Default": {
           "Type": "bool",
           "Value": "false"
@@ -1061,6 +1319,14 @@
           "Type": "string"
         }
       },
+      "custom_saml_request_template": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Custom SAML Request Template.",
+        "Default": {
+          "Type": "string"
+        }
+      },
       "endpoint_name": {
         "Type": "String",
         "Required": true,
@@ -1103,16 +1369,6 @@
         "Optional": true,
         "Description": "Longitude of backup remote gateway."
       },
-      "backup_remote_gateway_name": {
-        "Type": "String",
-        "Optional": true,
-        "Description": "Backup remote gateway name."
-      },
-      "backup_remote_subnet_cidr": {
-        "Type": "String",
-        "Optional": true,
-        "Description": "Backup remote subnet CIDR."
-      },
       "connection_name": {
         "Type": "String",
         "Required": true,
@@ -1126,7 +1382,11 @@
       "custom_algorithms": {
         "Type": "Bool",
         "Optional": true,
-        "Description": "Switch to enable custom/non-default algorithms for IPSec Authentication/Encryption."
+        "Description": "Switch to enable custom/non-default algorithms for IPSec Authentication/Encryption.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
       },
       "enable_dead_peer_detection": {
         "Type": "Bool",
@@ -1200,7 +1460,11 @@
       "private_route_encryption": {
         "Type": "Bool",
         "Optional": true,
-        "Description": "Private route encryption switch."
+        "Description": "Private route encryption switch.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
       },
       "remote_gateway_ip": {
         "Type": "String",
@@ -1220,7 +1484,7 @@
       "remote_gateway_type": {
         "Type": "String",
         "Required": true,
-        "Description": "Remote gateway type. Valid values: 'generic', 'avx', 'aws', 'azure', 'sonicwall', and 'oracle'."
+        "Description": "Remote gateway type. Valid values: 'generic', 'avx', 'aws', 'azure', 'sonicwall' and 'oracle'."
       },
       "remote_subnet_cidr": {
         "Type": "String",
@@ -1555,6 +1819,14 @@
           "Value": "true"
         }
       },
+      "bgp_manual_spoke_advertise_cidrs": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Intended CIDR list to advertise to VGW.",
+        "Default": {
+          "Type": "string"
+        }
+      },
       "cloud_type": {
         "Type": "Int",
         "Required": true,
@@ -1584,7 +1856,16 @@
           "Value": "false"
         }
       },
-      "enable_firenet_interfaces": {
+      "enable_advertise_transit_cidr": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Switch to Enable/Disable advertise transit VPC network CIDR.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "enable_firenet": {
         "Type": "Bool",
         "Optional": true,
         "Description": "Specify whether to enable firenet interfaces or not.",
@@ -1683,6 +1964,15 @@
         "Description": "AZ of subnet being created for Insane Mode Transit Gateway. Required if insane_mode is enabled.",
         "Default": {
           "Type": "string"
+        }
+      },
+      "single_az_ha": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Set to 'enabled' if this feature is desired.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
         }
       },
       "subnet": {
@@ -1867,19 +2157,16 @@
       },
       "peering_hastatus": {
         "Type": "String",
-        "Optional": true,
         "Description": "Status of the HA tunnel.",
         "Computed": true
       },
       "peering_link": {
         "Type": "String",
-        "Optional": true,
         "Description": "Name of the peering link.",
         "Computed": true
       },
       "peering_state": {
         "Type": "String",
-        "Optional": true,
         "Description": "Status of the tunnel.",
         "Computed": true
       }
@@ -1889,14 +2176,6 @@
         "Type": "String",
         "Required": true,
         "Description": "BGP Local ASN (Autonomous System Number). Integer between 1-65535."
-      },
-      "bgp_manual_spoke_advertise_cidrs": {
-        "Type": "String",
-        "Optional": true,
-        "Description": "Intended CIDR list to advertise to VGW.",
-        "Default": {
-          "Type": "string"
-        }
       },
       "bgp_vgw_account": {
         "Type": "String",
@@ -1918,15 +2197,6 @@
         "Required": true,
         "Description": "The name of for Transit GW to VGW connection connection which is going to be created."
       },
-      "enable_advertise_transit_cidr": {
-        "Type": "Bool",
-        "Optional": true,
-        "Description": "Switch to Enable/Disable advertise transit VPC network CIDR.",
-        "Default": {
-          "Type": "bool",
-          "Value": "false"
-        }
-      },
       "gw_name": {
         "Type": "String",
         "Required": true,
@@ -1947,7 +2217,7 @@
       "aviatrix_firenet_vpc": {
         "Type": "Bool",
         "Optional": true,
-        "Description": "Specify the VPC as Aviatrix FireNet VPC or not.",
+        "Description": "Specify the VPC as Aviatrix FireNet VPC or not. Required to be false for GCP provider.",
         "Default": {
           "Type": "bool",
           "Value": "false"
@@ -1956,7 +2226,7 @@
       "aviatrix_transit_vpc": {
         "Type": "Bool",
         "Optional": true,
-        "Description": "Specify the VPC as Aviatrix Transit VPC or not.",
+        "Description": "Specify the VPC as Aviatrix Transit VPC or not. Required to be false for GCP provider.",
         "Default": {
           "Type": "bool",
           "Value": "false"
@@ -1964,8 +2234,8 @@
       },
       "cidr": {
         "Type": "String",
-        "Required": true,
-        "Description": "Subnet of the VPC to be created."
+        "Optional": true,
+        "Description": "Subnet of the VPC to be created. Required to be empty for GCP provider, and non-empty for other providers."
       },
       "cloud_type": {
         "Type": "Int",
@@ -1979,13 +2249,15 @@
       },
       "region": {
         "Type": "String",
-        "Required": true,
-        "Description": "Region where this gateway will be launched."
+        "Optional": true,
+        "Description": "Region of cloud provider. Required to be empty for GCP provider, and non-empty for other providers."
       },
       "subnets": {
         "Type": "List",
-        "Description": "List of subnet of the VPC to be created.",
+        "Optional": true,
+        "Description": "List of subnets of the VPC to be created. Required to be non-empty for GCP provider, and empty for other providers.",
         "Computed": true,
+        "IsBlock": true,
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
@@ -1999,10 +2271,15 @@
               "Optional": true,
               "Description": "Subnet name."
             },
-            "subnet_id": {
+            "region": {
               "Type": "String",
               "Optional": true,
-              "Description": "Subnet ID."
+              "Description": "Subnet region."
+            },
+            "subnet_id": {
+              "Type": "String",
+              "Description": "Subnet ID.",
+              "Computed": true
             }
           }
         }
@@ -2141,6 +2418,84 @@
         "Type": "String",
         "Description": "Aviatrix caller identity.",
         "Computed": true
+      }
+    },
+    "aviatrix_firenet_vendor_integration": {
+      "firewall_name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Name of firewall instance."
+      },
+      "instance_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "ID of Firewall instance."
+      },
+      "number_of_retries": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Number of retries for 'save' or 'synchronize'.",
+        "Default": {
+          "Type": "int",
+          "Value": "0"
+        }
+      },
+      "password": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Firewall login password for API calls."
+      },
+      "public_ip": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The public IP address of the firewall management interface for API calls from the Aviatrix Controller."
+      },
+      "retry_interval": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Retry interval in seconds for `save` or `synchronize`.",
+        "Default": {
+          "Type": "int",
+          "Value": "300"
+        }
+      },
+      "route_table": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Specify the firewall virtual Router name you wish the Controller to program. If left unspecified, the Controller programs the firewall’s default router."
+      },
+      "save": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Switch to save or not.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "synchronize": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Switch to sync or not.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "username": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Firewall login name for API calls from the Controller. For example, admin-api, as shown in the screen shot."
+      },
+      "vendor_type": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Select PAN."
+      },
+      "vpc_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "VPC ID."
       }
     },
     "aviatrix_gateway": {

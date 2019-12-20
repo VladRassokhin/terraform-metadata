@@ -2,13 +2,19 @@
   ".schema_version": "1",
   "name": "vcd",
   "type": "provider",
-  "version": "v2.4.0",
+  "version": "v2.6.0",
   "provider": {
     "allow_unverified_ssl": {
       "Type": "Bool",
       "Optional": true,
       "Description": "If set, VCDClient will permit unverifiable SSL certificates.",
       "DefaultFunc": "ENV(VCD_ALLOW_UNVERIFIED_SSL)"
+    },
+    "import_separator": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "Defines the import separation string to be used with 'terraform import'",
+      "DefaultFunc": "ENV(VCD_IMPORT_SEPARATOR)"
     },
     "logging": {
       "Type": "Bool",
@@ -45,6 +51,12 @@
       "Optional": true,
       "Description": "The VCD Org for user authentication",
       "DefaultFunc": "ENV(VCD_SYS_ORG)"
+    },
+    "token": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "The token used instead of username/password for VCD API operations.",
+      "DefaultFunc": "ENV(VCD_TOKEN)"
     },
     "url": {
       "Type": "String",
@@ -87,7 +99,8 @@
       },
       "org": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Description": "The name of organization to use, optional if defined at provider level. Useful when connected as sysadmin working across different organizations"
       }
     },
     "vcd_catalog_item": {
@@ -100,6 +113,11 @@
         "Type": "String",
         "Optional": true
       },
+      "metadata": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "Key and value pairs for catalog item metadata"
+      },
       "name": {
         "Type": "String",
         "Required": true,
@@ -107,7 +125,8 @@
       },
       "org": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Description": "The name of organization to use, optional if defined at provider level. Useful when connected as sysadmin working across different organizations"
       },
       "ova_path": {
         "Type": "String",
@@ -135,14 +154,34 @@
         "Required": true,
         "Description": "catalog name where upload the Media file"
       },
+      "creation_date": {
+        "Type": "String",
+        "Description": "Creation date",
+        "Computed": true
+      },
       "description": {
         "Type": "String",
         "Optional": true
+      },
+      "is_iso": {
+        "Type": "Bool",
+        "Description": "True if this media file is ISO",
+        "Computed": true
+      },
+      "is_published": {
+        "Type": "Bool",
+        "Description": "True if this media file is in a published catalog",
+        "Computed": true
       },
       "media_path": {
         "Type": "String",
         "Required": true,
         "Description": "absolute or relative path to Media file"
+      },
+      "metadata": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "Key and value pairs for catalog item metadata"
       },
       "name": {
         "Type": "String",
@@ -151,12 +190,33 @@
       },
       "org": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Description": "The name of organization to use, optional if defined at provider level. Useful when connected as sysadmin working across different organizations"
+      },
+      "owner_name": {
+        "Type": "String",
+        "Description": "Owner name",
+        "Computed": true
       },
       "show_upload_progress": {
         "Type": "Bool",
         "Optional": true,
         "Description": "shows upload progress in stdout"
+      },
+      "size": {
+        "Type": "Int",
+        "Description": "Media storage in Bytes",
+        "Computed": true
+      },
+      "status": {
+        "Type": "String",
+        "Description": "Media status",
+        "Computed": true
+      },
+      "storage_profile_name": {
+        "Type": "String",
+        "Description": "Storage profile name",
+        "Computed": true
       },
       "upload_piece_size": {
         "Type": "Int",
@@ -169,6 +229,10 @@
       }
     },
     "vcd_dnat": {
+      "description": {
+        "Type": "String",
+        "Optional": true
+      },
       "edge_gateway": {
         "Type": "String",
         "Required": true
@@ -180,38 +244,313 @@
       "icmp_sub_type": {
         "Type": "String",
         "Optional": true,
-        "Default": {
-          "Type": "string",
-          "Value": "any"
-        }
+        "Computed": true
       },
       "internal_ip": {
         "Type": "String",
         "Required": true
       },
-      "org": {
+      "network_name": {
         "Type": "String",
         "Optional": true
       },
+      "network_type": {
+        "Type": "String",
+        "Optional": true
+      },
+      "org": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of organization to use, optional if defined at provider level. Useful when connected as sysadmin working across different organizations"
+      },
       "port": {
         "Type": "Int",
-        "Required": true
+        "Optional": true,
+        "Computed": true
       },
       "protocol": {
         "Type": "String",
         "Optional": true,
         "Default": {
           "Type": "string",
-          "Value": "TCP"
+          "Value": "tcp"
         }
       },
       "translated_port": {
         "Type": "Int",
-        "Optional": true
+        "Optional": true,
+        "Computed": true
       },
       "vdc": {
         "Type": "String",
+        "Optional": true,
+        "Description": "The name of VDC to use, optional if defined at provider level"
+      }
+    },
+    "vcd_edgegateway": {
+      "advanced": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "True if the gateway uses advanced networking. (Enabled by default)",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "configuration": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Configuration of the vShield edge VM for this gateway. One of: compact, full (\"Large\"), full4 (\"Quad Large\"), x-large"
+      },
+      "default_external_network_ip": {
+        "Type": "String",
+        "Description": "IP address of edge gateway interface which is used as default.",
+        "Computed": true
+      },
+      "default_gateway_network": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "External network to be used as default gateway. Its name must be included in 'external_networks'. An empty value will skip the default gateway",
+        "Computed": true,
+        "ConflictsWith": [
+          "external_network"
+        ],
+        "Deprecated": "Please use the more advanced 'external_network' block(s)"
+      },
+      "description": {
+        "Type": "String",
         "Optional": true
+      },
+      "distributed_routing": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "If advanced networking enabled, also enable distributed routing",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "external_network": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "One or more blocks with external network information to be attached to this gateway's interface",
+        "Computed": true,
+        "ConflictsWith": [
+          "external_networks",
+          "default_gateway_network"
+        ],
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "enable_rate_limit": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Enable rate limiting",
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
+              }
+            },
+            "incoming_rate_limit": {
+              "Type": "Float",
+              "Optional": true,
+              "Description": "Incoming rate limit (Mbps)",
+              "Default": {
+                "Type": "int",
+                "Value": "0"
+              }
+            },
+            "name": {
+              "Type": "String",
+              "Required": true,
+              "Description": "External network name"
+            },
+            "outgoing_rate_limit": {
+              "Type": "Float",
+              "Optional": true,
+              "Description": "Outgoing rate limit (Mbps)",
+              "Default": {
+                "Type": "int",
+                "Value": "0"
+              }
+            },
+            "subnet": {
+              "Type": "Set",
+              "Optional": true,
+              "Computed": true,
+              "MinItems": 1,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "gateway": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "Gateway address for a subnet"
+                  },
+                  "ip_address": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "IP address on the edge gateway - will be auto-assigned if not defined"
+                  },
+                  "netmask": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "Netmask address for a subnet"
+                  },
+                  "suballocate_pool": {
+                    "Type": "Set",
+                    "Optional": true,
+                    "Description": "Define zero or more blocks to sub-allocate pools on the edge gateway",
+                    "IsBlock": true,
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "end_address": {
+                          "Type": "String",
+                          "Required": true
+                        },
+                        "start_address": {
+                          "Type": "String",
+                          "Required": true
+                        }
+                      }
+                    }
+                  },
+                  "use_for_default_route": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Description": "Defines if this subnet should be used as default gateway for edge",
+                    "Default": {
+                      "Type": "bool",
+                      "Value": "false"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "external_network_ips": {
+        "Type": "List",
+        "Description": "List of IP addresses set on edge gateway external network interfaces",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "external_networks": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "A list of external networks to be used by the edge gateway",
+        "ConflictsWith": [
+          "external_network"
+        ],
+        "Deprecated": "Please use the more advanced 'external_network' block(s)",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "fips_mode_enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enable FIPS mode. Only for vCD 9.1+. FIPS mode turns on the cipher suites that comply with FIPS. (False by default)"
+      },
+      "fw_default_rule_action": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "'accept' or 'deny'. Default 'deny'",
+        "Default": {
+          "Type": "string",
+          "Value": "deny"
+        }
+      },
+      "fw_default_rule_logging_enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enable logging for default rule. Default 'false'",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "fw_enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enable firewall. Default 'true'",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "ha_enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enable high availability on this edge gateway",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "lb_acceleration_enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enable load balancer acceleration. (Disabled by default)",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "lb_enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enable load balancing. (Disabled by default)",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "lb_logging_enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enable load balancer logging. (Disabled by default)",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "lb_loglevel": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Log level. One of 'emergency', 'alert', 'critical', 'error', 'warning', 'notice', 'info', 'debug'. ('info' by default)",
+        "Default": {
+          "Type": "string",
+          "Value": "info"
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Required": true
+      },
+      "org": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of organization to use, optional if defined at provider level. Useful when connected as sysadmin working across different organizations"
+      },
+      "use_default_route_for_dns_relay": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "If true, default gateway will be used for the edge gateways' default routing and DNS forwarding.(False by default)",
+        "Computed": true
+      },
+      "vdc": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of VDC to use, optional if defined at provider level"
       }
     },
     "vcd_edgegateway_vpn": {
@@ -267,7 +606,8 @@
       },
       "org": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Description": "The name of organization to use, optional if defined at provider level. Useful when connected as sysadmin working across different organizations"
       },
       "peer_id": {
         "Type": "String",
@@ -305,7 +645,110 @@
       },
       "vdc": {
         "Type": "String",
+        "Optional": true,
+        "Description": "The name of VDC to use, optional if defined at provider level"
+      }
+    },
+    "vcd_external_network": {
+      "description": {
+        "Type": "String",
         "Optional": true
+      },
+      "ip_scope": {
+        "Type": "List",
+        "Required": true,
+        "Description": "A list of IP scopes for the network",
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "dns1": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Primary DNS server"
+            },
+            "dns2": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Secondary DNS server"
+            },
+            "dns_suffix": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "DNS suffix"
+            },
+            "gateway": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Gateway of the network"
+            },
+            "netmask": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Network mask"
+            },
+            "static_ip_pool": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "IP ranges used for static pool allocation in the network",
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "end_address": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "End address of the IP range"
+                  },
+                  "start_address": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "Start address of the IP range"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Required": true
+      },
+      "retain_net_info_across_deployments": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Specifies whether the network resources such as IP/MAC of router will be retained across deployments. Default is false.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "vsphere_network": {
+        "Type": "List",
+        "Required": true,
+        "Description": "A list of port groups that back this network. Each referenced DV_PORTGROUP or NETWORK must exist on a vCenter server registered with the system.",
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "name": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The name of the port group"
+            },
+            "type": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The vSphere port group type. One of: DV_PORTGROUP (distributed virtual port group), NETWORK"
+            },
+            "vcenter": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The vCenter server name"
+            }
+          }
+        }
       }
     },
     "vcd_firewall_rules": {
@@ -319,7 +762,8 @@
       },
       "org": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Description": "The name of organization to use, optional if defined at provider level. Useful when connected as sysadmin working across different organizations"
       },
       "rule": {
         "Type": "List",
@@ -366,7 +810,69 @@
       },
       "vdc": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Description": "The name of VDC to use, optional if defined at provider level"
+      }
+    },
+    "vcd_independent_disk": {
+      "bus_sub_type": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "bus_type": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "datastore_name": {
+        "Type": "String",
+        "Description": "Datastore name",
+        "Computed": true
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "independent disk description"
+      },
+      "iops": {
+        "Type": "Int",
+        "Description": "IOPS request for the created disk",
+        "Computed": true
+      },
+      "is_attached": {
+        "Type": "Bool",
+        "Description": "True if the disk is already attached",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true
+      },
+      "org": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of organization to use, optional if defined at provider level. Useful when connected as sysadmin working across different organizations"
+      },
+      "owner_name": {
+        "Type": "String",
+        "Description": "The owner name of the disk",
+        "Computed": true
+      },
+      "size": {
+        "Type": "Float",
+        "Required": true,
+        "Description": "size in MB"
+      },
+      "storage_profile": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "vdc": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of VDC to use, optional if defined at provider level"
       }
     },
     "vcd_inserted_media": {
@@ -375,6 +881,15 @@
         "Required": true,
         "Description": "catalog name where to find media file"
       },
+      "eject_force": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "When ejecting answers automatically to question yes",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
       "name": {
         "Type": "String",
         "Required": true,
@@ -382,7 +897,8 @@
       },
       "org": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Description": "The name of organization to use, optional if defined at provider level. Useful when connected as sysadmin working across different organizations"
       },
       "vapp_name": {
         "Type": "String",
@@ -391,7 +907,8 @@
       },
       "vdc": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Description": "The name of VDC to use, optional if defined at provider level"
       },
       "vm_name": {
         "Type": "String",
@@ -399,10 +916,393 @@
         "Description": "VM in vApp in which media will be inserted or ejected"
       }
     },
+    "vcd_lb_app_profile": {
+      "cookie_mode": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The mode by which the cookie should be inserted. One of 'insert', 'prefix', or 'appsession'"
+      },
+      "cookie_name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Used to uniquely identify the session the first time a client accesses the site. The load balancer refers to this cookie when connecting subsequent requests in the session, so that they all go to the same virtual server. Only applies for persistence_mechanism 'cookie'"
+      },
+      "edge_gateway": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Edge gateway name in which the LB Application Profile is located"
+      },
+      "enable_pool_side_ssl": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enable to define the certificate, CAs, or CRLs used to authenticate the load balancer from the server side",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "enable_ssl_passthrough": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enable SSL authentication to be passed through to the virtual server. Otherwise SSL authentication takes place at the destination address."
+      },
+      "expiration": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Length of time in seconds that persistence stays in effect"
+      },
+      "http_redirect_url": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The URL to which traffic that arrives at the destination address should be redirected. Only applies for types 'http' and 'https'"
+      },
+      "insert_x_forwarded_http_header": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enables 'X-Forwarded-For' header for identifying the originating IP address of a client connecting to a Web server through the load balancer. Only applies for types HTTP and HTTPS",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Unique LB Application Profile name"
+      },
+      "org": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of organization to use, optional if defined at provider level. Useful when connected as sysadmin working across different organizations"
+      },
+      "persistence_mechanism": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Persistence mechanism for the profile. One of 'cookie', 'ssl-sessionid', 'sourceip'"
+      },
+      "type": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Protocol type used to send requests to the server. One of 'tcp', 'udp', 'http' org 'https'"
+      },
+      "vdc": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of VDC to use, optional if defined at provider level"
+      }
+    },
+    "vcd_lb_app_rule": {
+      "edge_gateway": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Edge gateway name in which the LB Application Rule is located"
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Unique LB Application Rule name"
+      },
+      "org": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of organization to use, optional if defined at provider level. Useful when connected as sysadmin working across different organizations"
+      },
+      "script": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The script for the application rule. Note - you may find HEREDOC useful to pass multiline strings"
+      },
+      "vdc": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of VDC to use, optional if defined at provider level"
+      }
+    },
+    "vcd_lb_server_pool": {
+      "algorithm": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Balancing method for the service. One of 'ip-hash', 'round-robin', 'uri', 'leastconn', 'url', or 'httpheader'"
+      },
+      "algorithm_parameters": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Additional options for load balancing algorithm for httpheader or url algorithms"
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Server pool description"
+      },
+      "edge_gateway": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Edge gateway name in which the LB Server Pool is located"
+      },
+      "enable_transparency": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Makes client IP addresses visible to the backend servers",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "member": {
+        "Type": "List",
+        "Optional": true,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "condition": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Defines member state. One of enabled, drain, disabled."
+            },
+            "id": {
+              "Type": "String",
+              "Description": "Pool member id (formatted as member-xx, where xx is a number)",
+              "Computed": true
+            },
+            "ip_address": {
+              "Type": "String",
+              "Required": true,
+              "Description": "IP address of member in server pool"
+            },
+            "max_connections": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "The maximum number of concurrent connections the member can handle. If exceeded requests are queued and the load balancer waits for a connection to be released"
+            },
+            "min_connections": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "Minimum number of concurrent connections a member must always accept"
+            },
+            "monitor_port": {
+              "Type": "Int",
+              "Required": true,
+              "Description": "Port at which the member is to receive health monitor requests. Can be the same as port"
+            },
+            "name": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Name of pool member"
+            },
+            "port": {
+              "Type": "Int",
+              "Required": true,
+              "Description": "Port at which the member is to receive traffic from the load balancer"
+            },
+            "weight": {
+              "Type": "Int",
+              "Required": true,
+              "Description": "Proportion of traffic this member is to handle. Must be an integer in the range 1-256"
+            }
+          }
+        }
+      },
+      "monitor_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Load Balancer Service Monitor ID"
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Unique LB Server Pool name"
+      },
+      "org": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of organization to use, optional if defined at provider level. Useful when connected as sysadmin working across different organizations"
+      },
+      "vdc": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of VDC to use, optional if defined at provider level"
+      }
+    },
+    "vcd_lb_service_monitor": {
+      "edge_gateway": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Edge gateway name in which the LB Service Monitor is located"
+      },
+      "expected": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "String that the monitor expects to match in the status line of the http or https response (for example, HTTP/1.1)"
+      },
+      "extension": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "Advanced monitor parameters as key=value pairs"
+      },
+      "interval": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Interval in seconds at which a server is to be monitored (defaults to 10)",
+        "Default": {
+          "Type": "int",
+          "Value": "10"
+        }
+      },
+      "max_retries": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Number of times the specified monitoring Method must fail sequentially before the server is declared down  (defaults to 3)",
+        "Default": {
+          "Type": "int",
+          "Value": "3"
+        }
+      },
+      "method": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Method to be used to detect server status. One of OPTIONS, GET, HEAD, POST, PUT, DELETE, TRACE, or CONNECT"
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Unique LB Service Monitor name"
+      },
+      "org": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of organization to use, optional if defined at provider level. Useful when connected as sysadmin working across different organizations"
+      },
+      "receive": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "String to be matched in the response content"
+      },
+      "send": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Data to be sent"
+      },
+      "timeout": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Maximum time in seconds within which a response from the server must be received  (defaults to 15)",
+        "Default": {
+          "Type": "int",
+          "Value": "15"
+        }
+      },
+      "type": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Way in which you want to send the health check request to the server. One of http, https, tcp, icmp, or udp"
+      },
+      "url": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "URL to be used in the server status request"
+      },
+      "vdc": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of VDC to use, optional if defined at provider level"
+      }
+    },
+    "vcd_lb_virtual_server": {
+      "app_profile_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Application profile ID to be associated with the virtual server"
+      },
+      "app_rule_ids": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "List of attached application rule IDs",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "connection_limit": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Maximum concurrent connections that the virtual server can process"
+      },
+      "connection_rate_limit": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Maximum incoming new connection requests per second"
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Virtual Server description"
+      },
+      "edge_gateway": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Edge gateway name in which the LB Virtual Server is located"
+      },
+      "enable_acceleration": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enable virtual server acceleration"
+      },
+      "enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Defines if the virtual server is enabled",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "ip_address": {
+        "Type": "String",
+        "Required": true,
+        "Description": "IP address that the load balancer listens on"
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Unique Virtual Server name"
+      },
+      "org": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of organization to use, optional if defined at provider level. Useful when connected as sysadmin working across different organizations"
+      },
+      "port": {
+        "Type": "Int",
+        "Required": true,
+        "Description": "Port number that the load balancer listens on"
+      },
+      "protocol": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Protocol that the virtual server accepts"
+      },
+      "server_pool_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The server pool that the load balancer will use"
+      },
+      "vdc": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of VDC to use, optional if defined at provider level"
+      }
+    },
     "vcd_network": {
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Optional description for the network"
+      },
       "dhcp_pool": {
         "Type": "Set",
         "Optional": true,
+        "Description": "A range of IPs to issue to virtual machines that don't have a static IP",
         "IsBlock": true,
         "Elem": {
           "Type": "SchemaInfo",
@@ -410,6 +1310,8 @@
             "default_lease_time": {
               "Type": "Int",
               "Optional": true,
+              "Description": "The default DHCP lease time to use",
+              "Removed": "vCD doesn't process this input. It sets the value to max_lease_time",
               "Default": {
                 "Type": "int",
                 "Value": "3600"
@@ -417,11 +1319,13 @@
             },
             "end_address": {
               "Type": "String",
-              "Required": true
+              "Required": true,
+              "Description": "The final address in the IP Range"
             },
             "max_lease_time": {
               "Type": "Int",
               "Optional": true,
+              "Description": "HThe maximum DHCP lease time to use",
               "Default": {
                 "Type": "int",
                 "Value": "7200"
@@ -429,7 +1333,8 @@
             },
             "start_address": {
               "Type": "String",
-              "Required": true
+              "Required": true,
+              "Description": "The first address in the IP Range"
             }
           }
         }
@@ -437,6 +1342,7 @@
       "dns1": {
         "Type": "String",
         "Optional": true,
+        "Description": "First DNS server to use",
         "Default": {
           "Type": "string",
           "Value": "8.8.8.8"
@@ -445,6 +1351,7 @@
       "dns2": {
         "Type": "String",
         "Optional": true,
+        "Description": "Second DNS server to use",
         "Default": {
           "Type": "string",
           "Value": "8.8.4.4"
@@ -452,28 +1359,43 @@
       },
       "dns_suffix": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Description": "A FQDN for the virtual machines on this network"
       },
       "edge_gateway": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "The name of the edge gateway"
       },
       "gateway": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Description": "The gateway of this network"
       },
       "href": {
         "Type": "String",
         "Optional": true,
+        "Description": "Network Hypertext Reference",
         "Computed": true
+      },
+      "interface_type": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Which interface to use (one of `internal`, `subinterface`, `distributed`)",
+        "Default": {
+          "Type": "string",
+          "Value": "internal"
+        }
       },
       "name": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "A unique name for the network"
       },
       "netmask": {
         "Type": "String",
         "Optional": true,
+        "Description": "The netmask for the new network",
         "Default": {
           "Type": "string",
           "Value": "255.255.255.0"
@@ -481,11 +1403,13 @@
       },
       "org": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Description": "The name of organization to use, optional if defined at provider level. Useful when connected as sysadmin working across different organizations"
       },
       "shared": {
         "Type": "Bool",
         "Optional": true,
+        "Description": "Defines if this network is shared between multiple VDCs in the Org",
         "Default": {
           "Type": "bool",
           "Value": "false"
@@ -494,47 +1418,86 @@
       "static_ip_pool": {
         "Type": "Set",
         "Optional": true,
+        "Description": "A range of IPs permitted to be used as static IPs for virtual machines",
         "IsBlock": true,
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
             "end_address": {
               "Type": "String",
-              "Required": true
+              "Required": true,
+              "Description": "The final address in the IP Range"
             },
             "start_address": {
               "Type": "String",
-              "Required": true
+              "Required": true,
+              "Description": "The first address in the IP Range"
             }
           }
         }
       },
       "vdc": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Description": "The name of VDC to use, optional if defined at provider level"
       }
     },
     "vcd_network_direct": {
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Optional description for the network"
+      },
       "external_network": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "The name of the external network"
+      },
+      "external_network_dns1": {
+        "Type": "String",
+        "Description": "Main DNS of the external network",
+        "Computed": true
+      },
+      "external_network_dns2": {
+        "Type": "String",
+        "Description": "Secondary DNS of the external network",
+        "Computed": true
+      },
+      "external_network_dns_suffix": {
+        "Type": "String",
+        "Description": "DNS suffix of the external network",
+        "Computed": true
+      },
+      "external_network_gateway": {
+        "Type": "String",
+        "Description": "Gateway of the external network",
+        "Computed": true
+      },
+      "external_network_netmask": {
+        "Type": "String",
+        "Description": "Net mask of the external network",
+        "Computed": true
       },
       "href": {
         "Type": "String",
         "Optional": true,
+        "Description": "Network Hypertext Reference",
         "Computed": true
       },
       "name": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "A unique name for this network"
       },
       "org": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Description": "The name of organization to use, optional if defined at provider level. Useful when connected as sysadmin working across different organizations"
       },
       "shared": {
         "Type": "Bool",
         "Optional": true,
+        "Description": "Defines if this network is shared between multiple VDCs in the Org",
         "Default": {
           "Type": "bool",
           "Value": "false"
@@ -542,13 +1505,20 @@
       },
       "vdc": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Description": "The name of VDC to use, optional if defined at provider level"
       }
     },
     "vcd_network_isolated": {
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Optional description for the network"
+      },
       "dhcp_pool": {
         "Type": "Set",
         "Optional": true,
+        "Description": "A range of IPs to issue to virtual machines that don't have a static IP",
         "IsBlock": true,
         "Elem": {
           "Type": "SchemaInfo",
@@ -556,6 +1526,7 @@
             "default_lease_time": {
               "Type": "Int",
               "Optional": true,
+              "Description": "The default DHCP lease time to use",
               "Default": {
                 "Type": "int",
                 "Value": "3600"
@@ -563,11 +1534,13 @@
             },
             "end_address": {
               "Type": "String",
-              "Required": true
+              "Required": true,
+              "Description": "The final address in the IP Range"
             },
             "max_lease_time": {
               "Type": "Int",
               "Optional": true,
+              "Description": "The maximum DHCP lease time to use",
               "Default": {
                 "Type": "int",
                 "Value": "7200"
@@ -575,7 +1548,8 @@
             },
             "start_address": {
               "Type": "String",
-              "Required": true
+              "Required": true,
+              "Description": "The first address in the IP Range"
             }
           }
         }
@@ -583,6 +1557,7 @@
       "dns1": {
         "Type": "String",
         "Optional": true,
+        "Description": "First DNS server to use",
         "Default": {
           "Type": "string",
           "Value": "8.8.8.8"
@@ -591,6 +1566,7 @@
       "dns2": {
         "Type": "String",
         "Optional": true,
+        "Description": "Second DNS server to use",
         "Default": {
           "Type": "string",
           "Value": "8.8.4.4"
@@ -598,24 +1574,28 @@
       },
       "dns_suffix": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Description": "A FQDN for the virtual machines on this network"
       },
       "gateway": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Description": "The gateway for this network"
       },
       "href": {
         "Type": "String",
-        "Optional": true,
+        "Description": "Network Hyper Reference",
         "Computed": true
       },
       "name": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "A unique name for this network"
       },
       "netmask": {
         "Type": "String",
         "Optional": true,
+        "Description": "The netmask for the new network",
         "Default": {
           "Type": "string",
           "Value": "255.255.255.0"
@@ -623,11 +1603,13 @@
       },
       "org": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Description": "The name of organization to use, optional if defined at provider level. Useful when connected as sysadmin working across different organizations"
       },
       "shared": {
         "Type": "Bool",
         "Optional": true,
+        "Description": "Defines if this network is shared between multiple VDCs in the Org",
         "Default": {
           "Type": "bool",
           "Value": "false"
@@ -636,30 +1618,40 @@
       "static_ip_pool": {
         "Type": "Set",
         "Optional": true,
+        "Description": "A range of IPs permitted to be used as static IPs for virtual machines",
         "IsBlock": true,
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
             "end_address": {
               "Type": "String",
-              "Required": true
+              "Required": true,
+              "Description": "The final address in the IP Range"
             },
             "start_address": {
               "Type": "String",
-              "Required": true
+              "Required": true,
+              "Description": "The first address in the IP Range"
             }
           }
         }
       },
       "vdc": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Description": "The name of VDC to use, optional if defined at provider level"
       }
     },
     "vcd_network_routed": {
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Optional description for the network"
+      },
       "dhcp_pool": {
         "Type": "Set",
         "Optional": true,
+        "Description": "A range of IPs to issue to virtual machines that don't have a static IP",
         "IsBlock": true,
         "Elem": {
           "Type": "SchemaInfo",
@@ -667,6 +1659,8 @@
             "default_lease_time": {
               "Type": "Int",
               "Optional": true,
+              "Description": "The default DHCP lease time to use",
+              "Removed": "vCD doesn't process this input. It sets the value to max_lease_time",
               "Default": {
                 "Type": "int",
                 "Value": "3600"
@@ -674,11 +1668,13 @@
             },
             "end_address": {
               "Type": "String",
-              "Required": true
+              "Required": true,
+              "Description": "The final address in the IP Range"
             },
             "max_lease_time": {
               "Type": "Int",
               "Optional": true,
+              "Description": "HThe maximum DHCP lease time to use",
               "Default": {
                 "Type": "int",
                 "Value": "7200"
@@ -686,7 +1682,8 @@
             },
             "start_address": {
               "Type": "String",
-              "Required": true
+              "Required": true,
+              "Description": "The first address in the IP Range"
             }
           }
         }
@@ -694,6 +1691,7 @@
       "dns1": {
         "Type": "String",
         "Optional": true,
+        "Description": "First DNS server to use",
         "Default": {
           "Type": "string",
           "Value": "8.8.8.8"
@@ -702,6 +1700,7 @@
       "dns2": {
         "Type": "String",
         "Optional": true,
+        "Description": "Second DNS server to use",
         "Default": {
           "Type": "string",
           "Value": "8.8.4.4"
@@ -709,28 +1708,43 @@
       },
       "dns_suffix": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Description": "A FQDN for the virtual machines on this network"
       },
       "edge_gateway": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "The name of the edge gateway"
       },
       "gateway": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Description": "The gateway of this network"
       },
       "href": {
         "Type": "String",
         "Optional": true,
+        "Description": "Network Hypertext Reference",
         "Computed": true
+      },
+      "interface_type": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Which interface to use (one of `internal`, `subinterface`, `distributed`)",
+        "Default": {
+          "Type": "string",
+          "Value": "internal"
+        }
       },
       "name": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "A unique name for the network"
       },
       "netmask": {
         "Type": "String",
         "Optional": true,
+        "Description": "The netmask for the new network",
         "Default": {
           "Type": "string",
           "Value": "255.255.255.0"
@@ -738,11 +1752,13 @@
       },
       "org": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Description": "The name of organization to use, optional if defined at provider level. Useful when connected as sysadmin working across different organizations"
       },
       "shared": {
         "Type": "Bool",
         "Optional": true,
+        "Description": "Defines if this network is shared between multiple VDCs in the Org",
         "Default": {
           "Type": "bool",
           "Value": "false"
@@ -751,24 +1767,521 @@
       "static_ip_pool": {
         "Type": "Set",
         "Optional": true,
+        "Description": "A range of IPs permitted to be used as static IPs for virtual machines",
         "IsBlock": true,
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
             "end_address": {
               "Type": "String",
-              "Required": true
+              "Required": true,
+              "Description": "The final address in the IP Range"
             },
             "start_address": {
               "Type": "String",
-              "Required": true
+              "Required": true,
+              "Description": "The first address in the IP Range"
             }
           }
         }
       },
       "vdc": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Description": "The name of VDC to use, optional if defined at provider level"
+      }
+    },
+    "vcd_nsxv_dhcp_relay": {
+      "domain_names": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "A set of IP domain names of DHCP servers",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "edge_gateway": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Edge gateway name for DHCP relay settings"
+      },
+      "ip_addresses": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "A set of IP address of DHCP servers",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "ip_sets": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "A set of IP set names which consist DHCP servers",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "org": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of organization to use, optional if defined at provider level. Useful when connected as sysadmin working across different organizations"
+      },
+      "relay_agent": {
+        "Type": "Set",
+        "Required": true,
+        "MinItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "gateway_ip_address": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Optional gateway IP address of org network which is to be used for relaying DHCP message to specified servers",
+              "Computed": true
+            },
+            "network_name": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Org network which is to be used for relaying DHCP message to specified servers"
+            }
+          }
+        }
+      },
+      "vdc": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of VDC to use, optional if defined at provider level"
+      }
+    },
+    "vcd_nsxv_dnat": {
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "NAT rule description"
+      },
+      "edge_gateway": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Edge gateway name in which NAT Rule is located"
+      },
+      "enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether the rule should be enabled. Default 'true'",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "icmp_type": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "ICMP type. Only supported when protocol is ICMP. One of `any`, `address-mask-request`, `address-mask-reply`, `destination-unreachable`, `echo-request`, `echo-reply`, `parameter-problem`, `redirect`, `router-advertisement`, `router-solicitation`, `source-quench`, `time-exceeded`, `timestamp-request`, `timestamp-reply`. Default `any`"
+      },
+      "logging_enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether logging should be enabled for this rule. Default 'false'",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "network_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Org or external network name"
+      },
+      "network_type": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Network type. One of 'ext', 'org'"
+      },
+      "org": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of organization to use, optional if defined at provider level. Useful when connected as sysadmin working across different organizations"
+      },
+      "original_address": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Original address or address range. This is the the destination address for DNAT rules."
+      },
+      "original_port": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Original port. This is the destination port for DNAT rules"
+      },
+      "protocol": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Protocol. Such as 'tcp', 'udp', 'icmp', 'any'"
+      },
+      "rule_tag": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Optional. Allows to set custom rule tag",
+        "Computed": true
+      },
+      "rule_type": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Read only. Possible values 'user', 'internal_high'",
+        "Computed": true
+      },
+      "translated_address": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Translated address or address range"
+      },
+      "translated_port": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Translated port"
+      },
+      "vdc": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of VDC to use, optional if defined at provider level"
+      }
+    },
+    "vcd_nsxv_firewall_rule": {
+      "above_rule_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "This firewall rule will be inserted above the referred one"
+      },
+      "action": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "'accept' or 'deny'. Default 'accept'",
+        "Default": {
+          "Type": "string",
+          "Value": "accept"
+        }
+      },
+      "destination": {
+        "Type": "List",
+        "Required": true,
+        "MaxItems": 1,
+        "MinItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "exclude": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Rule is applied to traffic going to any destinations except for the excluded destination. Default 'false'",
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
+              }
+            },
+            "gateway_interfaces": {
+              "Type": "Set",
+              "Optional": true,
+              "Description": "'vse', 'internal', 'external' or network name",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "ip_addresses": {
+              "Type": "Set",
+              "Optional": true,
+              "Description": "IP address, CIDR, an IP range, or the keyword 'any'",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "ip_sets": {
+              "Type": "Set",
+              "Optional": true,
+              "Description": "Set of IP set names",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "org_networks": {
+              "Type": "Set",
+              "Optional": true,
+              "Description": "Set of org network names",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "virtual_machine_ids": {
+              "Type": "Set",
+              "Optional": true,
+              "Description": "Set of VM IDs",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
+      "edge_gateway": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Edge gateway name in which Firewall Rule is located"
+      },
+      "enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether the rule should be enabled. Default 'true'",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "logging_enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether logging should be enabled for this rule. Default 'false'",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Firewall rule name"
+      },
+      "org": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of organization to use, optional if defined at provider level. Useful when connected as sysadmin working across different organizations"
+      },
+      "rule_tag": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Optional. Allows to set custom rule tag",
+        "Computed": true
+      },
+      "rule_type": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Read only. Possible values 'user', 'internal_high'",
+        "Computed": true
+      },
+      "service": {
+        "Type": "Set",
+        "Required": true,
+        "MinItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "port": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "protocol": {
+              "Type": "String",
+              "Required": true
+            },
+            "source_port": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            }
+          }
+        }
+      },
+      "source": {
+        "Type": "List",
+        "Required": true,
+        "MaxItems": 1,
+        "MinItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "exclude": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Rule is applied to traffic coming from all sources except for the excluded source. Default 'false'",
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
+              }
+            },
+            "gateway_interfaces": {
+              "Type": "Set",
+              "Optional": true,
+              "Description": "'vse', 'internal', 'external' or network name",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "ip_addresses": {
+              "Type": "Set",
+              "Optional": true,
+              "Description": "IP address, CIDR, an IP range, or the keyword 'any'",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "ip_sets": {
+              "Type": "Set",
+              "Optional": true,
+              "Description": "Set of IP set names",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "org_networks": {
+              "Type": "Set",
+              "Optional": true,
+              "Description": "Set of org network names",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "virtual_machine_ids": {
+              "Type": "Set",
+              "Optional": true,
+              "Description": "Set of VM IDs",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
+      "vdc": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of VDC to use, optional if defined at provider level"
+      }
+    },
+    "vcd_nsxv_ip_set": {
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "IP set description"
+      },
+      "ip_addresses": {
+        "Type": "Set",
+        "Required": true,
+        "Description": "A set of IP address, CIDR, IP range objects",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "is_inheritance_allowed": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Allows visibility in underlying scopes (Default is true)",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "IP set name"
+      },
+      "org": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of organization to use, optional if defined at provider level. Useful when connected as sysadmin working across different organizations"
+      },
+      "vdc": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of VDC to use, optional if defined at provider level"
+      }
+    },
+    "vcd_nsxv_snat": {
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "NAT rule description"
+      },
+      "edge_gateway": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Edge gateway name in which NAT Rule is located"
+      },
+      "enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether the rule should be enabled. Default 'true'",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "logging_enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether logging should be enabled for this rule. Default 'false'",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "network_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Org or external network name"
+      },
+      "network_type": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Network type. One of 'ext', 'org'"
+      },
+      "org": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of organization to use, optional if defined at provider level. Useful when connected as sysadmin working across different organizations"
+      },
+      "original_address": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Original address or address range. This is the the source address for SNAT rules"
+      },
+      "rule_tag": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Optional. Allows to set custom rule tag",
+        "Computed": true
+      },
+      "rule_type": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Read only. Possible values 'user', 'internal_high'",
+        "Computed": true
+      },
+      "translated_address": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Translated address or address range"
+      },
+      "vdc": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of VDC to use, optional if defined at provider level"
       }
     },
     "vcd_org": {
@@ -799,10 +2312,10 @@
       "deployed_vm_quota": {
         "Type": "Int",
         "Optional": true,
-        "Description": "Maximum number of virtual machines that can be deployed simultaneously by a member of this organization.",
+        "Description": "Maximum number of virtual machines that can be deployed simultaneously by a member of this organization. (0 = unlimited)",
         "Default": {
           "Type": "int",
-          "Value": "-1"
+          "Value": "0"
         }
       },
       "description": {
@@ -829,14 +2342,364 @@
       "stored_vm_quota": {
         "Type": "Int",
         "Optional": true,
-        "Description": "Maximum number of virtual machines in vApps or vApp templates that can be stored in an undeployed state by a member of this organization.",
+        "Description": "Maximum number of virtual machines in vApps or vApp templates that can be stored in an undeployed state by a member of this organization. (0 = unlimited)",
         "Default": {
           "Type": "int",
-          "Value": "-1"
+          "Value": "0"
         }
       }
     },
+    "vcd_org_user": {
+      "deployed_vm_quota": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Quota of vApps that this user can deploy. A value of 0 specifies an unlimited quota.",
+        "Default": {
+          "Type": "int",
+          "Value": "10"
+        }
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The user's description"
+      },
+      "email_address": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The user's email address"
+      },
+      "enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "True if the user is enabled and can log in.",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "full_name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The user's full name"
+      },
+      "instant_messaging": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The user's telephone"
+      },
+      "is_group_role": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "True if this user has a group role.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "is_locked": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "If the user account has been locked due to too many invalid login attempts, the value will change to true (only the system can lock the user). To unlock the user re-set this flag to false."
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "User's name. Only lowercase letters allowed. Cannot be changed after creation"
+      },
+      "org": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of organization to use, optional if defined at provider level. Useful when connected as sysadmin working across different organizations"
+      },
+      "password": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The user's password. This value is never returned on read. Either \"password\" or \"password_file\" must be included on creation.",
+        "ConflictsWith": [
+          "password_file"
+        ]
+      },
+      "password_file": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Name of a file containing the user's password. Either \"password_file\" or \"password\" must be included on creation.",
+        "ConflictsWith": [
+          "password"
+        ]
+      },
+      "provider_type": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Identity provider type for this this user. One of: 'INTEGRATED', 'SAML', 'OAUTH'. When empty, the default value 'INTEGRATED' is used.",
+        "Default": {
+          "Type": "string",
+          "Value": "INTEGRATED"
+        }
+      },
+      "role": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Role within the organization"
+      },
+      "stored_vm_quota": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Quota of vApps that this user can store. A value of 0 specifies an unlimited quota.",
+        "Default": {
+          "Type": "int",
+          "Value": "10"
+        }
+      },
+      "take_ownership": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Take ownership of user's objects on deletion.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "telephone": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The user's telephone"
+      }
+    },
+    "vcd_org_vdc": {
+      "allocation_model": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The allocation model used by this VDC; must be one of {AllocationVApp, AllocationPool, ReservationPool}"
+      },
+      "allow_over_commit": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Set to false to disallow creation of the VDC if the AllocationModel is AllocationPool or ReservationPool and the ComputeCapacity you specified is greater than what the backing Provider VDC can supply. Default is true.",
+        "Computed": true
+      },
+      "compute_capacity": {
+        "Type": "List",
+        "Required": true,
+        "Description": "The compute capacity allocated to this VDC.",
+        "MaxItems": 1,
+        "MinItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "cpu": {
+              "Type": "List",
+              "Required": true,
+              "MaxItems": 1,
+              "MinItems": 1,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "allocated": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Description": "Capacity that is committed to be available. Value in MB or MHz. Used with AllocationPool (Allocation pool) and ReservationPool (Reservation pool).",
+                    "Computed": true
+                  },
+                  "limit": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Description": "Capacity limit relative to the value specified for Allocation. It must not be less than that value. If it is greater than that value, it implies over provisioning. A value of 0 specifies unlimited units. Value in MB or MHz. Used with AllocationVApp (Pay as you go).",
+                    "Computed": true
+                  },
+                  "overhead": {
+                    "Type": "Int",
+                    "Computed": true
+                  },
+                  "reserved": {
+                    "Type": "Int",
+                    "Computed": true
+                  },
+                  "used": {
+                    "Type": "Int",
+                    "Computed": true
+                  }
+                }
+              }
+            },
+            "memory": {
+              "Type": "List",
+              "Required": true,
+              "MaxItems": 1,
+              "MinItems": 1,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "allocated": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Description": "Capacity that is committed to be available. Value in MB or MHz. Used with AllocationPool (Allocation pool) and ReservationPool (Reservation pool).",
+                    "Computed": true
+                  },
+                  "limit": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Description": "Capacity limit relative to the value specified for Allocation. It must not be less than that value. If it is greater than that value, it implies over provisioning. A value of 0 specifies unlimited units. Value in MB or MHz. Used with AllocationVApp (Pay as you go).",
+                    "Computed": true
+                  },
+                  "overhead": {
+                    "Type": "Int",
+                    "Computed": true
+                  },
+                  "reserved": {
+                    "Type": "Int",
+                    "Computed": true
+                  },
+                  "used": {
+                    "Type": "Int",
+                    "Computed": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "cpu_guaranteed": {
+        "Type": "Float",
+        "Optional": true,
+        "Description": "Percentage of allocated CPU resources guaranteed to vApps deployed in this VDC. For example, if this value is 0.75, then 75% of allocated resources are guaranteed. Required when AllocationModel is AllocationVApp or AllocationPool. If the element is empty, vCD sets a value",
+        "Computed": true
+      },
+      "cpu_speed": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Specifies the clock frequency, in Megahertz, for any virtual CPU that is allocated to a VM. A VM with 2 vCPUs will consume twice as much of this value. Ignored for ReservationPool. Required when AllocationModel is AllocationVApp or AllocationPool, and may not be less than 256 MHz. Defaults to 1000 MHz if the element is empty or missing.",
+        "Computed": true
+      },
+      "delete_force": {
+        "Type": "Bool",
+        "Required": true,
+        "Description": "When destroying use delete_force=True to remove a vdc and any objects it contains, regardless of their state."
+      },
+      "delete_recursive": {
+        "Type": "Bool",
+        "Required": true,
+        "Description": "When destroying use delete_recursive=True to remove the vdc and any objects it contains that are in a state that normally allows removal."
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true
+      },
+      "enable_fast_provisioning": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Request for fast provisioning. Request will be honored only if the underlying datas tore supports it. Fast provisioning can reduce the time it takes to create virtual machines by using vSphere linked clones. If you disable fast provisioning, all provisioning operations will result in full clones."
+      },
+      "enable_thin_provisioning": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Boolean to request thin provisioning. Request will be honored only if the underlying datastore supports it. Thin provisioning saves storage space by committing it on demand. This allows over-allocation of storage."
+      },
+      "enable_vm_discovery": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "True if discovery of vCenter VMs is enabled for resource pools backing this VDC. If left unspecified, the actual behaviour depends on enablement at the organization level and at the system level."
+      },
+      "enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "True if this VDC is enabled for use by the organization VDCs. Default is true.",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "memory_guaranteed": {
+        "Type": "Float",
+        "Optional": true,
+        "Description": "Percentage of allocated memory resources guaranteed to vApps deployed in this VDC. For example, if this value is 0.75, then 75% of allocated resources are guaranteed. Required when AllocationModel is AllocationVApp or AllocationPool. When Allocation model is AllocationPool minimum value is 0.2. If the element is empty, vCD sets a value.",
+        "Computed": true
+      },
+      "metadata": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "Key and value pairs for Org VDC metadata"
+      },
+      "name": {
+        "Type": "String",
+        "Required": true
+      },
+      "network_pool_name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of a network pool in the Provider VDC. Required if this VDC will contain routed or isolated networks."
+      },
+      "network_quota": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Maximum number of network objects that can be deployed in this VDC. Defaults to 0, which means no networks can be deployed."
+      },
+      "nic_quota": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Maximum number of virtual NICs allowed in this VDC. Defaults to 0, which specifies an unlimited number."
+      },
+      "org": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of organization to use, optional if defined at provider level. Useful when connected as sysadmin working across different organizations"
+      },
+      "provider_vdc_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "A reference to the Provider VDC from which this organization VDC is provisioned."
+      },
+      "storage_profile": {
+        "Type": "List",
+        "Required": true,
+        "Description": "Storage profiles supported by this VDC.",
+        "MinItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "default": {
+              "Type": "Bool",
+              "Required": true,
+              "Description": "True if this is default storage profile for this VDC. The default storage profile is used when an object that can specify a storage profile is created with no storage profile specified."
+            },
+            "enabled": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "True if this storage profile is enabled for use in the VDC.",
+              "Default": {
+                "Type": "bool",
+                "Value": "true"
+              }
+            },
+            "limit": {
+              "Type": "Int",
+              "Required": true,
+              "Description": "Maximum number of MB allocated for this storage profile. A value of 0 specifies unlimited MB."
+            },
+            "name": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Name of Provider VDC storage profile."
+            }
+          }
+        }
+      },
+      "vm_quota": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The maximum number of VMs that can be created in this VDC. Includes deployed and undeployed VMs in vApps and vApp templates. Defaults to 0, which specifies an unlimited number."
+      }
+    },
     "vcd_snat": {
+      "description": {
+        "Type": "String",
+        "Optional": true
+      },
       "edge_gateway": {
         "Type": "String",
         "Required": true
@@ -849,19 +2712,35 @@
         "Type": "String",
         "Required": true
       },
-      "org": {
+      "network_name": {
         "Type": "String",
         "Optional": true
       },
+      "network_type": {
+        "Type": "String",
+        "Optional": true,
+        "Default": {
+          "Type": "string",
+          "Value": "ext"
+        }
+      },
+      "org": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of organization to use, optional if defined at provider level. Useful when connected as sysadmin working across different organizations"
+      },
       "vdc": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Description": "The name of VDC to use, optional if defined at provider level"
       }
     },
     "vcd_vapp": {
       "accept_all_eulas": {
         "Type": "Bool",
         "Optional": true,
+        "Description": "Automatically accept EULA if OVA has it",
+        "Deprecated": "Creation of vApp and an implicit single VM in the same structure is deprecated. Use vcd_vapp_vm.accept_all_eulas instead",
         "Default": {
           "Type": "bool",
           "Value": "true"
@@ -869,137 +2748,219 @@
       },
       "catalog_name": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Description": "The catalog name in which to find the given vApp Template",
+        "Deprecated": "Creation of vApp and an implicit single VM in the same structure is deprecated. Use vcd_vapp_vm.catalog_name instead"
       },
       "cpus": {
         "Type": "Int",
-        "Optional": true
+        "Optional": true,
+        "Description": "The number of virtual CPUs to allocate to the vApp",
+        "Deprecated": "Creation of vApp and an implicit single VM in the same structure is deprecated. Use vcd_vapp_vm.cpus instead"
       },
       "description": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Description": "Optional description of the vApp"
+      },
+      "guest_properties": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "Key/value settings for guest properties. Will be picked up by new VMs when created."
       },
       "href": {
         "Type": "String",
-        "Optional": true,
+        "Description": "vApp Hyper Reference",
         "Computed": true
       },
       "initscript": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Description": "A script to be run only on initial boot",
+        "Deprecated": "Creation of vApp and an implicit single VM in the same structure is deprecated. Use vcd_vapp_vm.initscript instead"
       },
       "ip": {
         "Type": "String",
         "Optional": true,
-        "Computed": true
+        "Description": "The IP to assign to this vApp",
+        "Computed": true,
+        "Deprecated": "Creation of vApp and an implicit single VM in the same structure is deprecated. Use vcd_vapp_vm.network instead"
       },
       "memory": {
         "Type": "Int",
-        "Optional": true
+        "Optional": true,
+        "Description": "The amount of RAM (in MB) to allocate to the vApp",
+        "Deprecated": "Creation of vApp and an implicit single VM in the same structure is deprecated. Use vcd_vapp_vm.memory instead"
       },
       "metadata": {
         "Type": "Map",
-        "Optional": true
+        "Optional": true,
+        "Description": "Key value map of metadata to assign to this vApp. Key and value can be any string."
       },
       "name": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "A name for the vApp, unique withing the VDC"
       },
       "network_name": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Description": "Name of the network this vApp should join",
+        "Deprecated": "Creation of vApp and an implicit single VM in the same structure is deprecated. Use vcd_vapp_vm.network instead"
       },
       "org": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Description": "The name of organization to use, optional if defined at provider level. Useful when connected as sysadmin working across different organizations"
       },
       "ovf": {
         "Type": "Map",
-        "Optional": true
+        "Optional": true,
+        "Description": "Key value map of ovf parameters to assign to VM product section",
+        "Deprecated": "Creation of vApp and an implicit single VM in the same structure is deprecated. Use guest_properties in this resource or vcd_vapp_vm.guest_properties instead"
       },
       "power_on": {
         "Type": "Bool",
         "Optional": true,
+        "Description": "A boolean value stating if this vApp should be powered on",
         "Default": {
           "Type": "bool",
           "Value": "true"
         }
+      },
+      "status": {
+        "Type": "Int",
+        "Description": "Shows the status code of the vApp",
+        "Computed": true
+      },
+      "status_text": {
+        "Type": "String",
+        "Description": "Shows the status of the vApp",
+        "Computed": true
       },
       "storage_profile": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Description": "Storage profile to be used by the vApp",
+        "Deprecated": "Creation of vApp and an implicit single VM in the same structure is deprecated.use vcd_vapp_vm.storage_profile instead"
       },
       "template_name": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Description": "The name of the vApp Template to use",
+        "Deprecated": "Creation of vApp and an implicit single VM in the same structure is deprecated. Use vcd_vapp_vm.template_name instead"
       },
       "vdc": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Description": "The name of VDC to use, optional if defined at provider level"
       }
     },
-    "vcd_vapp_vm": {
-      "accept_all_eulas": {
-        "Type": "Bool",
+    "vcd_vapp_network": {
+      "dhcp_pool": {
+        "Type": "Set",
         "Optional": true,
-        "Default": {
-          "Type": "bool",
-          "Value": "true"
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "default_lease_time": {
+              "Type": "Int",
+              "Optional": true,
+              "Default": {
+                "Type": "int",
+                "Value": "3600"
+              }
+            },
+            "enabled": {
+              "Type": "Bool",
+              "Optional": true,
+              "Default": {
+                "Type": "bool",
+                "Value": "true"
+              }
+            },
+            "end_address": {
+              "Type": "String",
+              "Optional": true
+            },
+            "max_lease_time": {
+              "Type": "Int",
+              "Optional": true,
+              "Default": {
+                "Type": "int",
+                "Value": "7200"
+              }
+            },
+            "start_address": {
+              "Type": "String",
+              "Required": true
+            }
+          }
         }
       },
-      "catalog_name": {
+      "dns1": {
+        "Type": "String",
+        "Optional": true,
+        "Default": {
+          "Type": "string",
+          "Value": "8.8.8.8"
+        }
+      },
+      "dns2": {
+        "Type": "String",
+        "Optional": true,
+        "Default": {
+          "Type": "string",
+          "Value": "8.8.4.4"
+        }
+      },
+      "dns_suffix": {
+        "Type": "String",
+        "Optional": true
+      },
+      "gateway": {
         "Type": "String",
         "Required": true
       },
-      "cpus": {
-        "Type": "Int",
-        "Optional": true
-      },
-      "href": {
-        "Type": "String",
-        "Optional": true,
-        "Computed": true
-      },
-      "initscript": {
-        "Type": "String",
-        "Optional": true
-      },
-      "ip": {
-        "Type": "String",
-        "Optional": true,
-        "Computed": true
-      },
-      "memory": {
-        "Type": "Int",
+      "guest_vlan_allowed": {
+        "Type": "Bool",
         "Optional": true
       },
       "name": {
         "Type": "String",
         "Required": true
       },
-      "network_href": {
+      "netmask": {
         "Type": "String",
-        "Optional": true
-      },
-      "network_name": {
-        "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Default": {
+          "Type": "string",
+          "Value": "255.255.255.0"
+        }
       },
       "org": {
         "Type": "String",
-        "Optional": true
-      },
-      "power_on": {
-        "Type": "Bool",
         "Optional": true,
-        "Default": {
-          "Type": "bool",
-          "Value": "true"
-        }
+        "Description": "The name of organization to use, optional if defined at provider level. Useful when connected as sysadmin working across different organizations"
       },
-      "template_name": {
-        "Type": "String",
-        "Required": true
+      "static_ip_pool": {
+        "Type": "Set",
+        "Optional": true,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "end_address": {
+              "Type": "String",
+              "Required": true
+            },
+            "start_address": {
+              "Type": "String",
+              "Required": true
+            }
+          }
+        }
       },
       "vapp_name": {
         "Type": "String",
@@ -1007,9 +2968,2212 @@
       },
       "vdc": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Description": "The name of VDC to use, optional if defined at provider level"
+      }
+    },
+    "vcd_vapp_vm": {
+      "accept_all_eulas": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Automatically accept EULA if OVA has it",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "catalog_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The catalog name in which to find the given vApp Template"
+      },
+      "computer_name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Computer name to assign to this virtual machine",
+        "Computed": true
+      },
+      "cpu_cores": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The number of cores per socket",
+        "Default": {
+          "Type": "int",
+          "Value": "1"
+        }
+      },
+      "cpus": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The number of virtual CPUs to allocate to the VM",
+        "Default": {
+          "Type": "int",
+          "Value": "1"
+        }
+      },
+      "customization": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Guest customization block",
+        "MaxItems": 1,
+        "MinItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "force": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "'true' value will cause the VM to reboot on every 'apply' operation",
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
+              }
+            }
+          }
+        }
+      },
+      "description": {
+        "Type": "String",
+        "Description": "The VM description",
+        "Computed": true
+      },
+      "disk": {
+        "Type": "Set",
+        "Optional": true,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "bus_number": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Bus number on which to place the disk controller"
+            },
+            "name": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Independent disk name"
+            },
+            "unit_number": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Unit number (slot) on the bus specified by BusNumber"
+            }
+          }
+        }
+      },
+      "expose_hardware_virtualization": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Expose hardware-assisted CPU virtualization to guest OS.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "guest_properties": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "Key/value settings for guest properties"
+      },
+      "href": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "VM Hyper Reference",
+        "Computed": true
+      },
+      "initscript": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Script to run on initial boot or with customization.force=true set"
+      },
+      "ip": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true,
+        "ConflictsWith": [
+          "network"
+        ],
+        "Deprecated": "In favor of network"
+      },
+      "mac": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true,
+        "ConflictsWith": [
+          "network"
+        ],
+        "Deprecated": "In favor of network"
+      },
+      "memory": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The amount of RAM (in MB) to allocate to the VM"
+      },
+      "metadata": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "Key value map of metadata to assign to this VM"
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "A name for the VM, unique within the vApp"
+      },
+      "network": {
+        "Type": "List",
+        "Optional": true,
+        "Description": " A block to define network interface. Multiple can be used.",
+        "ConflictsWith": [
+          "ip",
+          "network_name",
+          "vapp_network_name",
+          "network_href"
+        ],
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "ip": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "IP of the VM. Settings depend on `ip_allocation_mode`. Omitted or empty for DHCP, POOL, NONE. Required for MANUAL",
+              "Computed": true
+            },
+            "ip_allocation_mode": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "IP address allocation mode. One of POOL, DHCP, MANUAL, NONE"
+            },
+            "is_primary": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Set to true if network interface should be primary. First network card in the list will be primary by default",
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
+              }
+            },
+            "mac": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Mac address of network interface",
+              "Computed": true
+            },
+            "name": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Name of the network this VM should connect to. Always required except for `type` `NONE`"
+            },
+            "type": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Network type to use: 'vapp', 'org' or 'none'. Use 'vapp' for vApp network, 'org' to attach Org VDC network. 'none' for empty NIC."
+            }
+          }
+        }
+      },
+      "network_href": {
+        "Type": "String",
+        "Optional": true,
+        "ConflictsWith": [
+          "network"
+        ],
+        "Deprecated": "In favor of network"
+      },
+      "network_name": {
+        "Type": "String",
+        "Optional": true,
+        "ConflictsWith": [
+          "network"
+        ],
+        "Deprecated": "In favor of network"
+      },
+      "org": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of organization to use, optional if defined at provider level. Useful when connected as sysadmin working across different organizations"
+      },
+      "power_on": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "A boolean value stating if this VM should be powered on",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "storage_profile": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Storage profile to override the default one",
+        "Computed": true
+      },
+      "template_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The name of the vApp Template to use"
+      },
+      "vapp_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The vApp this VM belongs to"
+      },
+      "vapp_network_name": {
+        "Type": "String",
+        "Optional": true,
+        "ConflictsWith": [
+          "network"
+        ],
+        "Deprecated": "In favor of network"
+      },
+      "vdc": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of VDC to use, optional if defined at provider level"
       }
     }
   },
-  "data-sources": {}
+  "data-sources": {
+    "vcd_catalog": {
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the catalog"
+      },
+      "org": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The name of organization to use, optional if defined at provider level. Useful when connected as sysadmin working across different organizations"
+      }
+    },
+    "vcd_catalog_item": {
+      "catalog": {
+        "Type": "String",
+        "Required": true,
+        "Description": "catalog containing the item"
+      },
+      "description": {
+        "Type": "String",
+        "Computed": true
+      },
+      "metadata": {
+        "Type": "Map",
+        "Description": "Key and value pairs for catalog item metadata",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true
+      },
+      "org": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of organization to use, optional if defined at provider level. Useful when connected as sysadmin working across different organizations"
+      }
+    },
+    "vcd_catalog_media": {
+      "catalog": {
+        "Type": "String",
+        "Required": true,
+        "Description": "catalog name where upload the Media file"
+      },
+      "creation_date": {
+        "Type": "String",
+        "Description": "Creation date",
+        "Computed": true
+      },
+      "description": {
+        "Type": "String",
+        "Computed": true
+      },
+      "is_iso": {
+        "Type": "Bool",
+        "Description": "True if this media file is ISO",
+        "Computed": true
+      },
+      "is_published": {
+        "Type": "Bool",
+        "Description": "True if this media file is in a published catalog",
+        "Computed": true
+      },
+      "metadata": {
+        "Type": "Map",
+        "Description": "Key and value pairs for catalog item metadata",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "media name"
+      },
+      "org": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of organization to use, optional if defined at provider level. Useful when connected as sysadmin working across different organizations"
+      },
+      "owner_name": {
+        "Type": "String",
+        "Description": "Owner name",
+        "Computed": true
+      },
+      "size": {
+        "Type": "Int",
+        "Description": "Media storage in Bytes",
+        "Computed": true
+      },
+      "status": {
+        "Type": "String",
+        "Description": "Media status",
+        "Computed": true
+      },
+      "storage_profile_name": {
+        "Type": "String",
+        "Description": "Storage profile name",
+        "Computed": true
+      }
+    },
+    "vcd_edgegateway": {
+      "advanced": {
+        "Type": "Bool",
+        "Description": "True if the gateway uses advanced networking. (Enabled by default)",
+        "Computed": true
+      },
+      "configuration": {
+        "Type": "String",
+        "Description": "Configuration of the vShield edge VM for this gateway. One of: compact, full (\"Large\"), full4 (\"Quad Large\"), x-large",
+        "Computed": true
+      },
+      "default_external_network_ip": {
+        "Type": "String",
+        "Description": "IP address of edge gateway interface which is used as default.",
+        "Computed": true
+      },
+      "default_gateway_network": {
+        "Type": "String",
+        "Description": "External network to be used as default gateway. Its name must be included in 'external_networks'. An empty value will skip the default gateway",
+        "Computed": true,
+        "Deprecated": "Please use the more advanced 'external_network' block(s)"
+      },
+      "description": {
+        "Type": "String",
+        "Computed": true
+      },
+      "distributed_routing": {
+        "Type": "Bool",
+        "Description": "If advanced networking enabled, also enable distributed routing",
+        "Computed": true
+      },
+      "external_network": {
+        "Type": "Set",
+        "Description": "One or more blocks with external network information to be attached to this gateway's interface",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "enable_rate_limit": {
+              "Type": "Bool",
+              "Description": "Enable rate limiting",
+              "Computed": true
+            },
+            "incoming_rate_limit": {
+              "Type": "Float",
+              "Description": "Incoming rate limit (Mbps)",
+              "Computed": true
+            },
+            "name": {
+              "Type": "String",
+              "Description": "External network name",
+              "Computed": true
+            },
+            "outgoing_rate_limit": {
+              "Type": "Float",
+              "Description": "Outgoing rate limit (Mbps)",
+              "Computed": true
+            },
+            "subnet": {
+              "Type": "Set",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "gateway": {
+                    "Type": "String",
+                    "Description": "Gateway address for a subnet",
+                    "Computed": true
+                  },
+                  "ip_address": {
+                    "Type": "String",
+                    "Description": "IP address on the edge gateway - will be auto-assigned if not defined",
+                    "Computed": true
+                  },
+                  "netmask": {
+                    "Type": "String",
+                    "Description": "Netmask address for a subnet",
+                    "Computed": true
+                  },
+                  "suballocate_pool": {
+                    "Type": "Set",
+                    "Description": "Define zero or more blocks to sub-allocate pools on the edge gateway",
+                    "Computed": true,
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "end_address": {
+                          "Type": "String",
+                          "Computed": true
+                        },
+                        "start_address": {
+                          "Type": "String",
+                          "Computed": true
+                        }
+                      }
+                    }
+                  },
+                  "use_for_default_route": {
+                    "Type": "Bool",
+                    "Description": "Defines if this subnet should be used as default gateway for edge",
+                    "Computed": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "external_network_ips": {
+        "Type": "List",
+        "Description": "List of IP addresses set on edge gateway external network interfaces",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "external_networks": {
+        "Type": "List",
+        "Description": "A list of external networks to be used by the edge gateway",
+        "Computed": true,
+        "Deprecated": "Please use the more advanced 'external_network' block(s)",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "fips_mode_enabled": {
+        "Type": "Bool",
+        "Description": "Enable FIPS mode. FIPS mode turns on the cipher suites that comply with FIPS. (False by default)",
+        "Computed": true
+      },
+      "fw_default_rule_action": {
+        "Type": "String",
+        "Description": "'accept' or 'deny'. Default 'deny'",
+        "Computed": true
+      },
+      "fw_default_rule_logging_enabled": {
+        "Type": "Bool",
+        "Description": "Enable logging for default rule. Default 'false'",
+        "Computed": true
+      },
+      "fw_enabled": {
+        "Type": "Bool",
+        "Description": "Enable firewall. Default 'true'",
+        "Computed": true
+      },
+      "ha_enabled": {
+        "Type": "Bool",
+        "Description": "Enable high availability on this edge gateway",
+        "Computed": true
+      },
+      "lb_acceleration_enabled": {
+        "Type": "Bool",
+        "Description": "Enable load balancer acceleration. (Disabled by default)",
+        "Computed": true
+      },
+      "lb_enabled": {
+        "Type": "Bool",
+        "Description": "Enable load balancing. (Disabled by default)",
+        "Computed": true
+      },
+      "lb_logging_enabled": {
+        "Type": "Bool",
+        "Description": "Enable load balancer logging. (Disabled by default)",
+        "Computed": true
+      },
+      "lb_loglevel": {
+        "Type": "String",
+        "Description": "Log level. One of 'emergency', 'alert', 'critical', 'error', 'warning', 'notice', 'info', 'debug'. ('info' by default)",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true
+      },
+      "org": {
+        "Type": "String",
+        "Optional": true
+      },
+      "use_default_route_for_dns_relay": {
+        "Type": "Bool",
+        "Description": "If true, default gateway will be used for the edge gateways' default routing and DNS forwarding.(False by default)",
+        "Computed": true
+      },
+      "vdc": {
+        "Type": "String",
+        "Optional": true
+      }
+    },
+    "vcd_external_network": {
+      "description": {
+        "Type": "String",
+        "Computed": true
+      },
+      "ip_scope": {
+        "Type": "List",
+        "Description": "A list of IP scopes for the network",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "dns1": {
+              "Type": "String",
+              "Description": "Primary DNS server",
+              "Computed": true
+            },
+            "dns2": {
+              "Type": "String",
+              "Description": "Secondary DNS server",
+              "Computed": true
+            },
+            "dns_suffix": {
+              "Type": "String",
+              "Description": "DNS suffix",
+              "Computed": true
+            },
+            "gateway": {
+              "Type": "String",
+              "Description": "Gateway of the network",
+              "Computed": true
+            },
+            "netmask": {
+              "Type": "String",
+              "Description": "Network mask",
+              "Computed": true
+            },
+            "static_ip_pool": {
+              "Type": "List",
+              "Description": "IP ranges used for static pool allocation in the network",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "end_address": {
+                    "Type": "String",
+                    "Description": "End address of the IP range",
+                    "Computed": true
+                  },
+                  "start_address": {
+                    "Type": "String",
+                    "Description": "Start address of the IP range",
+                    "Computed": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Required": true
+      },
+      "retain_net_info_across_deployments": {
+        "Type": "Bool",
+        "Description": "Specifies whether the network resources such as IP/MAC of router will be retained across deployments. Default is false.",
+        "Computed": true
+      },
+      "vsphere_network": {
+        "Type": "List",
+        "Description": "A list of port groups that back this network. Each referenced DV_PORTGROUP or NETWORK must exist on a vCenter server registered with the system.",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "name": {
+              "Type": "String",
+              "Description": "The name of the port group",
+              "Computed": true
+            },
+            "type": {
+              "Type": "String",
+              "Description": "The vSphere port group type. One of: DV_PORTGROUP (distributed virtual port group), NETWORK",
+              "Computed": true
+            },
+            "vcenter": {
+              "Type": "String",
+              "Description": "The vCenter server name",
+              "Computed": true
+            }
+          }
+        }
+      }
+    },
+    "vcd_independent_disk": {
+      "bus_sub_type": {
+        "Type": "String",
+        "Computed": true
+      },
+      "bus_type": {
+        "Type": "String",
+        "Computed": true
+      },
+      "datastore_name": {
+        "Type": "String",
+        "Description": "Datastore name",
+        "Computed": true
+      },
+      "description": {
+        "Type": "String",
+        "Description": "independent disk description",
+        "Computed": true
+      },
+      "id": {
+        "Type": "String",
+        "Optional": true
+      },
+      "iops": {
+        "Type": "Int",
+        "Description": "IOPS request for the created disk",
+        "Computed": true
+      },
+      "is_attached": {
+        "Type": "Bool",
+        "Description": "True if the disk is already attached",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true
+      },
+      "org": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of organization to use, optional if defined at provider level. Useful when connected as sysadmin working across different organizations"
+      },
+      "owner_name": {
+        "Type": "String",
+        "Description": "The owner name of the disk",
+        "Computed": true
+      },
+      "storage_profile": {
+        "Type": "String",
+        "Computed": true
+      },
+      "vdc": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of VDC to use, optional if defined at provider level"
+      }
+    },
+    "vcd_lb_app_profile": {
+      "cookie_mode": {
+        "Type": "String",
+        "Description": "The mode by which the cookie should be inserted. One of 'insert', 'prefix', or 'appsession'",
+        "Computed": true
+      },
+      "cookie_name": {
+        "Type": "String",
+        "Description": "Used to uniquely identify the session the first time a client accesses the site. The load balancer refers to this cookie when connecting subsequent requests in the session, so that they all go to the same virtual server. Only applies for persistence_mechanism 'cookie'",
+        "Computed": true
+      },
+      "edge_gateway": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Edge gateway name in which the LB Application Profile is located"
+      },
+      "enable_pool_side_ssl": {
+        "Type": "Bool",
+        "Description": "Enable to define the certificate, CAs, or CRLs used to authenticate the load balancer from the server side",
+        "Computed": true
+      },
+      "enable_ssl_passthrough": {
+        "Type": "Bool",
+        "Description": "Enable SSL authentication to be passed through to the virtual server. Otherwise SSL authentication takes place at the destination address.",
+        "Computed": true
+      },
+      "expiration": {
+        "Type": "Int",
+        "Description": "Length of time in seconds that persistence stays in effect",
+        "Computed": true
+      },
+      "http_redirect_url": {
+        "Type": "String",
+        "Description": "The URL to which traffic that arrives at the destination address should be redirected. Only applies for types HTTP and HTTPS",
+        "Computed": true
+      },
+      "insert_x_forwarded_http_header": {
+        "Type": "Bool",
+        "Description": "Enables 'X-Forwarded-For' header for identifying the originating IP address of a client connecting to a Web server through the load balancer. Only applies for types HTTP and HTTPS",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "LB Application Profile name for lookup"
+      },
+      "org": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of organization to use, optional if defined at provider level. Useful when connected as sysadmin working across different organizations"
+      },
+      "persistence_mechanism": {
+        "Type": "String",
+        "Description": "Persistence mechanism for the profile. One of 'cookie', 'ssl-sessionid', 'sourceip'",
+        "Computed": true
+      },
+      "type": {
+        "Type": "String",
+        "Description": "Protocol type used to send requests to the server. One of 'TCP', 'UDP', 'HTTP' org 'HTTPS'",
+        "Computed": true
+      },
+      "vdc": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of VDC to use, optional if defined at provider level"
+      }
+    },
+    "vcd_lb_app_rule": {
+      "edge_gateway": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Edge gateway name in which the LB Application Rule is located"
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "LB Application Rule name for lookup"
+      },
+      "org": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of organization to use, optional if defined at provider level. Useful when connected as sysadmin working across different organizations"
+      },
+      "script": {
+        "Type": "String",
+        "Description": "The script for the LB Application Rule. Each line will be terminated by newlines (\n)",
+        "Computed": true
+      },
+      "vdc": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of VDC to use, optional if defined at provider level"
+      }
+    },
+    "vcd_lb_server_pool": {
+      "algorithm": {
+        "Type": "String",
+        "Description": "Balancing method for the service",
+        "Computed": true
+      },
+      "algorithm_parameters": {
+        "Type": "String",
+        "Description": "Additional options for load balancing algorithm for http-header or url algorithms",
+        "Computed": true
+      },
+      "description": {
+        "Type": "String",
+        "Description": "Server pool description",
+        "Computed": true
+      },
+      "edge_gateway": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Edge gateway name in which the LB Server Pool is located"
+      },
+      "enable_transparency": {
+        "Type": "Bool",
+        "Description": "Makes client IP addresses visible to the backend servers",
+        "Computed": true
+      },
+      "member": {
+        "Type": "List",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "condition": {
+              "Type": "String",
+              "Description": "Defines member state. One of enabled, drain, disabled.",
+              "Computed": true
+            },
+            "id": {
+              "Type": "String",
+              "Description": "Pool member id (formatted as member-xx, where xx is a number)",
+              "Computed": true
+            },
+            "ip_address": {
+              "Type": "String",
+              "Description": "IP address of member in server pool",
+              "Computed": true
+            },
+            "max_connections": {
+              "Type": "Int",
+              "Description": "The maximum number of concurrent connections the member can handle. If exceeded requests are queued and the load balancer waits for a connection to be released",
+              "Computed": true
+            },
+            "min_connections": {
+              "Type": "Int",
+              "Description": "Minimum number of concurrent connections a member must always accept",
+              "Computed": true
+            },
+            "monitor_port": {
+              "Type": "Int",
+              "Description": "Port at which the member is to receive health monitor requests. Can be the same as port",
+              "Computed": true
+            },
+            "name": {
+              "Type": "String",
+              "Description": "Name of pool member",
+              "Computed": true
+            },
+            "port": {
+              "Type": "Int",
+              "Description": "Port at which the member is to receive traffic from the load balancer",
+              "Computed": true
+            },
+            "weight": {
+              "Type": "Int",
+              "Description": "Proportion of traffic this member is to handle. Must be an integer in the range 1-256",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "monitor_id": {
+        "Type": "String",
+        "Description": "Load Balancer Service Monitor ID",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Server Pool name for lookup"
+      },
+      "org": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of organization to use, optional if defined at provider level. Useful when connected as sysadmin working across different organizations"
+      },
+      "vdc": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of VDC to use, optional if defined at provider level"
+      }
+    },
+    "vcd_lb_service_monitor": {
+      "edge_gateway": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Edge gateway name in which the LB Service Monitor is located"
+      },
+      "expected": {
+        "Type": "String",
+        "Description": "String that the monitor expects to match in the status line of the http or https response (for example, HTTP/1.1)",
+        "Computed": true
+      },
+      "extension": {
+        "Type": "Map",
+        "Description": "Advanced monitor parameters as key=value pairs",
+        "Computed": true
+      },
+      "interval": {
+        "Type": "Int",
+        "Description": "Interval in seconds at which a server is to be monitored",
+        "Computed": true
+      },
+      "max_retries": {
+        "Type": "Int",
+        "Description": "Number of times the specified monitoring Method must fail sequentially before the server is declared down",
+        "Computed": true
+      },
+      "method": {
+        "Type": "String",
+        "Description": "Method to be used to detect server status. One of OPTIONS, GET, HEAD, POST, PUT, DELETE, TRACE, or CONNECT",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "LB Service Monitor name"
+      },
+      "org": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of organization to use, optional if defined at provider level. Useful when connected as sysadmin working across different organizations"
+      },
+      "receive": {
+        "Type": "String",
+        "Description": "String to be matched in the response content",
+        "Computed": true
+      },
+      "send": {
+        "Type": "String",
+        "Description": "Data to be sent",
+        "Computed": true
+      },
+      "timeout": {
+        "Type": "Int",
+        "Description": "Maximum time in seconds within which a response from the server must be received",
+        "Computed": true
+      },
+      "type": {
+        "Type": "String",
+        "Description": "Way in which you want to send the health check request to the server. One of http, https, tcp, icmp, or udp",
+        "Computed": true
+      },
+      "url": {
+        "Type": "String",
+        "Description": "URL to be used in the server status request",
+        "Computed": true
+      },
+      "vdc": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of VDC to use, optional if defined at provider level"
+      }
+    },
+    "vcd_lb_virtual_server": {
+      "app_profile_id": {
+        "Type": "String",
+        "Description": "Application profile ID to be associated with the virtual server",
+        "Computed": true
+      },
+      "app_rule_ids": {
+        "Type": "List",
+        "Description": "List of attached application rule IDs",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "connection_limit": {
+        "Type": "Int",
+        "Description": "Maximum concurrent connections that the virtual server can process",
+        "Computed": true
+      },
+      "connection_rate_limit": {
+        "Type": "Int",
+        "Description": "Maximum incoming new connection requests per second",
+        "Computed": true
+      },
+      "description": {
+        "Type": "String",
+        "Description": "Virtual Server description",
+        "Computed": true
+      },
+      "edge_gateway": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Edge gateway name in which the Virtual Server is located"
+      },
+      "enable_acceleration": {
+        "Type": "Bool",
+        "Description": "Enable virtual server acceleration",
+        "Computed": true
+      },
+      "enabled": {
+        "Type": "Bool",
+        "Description": "Defines if the virtual server is enabled",
+        "Computed": true
+      },
+      "ip_address": {
+        "Type": "String",
+        "Description": "IP address that the load balancer listens on",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Virtual Server name for lookup"
+      },
+      "org": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of organization to use, optional if defined at provider level. Useful when connected as sysadmin working across different organizations"
+      },
+      "port": {
+        "Type": "Int",
+        "Description": "Port number that the load balancer listens on",
+        "Computed": true
+      },
+      "protocol": {
+        "Type": "String",
+        "Description": "Protocol that the virtual server accepts",
+        "Computed": true
+      },
+      "server_pool_id": {
+        "Type": "String",
+        "Description": "The server pool that the load balancer will use",
+        "Computed": true
+      },
+      "vdc": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of VDC to use, optional if defined at provider level"
+      }
+    },
+    "vcd_network_direct": {
+      "description": {
+        "Type": "String",
+        "Description": "Optional description for the network",
+        "Computed": true
+      },
+      "external_network": {
+        "Type": "String",
+        "Description": "The name of the external network",
+        "Computed": true
+      },
+      "external_network_dns1": {
+        "Type": "String",
+        "Description": "Main DNS of the external network",
+        "Computed": true
+      },
+      "external_network_dns2": {
+        "Type": "String",
+        "Description": "Secondary DNS of the external network",
+        "Computed": true
+      },
+      "external_network_dns_suffix": {
+        "Type": "String",
+        "Description": "DNS suffix of the external network",
+        "Computed": true
+      },
+      "external_network_gateway": {
+        "Type": "String",
+        "Description": "Gateway of the external network",
+        "Computed": true
+      },
+      "external_network_netmask": {
+        "Type": "String",
+        "Description": "Net mask of the external network",
+        "Computed": true
+      },
+      "href": {
+        "Type": "String",
+        "Description": "Network Hypertext Reference",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "A unique name for this network"
+      },
+      "org": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of organization to use, optional if defined at provider level. Useful when connected as sysadmin working across different organizations"
+      },
+      "shared": {
+        "Type": "Bool",
+        "Description": "Defines if this network is shared between multiple VDCs in the Org",
+        "Computed": true
+      },
+      "vdc": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of VDC to use, optional if defined at provider level"
+      }
+    },
+    "vcd_network_isolated": {
+      "description": {
+        "Type": "String",
+        "Description": "Optional description for the network",
+        "Computed": true
+      },
+      "dhcp_pool": {
+        "Type": "Set",
+        "Description": "A range of IPs to issue to virtual machines that don't have a static IP",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "default_lease_time": {
+              "Type": "Int",
+              "Description": "The default DHCP lease time to use",
+              "Computed": true
+            },
+            "end_address": {
+              "Type": "String",
+              "Description": "The final address in the IP Range",
+              "Computed": true
+            },
+            "max_lease_time": {
+              "Type": "Int",
+              "Description": "The maximum DHCP lease time to use",
+              "Computed": true
+            },
+            "start_address": {
+              "Type": "String",
+              "Description": "The first address in the IP Range",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "dns1": {
+        "Type": "String",
+        "Description": "First DNS server to use",
+        "Computed": true
+      },
+      "dns2": {
+        "Type": "String",
+        "Description": "Second DNS server to use",
+        "Computed": true
+      },
+      "dns_suffix": {
+        "Type": "String",
+        "Description": "A FQDN for the virtual machines on this network",
+        "Computed": true
+      },
+      "gateway": {
+        "Type": "String",
+        "Description": "The gateway for this network",
+        "Computed": true
+      },
+      "href": {
+        "Type": "String",
+        "Description": "Network Hyper Reference",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "A unique name for this network"
+      },
+      "netmask": {
+        "Type": "String",
+        "Description": "The netmask for the new network",
+        "Computed": true
+      },
+      "org": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of organization to use, optional if defined at provider level. Useful when connected as sysadmin working across different organizations"
+      },
+      "shared": {
+        "Type": "Bool",
+        "Description": "Defines if this network is shared between multiple VDCs in the Org",
+        "Computed": true
+      },
+      "static_ip_pool": {
+        "Type": "Set",
+        "Description": "A range of IPs permitted to be used as static IPs for virtual machines",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "end_address": {
+              "Type": "String",
+              "Description": "The final address in the IP Range",
+              "Computed": true
+            },
+            "start_address": {
+              "Type": "String",
+              "Description": "The first address in the IP Range",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "vdc": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of VDC to use, optional if defined at provider level"
+      }
+    },
+    "vcd_network_routed": {
+      "description": {
+        "Type": "String",
+        "Description": "Optional description for the network",
+        "Computed": true
+      },
+      "dhcp_pool": {
+        "Type": "Set",
+        "Description": "A range of IPs to issue to virtual machines that don't have a static IP",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "default_lease_time": {
+              "Type": "Int",
+              "Description": "The default DHCP lease time to use",
+              "Computed": true
+            },
+            "end_address": {
+              "Type": "String",
+              "Description": "The final address in the IP Range",
+              "Computed": true
+            },
+            "max_lease_time": {
+              "Type": "Int",
+              "Description": "HThe maximum DHCP lease time to use",
+              "Computed": true
+            },
+            "start_address": {
+              "Type": "String",
+              "Description": "The first address in the IP Range",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "dns1": {
+        "Type": "String",
+        "Description": "First DNS server to use",
+        "Computed": true
+      },
+      "dns2": {
+        "Type": "String",
+        "Description": "Second DNS server to use",
+        "Computed": true
+      },
+      "dns_suffix": {
+        "Type": "String",
+        "Description": "A FQDN for the virtual machines on this network",
+        "Computed": true
+      },
+      "edge_gateway": {
+        "Type": "String",
+        "Description": "The name of the edge gateway",
+        "Computed": true
+      },
+      "gateway": {
+        "Type": "String",
+        "Description": "The gateway of this network",
+        "Computed": true
+      },
+      "href": {
+        "Type": "String",
+        "Description": "Network Hypertext Reference",
+        "Computed": true
+      },
+      "interface_type": {
+        "Type": "String",
+        "Description": "Which interface to use (one of `internal`, `subinterface`, `distributed`)",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "A unique name for the network"
+      },
+      "netmask": {
+        "Type": "String",
+        "Description": "The netmask for the new network",
+        "Computed": true
+      },
+      "org": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of organization to use, optional if defined at provider level. Useful when connected as sysadmin working across different organizations"
+      },
+      "shared": {
+        "Type": "Bool",
+        "Description": "Defines if this network is shared between multiple VDCs in the Org",
+        "Computed": true
+      },
+      "static_ip_pool": {
+        "Type": "Set",
+        "Description": "A range of IPs permitted to be used as static IPs for virtual machines",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "end_address": {
+              "Type": "String",
+              "Description": "The final address in the IP Range",
+              "Computed": true
+            },
+            "start_address": {
+              "Type": "String",
+              "Description": "The first address in the IP Range",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "vdc": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of VDC to use, optional if defined at provider level"
+      }
+    },
+    "vcd_nsxv_dhcp_relay": {
+      "domain_names": {
+        "Type": "Set",
+        "Description": "A set of IP domain names of DHCP servers",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "edge_gateway": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Edge gateway name for DHCP relay settings"
+      },
+      "ip_addresses": {
+        "Type": "Set",
+        "Description": "A set of IP address of DHCP servers",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "ip_sets": {
+        "Type": "Set",
+        "Description": "A set of IP set names which consist DHCP servers",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "org": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of organization to use, optional if defined at provider level. Useful when connected as sysadmin working across different organizations"
+      },
+      "relay_agent": {
+        "Type": "Set",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "gateway_ip_address": {
+              "Type": "String",
+              "Description": "Optional gateway IP address of org network which is to be used for relaying DHCP message to specified servers",
+              "Computed": true
+            },
+            "network_name": {
+              "Type": "String",
+              "Description": "Org network which is to be used for relaying DHCP message to specified servers",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "vdc": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of VDC to use, optional if defined at provider level"
+      }
+    },
+    "vcd_nsxv_dnat": {
+      "description": {
+        "Type": "String",
+        "Description": "NAT rule description",
+        "Computed": true
+      },
+      "edge_gateway": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Edge gateway name in which the NAT rule is located"
+      },
+      "enabled": {
+        "Type": "Bool",
+        "Description": "Defines if the rule is enabled",
+        "Computed": true
+      },
+      "icmp_type": {
+        "Type": "String",
+        "Description": "ICMP type. Only supported when protocol is ICMP. One of `any`, `address-mask-request`, `address-mask-reply`, `destination-unreachable`, `echo-request`, `echo-reply`, `parameter-problem`, `redirect`, `router-advertisement`, `router-solicitation`, `source-quench`, `time-exceeded`, `timestamp-request`, `timestamp-reply`. Default `any`",
+        "Computed": true
+      },
+      "logging_enabled": {
+        "Type": "Bool",
+        "Description": "Defines if logging is enabled for the rule",
+        "Computed": true
+      },
+      "network_name": {
+        "Type": "String",
+        "Description": "Org or external network name",
+        "Computed": true
+      },
+      "network_type": {
+        "Type": "String",
+        "Description": "Network type. One of 'ext', 'org'",
+        "Computed": true
+      },
+      "org": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of organization to use, optional if defined at provider level. Useful when connected as sysadmin working across different organizations"
+      },
+      "original_address": {
+        "Type": "String",
+        "Description": "Original address or address range. This is the the destination address for DNAT rules.",
+        "Computed": true
+      },
+      "original_port": {
+        "Type": "String",
+        "Description": "Original port. This is the destinationport for DNAT rules",
+        "Computed": true
+      },
+      "protocol": {
+        "Type": "String",
+        "Description": "Protocol. One of 'tcp', 'udp', 'icmp', 'any'",
+        "Computed": true
+      },
+      "rule_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "NAT rule ID for lookup"
+      },
+      "rule_tag": {
+        "Type": "Int",
+        "Description": "Custom rule tag. Contains rule ID if tag was not set",
+        "Computed": true
+      },
+      "rule_type": {
+        "Type": "String",
+        "Description": "Possible values 'user', 'internal_high'",
+        "Computed": true
+      },
+      "translated_address": {
+        "Type": "String",
+        "Description": "Translated address or address range",
+        "Computed": true
+      },
+      "translated_port": {
+        "Type": "String",
+        "Description": "Translated port",
+        "Computed": true
+      },
+      "vdc": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of VDC to use, optional if defined at provider level"
+      }
+    },
+    "vcd_nsxv_firewall_rule": {
+      "action": {
+        "Type": "String",
+        "Description": "'accept' or 'deny'. Default 'accept'",
+        "Computed": true
+      },
+      "destination": {
+        "Type": "List",
+        "Computed": true,
+        "MaxItems": 1,
+        "MinItems": 1,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "exclude": {
+              "Type": "Bool",
+              "Description": "Rule is applied to traffic going to any destinations except for the excluded destination. Default 'false'",
+              "Computed": true
+            },
+            "gateway_interfaces": {
+              "Type": "Set",
+              "Description": "'vse', 'internal', 'external' or network name",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "ip_addresses": {
+              "Type": "Set",
+              "Description": "IP address, CIDR, an IP range, or the keyword 'any'",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "ip_sets": {
+              "Type": "Set",
+              "Description": "Set of IP set names",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "org_networks": {
+              "Type": "Set",
+              "Description": "Set of org network names",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "virtual_machine_ids": {
+              "Type": "Set",
+              "Description": "Set of VM IDs",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
+      "edge_gateway": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Edge gateway name in which the firewall rule is located"
+      },
+      "enabled": {
+        "Type": "Bool",
+        "Description": "Whether the rule should be enabled. Default 'true'",
+        "Computed": true
+      },
+      "logging_enabled": {
+        "Type": "Bool",
+        "Description": "Whether logging should be enabled for this rule. Default 'false'",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Description": "Firewall rule name",
+        "Computed": true
+      },
+      "org": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of organization to use, optional if defined at provider level. Useful when connected as sysadmin working across different organizations"
+      },
+      "rule_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Firewall rule ID for lookup"
+      },
+      "rule_tag": {
+        "Type": "Int",
+        "Description": "Optional. Allows to set custom rule tag",
+        "Computed": true
+      },
+      "rule_type": {
+        "Type": "String",
+        "Description": "Read only. Possible values 'user', 'internal_high'",
+        "Computed": true
+      },
+      "service": {
+        "Type": "Set",
+        "Computed": true,
+        "MinItems": 1,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "port": {
+              "Type": "String",
+              "Computed": true
+            },
+            "protocol": {
+              "Type": "String",
+              "Computed": true
+            },
+            "source_port": {
+              "Type": "String",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "source": {
+        "Type": "List",
+        "Computed": true,
+        "MaxItems": 1,
+        "MinItems": 1,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "exclude": {
+              "Type": "Bool",
+              "Description": "Rule is applied to traffic coming from all sources except for the excluded source. Default 'false'",
+              "Computed": true
+            },
+            "gateway_interfaces": {
+              "Type": "Set",
+              "Description": "'vse', 'internal', 'external' or network name",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "ip_addresses": {
+              "Type": "Set",
+              "Description": "IP address, CIDR, an IP range, or the keyword 'any'",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "ip_sets": {
+              "Type": "Set",
+              "Description": "Set of IP set names",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "org_networks": {
+              "Type": "Set",
+              "Description": "Set of org network names",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "virtual_machine_ids": {
+              "Type": "Set",
+              "Description": "Set of VM IDs",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
+      "vdc": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of VDC to use, optional if defined at provider level"
+      }
+    },
+    "vcd_nsxv_ip_set": {
+      "description": {
+        "Type": "String",
+        "Description": "IP set description",
+        "Computed": true
+      },
+      "ip_addresses": {
+        "Type": "Set",
+        "Description": "A set of IP address, CIDR, IP range objects",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "is_inheritance_allowed": {
+        "Type": "Bool",
+        "Description": "Allows visibility in underlying scopes (Default is true)",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "IP set name"
+      },
+      "org": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of organization to use, optional if defined at provider level. Useful when connected as sysadmin working across different organizations"
+      },
+      "vdc": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of VDC to use, optional if defined at provider level"
+      }
+    },
+    "vcd_nsxv_snat": {
+      "description": {
+        "Type": "String",
+        "Description": "NAT rule description",
+        "Computed": true
+      },
+      "edge_gateway": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Edge gateway name in which the NAT rule is located"
+      },
+      "enabled": {
+        "Type": "Bool",
+        "Description": "Defines if the rule is enabled",
+        "Computed": true
+      },
+      "logging_enabled": {
+        "Type": "Bool",
+        "Description": "Defines if logging is enabled for the rule",
+        "Computed": true
+      },
+      "network_name": {
+        "Type": "String",
+        "Description": "Org or external network name",
+        "Computed": true
+      },
+      "network_type": {
+        "Type": "String",
+        "Description": "Network type. One of 'ext', 'org'",
+        "Computed": true
+      },
+      "org": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of organization to use, optional if defined at provider level. Useful when connected as sysadmin working across different organizations"
+      },
+      "original_address": {
+        "Type": "String",
+        "Description": "Original address or address range. This is the the source address for SNAT rules",
+        "Computed": true
+      },
+      "rule_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "NAT rule ID for lookup"
+      },
+      "rule_tag": {
+        "Type": "Int",
+        "Description": "Custom rule tag. Contains rule ID if tag was not set",
+        "Computed": true
+      },
+      "rule_type": {
+        "Type": "String",
+        "Description": "Possible values 'user', 'internal_high'.",
+        "Computed": true
+      },
+      "translated_address": {
+        "Type": "String",
+        "Description": "Translated address or address range",
+        "Computed": true
+      },
+      "vdc": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of VDC to use, optional if defined at provider level"
+      }
+    },
+    "vcd_org": {
+      "can_publish_catalogs": {
+        "Type": "Bool",
+        "Description": "True if this organization is allowed to share catalogs.",
+        "Computed": true
+      },
+      "delay_after_power_on_seconds": {
+        "Type": "Int",
+        "Description": "Specifies this organization's default for virtual machine boot delay after power on.",
+        "Computed": true
+      },
+      "deployed_vm_quota": {
+        "Type": "Int",
+        "Description": "Maximum number of virtual machines that can be deployed simultaneously by a member of this organization. (0 = unlimited)",
+        "Computed": true
+      },
+      "description": {
+        "Type": "String",
+        "Computed": true
+      },
+      "full_name": {
+        "Type": "String",
+        "Computed": true
+      },
+      "is_enabled": {
+        "Type": "Bool",
+        "Description": "True if this organization is enabled (allows login and all other operations).",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Organization name for lookup"
+      },
+      "stored_vm_quota": {
+        "Type": "Int",
+        "Description": "Maximum number of virtual machines in vApps or vApp templates that can be stored in an undeployed state by a member of this organization. (0 = unlimited)",
+        "Computed": true
+      }
+    },
+    "vcd_org_vdc": {
+      "allocation_model": {
+        "Type": "String",
+        "Description": "The allocation model used by this VDC; must be one of {AllocationVApp, AllocationPool, ReservationPool}",
+        "Computed": true
+      },
+      "allow_over_commit": {
+        "Type": "Bool",
+        "Description": "Set to false to disallow creation of the VDC if the AllocationModel is AllocationPool or ReservationPool and the ComputeCapacity you specified is greater than what the backing Provider VDC can supply. Default is true.",
+        "Computed": true
+      },
+      "compute_capacity": {
+        "Type": "List",
+        "Description": "The compute capacity allocated to this VDC.",
+        "Computed": true,
+        "MaxItems": 1,
+        "MinItems": 1,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "cpu": {
+              "Type": "List",
+              "Computed": true,
+              "MaxItems": 1,
+              "MinItems": 1,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "allocated": {
+                    "Type": "Int",
+                    "Description": "Capacity that is committed to be available. Value in MB or MHz. Used with AllocationPool (Allocation pool) and ReservationPool (Reservation pool).",
+                    "Computed": true
+                  },
+                  "limit": {
+                    "Type": "Int",
+                    "Description": "Capacity limit relative to the value specified for Allocation. It must not be less than that value. If it is greater than that value, it implies over provisioning. A value of 0 specifies unlimited units. Value in MB or MHz. Used with AllocationVApp (Pay as you go).",
+                    "Computed": true
+                  },
+                  "overhead": {
+                    "Type": "Int",
+                    "Computed": true
+                  },
+                  "reserved": {
+                    "Type": "Int",
+                    "Computed": true
+                  },
+                  "used": {
+                    "Type": "Int",
+                    "Computed": true
+                  }
+                }
+              }
+            },
+            "memory": {
+              "Type": "List",
+              "Computed": true,
+              "MaxItems": 1,
+              "MinItems": 1,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "allocated": {
+                    "Type": "Int",
+                    "Description": "Capacity that is committed to be available. Value in MB or MHz. Used with AllocationPool (Allocation pool) and ReservationPool (Reservation pool).",
+                    "Computed": true
+                  },
+                  "limit": {
+                    "Type": "Int",
+                    "Description": "Capacity limit relative to the value specified for Allocation. It must not be less than that value. If it is greater than that value, it implies over provisioning. A value of 0 specifies unlimited units. Value in MB or MHz. Used with AllocationVApp (Pay as you go).",
+                    "Computed": true
+                  },
+                  "overhead": {
+                    "Type": "Int",
+                    "Computed": true
+                  },
+                  "reserved": {
+                    "Type": "Int",
+                    "Computed": true
+                  },
+                  "used": {
+                    "Type": "Int",
+                    "Computed": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "cpu_guaranteed": {
+        "Type": "Float",
+        "Description": "Percentage of allocated CPU resources guaranteed to vApps deployed in this VDC. For example, if this value is 0.75, then 75% of allocated resources are guaranteed. Required when AllocationModel is AllocationVApp or AllocationPool. If the element is empty, vCD sets a value",
+        "Computed": true
+      },
+      "cpu_speed": {
+        "Type": "Int",
+        "Description": "Specifies the clock frequency, in Megahertz, for any virtual CPU that is allocated to a VM. A VM with 2 vCPUs will consume twice as much of this value. Ignored for ReservationPool. Required when AllocationModel is AllocationVApp or AllocationPool, and may not be less than 256 MHz. Defaults to 1000 MHz if the element is empty or missing.",
+        "Computed": true
+      },
+      "description": {
+        "Type": "String",
+        "Computed": true
+      },
+      "enable_fast_provisioning": {
+        "Type": "Bool",
+        "Description": "Request for fast provisioning. Request will be honored only if the underlying datas tore supports it. Fast provisioning can reduce the time it takes to create virtual machines by using vSphere linked clones. If you disable fast provisioning, all provisioning operations will result in full clones.",
+        "Computed": true
+      },
+      "enable_thin_provisioning": {
+        "Type": "Bool",
+        "Description": "Boolean to request thin provisioning. Request will be honored only if the underlying datastore supports it. Thin provisioning saves storage space by committing it on demand. This allows over-allocation of storage.",
+        "Computed": true
+      },
+      "enable_vm_discovery": {
+        "Type": "Bool",
+        "Description": "True if discovery of vCenter VMs is enabled for resource pools backing this VDC. If left unspecified, the actual behaviour depends on enablement at the organization level and at the system level.",
+        "Computed": true
+      },
+      "enabled": {
+        "Type": "Bool",
+        "Description": "True if this VDC is enabled for use by the organization VDCs. Default is true.",
+        "Computed": true
+      },
+      "memory_guaranteed": {
+        "Type": "Float",
+        "Description": "Percentage of allocated memory resources guaranteed to vApps deployed in this VDC. For example, if this value is 0.75, then 75% of allocated resources are guaranteed. Required when AllocationModel is AllocationVApp or AllocationPool. When Allocation model is AllocationPool minimum value is 0.2. If the element is empty, vCD sets a value.",
+        "Computed": true
+      },
+      "metadata": {
+        "Type": "Map",
+        "Description": "Key and value pairs for Org VDC metadata",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true
+      },
+      "network_pool_name": {
+        "Type": "String",
+        "Description": "The name of a network pool in the Provider VDC. Required if this VDC will contain routed or isolated networks.",
+        "Computed": true
+      },
+      "network_quota": {
+        "Type": "Int",
+        "Description": "Maximum number of network objects that can be deployed in this VDC. Defaults to 0, which means no networks can be deployed.",
+        "Computed": true
+      },
+      "nic_quota": {
+        "Type": "Int",
+        "Description": "Maximum number of virtual NICs allowed in this VDC. Defaults to 0, which specifies an unlimited number.",
+        "Computed": true
+      },
+      "org": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Organization to create the VDC in"
+      },
+      "provider_vdc_name": {
+        "Type": "String",
+        "Description": "A reference to the Provider VDC from which this organization VDC is provisioned.",
+        "Computed": true
+      },
+      "storage_profile": {
+        "Type": "List",
+        "Description": "Storage profiles supported by this VDC.",
+        "Computed": true,
+        "MinItems": 1,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "default": {
+              "Type": "Bool",
+              "Description": "True if this is default storage profile for this VDC. The default storage profile is used when an object that can specify a storage profile is created with no storage profile specified.",
+              "Computed": true
+            },
+            "enabled": {
+              "Type": "Bool",
+              "Description": "True if this storage profile is enabled for use in the VDC.",
+              "Computed": true
+            },
+            "limit": {
+              "Type": "Int",
+              "Description": "Maximum number of MB allocated for this storage profile. A value of 0 specifies unlimited MB.",
+              "Computed": true
+            },
+            "name": {
+              "Type": "String",
+              "Description": "Name of Provider VDC storage profile.",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "vm_quota": {
+        "Type": "Int",
+        "Description": "The maximum number of VMs that can be created in this VDC. Includes deployed and undeployed VMs in vApps and vApp templates. Defaults to 0, which specifies an unlimited number.",
+        "Computed": true
+      }
+    },
+    "vcd_vapp": {
+      "description": {
+        "Type": "String",
+        "Description": "Optional description of the vApp",
+        "Computed": true
+      },
+      "guest_properties": {
+        "Type": "Map",
+        "Description": "Key/value settings for guest properties",
+        "Computed": true
+      },
+      "href": {
+        "Type": "String",
+        "Description": "vApp Hyper Reference",
+        "Computed": true
+      },
+      "metadata": {
+        "Type": "Map",
+        "Description": "Key value map of metadata to assign to this vApp. Key and value can be any string.",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "A name for the vApp, unique within the VDC"
+      },
+      "org": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of organization to use, optional if defined at provider level. Useful when connected as sysadmin working across different organizations"
+      },
+      "status": {
+        "Type": "Int",
+        "Description": "Shows the status code of the vApp",
+        "Computed": true
+      },
+      "status_text": {
+        "Type": "String",
+        "Description": "Shows the status of the vApp",
+        "Computed": true
+      },
+      "vdc": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of VDC to use, optional if defined at provider level"
+      }
+    },
+    "vcd_vapp_vm": {
+      "computer_name": {
+        "Type": "String",
+        "Description": "Computer name assigned to this virtual machine",
+        "Computed": true
+      },
+      "cpu_cores": {
+        "Type": "Int",
+        "Description": "The number of cores per socket",
+        "Computed": true
+      },
+      "cpus": {
+        "Type": "Int",
+        "Description": "The number of virtual CPUs to allocate to the VM",
+        "Computed": true
+      },
+      "description": {
+        "Type": "String",
+        "Description": "The VM description",
+        "Computed": true
+      },
+      "disk": {
+        "Type": "Set",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "name": {
+              "Type": "String",
+              "Description": "Independent disk name",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "expose_hardware_virtualization": {
+        "Type": "Bool",
+        "Description": "Expose hardware-assisted CPU virtualization to guest OS.",
+        "Computed": true
+      },
+      "guest_properties": {
+        "Type": "Map",
+        "Description": "Key/value settings for guest properties",
+        "Computed": true
+      },
+      "href": {
+        "Type": "String",
+        "Description": "VM Hyper Reference",
+        "Computed": true
+      },
+      "memory": {
+        "Type": "Int",
+        "Description": "The amount of RAM (in MB) to allocate to the VM",
+        "Computed": true
+      },
+      "metadata": {
+        "Type": "Map",
+        "Description": "Key value map of metadata to assign to this VM",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "A name for the VM, unique within the vApp"
+      },
+      "network": {
+        "Type": "List",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "ip": {
+              "Type": "String",
+              "Description": "IP of the VM. Settings depend on `ip_allocation_mode`",
+              "Computed": true
+            },
+            "ip_allocation_mode": {
+              "Type": "String",
+              "Description": "IP address allocation mode.",
+              "Computed": true
+            },
+            "is_primary": {
+              "Type": "Bool",
+              "Description": "Set to true if network interface should be primary. First network card in the list will be primary by default",
+              "Computed": true
+            },
+            "mac": {
+              "Type": "String",
+              "Description": "Mac address of network interface",
+              "Computed": true
+            },
+            "name": {
+              "Type": "String",
+              "Description": "Name of the network this VM should connect to.",
+              "Computed": true
+            },
+            "type": {
+              "Type": "String",
+              "Description": "Network type",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "org": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of organization to use, optional if defined at provider level. Useful when connected as sysadmin working across different organizations"
+      },
+      "storage_profile": {
+        "Type": "String",
+        "Description": "Storage profile used with the VM",
+        "Computed": true
+      },
+      "vapp_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The vApp this VM belongs to"
+      },
+      "vdc": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of VDC to use, optional if defined at provider level"
+      }
+    }
+  }
 }

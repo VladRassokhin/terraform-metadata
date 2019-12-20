@@ -2,7 +2,7 @@
   ".schema_version": "1",
   "name": "signalfx",
   "type": "provider",
-  "version": "v4.8.3",
+  "version": "v4.11.0",
   "provider": {
     "api_url": {
       "Type": "String",
@@ -30,6 +30,70 @@
     }
   },
   "resources": {
+    "signalfx_alert_muting_rule": {
+      "description": {
+        "Type": "String",
+        "Required": true,
+        "Description": "description of the rule"
+      },
+      "detectors": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "detectors to which this muting rule applies",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "effective_start_time": {
+        "Type": "Int",
+        "Computed": true
+      },
+      "filter": {
+        "Type": "Set",
+        "Required": true,
+        "Description": "list of alert muting filters for this rule",
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "negated": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "(false by default) whether this filter should be a \"not\" filter",
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
+              }
+            },
+            "property": {
+              "Type": "String",
+              "Required": true,
+              "Description": "the property to filter by"
+            },
+            "property_value": {
+              "Type": "String",
+              "Required": true,
+              "Description": "the value of the property to filter by"
+            }
+          }
+        }
+      },
+      "start_time": {
+        "Type": "Int",
+        "Required": true,
+        "Description": "starting time of an alert muting rule as a Unix timestamp, in seconds"
+      },
+      "stop_time": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "stop time of an alert muting rule as a Unix timestamp, in seconds",
+        "Default": {
+          "Type": "int",
+          "Value": "0"
+        }
+      }
+    },
     "signalfx_aws_external_integration": {
       "external_id": {
         "Type": "String",
@@ -287,6 +351,24 @@
       }
     },
     "signalfx_dashboard": {
+      "authorized_writer_teams": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Team IDs that have write access to this dashboard",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "authorized_writer_users": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "User IDs that have write access to this dashboard",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
       "chart": {
         "Type": "Set",
         "Optional": true,
@@ -348,7 +430,6 @@
         "Type": "List",
         "Optional": true,
         "Description": "Column layout. Charts listed, will be placed in a single column with the same width and height",
-        "MaxItems": 1,
         "ConflictsWith": [
           "grid",
           "chart"
@@ -538,7 +619,6 @@
         "Type": "List",
         "Optional": true,
         "Description": "Grid dashboard layout. Charts listed will be placed in a grid by row with the same width and height. If a chart can't fit in a row, it will be placed automatically in the next row",
-        "MaxItems": 1,
         "ConflictsWith": [
           "column",
           "chart"
@@ -744,6 +824,24 @@
       }
     },
     "signalfx_dashboard_group": {
+      "authorized_writer_teams": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Team IDs that have write access to this dashboard",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "authorized_writer_users": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "User IDs that have write access to this dashboard",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
       "dashboard": {
         "Type": "List",
         "Optional": true,
@@ -858,7 +956,168 @@
         }
       }
     },
+    "signalfx_data_link": {
+      "context_dashboard_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The dashobard ID to which this data link will be applied"
+      },
+      "property_name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Name (key) of the metadata that's the trigger of a data link. If you specify `property_value`, you must specify `property_name`."
+      },
+      "property_value": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Value of the metadata that's the trigger of a data link. If you specify this property, you must also specify `property_name`."
+      },
+      "target_external_url": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Link to an external URL",
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "is_default": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Flag that designates a target as the default for a data link object.",
+              "Default": {
+                "Type": "bool",
+                "Value": "true"
+              }
+            },
+            "minimum_time_window": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The minimum time window for a search sent to an external site. Depends on the value set for `time_format`.",
+              "Default": {
+                "Type": "string",
+                "Value": "6000"
+              }
+            },
+            "name": {
+              "Type": "String",
+              "Required": true,
+              "Description": "User-assigned target name. Use this value to differentiate between the link targets for a data link object."
+            },
+            "property_key_mapping": {
+              "Type": "Map",
+              "Optional": true,
+              "Description": "Describes the relationship between SignalFx metadata keys and external system properties when the key names are different",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "time_format": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Designates the format of minimumTimeWindow in the same data link target object.",
+              "Default": {
+                "Type": "datalink.TimeFormat",
+                "Value": "ISO8601"
+              }
+            },
+            "url": {
+              "Type": "String",
+              "Required": true,
+              "Description": "URL string for a Splunk instance or external system data link target."
+            }
+          }
+        }
+      },
+      "target_signalfx_dashboard": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Link to a SignalFx dashboard",
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "dashboard_group_id": {
+              "Type": "String",
+              "Required": true,
+              "Description": "SignalFx-assigned ID of the dashboard link target's dashboard group"
+            },
+            "dashboard_id": {
+              "Type": "String",
+              "Required": true,
+              "Description": "SignalFx-assigned ID of the dashboard link target"
+            },
+            "is_default": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Flag that designates a target as the default for a data link object.",
+              "Default": {
+                "Type": "bool",
+                "Value": "true"
+              }
+            },
+            "name": {
+              "Type": "String",
+              "Required": true,
+              "Description": "User-assigned target name. Use this value to differentiate between the link targets for a data link object."
+            }
+          }
+        }
+      },
+      "target_splunk": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Link to a Splunk instance",
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "is_default": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Flag that designates a target as the default for a data link object.",
+              "Default": {
+                "Type": "bool",
+                "Value": "true"
+              }
+            },
+            "name": {
+              "Type": "String",
+              "Required": true,
+              "Description": "User-assigned target name. Use this value to differentiate between the link targets for a data link object."
+            },
+            "property_key_mapping": {
+              "Type": "Map",
+              "Optional": true,
+              "Description": "Describes the relationship between SignalFx metadata keys and external system properties when the key names are different",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      }
+    },
     "signalfx_detector": {
+      "authorized_writer_teams": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Team IDs that have write access to this dashboard",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "authorized_writer_users": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "User IDs that have write access to this dashboard",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
       "description": {
         "Type": "String",
         "Optional": true,
@@ -1265,11 +1524,89 @@
         "Computed": true
       }
     },
+    "signalfx_jira_integration": {
+      "api_token": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The API token for the user email",
+        "ConflictsWith": [
+          "username",
+          "password"
+        ]
+      },
+      "assignee_display_name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Jira display name for the assignee"
+      },
+      "assignee_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Jira user name for the assignee"
+      },
+      "auth_method": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Authentication method used when creating the Jira integration. One of `EmailAndToken` or `UsernameAndPassword`"
+      },
+      "base_url": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Base URL of the Jira instance that's integrated with SignalFx."
+      },
+      "enabled": {
+        "Type": "Bool",
+        "Required": true,
+        "Description": "Whether the integration is enabled or not"
+      },
+      "issue_type": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Issue type (for example, Story) for tickets that Jira creates for detector notifications. SignalFx validates issue types, so you must specify a type that's valid for the Jira project specified in `projectKey`."
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the integration"
+      },
+      "password": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Password used to authenticate the Jira integration.",
+        "ConflictsWith": [
+          "user_email",
+          "api_token"
+        ]
+      },
+      "project_key": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Jira key of an existing project. When Jira creates a new ticket for a detector notification, the ticket is assigned to this project."
+      },
+      "user_email": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Email address used to authenticate the Jira integration.",
+        "ConflictsWith": [
+          "username",
+          "password"
+        ]
+      },
+      "username": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "User name used to authenticate the Jira integration.",
+        "ConflictsWith": [
+          "user_email",
+          "api_token"
+        ]
+      }
+    },
     "signalfx_list_chart": {
       "color_by": {
         "Type": "String",
         "Optional": true,
-        "Description": "(Metric by default) Must be \"Metric\" or \"Dimension\"",
+        "Description": "(Metric by default) Must be \"Scale\", \"Metric\" or \"Dimension\"",
         "Default": {
           "Type": "string",
           "Value": "Dimension"
@@ -1855,6 +2192,86 @@
         "Type": "String",
         "Required": true,
         "Description": "Slack Webhook URL for integration"
+      }
+    },
+    "signalfx_team": {
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Description of the team (Optional)"
+      },
+      "members": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Members of team",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the team"
+      },
+      "notifications_critical": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "List of notification destinations to use for the critical alerts category.",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "notifications_default": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "List of notification destinations to use for the default alerts category.",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "notifications_info": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "List of notification destinations to use for the info alerts category.",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "notifications_major": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "List of notification destinations to use for the major alerts category.",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "notifications_minor": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "List of notification destinations to use for the minor alerts category.",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "notifications_warning": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "List of notification destinations to use for the warning alerts category.",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "url": {
+        "Type": "String",
+        "Description": "URL of the team",
+        "Computed": true
       }
     },
     "signalfx_text_chart": {

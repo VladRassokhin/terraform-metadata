@@ -2,7 +2,7 @@
   ".schema_version": "1",
   "name": "bigip",
   "type": "provider",
-  "version": "v0.12.4",
+  "version": "v1.1.1",
   "provider": {
     "address": {
       "Type": "String",
@@ -25,6 +25,11 @@
       "Required": true,
       "Description": "The user's password",
       "DefaultFunc": "ENV(BIGIP_PASSWORD)"
+    },
+    "port": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "Management Port to connect to Bigip"
     },
     "token_auth": {
       "Type": "Bool",
@@ -50,14 +55,10 @@
         "Required": true,
         "Description": "AS3 json"
       },
-      "tenant_name": {
+      "config_name": {
         "Type": "String",
-        "Optional": true,
-        "Description": "unique identifier for resource",
-        "Default": {
-          "Type": "string",
-          "Value": "as3"
-        }
+        "Required": true,
+        "Description": "unique identifier for AS3 resource"
       }
     },
     "bigip_cm_device": {
@@ -171,6 +172,18 @@
           "Type": "string",
           "Value": "sync-only"
         }
+      }
+    },
+    "bigip_do": {
+      "config_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "unique identifier for DO resource"
+      },
+      "do_json": {
+        "Type": "String",
+        "Required": true,
+        "Description": "DO json"
       }
     },
     "bigip_ltm_datagroup": {
@@ -344,11 +357,7 @@
       },
       "description": {
         "Type": "String",
-        "Optional": true,
-        "Default": {
-          "Type": "string",
-          "Value": "Test-Node"
-        }
+        "Optional": true
       },
       "dynamic_ratio": {
         "Type": "Int",
@@ -415,14 +424,16 @@
         "Description": "Specifies the maximum number of connections per second allowed for a node or node address. The default value is 'disabled'.",
         "Computed": true
       },
+      "ratio": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Sets the ratio number for the node.",
+        "Computed": true
+      },
       "state": {
         "Type": "String",
         "Optional": true,
-        "Description": "Marks the node up or down. The default value is user-up.",
-        "Default": {
-          "Type": "string",
-          "Value": "user-up"
-        }
+        "Description": "Marks the node up or down. The default value is user-up."
       }
     },
     "bigip_ltm_persistence_profile_cookie": {
@@ -1796,11 +1807,7 @@
       },
       "description": {
         "Type": "String",
-        "Optional": true,
-        "Default": {
-          "Type": "string",
-          "Value": "Test-Pool"
-        }
+        "Optional": true
       },
       "load_balancing_mode": {
         "Type": "String",
@@ -1989,7 +1996,10 @@
         "Type": "String",
         "Optional": true,
         "Description": "Profile name that this profile defaults from.",
-        "Computed": true
+        "Default": {
+          "Type": "string",
+          "Value": "/Common/clientssl"
+        }
       },
       "forward_proxy_bypass_default_action": {
         "Type": "String",
@@ -2000,12 +2010,14 @@
       "full_path": {
         "Type": "String",
         "Optional": true,
-        "Description": "full path of the profile"
+        "Description": "full path of the profile",
+        "Computed": true
       },
       "generation": {
         "Type": "Int",
         "Optional": true,
-        "Description": "generation"
+        "Description": "generation",
+        "Computed": true
       },
       "generic_alert": {
         "Type": "String",
@@ -2051,7 +2063,8 @@
       "partition": {
         "Type": "String",
         "Optional": true,
-        "Description": "name of partition"
+        "Description": "name of partition",
+        "Computed": true
       },
       "passphrase": {
         "Type": "String",
@@ -2792,7 +2805,10 @@
         "Type": "String",
         "Optional": true,
         "Description": "Profile name that this profile defaults from.",
-        "Computed": true
+        "Default": {
+          "Type": "string",
+          "Value": "/Common/serverssl"
+        }
       },
       "expire_cert_response_control": {
         "Type": "String",
@@ -2803,12 +2819,14 @@
       "full_path": {
         "Type": "String",
         "Optional": true,
-        "Description": "full path of the profile"
+        "Description": "full path of the profile",
+        "Computed": true
       },
       "generation": {
         "Type": "Int",
         "Optional": true,
-        "Description": "generation"
+        "Description": "generation",
+        "Computed": true
       },
       "generic_alert": {
         "Type": "String",
@@ -2848,7 +2866,8 @@
       "partition": {
         "Type": "String",
         "Optional": true,
-        "Description": "name of partition"
+        "Description": "name of partition",
+        "Computed": true
       },
       "passphrase": {
         "Type": "String",
@@ -3231,13 +3250,13 @@
           "ElementsType": "String"
         }
       },
+      "default_persistence_profile": {
+        "Type": "String",
+        "Optional": true
+      },
       "description": {
         "Type": "String",
-        "Optional": true,
-        "Default": {
-          "Type": "string",
-          "Value": "VirtualServer-test"
-        }
+        "Optional": true
       },
       "destination": {
         "Type": "String",
@@ -3343,6 +3362,15 @@
         "Description": "none, automap, snat",
         "Computed": true
       },
+      "state": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Specifies whether the virtual server and its resources are available for load balancing. The default is Enabled",
+        "Default": {
+          "Type": "string",
+          "Value": "enabled"
+        }
+      },
       "translate_address": {
         "Type": "String",
         "Optional": true,
@@ -3444,6 +3472,48 @@
         "Type": "Int",
         "Optional": true,
         "Description": "VLAN ID (tag)"
+      }
+    },
+    "bigip_ssl_certificate": {
+      "content": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Content of certificate on Disk"
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of SSL Certificate with .crt extension"
+      },
+      "partition": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Partition of ssl certificate",
+        "Default": {
+          "Type": "string",
+          "Value": "Common"
+        }
+      }
+    },
+    "bigip_ssl_key": {
+      "content": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Content of SSL certificate key present on local Disk"
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of SSL Certificate key with .key extension"
+      },
+      "partition": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Partition of ssl certificate key",
+        "Default": {
+          "Type": "string",
+          "Value": "Common"
+        }
       }
     },
     "bigip_sys_bigiplicense": {
