@@ -6,7 +6,7 @@ clean:
 build: schemas
 
 schemas: providers.list.full
-	@sh -c "'$(CURDIR)/build-all.sh'"
+	@sh -c "'$(CURDIR)/build-ci.sh'"
 
 providers.list.full:
 	@sh -c "'$(CURDIR)/fetch-providers.sh'"
