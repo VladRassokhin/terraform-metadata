@@ -2,7 +2,7 @@
   ".schema_version": "1",
   "name": "flexibleengine",
   "type": "provider",
-  "version": "v1.8.0",
+  "version": "v1.11.1",
   "provider": {
     "access_key": {
       "Type": "String",
@@ -74,6 +74,11 @@
       "Optional": true,
       "Description": "The secret key for API operations. You can retrieve this\nfrom the 'My Credential' section of the console.",
       "DefaultFunc": "ENV(OS_SECRET_KEY)"
+    },
+    "security_token": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "Security token to use for OBS federated authentication."
     },
     "swauth": {
       "Type": "Bool",
@@ -548,7 +553,7 @@
               "Optional": true,
               "Default": {
                 "Type": "string",
-                "Value": "2019-10-09T13:10Z"
+                "Value": "2020-03-01T14:11Z"
               }
             }
           }
@@ -665,6 +670,48 @@
         "Optional": true,
         "Computed": true
       },
+      "certificate_clusters": {
+        "Type": "List",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "certificate_authority_data": {
+              "Type": "String",
+              "Computed": true
+            },
+            "name": {
+              "Type": "String",
+              "Computed": true
+            },
+            "server": {
+              "Type": "String",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "certificate_users": {
+        "Type": "List",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "client_certificate_data": {
+              "Type": "String",
+              "Computed": true
+            },
+            "client_key_data": {
+              "Type": "String",
+              "Computed": true
+            },
+            "name": {
+              "Type": "String",
+              "Computed": true
+            }
+          }
+        }
+      },
       "cluster_type": {
         "Type": "String",
         "Required": true
@@ -687,6 +734,10 @@
         "Type": "String",
         "Optional": true,
         "Computed": true
+      },
+      "eip": {
+        "Type": "String",
+        "Optional": true
       },
       "extend_param": {
         "Type": "Map",
@@ -837,7 +888,8 @@
       },
       "labels": {
         "Type": "Map",
-        "Optional": true
+        "Optional": true,
+        "Computed": true
       },
       "max_pods": {
         "Type": "Int",
@@ -855,6 +907,16 @@
         "Computed": true
       },
       "os": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "postinstall": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "preinstall": {
         "Type": "String",
         "Optional": true,
         "Computed": true
@@ -2121,6 +2183,13 @@
         "Type": "String",
         "Required": true
       },
+      "network_id": {
+        "Type": "String",
+        "Optional": true,
+        "ConflictsWith": [
+          "subnet_id"
+        ]
+      },
       "order_id": {
         "Type": "String",
         "Computed": true
@@ -2134,7 +2203,7 @@
         "Optional": true
       },
       "port": {
-        "Type": "String",
+        "Type": "Int",
         "Computed": true
       },
       "product_id": {
@@ -2159,7 +2228,11 @@
       },
       "subnet_id": {
         "Type": "String",
-        "Required": true
+        "Optional": true,
+        "ConflictsWith": [
+          "network_id"
+        ],
+        "Deprecated": "use network_id instead"
       },
       "subnet_name": {
         "Type": "String",
@@ -3082,7 +3155,7 @@
         "Optional": true,
         "Default": {
           "Type": "string",
-          "Value": "/home/vlad/.terraform/image_cache"
+          "Value": "/home/runner/.terraform/image_cache"
         }
       },
       "image_source_url": {
@@ -3438,6 +3511,10 @@
         "Type": "String",
         "Optional": true,
         "Computed": true
+      },
+      "tls_ciphers_policy": {
+        "Type": "String",
+        "Optional": true
       }
     },
     "flexibleengine_lb_loadbalancer_v2": {
@@ -3687,6 +3764,30 @@
         "Type": "String",
         "Optional": true,
         "Computed": true
+      }
+    },
+    "flexibleengine_lb_whitelist_v2": {
+      "__timeouts__": [
+        "create",
+        "update",
+        "delete"
+      ],
+      "enable_whitelist": {
+        "Type": "Bool",
+        "Optional": true
+      },
+      "listener_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "tenant_id": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "whitelist": {
+        "Type": "String",
+        "Optional": true
       }
     },
     "flexibleengine_mls_instance_v1": {
@@ -5666,6 +5767,181 @@
         "Required": true
       }
     },
+    "flexibleengine_sdrs_drill_v1": {
+      "__timeouts__": [
+        "create",
+        "delete"
+      ],
+      "drill_vpc_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "group_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true
+      },
+      "status": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      }
+    },
+    "flexibleengine_sdrs_protectedinstance_v1": {
+      "__timeouts__": [
+        "create",
+        "delete"
+      ],
+      "cluster_id": {
+        "Type": "String",
+        "Optional": true
+      },
+      "delete_target_eip": {
+        "Type": "Bool",
+        "Optional": true
+      },
+      "delete_target_server": {
+        "Type": "Bool",
+        "Optional": true
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true
+      },
+      "group_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true
+      },
+      "primary_ip_address": {
+        "Type": "String",
+        "Optional": true
+      },
+      "primary_subnet_id": {
+        "Type": "String",
+        "Optional": true
+      },
+      "server_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "target_server": {
+        "Type": "String",
+        "Computed": true
+      }
+    },
+    "flexibleengine_sdrs_protectiongroup_v1": {
+      "__timeouts__": [
+        "create",
+        "delete"
+      ],
+      "description": {
+        "Type": "String",
+        "Optional": true
+      },
+      "domain_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "dr_type": {
+        "Type": "String",
+        "Optional": true
+      },
+      "enable": {
+        "Type": "Bool",
+        "Optional": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true
+      },
+      "source_availability_zone": {
+        "Type": "String",
+        "Required": true
+      },
+      "source_vpc_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "target_availability_zone": {
+        "Type": "String",
+        "Required": true
+      }
+    },
+    "flexibleengine_sdrs_replication_attach_v1": {
+      "__timeouts__": [
+        "create",
+        "delete"
+      ],
+      "device": {
+        "Type": "String",
+        "Required": true
+      },
+      "instance_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "replication_id": {
+        "Type": "String",
+        "Required": true
+      }
+    },
+    "flexibleengine_sdrs_replication_pair_v1": {
+      "__timeouts__": [
+        "create",
+        "delete"
+      ],
+      "delete_target_volume": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true
+      },
+      "fault_level": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "group_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true
+      },
+      "replication_model": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "status": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "target_volume_id": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "volume_id": {
+        "Type": "String",
+        "Required": true
+      }
+    },
     "flexibleengine_sfs_file_system_v2": {
       "__timeouts__": [
         "create",
@@ -7246,6 +7522,49 @@
         "Computed": true
       }
     },
+    "flexibleengine_lb_certificate_v2": {
+      "certificate": {
+        "Type": "String",
+        "Computed": true
+      },
+      "create_time": {
+        "Type": "String",
+        "Computed": true
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "domain": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "id": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "private_key": {
+        "Type": "String",
+        "Computed": true
+      },
+      "type": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "update_time": {
+        "Type": "String",
+        "Computed": true
+      }
+    },
     "flexibleengine_networking_network_v2": {
       "admin_state_up": {
         "Type": "String",
@@ -7590,6 +7909,17 @@
       },
       "website_redirect_location": {
         "Type": "String",
+        "Computed": true
+      }
+    },
+    "flexibleengine_sdrs_domain_v1": {
+      "description": {
+        "Type": "String",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
         "Computed": true
       }
     },
