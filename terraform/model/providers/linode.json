@@ -2,8 +2,14 @@
   ".schema_version": "1",
   "name": "linode",
   "type": "provider",
-  "version": "v1.8.0",
+  "version": "v1.9.2",
   "provider": {
+    "api_version": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "An HTTP User-Agent Prefix to prepend in API requests.",
+      "DefaultFunc": "ENV(LINODE_API_VERSION)"
+    },
     "token": {
       "Type": "String",
       "Required": true,
@@ -114,8 +120,9 @@
       },
       "name": {
         "Type": "String",
-        "Required": true,
-        "Description": "The name of this Record. This field's actual usage depends on the type of record this represents. For A and AAAA records, this is the subdomain being associated with an IP address."
+        "Optional": true,
+        "Description": "The name of this Record. This field's actual usage depends on the type of record this represents. For A and AAAA records, this is the subdomain being associated with an IP address. Required for non-SRV records. Generated for SRV records.",
+        "Computed": true
       },
       "port": {
         "Type": "Int",
@@ -1139,7 +1146,7 @@
       "mode": {
         "Type": "String",
         "Optional": true,
-        "Description": "The mode this NodeBalancer should use when sending traffic to this backend. If set to `accept` this backend is accepting traffic. If set to `reject` this backend will not receive traffic. If set to `drain` this backend will not receive new traffic, but connections already pinned to it will continue to be routed to it.",
+        "Description": "The mode this NodeBalancer should use when sending traffic to this backend. If set to `accept` this backend is accepting traffic. If set to `reject` this backend will not receive traffic. If set to `drain` this backend will not receive new traffic, but connections already pinned to it will continue to be routed to it. If set to `backup` this backend will only accept traffic if all other nodes are down.",
         "Computed": true
       },
       "nodebalancer_id": {
@@ -1156,6 +1163,35 @@
         "Type": "Int",
         "Optional": true,
         "Description": "Used when picking a backend to serve a request and is not pinned to a single backend yet. Nodes with a higher weight will receive more traffic. (1-255)",
+        "Computed": true
+      }
+    },
+    "linode_object_storage_bucket": {
+      "cluster": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The cluster of the Linode Object Storage Bucket."
+      },
+      "label": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The label of the Linode Object Storage Bucket."
+      }
+    },
+    "linode_object_storage_key": {
+      "access_key": {
+        "Type": "String",
+        "Description": "This keypair's access key. This is not secret.",
+        "Computed": true
+      },
+      "label": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The label given to this key. For display purposes only."
+      },
+      "secret_key": {
+        "Type": "String",
+        "Description": "This keypair's secret key.",
         "Computed": true
       }
     },
@@ -1516,6 +1552,67 @@
         "Computed": true
       }
     },
+    "linode_domain_record": {
+      "domain_id": {
+        "Type": "Int",
+        "Required": true,
+        "Description": "The associated domain's ID."
+      },
+      "id": {
+        "Type": "Int",
+        "Optional": true
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of the Record."
+      },
+      "port": {
+        "Type": "Int",
+        "Description": "The port this Record points to.",
+        "Computed": true
+      },
+      "priority": {
+        "Type": "Int",
+        "Description": "The priority of the target host. Lower values are preferred.",
+        "Computed": true
+      },
+      "protocol": {
+        "Type": "String",
+        "Description": "The protocol this Record's service communicates with. Only valid for SRV records.",
+        "Computed": true
+      },
+      "service": {
+        "Type": "String",
+        "Description": "The service this Record identified. Only valid for SRV records.",
+        "Computed": true
+      },
+      "tag": {
+        "Type": "String",
+        "Description": "The tag portion of a CAA record.",
+        "Computed": true
+      },
+      "target": {
+        "Type": "String",
+        "Description": "The target for this Record. This field's actual usage depends on the type of record this represents. For A and AAAA records, this is the address the named Domain should resolve to.",
+        "Computed": true
+      },
+      "ttl_sec": {
+        "Type": "Int",
+        "Description": "The amount of time in seconds that this Domain's records may be cached by resolvers or other domain servers.",
+        "Computed": true
+      },
+      "type": {
+        "Type": "String",
+        "Description": "The type of Record this is in the DNS system.",
+        "Computed": true
+      },
+      "weight": {
+        "Type": "Int",
+        "Description": "The relative weight of this Record. Higher values are preferred.",
+        "Computed": true
+      }
+    },
     "linode_image": {
       "created": {
         "Type": "String",
@@ -1724,6 +1821,37 @@
         "Computed": true
       }
     },
+    "linode_object_storage_cluster": {
+      "domain": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The base URL for this cluster.",
+        "Computed": true
+      },
+      "id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The unique ID of this Cluster."
+      },
+      "region": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The region this cluster is located in.",
+        "Computed": true
+      },
+      "static_site_domain": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The base URL for this cluster used when hosting static sites.",
+        "Computed": true
+      },
+      "status": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "This cluster's status.",
+        "Computed": true
+      }
+    },
     "linode_profile": {
       "authorized_keys": {
         "Type": "List",
@@ -1846,6 +1974,111 @@
         "Computed": true
       }
     },
+    "linode_stackscript": {
+      "created": {
+        "Type": "String",
+        "Description": "The date this StackScript was created.",
+        "Computed": true
+      },
+      "deployments_active": {
+        "Type": "Int",
+        "Description": "Count of currently active, deployed Linodes created from this StackScript.",
+        "Computed": true
+      },
+      "deployments_total": {
+        "Type": "Int",
+        "Description": "The total number of times this StackScript has been deployed.",
+        "Computed": true
+      },
+      "description": {
+        "Type": "String",
+        "Description": "A description for the StackScript.",
+        "Computed": true
+      },
+      "id": {
+        "Type": "Int",
+        "Required": true
+      },
+      "images": {
+        "Type": "List",
+        "Description": "An array of Image IDs representing the Images that this StackScript is compatible for deploying with.",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "is_public": {
+        "Type": "Bool",
+        "Description": "This determines whether other users can use your StackScript. Once a StackScript is made public, it cannot be made private.",
+        "Computed": true
+      },
+      "label": {
+        "Type": "String",
+        "Description": "The StackScript's label is for display purposes only.",
+        "Computed": true
+      },
+      "rev_note": {
+        "Type": "String",
+        "Description": "This field allows you to add notes for the set of revisions made to this StackScript.",
+        "Computed": true
+      },
+      "script": {
+        "Type": "String",
+        "Description": "The script to execute when provisioning a new Linode with this StackScript.",
+        "Computed": true
+      },
+      "updated": {
+        "Type": "String",
+        "Description": "The date this StackScript was updated.",
+        "Computed": true
+      },
+      "user_defined_fields": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "This is a list of fields defined with a special syntax inside this StackScript that allow for supplying customized parameters during deployment.",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "default": {
+              "Type": "String",
+              "Computed": true
+            },
+            "example": {
+              "Type": "String",
+              "Computed": true
+            },
+            "label": {
+              "Type": "String",
+              "Computed": true
+            },
+            "many_of": {
+              "Type": "String",
+              "Computed": true
+            },
+            "name": {
+              "Type": "String",
+              "Computed": true
+            },
+            "one_of": {
+              "Type": "String",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "user_gravatar_id": {
+        "Type": "String",
+        "Description": "The Gravatar ID for the User who created the StackScript.",
+        "Computed": true
+      },
+      "username": {
+        "Type": "String",
+        "Description": "The User who created the StackScript.",
+        "Computed": true
+      }
+    },
     "linode_user": {
       "email": {
         "Type": "String",
@@ -1870,6 +2103,62 @@
         "Type": "String",
         "Required": true,
         "Description": "This User's username. This is used for logging in, and may also be displayed alongside actions the User performs (for example, in Events or public StackScripts)."
+      }
+    },
+    "linode_volume": {
+      "created": {
+        "Type": "String",
+        "Description": "Datetime string representing when the Volume was created.",
+        "Computed": true
+      },
+      "filesystem_path": {
+        "Type": "String",
+        "Description": "The full filesystem path for the Volume based on the Volume's label. Path is /dev/disk/by-id/scsi-0LinodeVolume + Volume label.",
+        "Computed": true
+      },
+      "id": {
+        "Type": "Int",
+        "Required": true,
+        "Description": "The unique id of this Volume."
+      },
+      "label": {
+        "Type": "String",
+        "Description": "The Volume's label. For display purposes only.",
+        "Computed": true
+      },
+      "linode_id": {
+        "Type": "Int",
+        "Description": "If a Volume is attached to a specific Linode, the ID of that Linode will be displayed here.",
+        "Computed": true
+      },
+      "region": {
+        "Type": "String",
+        "Description": "The datacenter where this Volume is located.",
+        "Computed": true
+      },
+      "size": {
+        "Type": "Int",
+        "Description": "The size of this Volume in GiB.",
+        "Computed": true
+      },
+      "status": {
+        "Type": "String",
+        "Description": "The status of the Volume. Can be one of active | creating | resizing | contact_support",
+        "Computed": true
+      },
+      "tags": {
+        "Type": "Set",
+        "Description": "An array of tags applied to this Volume. Tags are for organizational purposes only.",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "updated": {
+        "Type": "String",
+        "Description": "Datetime string representing when the Volume was last updated.",
+        "Computed": true
       }
     }
   }

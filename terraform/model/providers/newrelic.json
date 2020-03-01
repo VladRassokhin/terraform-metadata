@@ -2,11 +2,11 @@
   ".schema_version": "1",
   "name": "newrelic",
   "type": "provider",
-  "version": "v1.5.1",
+  "version": "v1.14.0",
   "provider": {
     "api_key": {
       "Type": "String",
-      "Required": true,
+      "Optional": true,
       "DefaultFunc": "ENV(NEWRELIC_API_KEY)"
     },
     "api_url": {
@@ -14,17 +14,189 @@
       "Optional": true,
       "DefaultFunc": "ENV(NEWRELIC_API_URL)"
     },
+    "cacert_file": {
+      "Type": "String",
+      "Optional": true,
+      "DefaultFunc": "ENV(NEWRELIC_API_CACERT)"
+    },
     "infra_api_url": {
       "Type": "String",
       "Optional": true,
       "DefaultFunc": "ENV(NEWRELIC_INFRA_API_URL)"
+    },
+    "infrastructure_api_url": {
+      "Type": "String",
+      "Optional": true,
+      "DefaultFunc": "ENV(NEWRELIC_INFRASTRUCTURE_API_URL)"
+    },
+    "insecure_skip_verify": {
+      "Type": "Bool",
+      "Optional": true,
+      "DefaultFunc": "ENV(NEWRELIC_API_SKIP_VERIFY)"
+    },
+    "insights_account_id": {
+      "Type": "String",
+      "Optional": true,
+      "DefaultFunc": "ENV(NEWRELIC_INSIGHTS_ACCOUNT_ID)"
+    },
+    "insights_insert_key": {
+      "Type": "String",
+      "Optional": true,
+      "DefaultFunc": "ENV(NEWRELIC_INSIGHTS_INSERT_KEY)"
+    },
+    "insights_insert_url": {
+      "Type": "String",
+      "Optional": true,
+      "DefaultFunc": "ENV(NEWRELIC_INSIGHTS_INSERT_URL)"
+    },
+    "insights_query_key": {
+      "Type": "String",
+      "Optional": true,
+      "DefaultFunc": "ENV(NEWRELIC_INSIGHTS_QUERY_KEY)"
+    },
+    "insights_query_url": {
+      "Type": "String",
+      "Optional": true,
+      "DefaultFunc": "ENV(NEWRELIC_INSIGHTS_QUERY_URL)"
+    },
+    "nerdgraph_api_url": {
+      "Type": "String",
+      "Optional": true,
+      "DefaultFunc": "ENV(NEWRELIC_NERDGRAPH_API_URL)"
+    },
+    "synthetics_api_url": {
+      "Type": "String",
+      "Optional": true,
+      "DefaultFunc": "ENV(NEWRELIC_SYNTHETICS_API_URL)"
     }
   },
   "resources": {
     "newrelic_alert_channel": {
+      "config": {
+        "Type": "List",
+        "Optional": true,
+        "MaxItems": 1,
+        "ConflictsWith": [
+          "configuration"
+        ],
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "api_key": {
+              "Type": "String",
+              "Optional": true
+            },
+            "auth_password": {
+              "Type": "String",
+              "Optional": true
+            },
+            "auth_type": {
+              "Type": "String",
+              "Optional": true
+            },
+            "auth_username": {
+              "Type": "String",
+              "Optional": true
+            },
+            "base_url": {
+              "Type": "String",
+              "Optional": true
+            },
+            "channel": {
+              "Type": "String",
+              "Optional": true
+            },
+            "headers": {
+              "Type": "Map",
+              "Optional": true,
+              "ConflictsWith": [
+                "config.0.headers_string"
+              ],
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "headers_string": {
+              "Type": "String",
+              "Optional": true,
+              "ConflictsWith": [
+                "config.0.headers"
+              ]
+            },
+            "include_json_attachment": {
+              "Type": "String",
+              "Optional": true
+            },
+            "key": {
+              "Type": "String",
+              "Optional": true
+            },
+            "payload": {
+              "Type": "Map",
+              "Optional": true,
+              "ConflictsWith": [
+                "config.0.payload_string"
+              ],
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "payload_string": {
+              "Type": "String",
+              "Optional": true,
+              "ConflictsWith": [
+                "config.0.payload"
+              ]
+            },
+            "payload_type": {
+              "Type": "String",
+              "Optional": true
+            },
+            "recipients": {
+              "Type": "String",
+              "Optional": true
+            },
+            "region": {
+              "Type": "String",
+              "Optional": true
+            },
+            "route_key": {
+              "Type": "String",
+              "Optional": true
+            },
+            "service_key": {
+              "Type": "String",
+              "Optional": true
+            },
+            "tags": {
+              "Type": "String",
+              "Optional": true
+            },
+            "teams": {
+              "Type": "String",
+              "Optional": true
+            },
+            "url": {
+              "Type": "String",
+              "Optional": true
+            },
+            "user_id": {
+              "Type": "String",
+              "Optional": true
+            }
+          }
+        }
+      },
       "configuration": {
         "Type": "Map",
-        "Required": true
+        "Optional": true,
+        "ConflictsWith": [
+          "config"
+        ],
+        "Deprecated": "use `config` block instead"
       },
       "name": {
         "Type": "String",
@@ -49,7 +221,7 @@
         }
       },
       "entities": {
-        "Type": "List",
+        "Type": "Set",
         "Required": true,
         "MinItems": 1,
         "Elem": {
@@ -134,6 +306,14 @@
       }
     },
     "newrelic_alert_policy": {
+      "channel_ids": {
+        "Type": "List",
+        "Optional": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "Int"
+        }
+      },
       "created_at": {
         "Type": "String",
         "Computed": true
@@ -228,7 +408,7 @@
       "widget": {
         "Type": "Set",
         "Optional": true,
-        "MaxItems": 60,
+        "MaxItems": 300,
         "IsBlock": true,
         "Elem": {
           "Type": "SchemaInfo",
@@ -237,12 +417,103 @@
               "Type": "Int",
               "Required": true
             },
+            "compare_with": {
+              "Type": "Set",
+              "Optional": true,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "offset_duration": {
+                    "Type": "String",
+                    "Required": true
+                  },
+                  "presentation": {
+                    "Type": "List",
+                    "Required": true,
+                    "MaxItems": 1,
+                    "IsBlock": true,
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "color": {
+                          "Type": "String",
+                          "Required": true
+                        },
+                        "name": {
+                          "Type": "String",
+                          "Required": true
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "drilldown_dashboard_id": {
+              "Type": "Int",
+              "Optional": true
+            },
+            "duration": {
+              "Type": "Int",
+              "Optional": true
+            },
+            "end_time": {
+              "Type": "Int",
+              "Optional": true
+            },
+            "entity_ids": {
+              "Type": "Set",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "Int"
+              }
+            },
+            "facet": {
+              "Type": "String",
+              "Optional": true
+            },
             "height": {
               "Type": "Int",
               "Optional": true,
               "Default": {
                 "Type": "int",
                 "Value": "1"
+              }
+            },
+            "limit": {
+              "Type": "Int",
+              "Optional": true
+            },
+            "metric": {
+              "Type": "Set",
+              "Optional": true,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "name": {
+                    "Type": "String",
+                    "Required": true
+                  },
+                  "scope": {
+                    "Type": "String",
+                    "Optional": true
+                  },
+                  "units": {
+                    "Type": "String",
+                    "Optional": true
+                  },
+                  "values": {
+                    "Type": "Set",
+                    "Optional": true,
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  }
+                }
               }
             },
             "notes": {
@@ -253,9 +524,29 @@
               "Type": "String",
               "Optional": true
             },
+            "order_by": {
+              "Type": "String",
+              "Optional": true
+            },
+            "raw_metric_name": {
+              "Type": "String",
+              "Computed": true
+            },
             "row": {
               "Type": "Int",
               "Required": true
+            },
+            "source": {
+              "Type": "String",
+              "Optional": true
+            },
+            "threshold_red": {
+              "Type": "Float",
+              "Optional": true
+            },
+            "threshold_yellow": {
+              "Type": "Float",
+              "Optional": true
             },
             "title": {
               "Type": "String",
@@ -264,6 +555,10 @@
             "visualization": {
               "Type": "String",
               "Required": true
+            },
+            "widget_id": {
+              "Type": "Int",
+              "Computed": true
             },
             "width": {
               "Type": "Int",
@@ -304,7 +599,7 @@
               "Optional": true
             },
             "value": {
-              "Type": "Int",
+              "Type": "Float",
               "Optional": true
             }
           }
@@ -320,7 +615,8 @@
       },
       "event": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Computed": true
       },
       "integration_provider": {
         "Type": "String",
@@ -338,6 +634,10 @@
         "Type": "String",
         "Optional": true
       },
+      "runbook_url": {
+        "Type": "String",
+        "Optional": true
+      },
       "select": {
         "Type": "String",
         "Optional": true
@@ -349,6 +649,14 @@
       "updated_at": {
         "Type": "Int",
         "Computed": true
+      },
+      "violation_close_timer": {
+        "Type": "Int",
+        "Optional": true,
+        "Default": {
+          "Type": "int",
+          "Value": "24"
+        }
       },
       "warning": {
         "Type": "List",
@@ -368,7 +676,7 @@
               "Optional": true
             },
             "value": {
-              "Type": "Int",
+              "Type": "Float",
               "Optional": true
             }
           }
@@ -379,6 +687,56 @@
         "Optional": true
       }
     },
+    "newrelic_insights_event": {
+      "event": {
+        "Type": "Set",
+        "Required": true,
+        "MinItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "attribute": {
+              "Type": "Set",
+              "Required": true,
+              "MaxItems": 255,
+              "MinItems": 1,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "key": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "The name for the attribute"
+                  },
+                  "type": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Type for attribute value. Accepted values are string (default), int, or float"
+                  },
+                  "value": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "The value for the attribute"
+                  }
+                }
+              }
+            },
+            "timestamp": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "Unix epoch timestamp in either seconds or milliseconds"
+            },
+            "type": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The event's name"
+            }
+          }
+        }
+      }
+    },
     "newrelic_nrql_alert_condition": {
       "enabled": {
         "Type": "Bool",
@@ -387,6 +745,14 @@
           "Type": "bool",
           "Value": "true"
         }
+      },
+      "expected_groups": {
+        "Type": "Int",
+        "Optional": true
+      },
+      "ignore_overlap": {
+        "Type": "Bool",
+        "Optional": true
       },
       "name": {
         "Type": "String",
@@ -459,6 +825,14 @@
           }
         }
       },
+      "type": {
+        "Type": "String",
+        "Optional": true,
+        "Default": {
+          "Type": "string",
+          "Value": "static"
+        }
+      },
       "value_function": {
         "Type": "String",
         "Optional": true,
@@ -466,6 +840,100 @@
           "Type": "string",
           "Value": "single_value"
         }
+      },
+      "violation_time_limit_seconds": {
+        "Type": "Int",
+        "Optional": true
+      }
+    },
+    "newrelic_plugins_alert_condition": {
+      "enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "entities": {
+        "Type": "Set",
+        "Required": true,
+        "MinItems": 1,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "Int"
+        }
+      },
+      "metric": {
+        "Type": "String",
+        "Required": true
+      },
+      "metric_description": {
+        "Type": "String",
+        "Required": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true
+      },
+      "plugin_guid": {
+        "Type": "String",
+        "Required": true
+      },
+      "plugin_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "policy_id": {
+        "Type": "Int",
+        "Required": true
+      },
+      "runbook_url": {
+        "Type": "String",
+        "Optional": true
+      },
+      "term": {
+        "Type": "Set",
+        "Required": true,
+        "MinItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "duration": {
+              "Type": "Int",
+              "Required": true
+            },
+            "operator": {
+              "Type": "String",
+              "Optional": true,
+              "Default": {
+                "Type": "string",
+                "Value": "equal"
+              }
+            },
+            "priority": {
+              "Type": "String",
+              "Optional": true,
+              "Default": {
+                "Type": "string",
+                "Value": "critical"
+              }
+            },
+            "threshold": {
+              "Type": "Float",
+              "Required": true
+            },
+            "time_function": {
+              "Type": "String",
+              "Required": true
+            }
+          }
+        }
+      },
+      "value_function": {
+        "Type": "String",
+        "Required": true
       }
     },
     "newrelic_synthetics_alert_condition": {
@@ -496,6 +964,24 @@
       "runbook_url": {
         "Type": "String",
         "Optional": true
+      }
+    },
+    "newrelic_synthetics_label": {
+      "href": {
+        "Type": "String",
+        "Computed": true
+      },
+      "monitor_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "type": {
+        "Type": "String",
+        "Required": true
+      },
+      "value": {
+        "Type": "String",
+        "Required": true
       }
     },
     "newrelic_synthetics_monitor": {
@@ -562,10 +1048,128 @@
         "Type": "String",
         "Required": true
       }
+    },
+    "newrelic_synthetics_secure_credential": {
+      "created_at": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true
+      },
+      "key": {
+        "Type": "String",
+        "Required": true
+      },
+      "last_updated": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "value": {
+        "Type": "String",
+        "Required": true
+      }
     }
   },
   "data-sources": {
     "newrelic_alert_channel": {
+      "config": {
+        "Type": "List",
+        "Computed": true,
+        "MaxItems": 1,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "api_key": {
+              "Type": "String",
+              "Optional": true
+            },
+            "auth_password": {
+              "Type": "String",
+              "Optional": true
+            },
+            "auth_type": {
+              "Type": "String",
+              "Optional": true
+            },
+            "auth_username": {
+              "Type": "String",
+              "Optional": true
+            },
+            "base_url": {
+              "Type": "String",
+              "Optional": true
+            },
+            "channel": {
+              "Type": "String",
+              "Optional": true
+            },
+            "headers": {
+              "Type": "Map",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "include_json_attachment": {
+              "Type": "String",
+              "Optional": true
+            },
+            "key": {
+              "Type": "String",
+              "Optional": true
+            },
+            "payload": {
+              "Type": "Map",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "payload_type": {
+              "Type": "String",
+              "Optional": true
+            },
+            "recipients": {
+              "Type": "String",
+              "Optional": true
+            },
+            "region": {
+              "Type": "String",
+              "Optional": true
+            },
+            "route_key": {
+              "Type": "String",
+              "Optional": true
+            },
+            "service_key": {
+              "Type": "String",
+              "Optional": true
+            },
+            "tags": {
+              "Type": "String",
+              "Optional": true
+            },
+            "teams": {
+              "Type": "String",
+              "Optional": true
+            },
+            "url": {
+              "Type": "String",
+              "Optional": true
+            },
+            "user_id": {
+              "Type": "String",
+              "Optional": true
+            }
+          }
+        }
+      },
       "name": {
         "Type": "String",
         "Required": true
@@ -629,6 +1233,34 @@
         "Required": true
       }
     },
+    "newrelic_plugin": {
+      "guid": {
+        "Type": "String",
+        "Required": true
+      },
+      "id": {
+        "Type": "String",
+        "Computed": true
+      }
+    },
+    "newrelic_plugin_component": {
+      "health_status": {
+        "Type": "String",
+        "Computed": true
+      },
+      "id": {
+        "Type": "String",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true
+      },
+      "plugin_id": {
+        "Type": "Int",
+        "Required": true
+      }
+    },
     "newrelic_synthetics_monitor": {
       "monitor_id": {
         "Type": "String",
@@ -637,6 +1269,24 @@
       "name": {
         "Type": "String",
         "Required": true
+      }
+    },
+    "newrelic_synthetics_secure_credential": {
+      "created_at": {
+        "Type": "String",
+        "Computed": true
+      },
+      "description": {
+        "Type": "String",
+        "Computed": true
+      },
+      "key": {
+        "Type": "String",
+        "Required": true
+      },
+      "last_updated": {
+        "Type": "String",
+        "Computed": true
       }
     }
   }

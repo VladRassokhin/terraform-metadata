@@ -2,12 +2,12 @@
   ".schema_version": "1",
   "name": "exoscale",
   "type": "provider",
-  "version": "v0.12.1",
+  "version": "v0.16.1",
   "provider": {
     "compute_endpoint": {
       "Type": "String",
       "Optional": true,
-      "Description": "Exoscale CloudStack API endpoint (by default: https://api.exoscale.ch/compute)",
+      "Description": "Exoscale CloudStack API endpoint (by default: https://api.exoscale.com/v1)",
       "DefaultFunc": "MENV(EXOSCALE_ENDPOINT,EXOSCALE_COMPUTE_ENDPOINT,CLOUDSTACK_ENDPOINT)"
     },
     "config": {
@@ -24,7 +24,7 @@
     "dns_endpoint": {
       "Type": "String",
       "Required": true,
-      "Description": "Exoscale DNS API endpoint (by default: https://api.exoscale.ch/dns)",
+      "Description": "Exoscale DNS API endpoint (by default: https://api.exoscale.com/dns)",
       "DefaultFunc": "ENV(EXOSCALE_DNS_ENDPOINT)"
     },
     "gzip_user_data": {
@@ -144,6 +144,11 @@
         "Type": "String",
         "Computed": true
       },
+      "hostname": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
       "ip4": {
         "Type": "Bool",
         "Optional": true,
@@ -176,7 +181,7 @@
       },
       "key_pair": {
         "Type": "String",
-        "Required": true
+        "Optional": true
       },
       "keyboard": {
         "Type": "String",
@@ -184,7 +189,8 @@
       },
       "name": {
         "Type": "String",
-        "Computed": true
+        "Computed": true,
+        "Deprecated": "use `hostname` attribute instead"
       },
       "password": {
         "Type": "String",
@@ -239,7 +245,19 @@
       },
       "template": {
         "Type": "String",
-        "Required": true
+        "Optional": true,
+        "Computed": true,
+        "ConflictsWith": [
+          "template_id"
+        ]
+      },
+      "template_id": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true,
+        "ConflictsWith": [
+          "template"
+        ]
       },
       "user_data": {
         "Type": "String",
@@ -253,7 +271,8 @@
       },
       "username": {
         "Type": "String",
-        "Computed": true
+        "Computed": true,
+        "Deprecated": "broken, use `compute_template` data source `username` attribute"
       },
       "zone": {
         "Type": "String",
@@ -325,6 +344,81 @@
         "Computed": true
       }
     },
+    "exoscale_instance_pool": {
+      "__timeouts__": [
+        "create",
+        "read",
+        "update",
+        "delete"
+      ],
+      "description": {
+        "Type": "String",
+        "Optional": true
+      },
+      "disk_size": {
+        "Type": "Int",
+        "Optional": true,
+        "Computed": true
+      },
+      "key_pair": {
+        "Type": "String",
+        "Optional": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true
+      },
+      "network_ids": {
+        "Type": "Set",
+        "Optional": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "security_group_ids": {
+        "Type": "Set",
+        "Optional": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "service_offering": {
+        "Type": "String",
+        "Required": true
+      },
+      "size": {
+        "Type": "Int",
+        "Required": true
+      },
+      "state": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "template_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "user_data": {
+        "Type": "String",
+        "Optional": true
+      },
+      "virtual_machines": {
+        "Type": "Set",
+        "Optional": true,
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "zone": {
+        "Type": "String",
+        "Required": true
+      }
+    },
     "exoscale_ipaddress": {
       "__timeouts__": [
         "create",
@@ -332,6 +426,10 @@
         "update",
         "delete"
       ],
+      "description": {
+        "Type": "String",
+        "Optional": true
+      },
       "healthcheck_interval": {
         "Type": "Int",
         "Optional": true,
@@ -413,7 +511,8 @@
       },
       "network_offering": {
         "Type": "String",
-        "Required": true
+        "Optional": true,
+        "Deprecated": "This attribute is deprecated, please remove it from your configuration."
       },
       "start_ip": {
         "Type": "String",
@@ -780,6 +879,149 @@
     }
   },
   "data-sources": {
+    "exoscale_compute": {
+      "cpu": {
+        "Type": "Int",
+        "Description": "Number of cpu the Compute instance is running with",
+        "Computed": true
+      },
+      "created": {
+        "Type": "String",
+        "Description": "Date when the Compute instance was created",
+        "Computed": true
+      },
+      "disk_size": {
+        "Type": "Int",
+        "Description": "Size of the Compute instance disk",
+        "Computed": true
+      },
+      "hostname": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Hostname of the Compute instance",
+        "ConflictsWith": [
+          "id",
+          "tags"
+        ]
+      },
+      "id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "ID of the Compute instance",
+        "ConflictsWith": [
+          "hostname",
+          "tags"
+        ]
+      },
+      "ip6_address": {
+        "Type": "String",
+        "Description": "Compute instance public ipv6 address (if ipv6 is enabled)",
+        "Computed": true
+      },
+      "ip_address": {
+        "Type": "String",
+        "Description": "Compute instance public ipv4 address",
+        "Computed": true
+      },
+      "memory": {
+        "Type": "Int",
+        "Description": "Memory allocated for the Compute instance",
+        "Computed": true
+      },
+      "private_network_ip_addresses": {
+        "Type": "List",
+        "Description": "List of Compute instance private IP addresses (in managed Private Networks only)",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "size": {
+        "Type": "String",
+        "Description": "Current size of the Compute instance",
+        "Computed": true
+      },
+      "state": {
+        "Type": "String",
+        "Description": "State of the Compute instance",
+        "Computed": true
+      },
+      "tags": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "Map of tags (key: value)",
+        "ConflictsWith": [
+          "id",
+          "hostname"
+        ],
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "template": {
+        "Type": "String",
+        "Description": "Name of the template for the Compute instance",
+        "Computed": true
+      },
+      "zone": {
+        "Type": "String",
+        "Description": "Name of the availability zone for the Compute instance",
+        "Computed": true
+      }
+    },
+    "exoscale_compute_ipaddress": {
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Description of the Elastic IP",
+        "ConflictsWith": [
+          "ip_address",
+          "id",
+          "tags"
+        ]
+      },
+      "id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "ID of the Elastic IP",
+        "ConflictsWith": [
+          "description",
+          "ip_address",
+          "tags"
+        ]
+      },
+      "ip_address": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "IP Address",
+        "ConflictsWith": [
+          "description",
+          "id",
+          "tags"
+        ]
+      },
+      "tags": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "Map of tags (key: value)",
+        "ConflictsWith": [
+          "description",
+          "ip_address",
+          "id"
+        ],
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "zone": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the zone"
+      }
+    },
     "exoscale_compute_template": {
       "filter": {
         "Type": "String",
@@ -815,6 +1057,104 @@
         "Type": "String",
         "Required": true,
         "Description": "Name of the zone"
+      }
+    },
+    "exoscale_domain": {
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the Domain"
+      }
+    },
+    "exoscale_domain_record": {
+      "domain": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Domain of the Record"
+      },
+      "filter": {
+        "Type": "List",
+        "Required": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "content_regex": {
+              "Type": "String",
+              "Optional": true,
+              "ConflictsWith": [
+                "filter.0.id",
+                "filter.0.name",
+                "filter.0.record_type"
+              ]
+            },
+            "id": {
+              "Type": "Int",
+              "Optional": true,
+              "ConflictsWith": [
+                "filter.0.name",
+                "filter.0.record_type",
+                "filter.0.content_regex"
+              ]
+            },
+            "name": {
+              "Type": "String",
+              "Optional": true,
+              "ConflictsWith": [
+                "filter.0.id",
+                "filter.0.content_regex"
+              ]
+            },
+            "record_type": {
+              "Type": "String",
+              "Optional": true,
+              "ConflictsWith": [
+                "filter.0.id",
+                "filter.0.content_regex"
+              ]
+            }
+          }
+        }
+      },
+      "records": {
+        "Type": "List",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "content": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Content of the Record"
+            },
+            "domain": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Domain of the Record"
+            },
+            "id": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "ID of the Record"
+            },
+            "name": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Name of the Record"
+            },
+            "prio": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "Prio of the Record"
+            },
+            "record_type": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Type of the Record"
+            }
+          }
+        }
       }
     }
   }
