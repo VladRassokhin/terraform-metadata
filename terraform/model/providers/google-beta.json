@@ -2,7 +2,7 @@
   ".schema_version": "1",
   "name": "google-beta",
   "type": "provider",
-  "version": "v3.10.0",
+  "version": "v3.11.0",
   "provider": {
     "access_context_manager_custom_endpoint": {
       "Type": "String",
@@ -198,6 +198,11 @@
       "Type": "String",
       "Optional": true,
       "DefaultFunc": "MENV(GOOGLE_FIRESTORE_CUSTOM_ENDPOINT)"
+    },
+    "game_services_custom_endpoint": {
+      "Type": "String",
+      "Optional": true,
+      "DefaultFunc": "MENV(GOOGLE_GAME_SERVICES_CUSTOM_ENDPOINT)"
     },
     "healthcare_custom_endpoint": {
       "Type": "String",
@@ -927,6 +932,54 @@
         "Description": "IP address or range, defined using CIDR notation, of requests that this rule applies to."
       }
     },
+    "google_app_engine_service_split_traffic": {
+      "__timeouts__": [
+        "create",
+        "update",
+        "delete"
+      ],
+      "migrate_traffic": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "If set to true traffic will be migrated to this version."
+      },
+      "project": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "service": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The name of the service these settings apply to."
+      },
+      "split": {
+        "Type": "List",
+        "Required": true,
+        "Description": "Mapping that defines fractional HTTP traffic diversion to different versions within the service.",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "allocations": {
+              "Type": "Map",
+              "Required": true,
+              "Description": "Mapping from version IDs within the service to fractional (0.000, 1] allocations of traffic for that version. Each version can be specified only once, but some versions in the service may not have any traffic allocation. Services that have traffic allocated cannot be deleted until either the service is deleted or their traffic allocation is removed. Allocations must sum to 1. Up to two decimal place precision is supported for IP-based splits and up to three decimal places is supported for cookie-based splits.",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "shard_by": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Mechanism used to determine which version a request is sent to. The traffic selection algorithm will be stable for either type until allocations are changed."
+            }
+          }
+        }
+      }
+    },
     "google_app_engine_standard_app_version": {
       "__timeouts__": [
         "create",
@@ -1627,6 +1680,44 @@
         "Type": "String",
         "Optional": true,
         "Computed": true
+      },
+      "range_partitioning": {
+        "Type": "List",
+        "Optional": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "field": {
+              "Type": "String",
+              "Required": true
+            },
+            "range": {
+              "Type": "List",
+              "Required": true,
+              "MaxItems": 1,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "end": {
+                    "Type": "Int",
+                    "Required": true
+                  },
+                  "interval": {
+                    "Type": "Int",
+                    "Required": true
+                  },
+                  "start": {
+                    "Type": "Int",
+                    "Required": true
+                  }
+                }
+              }
+            }
+          }
+        }
       },
       "schema": {
         "Type": "String",
@@ -6178,6 +6269,11 @@
         "Computed": true,
         "Removed": "ipVersion is not used for regional forwarding rules. Please remove this field if you are using it."
       },
+      "is_mirroring_collector": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Indicates whether or not this load balancer can be used\nas a collector for packet mirroring. To prevent mirroring loops,\ninstances behind this load balancer will not have their traffic\nmirrored even if a PacketMirroring rule applies to them. This\ncan only be set to true for load balancers that have their\nloadBalancingScheme set to INTERNAL."
+      },
       "label_fingerprint": {
         "Type": "String",
         "Description": "The fingerprint used for optimistic locking of this resource.  Used\ninternally during updates.",
@@ -7355,6 +7451,10 @@
         "Type": "String",
         "Optional": true
       },
+      "desired_status": {
+        "Type": "String",
+        "Optional": true
+      },
       "enable_display": {
         "Type": "Bool",
         "Optional": true
@@ -7813,6 +7913,11 @@
         "Computed": true
       },
       "description": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "desired_status": {
         "Type": "String",
         "Optional": true,
         "Computed": true
@@ -9484,6 +9589,157 @@
             }
           }
         }
+      }
+    },
+    "google_compute_packet_mirroring": {
+      "__timeouts__": [
+        "create",
+        "update",
+        "delete"
+      ],
+      "collector_ilb": {
+        "Type": "List",
+        "Required": true,
+        "Description": "The Forwarding Rule resource (of type load_balancing_scheme=INTERNAL)\nthat will be used as collector for mirrored traffic. The\nspecified forwarding rule must have is_mirroring_collector\nset to true.",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "url": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The URL of the forwarding rule."
+            }
+          }
+        }
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "A human-readable description of the rule."
+      },
+      "filter": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "A filter for mirrored traffic.  If unset, all traffic is mirrored.",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "cidr_ranges": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "IP CIDR ranges that apply as a filter on the source (ingress) or\ndestination (egress) IP in the IP header. Only IPv4 is supported.",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "ip_protocols": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Protocols that apply as a filter on mirrored traffic.",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
+      "mirrored_resources": {
+        "Type": "List",
+        "Required": true,
+        "Description": "A means of specifying which resources to mirror.",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "instances": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "All the listed instances will be mirrored.  Specify at most 50.",
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "url": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "The URL of the instances where this rule should be active."
+                  }
+                }
+              }
+            },
+            "subnetworks": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "All instances in one of these subnetworks will be mirrored.",
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "url": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "The URL of the subnetwork where this rule should be active."
+                  }
+                }
+              }
+            },
+            "tags": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "All instances with these tags will be mirrored.",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The name of the packet mirroring rule"
+      },
+      "network": {
+        "Type": "List",
+        "Required": true,
+        "Description": "Specifies the mirrored VPC network. Only packets in this network\nwill be mirrored. All mirrored VMs should have a NIC in the given\nnetwork. All mirrored subnetworks should belong to the given network.",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "url": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The full self_link URL of the network where this rule is active."
+            }
+          }
+        }
+      },
+      "priority": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Since only one rule can be active at a time, priority is\nused to break ties in the case of two rules that apply to\nthe same instances.",
+        "Computed": true
+      },
+      "project": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "region": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The Region in which the created address should reside.\nIf it is not provided, the provider region is used.",
+        "Computed": true
       }
     },
     "google_compute_project_default_network_tier": {
@@ -12706,7 +12962,7 @@
                   "storage_locations": {
                     "Type": "Set",
                     "Optional": true,
-                    "Description": "GCS bucket location in which to store the snapshot (regional or multi-regional).",
+                    "Description": "Cloud Storage bucket location to store the auto snapshot\n(regional or multi-regional)",
                     "MaxItems": 1,
                     "Elem": {
                       "Type": "SchemaElements",
@@ -20496,6 +20752,397 @@
         "Computed": true
       }
     },
+    "google_game_services_game_server_cluster": {
+      "__timeouts__": [
+        "create",
+        "update",
+        "delete"
+      ],
+      "cluster_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Required. The resource name of the game server cluster"
+      },
+      "connection_info": {
+        "Type": "List",
+        "Required": true,
+        "Description": "Game server cluster connection information. This information is used to\nmanage game server clusters.",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "gke_cluster_reference": {
+              "Type": "List",
+              "Required": true,
+              "Description": "Reference of the GKE cluster where the game servers are installed.",
+              "MaxItems": 1,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "cluster": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "The full or partial name of a GKE cluster, using one of the following\nforms:\n\n* 'projects/{project_id}/locations/{location}/clusters/{cluster_id}'\n* 'locations/{location}/clusters/{cluster_id}'\n* '{cluster_id}'\n\nIf project and location are not specified, the project and location of the\nGameServerCluster resource are used to generate the full name of the\nGKE cluster."
+                  }
+                }
+              }
+            },
+            "namespace": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Namespace designated on the game server cluster where the game server\ninstances will be created. The namespace existence will be validated\nduring creation."
+            }
+          }
+        }
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Human readable description of the cluster."
+      },
+      "labels": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "The labels associated with this game server cluster. Each label is a\nkey-value pair.",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "location": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Location of the Cluster.",
+        "Default": {
+          "Type": "string",
+          "Value": "global"
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Description": "The resource id of the game server cluster, eg:\n\n'projects/{project_id}/locations/{location}/realms/{realm_id}/gameServerClusters/{cluster_id}'.\nFor example,\n\n'projects/my-project/locations/{location}/realms/zanzibar/gameServerClusters/my-onprem-cluster'.",
+        "Computed": true
+      },
+      "project": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "realm_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The realm id of the game server realm."
+      }
+    },
+    "google_game_services_game_server_config": {
+      "__timeouts__": [
+        "create",
+        "delete"
+      ],
+      "config_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "A unique id for the deployment config."
+      },
+      "deployment_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "A unique id for the deployment."
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The description of the game server config."
+      },
+      "fleet_configs": {
+        "Type": "List",
+        "Required": true,
+        "Description": "The fleet config contains list of fleet specs. In the Single Cloud, there\nwill be only one.",
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "fleet_spec": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The fleet spec, which is sent to Agones to configure fleet.\nThe spec can be passed as inline json but it is recommended to use a file reference\ninstead. File references can contain the json or yaml format of the fleet spec. Eg:\n\n* fleet_spec = jsonencode(yamldecode(file(\"fleet_configs.yaml\")))\n* fleet_spec = file(\"fleet_configs.json\")\n\nThe format of the spec can be found :\n'https://agones.dev/site/docs/reference/fleet/'."
+            },
+            "name": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The name of the FleetConfig.",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "labels": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "The labels associated with this game server config. Each label is a\nkey-value pair.",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "location": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Location of the Deployment.",
+        "Default": {
+          "Type": "string",
+          "Value": "global"
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Description": "The resource name of the game server config, in the form:\n\n'projects/{project_id}/locations/{location}/gameServerDeployments/{deployment_id}/configs/{config_id}'.",
+        "Computed": true
+      },
+      "project": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "scaling_configs": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Optional. This contains the autoscaling settings.",
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "fleet_autoscaler_spec": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Fleet autoscaler spec, which is sent to Agones.\nExample spec can be found :\nhttps://agones.dev/site/docs/reference/fleetautoscaler/"
+            },
+            "name": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The name of the ScalingConfig"
+            },
+            "schedules": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "The schedules to which this scaling config applies.",
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "cron_job_duration": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "The duration for the cron job event. The duration of the event is effective\nafter the cron job's start time.\n\nA duration in seconds with up to nine fractional digits, terminated by 's'. Example: \"3.5s\"."
+                  },
+                  "cron_spec": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "The cron definition of the scheduled event. See\nhttps://en.wikipedia.org/wiki/Cron. Cron spec specifies the local time as\ndefined by the realm."
+                  },
+                  "end_time": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "The end time of the event.\n\nA timestamp in RFC3339 UTC \"Zulu\" format, accurate to nanoseconds. Example: \"2014-10-02T15:01:23.045123456Z\"."
+                  },
+                  "start_time": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "The start time of the event.\n\nA timestamp in RFC3339 UTC \"Zulu\" format, accurate to nanoseconds. Example: \"2014-10-02T15:01:23.045123456Z\"."
+                  }
+                }
+              }
+            },
+            "selectors": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Labels used to identify the clusters to which this scaling config\napplies. A cluster is subject to this scaling config if its labels match\nany of the selector entries.",
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "labels": {
+                    "Type": "Map",
+                    "Optional": true,
+                    "Description": "Set of labels to group by.",
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "google_game_services_game_server_deployment": {
+      "__timeouts__": [
+        "create",
+        "update",
+        "delete"
+      ],
+      "deployment_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "A unique id for the deployment."
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Human readable description of the game server deployment."
+      },
+      "labels": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "The labels associated with this game server deployment. Each label is a\nkey-value pair.",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "location": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Location of the Deployment.",
+        "Default": {
+          "Type": "string",
+          "Value": "global"
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Description": "The resource id of the game server deployment, eg:\n\n'projects/{project_id}/locations/{location}/gameServerDeployments/{deployment_id}'.\nFor example,\n\n'projects/my-project/locations/{location}/gameServerDeployments/my-deployment'.",
+        "Computed": true
+      },
+      "project": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      }
+    },
+    "google_game_services_game_server_deployment_rollout": {
+      "__timeouts__": [
+        "create",
+        "update",
+        "delete"
+      ],
+      "default_game_server_config": {
+        "Type": "String",
+        "Required": true,
+        "Description": "This field points to the game server config that is\napplied by default to all realms and clusters. For example,\n\n'projects/my-project/locations/global/gameServerDeployments/my-game/configs/my-config'."
+      },
+      "deployment_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The deployment to rollout the new config to. Only 1 rollout must be associated with each deployment."
+      },
+      "game_server_config_overrides": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "The game_server_config_overrides contains the per game server config\noverrides. The overrides are processed in the order they are listed. As\nsoon as a match is found for a cluster, the rest of the list is not\nprocessed.",
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "config_version": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Version of the configuration."
+            },
+            "realms_selector": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Selection by realms.",
+              "MaxItems": 1,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "realms": {
+                    "Type": "List",
+                    "Optional": true,
+                    "Description": "List of realms to match against.",
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Description": "The resource id of the game server deployment\n\neg: 'projects/my-project/locations/global/gameServerDeployments/my-deployment/rollout'.",
+        "Computed": true
+      },
+      "project": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      }
+    },
+    "google_game_services_realm": {
+      "__timeouts__": [
+        "create",
+        "update",
+        "delete"
+      ],
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Human readable description of the realm."
+      },
+      "etag": {
+        "Type": "String",
+        "Description": "ETag of the resource.",
+        "Computed": true
+      },
+      "labels": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "The labels associated with this realm. Each label is a key-value pair.",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "location": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Location of the Realm.",
+        "Default": {
+          "Type": "string",
+          "Value": "global"
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Description": "The resource id of the realm, of the form:\n'projects/{project_id}/locations/{location}/realms/{realm_id}'. For\nexample, 'projects/my-project/locations/{location}/realms/my-realm'.",
+        "Computed": true
+      },
+      "project": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "realm_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "GCP region of the Realm."
+      },
+      "time_zone": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Required. Time zone where all realm-specific policies are evaluated. The value of\nthis field must be from the IANA time zone database:\nhttps://www.iana.org/time-zones."
+      }
+    },
     "google_healthcare_dataset": {
       "__timeouts__": [
         "create",
@@ -27485,6 +28132,14 @@
         "Type": "String",
         "Computed": true
       },
+      "metadata": {
+        "Type": "Map",
+        "Optional": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
       "name": {
         "Type": "String",
         "Required": true
@@ -28472,6 +29127,56 @@
         "Computed": true
       }
     },
+    "google_compute_backend_bucket": {
+      "bucket_name": {
+        "Type": "String",
+        "Description": "Cloud Storage bucket name.",
+        "Computed": true
+      },
+      "cdn_policy": {
+        "Type": "List",
+        "Description": "Cloud CDN configuration for this Backend Bucket.",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "signed_url_cache_max_age_sec": {
+              "Type": "Int",
+              "Description": "Maximum number of seconds the response to a signed URL request will\nbe considered fresh. After this time period,\nthe response will be revalidated before being served.\nWhen serving responses to signed URL requests,\nCloud CDN will internally behave as though\nall responses from this backend had a \"Cache-Control: public,\nmax-age=[TTL]\" header, regardless of any existing Cache-Control\nheader. The actual headers served in responses will not be altered.",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "creation_timestamp": {
+        "Type": "String",
+        "Description": "Creation timestamp in RFC3339 text format.",
+        "Computed": true
+      },
+      "description": {
+        "Type": "String",
+        "Description": "An optional textual description of the resource; provided by the\nclient when the resource is created.",
+        "Computed": true
+      },
+      "enable_cdn": {
+        "Type": "Bool",
+        "Description": "If true, enable Cloud CDN for this BackendBucket.",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the resource. Provided by the client when the resource is\ncreated. The name must be 1-63 characters long, and comply with\nRFC1035.  Specifically, the name must be 1-63 characters long and\nmatch the regular expression '[a-z]([-a-z0-9]*[a-z0-9])?' which means\nthe first character must be a lowercase letter, and all following\ncharacters must be a dash, lowercase letter, or digit, except the\nlast character, which cannot be a dash."
+      },
+      "project": {
+        "Type": "String",
+        "Optional": true
+      },
+      "self_link": {
+        "Type": "String",
+        "Computed": true
+      }
+    },
     "google_compute_backend_service": {
       "affinity_cookie_ttl_sec": {
         "Type": "Int",
@@ -29262,6 +29967,10 @@
         "Computed": true
       },
       "description": {
+        "Type": "String",
+        "Computed": true
+      },
+      "desired_status": {
         "Type": "String",
         "Computed": true
       },
@@ -32284,6 +32993,14 @@
       "md5hash": {
         "Type": "String",
         "Computed": true
+      },
+      "metadata": {
+        "Type": "Map",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       },
       "name": {
         "Type": "String",
