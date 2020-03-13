@@ -2,7 +2,7 @@
   ".schema_version": "1",
   "name": "aviatrix",
   "type": "provider",
-  "version": "v2.11.0",
+  "version": "v2.12.0",
   "provider": {
     "controller_ip": {
       "Type": "String",
@@ -328,7 +328,7 @@
                   "customized_route_advertisement": {
                     "Type": "String",
                     "Optional": true,
-                    "Description": "Advanced option. Customized route(s) to advertise.",
+                    "Description": "Advanced option. Customized route(s) to be advertised to other VPCs that are connected to the same TGW.",
                     "Default": {
                       "Type": "string"
                     }
@@ -344,7 +344,7 @@
                   "disable_local_route_propagation": {
                     "Type": "Bool",
                     "Optional": true,
-                    "Description": "Advanced option. Switch to allow admin not to propagate the VPC CIDR to the security domain/TGW route table that it is being attached to.",
+                    "Description": "Advanced option. If set to true, it disables automatic route propagation of this VPC to other VPCs within the same security domain.",
                     "Default": {
                       "Type": "bool",
                       "Value": "false"
@@ -461,7 +461,7 @@
       "customized_route_advertisement": {
         "Type": "String",
         "Optional": true,
-        "Description": "Advanced option. Customized route(s) to advertise.",
+        "Description": "Advanced option. Customized route(s) to be advertised to other VPCs that are connected to the same TGW.",
         "Default": {
           "Type": "string"
         }
@@ -477,7 +477,7 @@
       "disable_local_route_propagation": {
         "Type": "Bool",
         "Optional": true,
-        "Description": "Advanced option. Switch to allow admin not to propagate the VPC CIDR to the security domain/TGW route table that it is being attached to.",
+        "Description": "Advanced option. If set to true, it disables automatic route propagation of this VPC to other VPCs within the same security domain.",
         "Default": {
           "Type": "bool",
           "Value": "false"
@@ -585,6 +585,78 @@
         "Type": "String",
         "Description": "ID of the vpn connection.",
         "Computed": true
+      }
+    },
+    "aviatrix_azure_peer": {
+      "account_name1": {
+        "Type": "String",
+        "Required": true,
+        "Description": "This parameter represents the name of an Azure Cloud-Account in Aviatrix controller."
+      },
+      "account_name2": {
+        "Type": "String",
+        "Required": true,
+        "Description": "This parameter represents the name of an Azure Cloud-Account in Aviatrix controller."
+      },
+      "vnet_cidr1": {
+        "Type": "List",
+        "Description": "List of VNet CIDR of vnet_name_resource_group1.",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "vnet_cidr2": {
+        "Type": "List",
+        "Description": "List of VNet CIDR of vnet_name_resource_group2.",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "vnet_name_resource_group1": {
+        "Type": "String",
+        "Required": true,
+        "Description": "VNet-Name of Azure cloud."
+      },
+      "vnet_name_resource_group2": {
+        "Type": "String",
+        "Required": true,
+        "Description": "VNet-Name of Azure cloud."
+      },
+      "vnet_reg1": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Region of Azure cloud."
+      },
+      "vnet_reg2": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Region of Azure cloud."
+      }
+    },
+    "aviatrix_azure_spoke_native_peering": {
+      "spoke_account_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "An Aviatrix account that corresponds to a subscription in Azure."
+      },
+      "spoke_region": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Spoke VNet region."
+      },
+      "spoke_vpc_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Combination of the Spoke VNet name and resource group."
+      },
+      "transit_gateway_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of an azure transit gateway with transit firenet enabled."
       }
     },
     "aviatrix_controller_config": {
@@ -881,7 +953,8 @@
       "firewall_image_version": {
         "Type": "String",
         "Optional": true,
-        "Description": "Version of firewall image."
+        "Description": "Version of firewall image.",
+        "Computed": true
       },
       "firewall_name": {
         "Type": "String",
@@ -923,15 +996,37 @@
         "Required": true,
         "Description": "Management Interface Subnet."
       },
+      "password": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Applicable to Azure deployment only."
+      },
       "public_ip": {
         "Type": "String",
         "Description": "Management Public IP.",
         "Computed": true
       },
+      "username": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Applicable to Azure deployment only. 'admin' as a username is not accepted."
+      },
       "vpc_id": {
         "Type": "String",
         "Required": true,
         "Description": "ID of the Security VPC."
+      }
+    },
+    "aviatrix_firewall_management_access": {
+      "management_access_resource_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the resource to be enabled firewall management access."
+      },
+      "transit_firenet_gateway_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the transit firenet gateway."
       }
     },
     "aviatrix_firewall_tag": {
@@ -1075,11 +1170,6 @@
         "Type": "Int",
         "Required": true,
         "Description": "Type of cloud service provider."
-      },
-      "cloudn_bkup_gateway_inst_id": {
-        "Type": "String",
-        "Description": "Instance ID of the backup gateway.",
-        "Computed": true
       },
       "customer_managed_keys": {
         "Type": "String",
@@ -1304,6 +1394,11 @@
           "Type": "string"
         }
       },
+      "peering_ha_cloud_instance_id": {
+        "Type": "String",
+        "Description": "Instance ID of the peering HA gateway.",
+        "Computed": true
+      },
       "peering_ha_eip": {
         "Type": "String",
         "Optional": true,
@@ -1329,7 +1424,7 @@
       "peering_ha_subnet": {
         "Type": "String",
         "Optional": true,
-        "Description": "Public Subnet Information while creating Peering HA Gateway, only subnet is accepted. Required to create peering ha gateway if cloud_type = 1 or 8 (AWS or ARM)",
+        "Description": "Public Subnet Information while creating Peering HA Gateway, only subnet is accepted. Required to create peering ha gateway if cloud_type = 1 or 8 (AWS or AZURE)",
         "Default": {
           "Type": "string"
         }
@@ -1341,6 +1436,11 @@
         "Default": {
           "Type": "string"
         }
+      },
+      "private_ip": {
+        "Type": "String",
+        "Description": "Private IP address of the Gateway created.",
+        "Computed": true
       },
       "public_dns_server": {
         "Type": "String",
@@ -1952,6 +2052,11 @@
         "Required": true,
         "Description": "Size of the gateway instance."
       },
+      "ha_cloud_instance_id": {
+        "Type": "String",
+        "Description": "Cloud instance ID of HA spoke gateway.",
+        "Computed": true
+      },
       "ha_eip": {
         "Type": "String",
         "Optional": true,
@@ -1977,7 +2082,7 @@
       "ha_subnet": {
         "Type": "String",
         "Optional": true,
-        "Description": "HA Subnet. Required if enabling HA for AWS/ARM.",
+        "Description": "HA Subnet. Required if enabling HA for AWS/AZURE.",
         "Default": {
           "Type": "string"
         }
@@ -2014,6 +2119,16 @@
         "Default": {
           "Type": "string"
         }
+      },
+      "private_ip": {
+        "Type": "String",
+        "Description": "Private IP address of the spoke gateway created.",
+        "Computed": true
+      },
+      "security_group_id": {
+        "Type": "String",
+        "Description": "Security group used for the spoke gateway.",
+        "Computed": true
       },
       "single_az_ha": {
         "Type": "Bool",
@@ -2107,7 +2222,7 @@
       "ha_subnet": {
         "Type": "String",
         "Optional": true,
-        "Description": "HA Subnet. Required if enabling HA for AWS/ARM.",
+        "Description": "HA Subnet. Required if enabling HA for AWS/AZURE.",
         "Default": {
           "Type": "string"
         }
@@ -2184,6 +2299,18 @@
         "Description": "Name of Source gateway."
       }
     },
+    "aviatrix_transit_firenet_policy": {
+      "inspected_resource_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the resource to be added to transit firenet policy."
+      },
+      "transit_firenet_gateway_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the transit firenet gateway."
+      }
+    },
     "aviatrix_transit_gateway": {
       "account_name": {
         "Type": "String",
@@ -2206,6 +2333,11 @@
         "Default": {
           "Type": "string"
         }
+      },
+      "cloud_instance_id": {
+        "Type": "String",
+        "Description": "Instance ID of the transit gateway.",
+        "Computed": true
       },
       "cloud_type": {
         "Type": "Int",
@@ -2285,6 +2417,15 @@
           "Value": "false"
         }
       },
+      "enable_transit_firenet": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Specify whether to enable transit firenet interfaces or not.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
       "enable_vpc_dns_server": {
         "Type": "Bool",
         "Optional": true,
@@ -2320,6 +2461,11 @@
         "Required": true,
         "Description": "Size of the gateway instance."
       },
+      "ha_cloud_instance_id": {
+        "Type": "String",
+        "Description": "Cloud instance ID of HA transit gateway.",
+        "Computed": true
+      },
       "ha_eip": {
         "Type": "String",
         "Optional": true,
@@ -2345,7 +2491,7 @@
       "ha_subnet": {
         "Type": "String",
         "Optional": true,
-        "Description": "HA Subnet. Required for enabling HA for AWS/ARM gateway.",
+        "Description": "HA Subnet. Required for enabling HA for AWS/AZURE gateway.",
         "Default": {
           "Type": "string"
         }
@@ -2374,6 +2520,16 @@
         "Default": {
           "Type": "string"
         }
+      },
+      "private_ip": {
+        "Type": "String",
+        "Description": "Private IP address of the transit gateway created.",
+        "Computed": true
+      },
+      "security_group_id": {
+        "Type": "String",
+        "Description": "Security group used for the transit gateway.",
+        "Computed": true
       },
       "single_az_ha": {
         "Type": "Bool",
