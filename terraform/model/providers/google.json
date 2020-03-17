@@ -2,7 +2,7 @@
   ".schema_version": "1",
   "name": "google",
   "type": "provider",
-  "version": "v3.12.0",
+  "version": "v3.13.0",
   "provider": {
     "access_context_manager_custom_endpoint": {
       "Type": "String",
@@ -3566,7 +3566,7 @@
             "timeout": {
               "Type": "String",
               "Optional": true,
-              "Description": "Amount of time that this build should be allowed to run, to second granularity. \nIf this amount of time elapses, work on the build will cease and the build status will be TIMEOUT.\nThis timeout must be equal to or greater than the sum of the timeouts for build steps within the build.\nThe expected format is the number of seconds followed by s.\nDefault time is ten minutes (600s).",
+              "Description": "Amount of time that this build should be allowed to run, to second granularity.\nIf this amount of time elapses, work on the build will cease and the build status will be TIMEOUT.\nThis timeout must be equal to or greater than the sum of the timeouts for build steps within the build.\nThe expected format is the number of seconds followed by s.\nDefault time is ten minutes (600s).",
               "Default": {
                 "Type": "string",
                 "Value": "600s"
@@ -3607,7 +3607,7 @@
       "included_files": {
         "Type": "List",
         "Optional": true,
-        "Description": "ignoredFiles and includedFiles are file glob matches using http://godoc/pkg/path/filepath#Match\nextended with support for '**'.\n\nIf any of the files altered in the commit pass the ignoredFiles filter\nand includedFiles is empty, then as far as this filter is concerned, we\nshould trigger the build.\n\nIf any of the files altered in the commit pass the ignoredFiles filter\nand includedFiles is not empty, then we make sure that at least one of\nthose files matches a includedFiles glob. If not, then we do not trigger\na build.",
+        "Description": "ignoredFiles and includedFiles are file glob matches using https://golang.org/pkg/path/filepath/#Match\nextended with support for '**'.\n\nIf any of the files altered in the commit pass the ignoredFiles filter\nand includedFiles is empty, then as far as this filter is concerned, we\nshould trigger the build.\n\nIf any of the files altered in the commit pass the ignoredFiles filter\nand includedFiles is not empty, then we make sure that at least one of\nthose files matches a includedFiles glob. If not, then we do not trigger\na build.",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -8912,6 +8912,33 @@
           "Type": "SchemaElements",
           "ElementsType": "String"
         }
+      }
+    },
+    "google_compute_region_disk_resource_policy_attachment": {
+      "__timeouts__": [
+        "create",
+        "delete"
+      ],
+      "disk": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The name of the regional disk in which the resource policies are attached to."
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The resource policy to be attached to the disk for scheduling snapshot\ncreation. Do not specify the self link."
+      },
+      "project": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "region": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "A reference to the region where the disk resides.",
+        "Computed": true
       }
     },
     "google_compute_region_health_check": {
@@ -16061,8 +16088,7 @@
       "tier": {
         "Type": "String",
         "Optional": true,
-        "Description": "The agent tier. If not specified, TIER_STANDARD is assumed.\n* TIER_STANDARD: Standard tier.\n* TIER_ENTERPRISE: Enterprise tier (Essentials).\n* TIER_ENTERPRISE_PLUS: Enterprise tier (Plus).\nNOTE: This field seems to have eventual consistency in the API. Updating this field to a new value, or even \ncreating a new agent with a tier that is different from a previous agent in the same project will take some\ntime to propagate. The provider will wait for the API to show consistency, which can lead to longer apply times.",
-        "Computed": true
+        "Description": "The agent tier. If not specified, TIER_STANDARD is assumed.\n* TIER_STANDARD: Standard tier.\n* TIER_ENTERPRISE: Enterprise tier (Essentials).\n* TIER_ENTERPRISE_PLUS: Enterprise tier (Plus).\nNOTE: Due to consistency issues, the provider will not read this field from the API. Drift is possible between \nthe Terraform state and Dialogflow if the agent tier is changed outside of Terraform."
       },
       "time_zone": {
         "Type": "String",
@@ -18899,7 +18925,7 @@
       "labels": {
         "Type": "Map",
         "Optional": true,
-        "Description": "Configuration fields that define the channel and its behavior. The\npermissible and required labels are specified in the\nNotificationChannelDescriptor corresponding to the type field.\n\n**Note**: Some NotificationChannelDescriptor labels are\nsensitive and the API will return an partially-obfuscated value.\nFor example, for '\"type\": \"slack\"' channels, an 'auth_token'\nlabel with value \"SECRET\" will be obfuscated as \"**CRET\". In order\nto avoid a diff, Terraform will use the state value if it appears\nthat the obfuscated value matches the state value in\nlength/unobfuscated characters. However, Terraform will not detect a\ndiff if the obfuscated portion of the value was changed outside of\nTerraform.",
+        "Description": "Configuration fields that define the channel and its behavior. The\npermissible and required labels are specified in the\nNotificationChannelDescriptor corresponding to the type field.\n\nLabels with sensitive data are obfuscated by the API and therefore Terraform cannot\ndetermine if there are upstream changes to these fields. They can also be configured via\nthe sensitive_labels block, but cannot be configured in both places.",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -18914,6 +18940,33 @@
         "Type": "String",
         "Optional": true,
         "Computed": true
+      },
+      "sensitive_labels": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Different notification type behaviors are configured primarily using the the 'labels' field on this\nresource. This block contains the labels which contain secrets or passwords so that they can be marked\nsensitive and hidden from plan output. The name of the field, eg: password, will be the key\nin the 'labels' map in the api request.\n\nCredentials may not be specified in both locations and will cause an error. Changing from one location\nto a different credential configuration in the config will require an apply to update state.",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "auth_token": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "An authorization token for a notification channel. Channel types that support this field include: slack"
+            },
+            "password": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "An password for a notification channel. Channel types that support this field include: webhook_basicauth"
+            },
+            "service_key": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "An servicekey token for a notification channel. Channel types that support this field include: pagerduty"
+            }
+          }
+        }
       },
       "type": {
         "Type": "String",
@@ -21389,6 +21442,47 @@
             }
           }
         }
+      }
+    },
+    "google_sql_source_representation_instance": {
+      "__timeouts__": [
+        "create",
+        "delete"
+      ],
+      "database_version": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The MySQL version running on your source database server: MYSQL_5_6 or MYSQL_5_7."
+      },
+      "host": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The externally accessible IPv4 address for the source database server."
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The name of the source representation instance. Use any valid Cloud SQL instance name."
+      },
+      "port": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The externally accessible port for the source database server.\nDefaults to 3306.",
+        "Default": {
+          "Type": "int",
+          "Value": "3306"
+        }
+      },
+      "project": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "region": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The Region in which the created instance should reside.\nIf it is not provided, the provider region is used.",
+        "Computed": true
       }
     },
     "google_sql_ssl_cert": {
@@ -25817,7 +25911,7 @@
       "labels": {
         "Type": "Map",
         "Optional": true,
-        "Description": "Configuration fields that define the channel and its behavior. The\npermissible and required labels are specified in the\nNotificationChannelDescriptor corresponding to the type field.\n\n**Note**: Some NotificationChannelDescriptor labels are\nsensitive and the API will return an partially-obfuscated value.\nFor example, for '\"type\": \"slack\"' channels, an 'auth_token'\nlabel with value \"SECRET\" will be obfuscated as \"**CRET\". In order\nto avoid a diff, Terraform will use the state value if it appears\nthat the obfuscated value matches the state value in\nlength/unobfuscated characters. However, Terraform will not detect a\ndiff if the obfuscated portion of the value was changed outside of\nTerraform.",
+        "Description": "Configuration fields that define the channel and its behavior. The\npermissible and required labels are specified in the\nNotificationChannelDescriptor corresponding to the type field.\n\nLabels with sensitive data are obfuscated by the API and therefore Terraform cannot\ndetermine if there are upstream changes to these fields. They can also be configured via\nthe sensitive_labels block, but cannot be configured in both places.",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -25831,6 +25925,31 @@
       "project": {
         "Type": "String",
         "Optional": true
+      },
+      "sensitive_labels": {
+        "Type": "List",
+        "Description": "Different notification type behaviors are configured primarily using the the 'labels' field on this\nresource. This block contains the labels which contain secrets or passwords so that they can be marked\nsensitive and hidden from plan output. The name of the field, eg: password, will be the key\nin the 'labels' map in the api request.\n\nCredentials may not be specified in both locations and will cause an error. Changing from one location\nto a different credential configuration in the config will require an apply to update state.",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "auth_token": {
+              "Type": "String",
+              "Description": "An authorization token for a notification channel. Channel types that support this field include: slack",
+              "Computed": true
+            },
+            "password": {
+              "Type": "String",
+              "Description": "An password for a notification channel. Channel types that support this field include: webhook_basicauth",
+              "Computed": true
+            },
+            "service_key": {
+              "Type": "String",
+              "Description": "An servicekey token for a notification channel. Channel types that support this field include: pagerduty",
+              "Computed": true
+            }
+          }
+        }
       },
       "type": {
         "Type": "String",
