@@ -2,7 +2,7 @@
   ".schema_version": "1",
   "name": "rancher2",
   "type": "provider",
-  "version": "v1.7.3",
+  "version": "v1.8.1",
   "provider": {
     "access_key": {
       "Type": "String",
@@ -33,6 +33,15 @@
       "Optional": true,
       "Description": "Allow insecure connections to Rancher. Mandatory if self signed tls and not ca_certs provided",
       "DefaultFunc": "ENV(RANCHER_INSECURE)"
+    },
+    "retries": {
+      "Type": "Int",
+      "Optional": true,
+      "Description": "Rancher connection retries",
+      "Default": {
+        "Type": "int",
+        "Value": "5"
+      }
     },
     "secret_key": {
       "Type": "String",
@@ -1224,6 +1233,14 @@
       "username": {
         "Type": "String",
         "Optional": true
+      },
+      "version": {
+        "Type": "String",
+        "Optional": true,
+        "Default": {
+          "Type": "string",
+          "Value": "helm_v2"
+        }
       }
     },
     "rancher2_certificate": {
@@ -1460,6 +1477,7 @@
         "ConflictsWith": [
           "eks_config",
           "gke_config",
+          "k3s_config",
           "rke_config"
         ],
         "IsBlock": true,
@@ -1951,6 +1969,7 @@
         "ConflictsWith": [
           "aks_config",
           "gke_config",
+          "k3s_config",
           "rke_config"
         ],
         "IsBlock": true,
@@ -2130,6 +2149,7 @@
         "ConflictsWith": [
           "aks_config",
           "eks_config",
+          "k3s_config",
           "rke_config"
         ],
         "IsBlock": true,
@@ -2517,6 +2537,79 @@
           }
         }
       },
+      "k3s_config": {
+        "Type": "List",
+        "Optional": true,
+        "Computed": true,
+        "MaxItems": 1,
+        "ConflictsWith": [
+          "aks_config",
+          "eks_config",
+          "gke_config",
+          "rke_config"
+        ],
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "upgrade_strategy": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "The K3S upgrade strategy",
+              "Computed": true,
+              "MaxItems": 1,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "drain_server_nodes": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Description": "Drain server nodes",
+                    "Default": {
+                      "Type": "bool",
+                      "Value": "false"
+                    }
+                  },
+                  "drain_worker_nodes": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Description": "Drain worker nodes",
+                    "Default": {
+                      "Type": "bool",
+                      "Value": "false"
+                    }
+                  },
+                  "server_concurrency": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Description": "Server concurrency",
+                    "Default": {
+                      "Type": "int",
+                      "Value": "1"
+                    }
+                  },
+                  "worker_concurrency": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Description": "Worker concurrency",
+                    "Default": {
+                      "Type": "int",
+                      "Value": "1"
+                    }
+                  }
+                }
+              }
+            },
+            "version": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The K3S kubernetes version",
+              "Computed": true
+            }
+          }
+        }
+      },
       "kube_config": {
         "Type": "String",
         "Computed": true
@@ -2538,7 +2631,8 @@
         "ConflictsWith": [
           "aks_config",
           "eks_config",
-          "gke_config"
+          "gke_config",
+          "k3s_config"
         ],
         "IsBlock": true,
         "Elem": {
@@ -3412,7 +3506,8 @@
               "Type": "String",
               "Optional": true,
               "Description": "Optional kubernetes version to deploy",
-              "Computed": true
+              "Computed": true,
+              "DefaultFunc": "UNKNOWN"
             },
             "monitoring": {
               "Type": "List",
@@ -4235,6 +4330,204 @@
               "Optional": true,
               "Description": "Optional cluster level SSH private key path",
               "Computed": true
+            },
+            "upgrade_strategy": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "RKE upgrade strategy",
+              "Computed": true,
+              "MaxItems": 1,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "drain": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "bool",
+                      "Value": "false"
+                    }
+                  },
+                  "drain_input": {
+                    "Type": "List",
+                    "Optional": true,
+                    "Computed": true,
+                    "MaxItems": 1,
+                    "IsBlock": true,
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "delete_local_data": {
+                          "Type": "Bool",
+                          "Optional": true,
+                          "Default": {
+                            "Type": "bool",
+                            "Value": "false"
+                          }
+                        },
+                        "force": {
+                          "Type": "Bool",
+                          "Optional": true,
+                          "Default": {
+                            "Type": "bool",
+                            "Value": "false"
+                          }
+                        },
+                        "grace_period": {
+                          "Type": "Int",
+                          "Optional": true,
+                          "Default": {
+                            "Type": "int",
+                            "Value": "-1"
+                          }
+                        },
+                        "ignore_daemon_sets": {
+                          "Type": "Bool",
+                          "Optional": true,
+                          "Default": {
+                            "Type": "bool",
+                            "Value": "true"
+                          }
+                        },
+                        "timeout": {
+                          "Type": "Int",
+                          "Optional": true,
+                          "Default": {
+                            "Type": "int",
+                            "Value": "60"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "max_unavailable_controlplane": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "string",
+                      "Value": "1"
+                    }
+                  },
+                  "max_unavailable_worker": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "string",
+                      "Value": "10%"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "scheduled_cluster_scan": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Cluster scheduled scan",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "enabled": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Enable scheduled cluster scan",
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
+              }
+            },
+            "scan_config": {
+              "Type": "List",
+              "Required": true,
+              "Description": "Cluster scan config",
+              "MaxItems": 1,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "cis_scan_config": {
+                    "Type": "List",
+                    "Optional": true,
+                    "Description": "The cluster cis scan config",
+                    "Computed": true,
+                    "MaxItems": 1,
+                    "IsBlock": true,
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "debug_master": {
+                          "Type": "Bool",
+                          "Optional": true,
+                          "Description": "Debug master",
+                          "Default": {
+                            "Type": "bool",
+                            "Value": "false"
+                          }
+                        },
+                        "debug_worker": {
+                          "Type": "Bool",
+                          "Optional": true,
+                          "Description": "Debug worker",
+                          "Default": {
+                            "Type": "bool",
+                            "Value": "false"
+                          }
+                        },
+                        "override_benchmark_version": {
+                          "Type": "String",
+                          "Optional": true,
+                          "Description": "Override Benchmark Version"
+                        },
+                        "override_skip": {
+                          "Type": "List",
+                          "Optional": true,
+                          "Elem": {
+                            "Type": "SchemaElements",
+                            "ElementsType": "String"
+                          }
+                        },
+                        "profile": {
+                          "Type": "String",
+                          "Optional": true,
+                          "Description": "Profile",
+                          "Default": {
+                            "Type": "string",
+                            "Value": "permissive"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "schedule_config": {
+              "Type": "List",
+              "Required": true,
+              "Description": "Schedule cluster scan config",
+              "MaxItems": 1,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "cron_schedule": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "Crontab schedule"
+                  },
+                  "retention": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Description": "Cluster scan retention",
+                    "Computed": true
+                  }
+                }
+              }
             }
           }
         }
@@ -4310,6 +4603,15 @@
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
+            "default_recipient": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Use notifier default recipient",
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
+              }
+            },
             "notifier_id": {
               "Type": "String",
               "Required": true,
@@ -4746,6 +5048,15 @@
           }
         }
       },
+      "enable_json_parsing": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Optional enable json log parsing",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
       "fluentd_config": {
         "Type": "List",
         "Optional": true,
@@ -5095,6 +5406,15 @@
       "system_project_id": {
         "Type": "String",
         "Computed": true
+      },
+      "wait_monitoring": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Wait until monitoring is up and running",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
       }
     },
     "rancher2_cluster_template": {
@@ -6140,7 +6460,8 @@
                           "Type": "String",
                           "Optional": true,
                           "Description": "Optional kubernetes version to deploy",
-                          "Computed": true
+                          "Computed": true,
+                          "DefaultFunc": "UNKNOWN"
                         },
                         "monitoring": {
                           "Type": "List",
@@ -6963,6 +7284,204 @@
                           "Optional": true,
                           "Description": "Optional cluster level SSH private key path",
                           "Computed": true
+                        },
+                        "upgrade_strategy": {
+                          "Type": "List",
+                          "Optional": true,
+                          "Description": "RKE upgrade strategy",
+                          "Computed": true,
+                          "MaxItems": 1,
+                          "IsBlock": true,
+                          "Elem": {
+                            "Type": "SchemaInfo",
+                            "Info": {
+                              "drain": {
+                                "Type": "Bool",
+                                "Optional": true,
+                                "Default": {
+                                  "Type": "bool",
+                                  "Value": "false"
+                                }
+                              },
+                              "drain_input": {
+                                "Type": "List",
+                                "Optional": true,
+                                "Computed": true,
+                                "MaxItems": 1,
+                                "IsBlock": true,
+                                "Elem": {
+                                  "Type": "SchemaInfo",
+                                  "Info": {
+                                    "delete_local_data": {
+                                      "Type": "Bool",
+                                      "Optional": true,
+                                      "Default": {
+                                        "Type": "bool",
+                                        "Value": "false"
+                                      }
+                                    },
+                                    "force": {
+                                      "Type": "Bool",
+                                      "Optional": true,
+                                      "Default": {
+                                        "Type": "bool",
+                                        "Value": "false"
+                                      }
+                                    },
+                                    "grace_period": {
+                                      "Type": "Int",
+                                      "Optional": true,
+                                      "Default": {
+                                        "Type": "int",
+                                        "Value": "-1"
+                                      }
+                                    },
+                                    "ignore_daemon_sets": {
+                                      "Type": "Bool",
+                                      "Optional": true,
+                                      "Default": {
+                                        "Type": "bool",
+                                        "Value": "true"
+                                      }
+                                    },
+                                    "timeout": {
+                                      "Type": "Int",
+                                      "Optional": true,
+                                      "Default": {
+                                        "Type": "int",
+                                        "Value": "60"
+                                      }
+                                    }
+                                  }
+                                }
+                              },
+                              "max_unavailable_controlplane": {
+                                "Type": "String",
+                                "Optional": true,
+                                "Default": {
+                                  "Type": "string",
+                                  "Value": "1"
+                                }
+                              },
+                              "max_unavailable_worker": {
+                                "Type": "String",
+                                "Optional": true,
+                                "Default": {
+                                  "Type": "string",
+                                  "Value": "10%"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "scheduled_cluster_scan": {
+                    "Type": "List",
+                    "Optional": true,
+                    "Description": "Cluster scheduled scan",
+                    "MaxItems": 1,
+                    "IsBlock": true,
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "enabled": {
+                          "Type": "Bool",
+                          "Optional": true,
+                          "Description": "Enable scheduled cluster scan",
+                          "Default": {
+                            "Type": "bool",
+                            "Value": "false"
+                          }
+                        },
+                        "scan_config": {
+                          "Type": "List",
+                          "Required": true,
+                          "Description": "Cluster scan config",
+                          "MaxItems": 1,
+                          "IsBlock": true,
+                          "Elem": {
+                            "Type": "SchemaInfo",
+                            "Info": {
+                              "cis_scan_config": {
+                                "Type": "List",
+                                "Optional": true,
+                                "Description": "The cluster cis scan config",
+                                "Computed": true,
+                                "MaxItems": 1,
+                                "IsBlock": true,
+                                "Elem": {
+                                  "Type": "SchemaInfo",
+                                  "Info": {
+                                    "debug_master": {
+                                      "Type": "Bool",
+                                      "Optional": true,
+                                      "Description": "Debug master",
+                                      "Default": {
+                                        "Type": "bool",
+                                        "Value": "false"
+                                      }
+                                    },
+                                    "debug_worker": {
+                                      "Type": "Bool",
+                                      "Optional": true,
+                                      "Description": "Debug worker",
+                                      "Default": {
+                                        "Type": "bool",
+                                        "Value": "false"
+                                      }
+                                    },
+                                    "override_benchmark_version": {
+                                      "Type": "String",
+                                      "Optional": true,
+                                      "Description": "Override Benchmark Version"
+                                    },
+                                    "override_skip": {
+                                      "Type": "List",
+                                      "Optional": true,
+                                      "Elem": {
+                                        "Type": "SchemaElements",
+                                        "ElementsType": "String"
+                                      }
+                                    },
+                                    "profile": {
+                                      "Type": "String",
+                                      "Optional": true,
+                                      "Description": "Profile",
+                                      "Default": {
+                                        "Type": "string",
+                                        "Value": "permissive"
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        },
+                        "schedule_config": {
+                          "Type": "List",
+                          "Required": true,
+                          "Description": "Schedule cluster scan config",
+                          "MaxItems": 1,
+                          "IsBlock": true,
+                          "Elem": {
+                            "Type": "SchemaInfo",
+                            "Info": {
+                              "cron_schedule": {
+                                "Type": "String",
+                                "Required": true,
+                                "Description": "Crontab schedule"
+                              },
+                              "retention": {
+                                "Type": "Int",
+                                "Optional": true,
+                                "Description": "Cluster scan retention",
+                                "Computed": true
+                              }
+                            }
+                          }
                         }
                       }
                     }
@@ -7202,6 +7721,11 @@
         "Type": "String",
         "Required": true
       },
+      "group_principal_id": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
       "labels": {
         "Type": "Map",
         "Optional": true,
@@ -7214,7 +7738,8 @@
       },
       "user_id": {
         "Type": "String",
-        "Required": true
+        "Optional": true,
+        "Computed": true
       }
     },
     "rancher2_multi_cluster_app": {
@@ -9867,6 +10392,15 @@
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
+            "default_recipient": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Use notifier default recipient",
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
+              }
+            },
             "notifier_id": {
               "Type": "String",
               "Required": true,
@@ -10215,6 +10749,15 @@
               "Optional": true
             }
           }
+        }
+      },
+      "enable_json_parsing": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Optional enable json log parsing",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
         }
       },
       "fluentd_config": {
@@ -11059,6 +11602,10 @@
         "Computed": true
       },
       "username": {
+        "Type": "String",
+        "Computed": true
+      },
+      "version": {
         "Type": "String",
         "Computed": true
       }
@@ -12115,6 +12662,71 @@
           }
         }
       },
+      "k3s_config": {
+        "Type": "List",
+        "Computed": true,
+        "MaxItems": 1,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "upgrade_strategy": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "The K3S upgrade strategy",
+              "Computed": true,
+              "MaxItems": 1,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "drain_server_nodes": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Description": "Drain server nodes",
+                    "Default": {
+                      "Type": "bool",
+                      "Value": "false"
+                    }
+                  },
+                  "drain_worker_nodes": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Description": "Drain worker nodes",
+                    "Default": {
+                      "Type": "bool",
+                      "Value": "false"
+                    }
+                  },
+                  "server_concurrency": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Description": "Server concurrency",
+                    "Default": {
+                      "Type": "int",
+                      "Value": "1"
+                    }
+                  },
+                  "worker_concurrency": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Description": "Worker concurrency",
+                    "Default": {
+                      "Type": "int",
+                      "Value": "1"
+                    }
+                  }
+                }
+              }
+            },
+            "version": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The K3S kubernetes version",
+              "Computed": true
+            }
+          }
+        }
+      },
       "kube_config": {
         "Type": "String",
         "Computed": true
@@ -13002,7 +13614,8 @@
               "Type": "String",
               "Optional": true,
               "Description": "Optional kubernetes version to deploy",
-              "Computed": true
+              "Computed": true,
+              "DefaultFunc": "UNKNOWN"
             },
             "monitoring": {
               "Type": "List",
@@ -13825,6 +14438,202 @@
               "Optional": true,
               "Description": "Optional cluster level SSH private key path",
               "Computed": true
+            },
+            "upgrade_strategy": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "RKE upgrade strategy",
+              "Computed": true,
+              "MaxItems": 1,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "drain": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "bool",
+                      "Value": "false"
+                    }
+                  },
+                  "drain_input": {
+                    "Type": "List",
+                    "Optional": true,
+                    "Computed": true,
+                    "MaxItems": 1,
+                    "IsBlock": true,
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "delete_local_data": {
+                          "Type": "Bool",
+                          "Optional": true,
+                          "Default": {
+                            "Type": "bool",
+                            "Value": "false"
+                          }
+                        },
+                        "force": {
+                          "Type": "Bool",
+                          "Optional": true,
+                          "Default": {
+                            "Type": "bool",
+                            "Value": "false"
+                          }
+                        },
+                        "grace_period": {
+                          "Type": "Int",
+                          "Optional": true,
+                          "Default": {
+                            "Type": "int",
+                            "Value": "-1"
+                          }
+                        },
+                        "ignore_daemon_sets": {
+                          "Type": "Bool",
+                          "Optional": true,
+                          "Default": {
+                            "Type": "bool",
+                            "Value": "true"
+                          }
+                        },
+                        "timeout": {
+                          "Type": "Int",
+                          "Optional": true,
+                          "Default": {
+                            "Type": "int",
+                            "Value": "60"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "max_unavailable_controlplane": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "string",
+                      "Value": "1"
+                    }
+                  },
+                  "max_unavailable_worker": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "string",
+                      "Value": "10%"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "scheduled_cluster_scan": {
+        "Type": "List",
+        "Description": "Cluster scheduled scan",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "enabled": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Enable scheduled cluster scan",
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
+              }
+            },
+            "scan_config": {
+              "Type": "List",
+              "Required": true,
+              "Description": "Cluster scan config",
+              "MaxItems": 1,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "cis_scan_config": {
+                    "Type": "List",
+                    "Optional": true,
+                    "Description": "The cluster cis scan config",
+                    "Computed": true,
+                    "MaxItems": 1,
+                    "IsBlock": true,
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "debug_master": {
+                          "Type": "Bool",
+                          "Optional": true,
+                          "Description": "Debug master",
+                          "Default": {
+                            "Type": "bool",
+                            "Value": "false"
+                          }
+                        },
+                        "debug_worker": {
+                          "Type": "Bool",
+                          "Optional": true,
+                          "Description": "Debug worker",
+                          "Default": {
+                            "Type": "bool",
+                            "Value": "false"
+                          }
+                        },
+                        "override_benchmark_version": {
+                          "Type": "String",
+                          "Optional": true,
+                          "Description": "Override Benchmark Version"
+                        },
+                        "override_skip": {
+                          "Type": "List",
+                          "Optional": true,
+                          "Elem": {
+                            "Type": "SchemaElements",
+                            "ElementsType": "String"
+                          }
+                        },
+                        "profile": {
+                          "Type": "String",
+                          "Optional": true,
+                          "Description": "Profile",
+                          "Default": {
+                            "Type": "string",
+                            "Value": "permissive"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "schedule_config": {
+              "Type": "List",
+              "Required": true,
+              "Description": "Schedule cluster scan config",
+              "MaxItems": 1,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "cron_schedule": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "Crontab schedule"
+                  },
+                  "retention": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Description": "Cluster scan retention",
+                    "Computed": true
+                  }
+                }
+              }
             }
           }
         }
@@ -13875,6 +14684,15 @@
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
+            "default_recipient": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Use notifier default recipient",
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
+              }
+            },
             "notifier_id": {
               "Type": "String",
               "Required": true,
@@ -14139,6 +14957,32 @@
         "Type": "String",
         "Required": true
       },
+      "custom_target_config": {
+        "Type": "List",
+        "Computed": true,
+        "MaxItems": 1,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "certificate": {
+              "Type": "String",
+              "Optional": true
+            },
+            "client_cert": {
+              "Type": "String",
+              "Optional": true
+            },
+            "client_key": {
+              "Type": "String",
+              "Optional": true
+            },
+            "content": {
+              "Type": "String",
+              "Required": true
+            }
+          }
+        }
+      },
       "elasticsearch_config": {
         "Type": "List",
         "Computed": true,
@@ -14201,6 +15045,11 @@
             }
           }
         }
+      },
+      "enable_json_parsing": {
+        "Type": "Bool",
+        "Description": "Optional enable json log parsing",
+        "Computed": true
       },
       "fluentd_config": {
         "Type": "List",
@@ -14463,6 +15312,106 @@
       },
       "user_principal_id": {
         "Type": "String",
+        "Computed": true
+      }
+    },
+    "rancher2_cluster_scan": {
+      "annotations": {
+        "Type": "Map",
+        "Computed": true
+      },
+      "cluster_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The cluster ID to scan"
+      },
+      "labels": {
+        "Type": "Map",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The cluster scan name",
+        "Computed": true
+      },
+      "run_type": {
+        "Type": "String",
+        "Description": "The cluster scan run type",
+        "Computed": true
+      },
+      "scan_config": {
+        "Type": "List",
+        "Description": "The cluster scan config",
+        "Computed": true,
+        "MaxItems": 1,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "cis_scan_config": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "The cluster cis scan config",
+              "Computed": true,
+              "MaxItems": 1,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "debug_master": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Description": "Debug master",
+                    "Default": {
+                      "Type": "bool",
+                      "Value": "false"
+                    }
+                  },
+                  "debug_worker": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Description": "Debug worker",
+                    "Default": {
+                      "Type": "bool",
+                      "Value": "false"
+                    }
+                  },
+                  "override_benchmark_version": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Override Benchmark Version"
+                  },
+                  "override_skip": {
+                    "Type": "List",
+                    "Optional": true,
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  },
+                  "profile": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Profile",
+                    "Default": {
+                      "Type": "string",
+                      "Value": "permissive"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "scan_type": {
+        "Type": "String",
+        "Description": "The cluster scan type",
+        "Computed": true
+      },
+      "status": {
+        "Type": "String",
+        "Description": "The cluster scan status",
         "Computed": true
       }
     },
@@ -15502,7 +16451,8 @@
                           "Type": "String",
                           "Optional": true,
                           "Description": "Optional kubernetes version to deploy",
-                          "Computed": true
+                          "Computed": true,
+                          "DefaultFunc": "UNKNOWN"
                         },
                         "monitoring": {
                           "Type": "List",
@@ -16325,6 +17275,204 @@
                           "Optional": true,
                           "Description": "Optional cluster level SSH private key path",
                           "Computed": true
+                        },
+                        "upgrade_strategy": {
+                          "Type": "List",
+                          "Optional": true,
+                          "Description": "RKE upgrade strategy",
+                          "Computed": true,
+                          "MaxItems": 1,
+                          "IsBlock": true,
+                          "Elem": {
+                            "Type": "SchemaInfo",
+                            "Info": {
+                              "drain": {
+                                "Type": "Bool",
+                                "Optional": true,
+                                "Default": {
+                                  "Type": "bool",
+                                  "Value": "false"
+                                }
+                              },
+                              "drain_input": {
+                                "Type": "List",
+                                "Optional": true,
+                                "Computed": true,
+                                "MaxItems": 1,
+                                "IsBlock": true,
+                                "Elem": {
+                                  "Type": "SchemaInfo",
+                                  "Info": {
+                                    "delete_local_data": {
+                                      "Type": "Bool",
+                                      "Optional": true,
+                                      "Default": {
+                                        "Type": "bool",
+                                        "Value": "false"
+                                      }
+                                    },
+                                    "force": {
+                                      "Type": "Bool",
+                                      "Optional": true,
+                                      "Default": {
+                                        "Type": "bool",
+                                        "Value": "false"
+                                      }
+                                    },
+                                    "grace_period": {
+                                      "Type": "Int",
+                                      "Optional": true,
+                                      "Default": {
+                                        "Type": "int",
+                                        "Value": "-1"
+                                      }
+                                    },
+                                    "ignore_daemon_sets": {
+                                      "Type": "Bool",
+                                      "Optional": true,
+                                      "Default": {
+                                        "Type": "bool",
+                                        "Value": "true"
+                                      }
+                                    },
+                                    "timeout": {
+                                      "Type": "Int",
+                                      "Optional": true,
+                                      "Default": {
+                                        "Type": "int",
+                                        "Value": "60"
+                                      }
+                                    }
+                                  }
+                                }
+                              },
+                              "max_unavailable_controlplane": {
+                                "Type": "String",
+                                "Optional": true,
+                                "Default": {
+                                  "Type": "string",
+                                  "Value": "1"
+                                }
+                              },
+                              "max_unavailable_worker": {
+                                "Type": "String",
+                                "Optional": true,
+                                "Default": {
+                                  "Type": "string",
+                                  "Value": "10%"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "scheduled_cluster_scan": {
+                    "Type": "List",
+                    "Optional": true,
+                    "Description": "Cluster scheduled scan",
+                    "MaxItems": 1,
+                    "IsBlock": true,
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "enabled": {
+                          "Type": "Bool",
+                          "Optional": true,
+                          "Description": "Enable scheduled cluster scan",
+                          "Default": {
+                            "Type": "bool",
+                            "Value": "false"
+                          }
+                        },
+                        "scan_config": {
+                          "Type": "List",
+                          "Required": true,
+                          "Description": "Cluster scan config",
+                          "MaxItems": 1,
+                          "IsBlock": true,
+                          "Elem": {
+                            "Type": "SchemaInfo",
+                            "Info": {
+                              "cis_scan_config": {
+                                "Type": "List",
+                                "Optional": true,
+                                "Description": "The cluster cis scan config",
+                                "Computed": true,
+                                "MaxItems": 1,
+                                "IsBlock": true,
+                                "Elem": {
+                                  "Type": "SchemaInfo",
+                                  "Info": {
+                                    "debug_master": {
+                                      "Type": "Bool",
+                                      "Optional": true,
+                                      "Description": "Debug master",
+                                      "Default": {
+                                        "Type": "bool",
+                                        "Value": "false"
+                                      }
+                                    },
+                                    "debug_worker": {
+                                      "Type": "Bool",
+                                      "Optional": true,
+                                      "Description": "Debug worker",
+                                      "Default": {
+                                        "Type": "bool",
+                                        "Value": "false"
+                                      }
+                                    },
+                                    "override_benchmark_version": {
+                                      "Type": "String",
+                                      "Optional": true,
+                                      "Description": "Override Benchmark Version"
+                                    },
+                                    "override_skip": {
+                                      "Type": "List",
+                                      "Optional": true,
+                                      "Elem": {
+                                        "Type": "SchemaElements",
+                                        "ElementsType": "String"
+                                      }
+                                    },
+                                    "profile": {
+                                      "Type": "String",
+                                      "Optional": true,
+                                      "Description": "Profile",
+                                      "Default": {
+                                        "Type": "string",
+                                        "Value": "permissive"
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        },
+                        "schedule_config": {
+                          "Type": "List",
+                          "Required": true,
+                          "Description": "Schedule cluster scan config",
+                          "MaxItems": 1,
+                          "IsBlock": true,
+                          "Elem": {
+                            "Type": "SchemaInfo",
+                            "Info": {
+                              "cron_schedule": {
+                                "Type": "String",
+                                "Required": true,
+                                "Description": "Crontab schedule"
+                              },
+                              "retention": {
+                                "Type": "Int",
+                                "Optional": true,
+                                "Description": "Cluster scan retention",
+                                "Computed": true
+                              }
+                            }
+                          }
                         }
                       }
                     }
@@ -16541,6 +17689,10 @@
       "global_role_id": {
         "Type": "String",
         "Optional": true,
+        "Computed": true
+      },
+      "group_principal_id": {
+        "Type": "String",
         "Computed": true
       },
       "labels": {
@@ -17950,6 +19102,15 @@
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
+            "default_recipient": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Use notifier default recipient",
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
+              }
+            },
             "notifier_id": {
               "Type": "String",
               "Required": true,
@@ -18143,6 +19304,32 @@
         "Type": "Map",
         "Computed": true
       },
+      "custom_target_config": {
+        "Type": "List",
+        "Computed": true,
+        "MaxItems": 1,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "certificate": {
+              "Type": "String",
+              "Optional": true
+            },
+            "client_cert": {
+              "Type": "String",
+              "Optional": true
+            },
+            "client_key": {
+              "Type": "String",
+              "Optional": true
+            },
+            "content": {
+              "Type": "String",
+              "Required": true
+            }
+          }
+        }
+      },
       "elasticsearch_config": {
         "Type": "List",
         "Computed": true,
@@ -18205,6 +19392,11 @@
             }
           }
         }
+      },
+      "enable_json_parsing": {
+        "Type": "Bool",
+        "Description": "Optional enable json log parsing",
+        "Computed": true
       },
       "fluentd_config": {
         "Type": "List",
