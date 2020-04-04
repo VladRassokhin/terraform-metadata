@@ -2,8 +2,17 @@
   ".schema_version": "1",
   "name": "vault",
   "type": "provider",
-  "version": "v2.9.0",
+  "version": "v2.10.0",
   "provider": {
+    "add_address_to_env": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "If true, adds the value of the `address` argument to the Terraform process environment.",
+      "Default": {
+        "Type": "bool",
+        "Value": "false"
+      }
+    },
     "address": {
       "Type": "String",
       "Required": true,
@@ -1324,8 +1333,7 @@
         "Description": "ARN for an existing IAM policy the role should use.",
         "ConflictsWith": [
           "policy",
-          "policy_arn",
-          "role_arns"
+          "policy_arn"
         ],
         "Elem": {
           "Type": "SchemaElements",
@@ -1347,8 +1355,7 @@
         "Description": "ARNs of AWS roles allowed to be assumed. Only valid when credential_type is 'assumed_role'",
         "ConflictsWith": [
           "policy",
-          "policy_arn",
-          "policy_arns"
+          "policy_arn"
         ],
         "Elem": {
           "Type": "SchemaElements",
@@ -2033,7 +2040,8 @@
           "mysql_aurora",
           "mysql_legacy",
           "postgresql",
-          "oracle"
+          "oracle",
+          "elasticsearch"
         ],
         "IsBlock": true,
         "Elem": {
@@ -2121,6 +2129,45 @@
         "Optional": true,
         "Description": "A map of sensitive data to pass to the endpoint. Useful for templated connection strings."
       },
+      "elasticsearch": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Connection parameters for the elasticsearch-database-plugin.",
+        "MaxItems": 1,
+        "ConflictsWith": [
+          "cassandra",
+          "hana",
+          "mongodb",
+          "mssql",
+          "mysql",
+          "mysql_rds",
+          "mysql_aurora",
+          "mysql_legacy",
+          "postgresql",
+          "oracle"
+        ],
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "password": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The password to be used in the connection URL"
+            },
+            "url": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The URL for Elasticsearch's API"
+            },
+            "username": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The username to be used in the connection URL"
+            }
+          }
+        }
+      },
       "hana": {
         "Type": "List",
         "Optional": true,
@@ -2135,7 +2182,8 @@
           "mysql_aurora",
           "mysql_legacy",
           "postgresql",
-          "oracle"
+          "oracle",
+          "elasticsearch"
         ],
         "IsBlock": true,
         "Elem": {
@@ -2182,7 +2230,8 @@
           "mysql_aurora",
           "mysql_legacy",
           "postgresql",
-          "oracle"
+          "oracle",
+          "elasticsearch"
         ],
         "IsBlock": true,
         "Elem": {
@@ -2229,7 +2278,8 @@
           "mysql_aurora",
           "mysql_legacy",
           "postgresql",
-          "oracle"
+          "oracle",
+          "elasticsearch"
         ],
         "IsBlock": true,
         "Elem": {
@@ -2276,7 +2326,8 @@
           "mysql_aurora",
           "mysql_legacy",
           "postgresql",
-          "oracle"
+          "oracle",
+          "elasticsearch"
         ],
         "IsBlock": true,
         "Elem": {
@@ -2323,7 +2374,8 @@
           "mysql_rds",
           "mysql_legacy",
           "postgresql",
-          "oracle"
+          "oracle",
+          "elasticsearch"
         ],
         "IsBlock": true,
         "Elem": {
@@ -2370,7 +2422,8 @@
           "mysql_rds",
           "mysql_aurora",
           "postgresql",
-          "oracle"
+          "oracle",
+          "elasticsearch"
         ],
         "IsBlock": true,
         "Elem": {
@@ -2417,7 +2470,8 @@
           "mysql_aurora",
           "mysql_legacy",
           "postgresql",
-          "oracle"
+          "oracle",
+          "elasticsearch"
         ],
         "IsBlock": true,
         "Elem": {
@@ -2469,7 +2523,8 @@
           "mysql_rds",
           "mysql_aurora",
           "mysql_legacy",
-          "postgresql"
+          "postgresql",
+          "elasticsearch"
         ],
         "IsBlock": true,
         "Elem": {
@@ -2516,7 +2571,8 @@
           "mysql_rds",
           "mysql_aurora",
           "mysql_legacy",
-          "oracle"
+          "oracle",
+          "elasticsearch"
         ],
         "IsBlock": true,
         "Elem": {
@@ -6307,6 +6363,11 @@
           "Value": "token"
         }
       },
+      "encrypted_client_token": {
+        "Type": "String",
+        "Description": "The client token encrypted using the provided PGP key.",
+        "Computed": true
+      },
       "explicit_max_ttl": {
         "Type": "String",
         "Optional": true,
@@ -6343,6 +6404,11 @@
         "Type": "String",
         "Optional": true,
         "Description": "The period of the token."
+      },
+      "pgp_key": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The PGP key (base64 encoded) to encrypt the token."
       },
       "policies": {
         "Type": "Set",
@@ -6806,6 +6872,84 @@
         "Default": {
           "Type": "string",
           "Value": "creds"
+        }
+      }
+    },
+    "vault_azure_access_credentials": {
+      "backend": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Azure Secret Backend to read credentials from."
+      },
+      "client_id": {
+        "Type": "String",
+        "Description": "The client id for credentials to query the Azure APIs.",
+        "Computed": true
+      },
+      "client_secret": {
+        "Type": "String",
+        "Description": "The client secret for credentials to query the Azure APIs.",
+        "Computed": true
+      },
+      "lease_duration": {
+        "Type": "Int",
+        "Description": "Lease duration in seconds relative to the time in lease_start_time.",
+        "Computed": true
+      },
+      "lease_id": {
+        "Type": "String",
+        "Description": "Lease identifier assigned by vault.",
+        "Computed": true
+      },
+      "lease_renewable": {
+        "Type": "Bool",
+        "Description": "True if the duration of this lease can be extended through renewal.",
+        "Computed": true
+      },
+      "lease_start_time": {
+        "Type": "String",
+        "Description": "Time at which the lease was read, using the clock of the system where Terraform was running",
+        "Computed": true
+      },
+      "max_cred_validation_seconds": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "If 'validate_creds' is true, the number of seconds after which to give up validating credentials.",
+        "Default": {
+          "Type": "int",
+          "Value": "1200"
+        }
+      },
+      "num_seconds_between_tests": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "If 'validate_creds' is true, the number of seconds to wait between each test of generated credentials.",
+        "Default": {
+          "Type": "int",
+          "Value": "7"
+        }
+      },
+      "num_sequential_successes": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "If 'validate_creds' is true, the number of sequential successes required to validate generated credentials.",
+        "Default": {
+          "Type": "int",
+          "Value": "8"
+        }
+      },
+      "role": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Azure Secret Role to read credentials from."
+      },
+      "validate_creds": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether generated credentials should be validated before being returned.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
         }
       }
     },
