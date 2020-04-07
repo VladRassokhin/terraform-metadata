@@ -2,7 +2,7 @@
   ".schema_version": "1",
   "name": "google",
   "type": "provider",
-  "version": "v3.15.0",
+  "version": "v3.16.0",
   "provider": {
     "access_context_manager_custom_endpoint": {
       "Type": "String",
@@ -609,12 +609,38 @@
               }
             },
             "restricted_services": {
-              "Type": "List",
+              "Type": "Set",
               "Optional": true,
               "Description": "GCP services that are subject to the Service Perimeter\nrestrictions. Must contain a list of services. For example, if\n'storage.googleapis.com' is specified, access to the storage\nbuckets inside the perimeter must meet the perimeter's access\nrestrictions.",
               "Elem": {
                 "Type": "SchemaElements",
                 "ElementsType": "String"
+              }
+            },
+            "vpc_accessible_services": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Specifies how APIs are allowed to communicate within the Service\nPerimeter.",
+              "MaxItems": 1,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "allowed_services": {
+                    "Type": "Set",
+                    "Optional": true,
+                    "Description": "The list of APIs usable within the Service Perimeter.\nMust be empty unless 'enableRestriction' is True.",
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  },
+                  "enable_restriction": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Description": "Whether to restrict API calls within the Service Perimeter to the\nlist of APIs specified in 'allowedServices'."
+                  }
+                }
               }
             }
           }
@@ -3271,6 +3297,14 @@
         "update",
         "delete"
       ],
+      "autogenerate_revision_name": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
       "location": {
         "Type": "String",
         "Required": true,
@@ -4516,6 +4550,14 @@
         "Optional": true,
         "Computed": true
       },
+      "ingress_settings": {
+        "Type": "String",
+        "Optional": true,
+        "Default": {
+          "Type": "string",
+          "Value": "ALLOW_ALL"
+        }
+      },
       "labels": {
         "Type": "Map",
         "Optional": true
@@ -4597,6 +4639,11 @@
       "vpc_connector": {
         "Type": "String",
         "Optional": true
+      },
+      "vpc_connector_egress_settings": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
       }
     },
     "google_cloudfunctions_function_iam_binding": {
@@ -10391,6 +10438,7 @@
     "google_compute_reservation": {
       "__timeouts__": [
         "create",
+        "update",
         "delete"
       ],
       "commitment": {
@@ -14850,6 +14898,48 @@
           "ElementsType": "String"
         }
       },
+      "resource_usage_export_config": {
+        "Type": "List",
+        "Optional": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "bigquery_destination": {
+              "Type": "List",
+              "Required": true,
+              "MaxItems": 1,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "dataset_id": {
+                    "Type": "String",
+                    "Required": true
+                  }
+                }
+              }
+            },
+            "enable_network_egress_metering": {
+              "Type": "Bool",
+              "Optional": true,
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
+              }
+            },
+            "enable_resource_consumption_metering": {
+              "Type": "Bool",
+              "Optional": true,
+              "Default": {
+                "Type": "bool",
+                "Value": "true"
+              }
+            }
+          }
+        }
+      },
       "services_ipv4_cidr": {
         "Type": "String",
         "Computed": true
@@ -17060,7 +17150,7 @@
             "default_key_specs": {
               "Type": "List",
               "Optional": true,
-              "Description": "Specifies parameters that will be used for generating initial DnsKeys\nfor this ManagedZone. If you provide a spec for keySigning or zoneSigning,\nyou must also provide one for the other.",
+              "Description": "Specifies parameters that will be used for generating initial DnsKeys\nfor this ManagedZone. If you provide a spec for keySigning or zoneSigning,\nyou must also provide one for the other.\ndefault_key_specs can only be updated when the state is 'off'.",
               "Computed": true,
               "IsBlock": true,
               "Elem": {
@@ -17105,7 +17195,7 @@
             "non_existence": {
               "Type": "String",
               "Optional": true,
-              "Description": "Specifies the mechanism used to provide authenticated denial-of-existence responses.",
+              "Description": "Specifies the mechanism used to provide authenticated denial-of-existence responses.\nnon_existence can only be updated when the state is 'off'.",
               "Computed": true
             },
             "state": {
@@ -20885,6 +20975,28 @@
         "Description": "This value is the maximum time after a subscriber receives a message\nbefore the subscriber should acknowledge the message. After message\ndelivery but before the ack deadline expires and before the message is\nacknowledged, it is an outstanding message and will not be delivered\nagain during that time (on a best-effort basis).\n\nFor pull subscriptions, this value is used as the initial value for\nthe ack deadline. To override this value for a given message, call\nsubscriptions.modifyAckDeadline with the corresponding ackId if using\npull. The minimum custom deadline you can specify is 10 seconds. The\nmaximum custom deadline you can specify is 600 seconds (10 minutes).\nIf this parameter is 0, a default value of 10 seconds is used.\n\nFor push delivery, this value is also used to set the request timeout\nfor the call to the push endpoint.\n\nIf the subscriber never acknowledges the message, the Pub/Sub system\nwill eventually redeliver the message.",
         "Computed": true
       },
+      "dead_letter_policy": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "A policy that specifies the conditions for dead lettering messages in\nthis subscription. If dead_letter_policy is not set, dead lettering\nis disabled.\n\nThe Cloud Pub/Sub service account associated with this subscriptions's\nparent project (i.e.,\nservice-{project_number}@gcp-sa-pubsub.iam.gserviceaccount.com) must have\npermission to Acknowledge() messages on this subscription.",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "dead_letter_topic": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The name of the topic to which dead letter messages should be published.\nFormat is 'projects/{project}/topics/{topic}'.\n\nThe Cloud Pub/Sub service\\naccount associated with the enclosing subscription's\nparent project (i.e., \nservice-{project_number}@gcp-sa-pubsub.iam.gserviceaccount.com) must have\npermission to Publish() to this topic.\n\nThe operation will fail if the topic does not exist.\nUsers should ensure that there is a subscription attached to this topic\nsince messages published to a topic with no subscriptions are lost."
+            },
+            "max_delivery_attempts": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "The maximum number of delivery attempts for any message. The value must be\nbetween 5 and 100.\n\nThe number of delivery attempts is defined as 1 + (the sum of number of \nNACKs and number of times the acknowledgement deadline has been exceeded for the message).\n\nA NACK is any call to ModifyAckDeadline with a 0 deadline. Note that\nclient libraries may automatically extend ack_deadlines.\n\nThis field will be honored on a best effort basis.\n\nIf this parameter is 0, a default value of 5 is used."
+            }
+          }
+        }
+      },
       "expiration_policy": {
         "Type": "List",
         "Optional": true,
@@ -23855,6 +23967,10 @@
         "Type": "String",
         "Computed": true
       },
+      "ingress_settings": {
+        "Type": "String",
+        "Computed": true
+      },
       "labels": {
         "Type": "Map",
         "Computed": true
@@ -23917,6 +24033,10 @@
         "Computed": true
       },
       "vpc_connector": {
+        "Type": "String",
+        "Computed": true
+      },
+      "vpc_connector_egress_settings": {
         "Type": "String",
         "Computed": true
       }
@@ -26300,6 +26420,36 @@
           "ElementsType": "String"
         }
       },
+      "resource_usage_export_config": {
+        "Type": "List",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "bigquery_destination": {
+              "Type": "List",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "dataset_id": {
+                    "Type": "String",
+                    "Computed": true
+                  }
+                }
+              }
+            },
+            "enable_network_egress_metering": {
+              "Type": "Bool",
+              "Computed": true
+            },
+            "enable_resource_consumption_metering": {
+              "Type": "Bool",
+              "Computed": true
+            }
+          }
+        }
+      },
       "services_ipv4_cidr": {
         "Type": "String",
         "Computed": true
@@ -27042,6 +27192,29 @@
         "Type": "String",
         "Description": "Indicates whether this channel has been verified or not. On a ListNotificationChannels or GetNotificationChannel operation, this field is expected to be populated.If the value is UNVERIFIED, then it indicates that the channel is non-functioning (it both requires verification and lacks verification); otherwise, it is assumed that the channel works.If the channel is neither VERIFIED nor UNVERIFIED, it implies that the channel is of a type that does not require verification or that this specific channel has been exempted from verification because it was created prior to verification being required for channels of this type.This field cannot be modified using a standard UpdateNotificationChannel operation. To change the value of this field, you must call VerifyNotificationChannel.",
         "Computed": true
+      }
+    },
+    "google_monitoring_uptime_check_ips": {
+      "uptime_check_ips": {
+        "Type": "List",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "ip_address": {
+              "Type": "String",
+              "Computed": true
+            },
+            "location": {
+              "Type": "String",
+              "Computed": true
+            },
+            "region": {
+              "Type": "String",
+              "Computed": true
+            }
+          }
+        }
       }
     },
     "google_netblock_ip_ranges": {
