@@ -2,7 +2,7 @@
   ".schema_version": "1",
   "name": "openstack",
   "type": "provider",
-  "version": "v1.26.0",
+  "version": "v1.27.0",
   "provider": {
     "allow_reauth": {
       "Type": "Bool",
@@ -1108,6 +1108,14 @@
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
+            "detach_ports_before_destroy": {
+              "Type": "Bool",
+              "Optional": true,
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
+              }
+            },
             "ignore_resize_confirmation": {
               "Type": "Bool",
               "Optional": true,
@@ -1482,8 +1490,12 @@
         "Computed": true
       },
       "master_addresses": {
-        "Type": "String",
-        "Computed": true
+        "Type": "List",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       },
       "master_count": {
         "Type": "Int",
@@ -1501,8 +1513,12 @@
         "Computed": true
       },
       "node_addresses": {
-        "Type": "String",
-        "Computed": true
+        "Type": "List",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       },
       "node_count": {
         "Type": "Int",
@@ -2588,7 +2604,8 @@
         "Type": "String",
         "Optional": true,
         "ConflictsWith": [
-          "image_source_url"
+          "image_source_url",
+          "web_download"
         ]
       },
       "metadata": {
@@ -2669,10 +2686,9 @@
       "verify_checksum": {
         "Type": "Bool",
         "Optional": true,
-        "Default": {
-          "Type": "bool",
-          "Value": "true"
-        }
+        "ConflictsWith": [
+          "web_download"
+        ]
       },
       "visibility": {
         "Type": "String",
@@ -2681,6 +2697,14 @@
           "Type": "string",
           "Value": "private"
         }
+      },
+      "web_download": {
+        "Type": "Bool",
+        "Optional": true,
+        "ConflictsWith": [
+          "local_file_path",
+          "verify_checksum"
+        ]
       }
     },
     "openstack_keymanager_container_v1": {
@@ -2802,6 +2826,93 @@
         "Required": true
       },
       "updated_at": {
+        "Type": "String",
+        "Computed": true
+      }
+    },
+    "openstack_keymanager_order_v1": {
+      "__timeouts__": [
+        "create",
+        "delete"
+      ],
+      "container_ref": {
+        "Type": "String",
+        "Computed": true
+      },
+      "created": {
+        "Type": "String",
+        "Computed": true
+      },
+      "creator_id": {
+        "Type": "String",
+        "Computed": true
+      },
+      "meta": {
+        "Type": "List",
+        "Required": true,
+        "MaxItems": 1,
+        "MinItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "algorithm": {
+              "Type": "String",
+              "Required": true
+            },
+            "bit_length": {
+              "Type": "Int",
+              "Required": true
+            },
+            "expiration": {
+              "Type": "String",
+              "Optional": true
+            },
+            "mode": {
+              "Type": "String",
+              "Optional": true
+            },
+            "name": {
+              "Type": "String",
+              "Optional": true
+            },
+            "payload_content_type": {
+              "Type": "String",
+              "Optional": true
+            }
+          }
+        }
+      },
+      "order_ref": {
+        "Type": "String",
+        "Computed": true
+      },
+      "region": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "secret_ref": {
+        "Type": "String",
+        "Computed": true
+      },
+      "status": {
+        "Type": "String",
+        "Computed": true
+      },
+      "sub_status": {
+        "Type": "String",
+        "Computed": true
+      },
+      "sub_status_message": {
+        "Type": "String",
+        "Computed": true
+      },
+      "type": {
+        "Type": "String",
+        "Required": true
+      },
+      "updated": {
         "Type": "String",
         "Computed": true
       }
@@ -3295,6 +3406,68 @@
       },
       "weight": {
         "Type": "Int",
+        "Optional": true,
+        "Computed": true
+      }
+    },
+    "openstack_lb_members_v2": {
+      "__timeouts__": [
+        "create",
+        "update",
+        "delete"
+      ],
+      "member": {
+        "Type": "Set",
+        "Optional": true,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "address": {
+              "Type": "String",
+              "Required": true
+            },
+            "admin_state_up": {
+              "Type": "Bool",
+              "Optional": true,
+              "Default": {
+                "Type": "bool",
+                "Value": "true"
+              }
+            },
+            "id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "name": {
+              "Type": "String",
+              "Optional": true
+            },
+            "protocol_port": {
+              "Type": "Int",
+              "Required": true
+            },
+            "subnet_id": {
+              "Type": "String",
+              "Optional": true
+            },
+            "weight": {
+              "Type": "Int",
+              "Optional": true,
+              "Default": {
+                "Type": "int",
+                "Value": "1"
+              }
+            }
+          }
+        }
+      },
+      "pool_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "region": {
+        "Type": "String",
         "Optional": true,
         "Computed": true
       }
@@ -6284,8 +6457,12 @@
         "Computed": true
       },
       "master_addresses": {
-        "Type": "String",
-        "Computed": true
+        "Type": "List",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       },
       "master_count": {
         "Type": "Int",
@@ -6300,8 +6477,12 @@
         "Required": true
       },
       "node_addresses": {
-        "Type": "String",
-        "Computed": true
+        "Type": "List",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       },
       "node_count": {
         "Type": "Int",

@@ -2,7 +2,7 @@
   ".schema_version": "1",
   "name": "digitalocean",
   "type": "provider",
-  "version": "v1.15.1",
+  "version": "v1.16.0",
   "provider": {
     "api_endpoint": {
       "Type": "String",
@@ -15,6 +15,12 @@
       "Optional": true,
       "Description": "The access key ID for Spaces API operations.",
       "DefaultFunc": "ENV(SPACES_ACCESS_KEY_ID)"
+    },
+    "spaces_endpoint": {
+      "Type": "String",
+      "Required": true,
+      "Description": "The URL to use for the DigitalOcean Spaces API.",
+      "DefaultFunc": "ENV(SPACES_ENDPOINT_URL)"
     },
     "spaces_secret_key": {
       "Type": "String",
@@ -168,6 +174,11 @@
       },
       "private_host": {
         "Type": "String",
+        "Computed": true
+      },
+      "private_network_uuid": {
+        "Type": "String",
+        "Optional": true,
         "Computed": true
       },
       "private_uri": {
@@ -474,10 +485,7 @@
       "private_networking": {
         "Type": "Bool",
         "Optional": true,
-        "Default": {
-          "Type": "bool",
-          "Value": "false"
-        }
+        "Computed": true
       },
       "region": {
         "Type": "String",
@@ -535,6 +543,11 @@
           "Type": "SchemaElements",
           "ElementsType": "String"
         }
+      },
+      "vpc_uuid": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
       }
     },
     "digitalocean_droplet_snapshot": {
@@ -930,6 +943,11 @@
       "version": {
         "Type": "String",
         "Required": true
+      },
+      "vpc_uuid": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
       }
     },
     "digitalocean_kubernetes_node_pool": {
@@ -1203,6 +1221,11 @@
         "Type": "String",
         "Description": "the uniform resource name for the load balancer",
         "Computed": true
+      },
+      "vpc_uuid": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
       }
     },
     "digitalocean_project": {
@@ -1214,7 +1237,7 @@
       "description": {
         "Type": "String",
         "Optional": true,
-        "Description": "the descirption of the project",
+        "Description": "the description of the project",
         "Default": {
           "Type": "string"
         }
@@ -1401,6 +1424,71 @@
           "Value": "false"
         }
       },
+      "lifecycle_rule": {
+        "Type": "List",
+        "Optional": true,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "abort_incomplete_multipart_upload_days": {
+              "Type": "Int",
+              "Optional": true
+            },
+            "enabled": {
+              "Type": "Bool",
+              "Required": true
+            },
+            "expiration": {
+              "Type": "Set",
+              "Optional": true,
+              "MaxItems": 1,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "date": {
+                    "Type": "String",
+                    "Optional": true
+                  },
+                  "days": {
+                    "Type": "Int",
+                    "Optional": true
+                  },
+                  "expired_object_delete_marker": {
+                    "Type": "Bool",
+                    "Optional": true
+                  }
+                }
+              }
+            },
+            "id": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "noncurrent_version_expiration": {
+              "Type": "Set",
+              "Optional": true,
+              "MaxItems": 1,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "days": {
+                    "Type": "Int",
+                    "Optional": true
+                  }
+                }
+              }
+            },
+            "prefix": {
+              "Type": "String",
+              "Optional": true
+            }
+          }
+        }
+      },
       "name": {
         "Type": "String",
         "Required": true,
@@ -1419,6 +1507,121 @@
         "Type": "String",
         "Description": "the uniform resource name for the bucket",
         "Computed": true
+      },
+      "versioning": {
+        "Type": "List",
+        "Optional": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "enabled": {
+              "Type": "Bool",
+              "Optional": true,
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
+              }
+            }
+          }
+        }
+      }
+    },
+    "digitalocean_spaces_bucket_object": {
+      "acl": {
+        "Type": "String",
+        "Optional": true,
+        "Default": {
+          "Type": "string",
+          "Value": "private"
+        }
+      },
+      "bucket": {
+        "Type": "String",
+        "Required": true
+      },
+      "cache_control": {
+        "Type": "String",
+        "Optional": true
+      },
+      "content": {
+        "Type": "String",
+        "Optional": true,
+        "ConflictsWith": [
+          "source",
+          "content_base64"
+        ]
+      },
+      "content_base64": {
+        "Type": "String",
+        "Optional": true,
+        "ConflictsWith": [
+          "source",
+          "content"
+        ]
+      },
+      "content_disposition": {
+        "Type": "String",
+        "Optional": true
+      },
+      "content_encoding": {
+        "Type": "String",
+        "Optional": true
+      },
+      "content_language": {
+        "Type": "String",
+        "Optional": true
+      },
+      "content_type": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "etag": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "force_destroy": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "key": {
+        "Type": "String",
+        "Required": true
+      },
+      "metadata": {
+        "Type": "Map",
+        "Optional": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "region": {
+        "Type": "String",
+        "Required": true
+      },
+      "source": {
+        "Type": "String",
+        "Optional": true,
+        "ConflictsWith": [
+          "content",
+          "content_base64"
+        ]
+      },
+      "version_id": {
+        "Type": "String",
+        "Computed": true
+      },
+      "website_redirect": {
+        "Type": "String",
+        "Optional": true
       }
     },
     "digitalocean_ssh_key": {
@@ -1552,6 +1755,44 @@
         "Type": "String",
         "Required": true
       }
+    },
+    "digitalocean_vpc": {
+      "created_at": {
+        "Type": "String",
+        "Description": "The date and time of when the VPC was created",
+        "Computed": true
+      },
+      "default": {
+        "Type": "Bool",
+        "Description": "Whether or not the VPC is the default one for the region",
+        "Computed": true
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "A free-form description for the VPC"
+      },
+      "ip_range": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The range of IP addresses for the VPC in CIDR notation",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The name of the VPC"
+      },
+      "region": {
+        "Type": "String",
+        "Required": true,
+        "Description": "DigitalOcean region slug for the VPC's location"
+      },
+      "urn": {
+        "Type": "String",
+        "Description": "The uniform resource name (URN) for the VPC",
+        "Computed": true
+      }
     }
   },
   "data-sources": {
@@ -1679,6 +1920,10 @@
         "Type": "String",
         "Computed": true
       },
+      "private_network_uuid": {
+        "Type": "String",
+        "Computed": true
+      },
       "private_uri": {
         "Type": "String",
         "Computed": true
@@ -1741,7 +1986,7 @@
     "digitalocean_droplet": {
       "backups": {
         "Type": "Bool",
-        "Description": "whether the droplet has backups enabled",
+        "Description": "whether the Droplet has backups enabled",
         "Computed": true
       },
       "created_at": {
@@ -1751,13 +1996,13 @@
       },
       "disk": {
         "Type": "Int",
-        "Description": "the size of the droplets disk in gigabytes",
+        "Description": "the size of the Droplets disk in gigabytes",
         "Computed": true
       },
       "id": {
         "Type": "Int",
         "Optional": true,
-        "Description": "id of the droplet"
+        "Description": "id of the Droplet"
       },
       "image": {
         "Type": "String",
@@ -1766,67 +2011,67 @@
       },
       "ipv4_address": {
         "Type": "String",
-        "Description": "the droplets public ipv4 address",
+        "Description": "the Droplets public ipv4 address",
         "Computed": true
       },
       "ipv4_address_private": {
         "Type": "String",
-        "Description": "the droplets private ipv4 address",
+        "Description": "the Droplets private ipv4 address",
         "Computed": true
       },
       "ipv6": {
         "Type": "Bool",
-        "Description": "whether the droplet has ipv6 enabled",
+        "Description": "whether the Droplet has ipv6 enabled",
         "Computed": true
       },
       "ipv6_address": {
         "Type": "String",
-        "Description": "the droplets public ipv6 address",
+        "Description": "the Droplets public ipv6 address",
         "Computed": true
       },
       "ipv6_address_private": {
         "Type": "String",
-        "Description": "the droplets private ipv4 address",
+        "Description": "the Droplets private ipv4 address",
         "Computed": true
       },
       "locked": {
         "Type": "Bool",
-        "Description": "whether the droplet has been locked",
+        "Description": "whether the Droplet has been locked",
         "Computed": true
       },
       "memory": {
         "Type": "Int",
-        "Description": "memory of the droplet in megabytes",
+        "Description": "memory of the Droplet in megabytes",
         "Computed": true
       },
       "monitoring": {
         "Type": "Bool",
-        "Description": "whether the droplet has monitoring enabled",
+        "Description": "whether the Droplet has monitoring enabled",
         "Computed": true
       },
       "name": {
         "Type": "String",
         "Optional": true,
-        "Description": "name of the droplet"
+        "Description": "name of the Droplet"
       },
       "price_hourly": {
         "Type": "Float",
-        "Description": "the droplets hourly price",
+        "Description": "the Droplets hourly price",
         "Computed": true
       },
       "price_monthly": {
         "Type": "Float",
-        "Description": "the droplets monthly price",
+        "Description": "the Droplets monthly price",
         "Computed": true
       },
       "private_networking": {
         "Type": "Bool",
-        "Description": "whether the droplet has private networking enabled",
+        "Description": "whether the Droplet has private networking enabled",
         "Computed": true
       },
       "region": {
         "Type": "String",
-        "Description": "the region that the droplet instance is deployed in",
+        "Description": "the region that the Droplet instance is deployed in",
         "Computed": true
       },
       "size": {
@@ -1836,13 +2081,13 @@
       },
       "status": {
         "Type": "String",
-        "Description": "state of the droplet instance",
+        "Description": "state of the Droplet instance",
         "Computed": true
       },
       "tag": {
         "Type": "String",
         "Optional": true,
-        "Description": "unique tag of the droplet"
+        "Description": "unique tag of the Droplet"
       },
       "tags": {
         "Type": "Set",
@@ -1864,12 +2109,17 @@
       },
       "volume_ids": {
         "Type": "Set",
-        "Description": "list of volumes attached to the droplet",
+        "Description": "list of volumes attached to the Droplet",
         "Computed": true,
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
         }
+      },
+      "vpc_uuid": {
+        "Type": "String",
+        "Description": "UUID of the VPC in which the Droplet is located",
+        "Computed": true
       }
     },
     "digitalocean_droplet_snapshot": {
@@ -2342,6 +2592,10 @@
       "version": {
         "Type": "String",
         "Computed": true
+      },
+      "vpc_uuid": {
+        "Type": "String",
+        "Computed": true
       }
     },
     "digitalocean_kubernetes_versions": {
@@ -2527,6 +2781,11 @@
       "urn": {
         "Type": "String",
         "Description": "the uniform resource name for the load balancer",
+        "Computed": true
+      },
+      "vpc_uuid": {
+        "Type": "String",
+        "Description": "UUID of the VPC in which the load balancer is located",
         "Computed": true
       }
     },
@@ -3089,6 +3348,43 @@
         }
       },
       "volume_id": {
+        "Type": "String",
+        "Computed": true
+      }
+    },
+    "digitalocean_vpc": {
+      "created_at": {
+        "Type": "String",
+        "Computed": true
+      },
+      "default": {
+        "Type": "Bool",
+        "Computed": true
+      },
+      "description": {
+        "Type": "String",
+        "Computed": true
+      },
+      "id": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "ip_range": {
+        "Type": "String",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "region": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "urn": {
         "Type": "String",
         "Computed": true
       }
