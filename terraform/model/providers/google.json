@@ -2,7 +2,7 @@
   ".schema_version": "1",
   "name": "google",
   "type": "provider",
-  "version": "v3.16.0",
+  "version": "v3.17.0",
   "provider": {
     "access_context_manager_custom_endpoint": {
       "Type": "String",
@@ -228,6 +228,11 @@
       "Type": "String",
       "Optional": true,
       "DefaultFunc": "MENV(GOOGLE_MONITORING_CUSTOM_ENDPOINT)"
+    },
+    "os_login_custom_endpoint": {
+      "Type": "String",
+      "Optional": true,
+      "DefaultFunc": "MENV(GOOGLE_OS_LOGIN_CUSTOM_ENDPOINT)"
     },
     "project": {
       "Type": "String",
@@ -581,6 +586,71 @@
           "Value": "PERIMETER_TYPE_REGULAR"
         }
       },
+      "spec": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Proposed (or dry run) ServicePerimeter configuration.\nThis configuration allows to specify and test ServicePerimeter configuration\nwithout enforcing actual access restrictions. Only allowed to be set when\nthe 'useExplicitDryRunSpec' flag is set.",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "access_levels": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "A list of AccessLevel resource names that allow resources within\nthe ServicePerimeter to be accessed from the internet.\nAccessLevels listed must be in the same policy as this\nServicePerimeter. Referencing a nonexistent AccessLevel is a\nsyntax error. If no AccessLevel names are listed, resources within\nthe perimeter can only be accessed via GCP calls with request\norigins within the perimeter. For Service Perimeter Bridge, must\nbe empty.\n\nFormat: accessPolicies/{policy_id}/accessLevels/{access_level_name}",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "resources": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "A list of GCP resources that are inside of the service perimeter.\nCurrently only projects are allowed.\nFormat: projects/{project_number}",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "restricted_services": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "GCP services that are subject to the Service Perimeter\nrestrictions. Must contain a list of services. For example, if\n'storage.googleapis.com' is specified, access to the storage\nbuckets inside the perimeter must meet the perimeter's access\nrestrictions.",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "vpc_accessible_services": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Specifies how APIs are allowed to communicate within the Service\nPerimeter.",
+              "MaxItems": 1,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "allowed_services": {
+                    "Type": "List",
+                    "Optional": true,
+                    "Description": "The list of APIs usable within the Service Perimeter.\nMust be empty unless 'enableRestriction' is True.",
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  },
+                  "enable_restriction": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Description": "Whether to restrict API calls within the Service Perimeter to the\nlist of APIs specified in 'allowedServices'."
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
       "status": {
         "Type": "List",
         "Optional": true,
@@ -655,6 +725,11 @@
         "Type": "String",
         "Description": "Time the AccessPolicy was updated in UTC.",
         "Computed": true
+      },
+      "use_explicit_dry_run_spec": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Use explicit dry run spec flag. Ordinarily, a dry-run spec implicitly exists\nfor all Service Perimeters, and that spec is identical to the status for those\nService Perimeters. When this flag is set, it inhibits the generation of the\nimplicit spec, thereby allowing the user to explicitly provide a\nconfiguration (\"spec\") to use in a dry-run version of the Service Perimeter.\nThis allows the user to test changes to the enforced config (\"status\") without\nactually enforcing them. This testing is done through analyzing the differences\nbetween currently enforced and suggested restrictions. useExplicitDryRunSpec must\nbet set to True if any of the fields in the spec are set to non-default values."
       }
     },
     "google_access_context_manager_service_perimeter_resource": {
@@ -2234,6 +2309,79 @@
       "self_link": {
         "Type": "String",
         "Computed": true
+      }
+    },
+    "google_bigquery_dataset_access": {
+      "__timeouts__": [
+        "create",
+        "delete"
+      ],
+      "dataset_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "A unique ID for this dataset, without the project name. The ID\nmust contain only letters (a-z, A-Z), numbers (0-9), or\nunderscores (_). The maximum length is 1,024 characters."
+      },
+      "domain": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "A domain to grant access to. Any users signed in with the\ndomain specified will be granted the specified access"
+      },
+      "group_by_email": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "An email address of a Google Group to grant access to."
+      },
+      "iam_member": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Some other type of member that appears in the IAM Policy but isn't a user,\ngroup, domain, or special group. For example: 'allUsers'"
+      },
+      "project": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "role": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Describes the rights granted to the user specified by the other\nmember of the access object. Primitive, Predefined and custom\nroles are supported. Predefined roles that have equivalent\nprimitive roles are swapped by the API to their Primitive\ncounterparts, and will show a diff post-create. See\n[official docs](https://cloud.google.com/bigquery/docs/access-control)."
+      },
+      "special_group": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "A special group to grant access to. Possible values include:\n\n\n* 'projectOwners': Owners of the enclosing project.\n\n\n* 'projectReaders': Readers of the enclosing project.\n\n\n* 'projectWriters': Writers of the enclosing project.\n\n\n* 'allAuthenticatedUsers': All authenticated BigQuery users."
+      },
+      "user_by_email": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "An email address of a user to grant access to. For example:\nfred@example.com"
+      },
+      "view": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "A view from a different dataset to grant access to. Queries\nexecuted against that view will have read access to tables in\nthis dataset. The role field is not required when this field is\nset. If that view is updated by any user, access to the view\nneeds to be granted again via an update operation.",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "dataset_id": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The ID of the dataset containing this table."
+            },
+            "project_id": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The ID of the project containing this table."
+            },
+            "table_id": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The ID of the table. The ID must contain only letters (a-z,\nA-Z), numbers (0-9), or underscores (_). The maximum length\nis 1,024 characters."
+            }
+          }
+        }
       }
     },
     "google_bigquery_table": {
@@ -5936,7 +6084,7 @@
             "protocol": {
               "Type": "String",
               "Required": true,
-              "Description": "The IP protocol to which this rule applies. The protocol type is\nrequired when creating a firewall rule. This value can either be\none of the following well known protocol strings (tcp, udp,\nicmp, esp, ah, sctp), or the IP protocol number."
+              "Description": "The IP protocol to which this rule applies. The protocol type is\nrequired when creating a firewall rule. This value can either be\none of the following well known protocol strings (tcp, udp,\nicmp, esp, ah, sctp, ipip), or the IP protocol number."
             }
           }
         }
@@ -5969,7 +6117,7 @@
             "protocol": {
               "Type": "String",
               "Required": true,
-              "Description": "The IP protocol to which this rule applies. The protocol type is\nrequired when creating a firewall rule. This value can either be\none of the following well known protocol strings (tcp, udp,\nicmp, esp, ah, sctp), or the IP protocol number."
+              "Description": "The IP protocol to which this rule applies. The protocol type is\nrequired when creating a firewall rule. This value can either be\none of the following well known protocol strings (tcp, udp,\nicmp, esp, ah, sctp, ipip), or the IP protocol number."
             }
           }
         }
@@ -8782,12 +8930,17 @@
     "google_compute_interconnect_attachment": {
       "__timeouts__": [
         "create",
+        "update",
         "delete"
       ],
       "admin_enabled": {
         "Type": "Bool",
         "Optional": true,
-        "Description": "Whether the VLAN attachment is enabled or disabled.  When using\nPARTNER type this will Pre-Activate the interconnect attachment"
+        "Description": "Whether the VLAN attachment is enabled or disabled.  When using\nPARTNER type this will Pre-Activate the interconnect attachment",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
       },
       "bandwidth": {
         "Type": "String",
@@ -17118,6 +17271,122 @@
         "Description": "The time zone of this agent from the [time zone database](https://www.iana.org/time-zones), e.g., America/New_York,\nEurope/Paris."
       }
     },
+    "google_dialogflow_intent": {
+      "__timeouts__": [
+        "create",
+        "update",
+        "delete"
+      ],
+      "action": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of the action associated with the intent.\nNote: The action name must not contain whitespaces.",
+        "Computed": true
+      },
+      "default_response_platforms": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "The list of platforms for which the first responses will be copied from the messages in PLATFORM_UNSPECIFIED\n(i.e. default platform).",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "display_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The name of this intent to be displayed on the console."
+      },
+      "events": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "The collection of event names that trigger the intent. If the collection of input contexts is not empty, all of\nthe contexts must be present in the active user session for an event to trigger this intent. See the \n[events reference](https://cloud.google.com/dialogflow/docs/events-overview) for more details.",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "followup_intent_info": {
+        "Type": "List",
+        "Description": "Information about all followup intents that have this intent as a direct or indirect parent. We populate this field\nonly in the output.",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "followup_intent_name": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The unique identifier of the followup intent.\nFormat: projects/\u003cProject ID\u003e/agent/intents/\u003cIntent ID\u003e."
+            },
+            "parent_followup_intent_name": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The unique identifier of the followup intent's parent.\nFormat: projects/\u003cProject ID\u003e/agent/intents/\u003cIntent ID\u003e."
+            }
+          }
+        }
+      },
+      "input_context_names": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "The list of context names required for this intent to be triggered.\nFormat: projects/\u003cProject ID\u003e/agent/sessions/-/contexts/\u003cContext ID\u003e.",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "is_fallback": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Indicates whether this is a fallback intent.",
+        "Computed": true
+      },
+      "ml_disabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Indicates whether Machine Learning is disabled for the intent.\nNote: If mlDisabled setting is set to true, then this intent is not taken into account during inference in ML\nONLY match mode. Also, auto-markup in the UI is turned off.",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Description": "The unique identifier of this intent. \nFormat: projects/\u003cProject ID\u003e/agent/intents/\u003cIntent ID\u003e.",
+        "Computed": true
+      },
+      "parent_followup_intent_name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The unique identifier of the parent intent in the chain of followup intents.\nFormat: projects/\u003cProject ID\u003e/agent/intents/\u003cIntent ID\u003e.",
+        "Computed": true
+      },
+      "priority": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The priority of this intent. Higher numbers represent higher priorities.\n  - If the supplied value is unspecified or 0, the service translates the value to 500,000, which corresponds\n  to the Normal priority in the console.\n  - If the supplied value is negative, the intent is ignored in runtime detect intent requests.",
+        "Computed": true
+      },
+      "project": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "reset_contexts": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Indicates whether to delete all contexts in the current session when this intent is matched.",
+        "Computed": true
+      },
+      "root_followup_intent_name": {
+        "Type": "String",
+        "Description": "The unique identifier of the root intent in the chain of followup intents. It identifies the correct followup\nintents chain for this intent.\nFormat: projects/\u003cProject ID\u003e/agent/intents/\u003cIntent ID\u003e.",
+        "Computed": true
+      },
+      "webhook_state": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Indicates whether webhooks are enabled for the intent.\n* WEBHOOK_STATE_ENABLED: Webhook is enabled in the agent and in the intent.\n* WEBHOOK_STATE_ENABLED_FOR_SLOT_FILLING: Webhook is enabled in the agent and in the intent. Also, each slot\nfilling prompt is forwarded to the webhook.",
+        "Computed": true
+      }
+    },
     "google_dns_managed_zone": {
       "__timeouts__": [
         "create",
@@ -20592,6 +20861,33 @@
         "Computed": true
       }
     },
+    "google_os_login_ssh_public_key": {
+      "__timeouts__": [
+        "create",
+        "update",
+        "delete"
+      ],
+      "expiration_time_usec": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "An expiration time in microseconds since epoch."
+      },
+      "fingerprint": {
+        "Type": "String",
+        "Description": "The SHA-256 fingerprint of the SSH public key.",
+        "Computed": true
+      },
+      "key": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Public key text in SSH format, defined by RFC4253 section 6.6."
+      },
+      "user": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The user email."
+      }
+    },
     "google_project": {
       "__timeouts__": [
         "create",
@@ -22466,7 +22762,10 @@
                   "ipv4_enabled": {
                     "Type": "Bool",
                     "Optional": true,
-                    "Computed": true
+                    "Default": {
+                      "Type": "bool",
+                      "Value": "true"
+                    }
                   },
                   "private_network": {
                     "Type": "String",
