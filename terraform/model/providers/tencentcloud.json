@@ -2,7 +2,7 @@
   ".schema_version": "1",
   "name": "tencentcloud",
   "type": "provider",
-  "version": "v1.31.1",
+  "version": "v1.32.1",
   "provider": {
     "region": {
       "Type": "String",
@@ -1178,6 +1178,12 @@
         "Required": true,
         "Description": "ID of the CCN."
       },
+      "ccn_uin": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Uin of the ccn attached. Default is ``, which means the uin of this account. This parameter is used with case when attaching ccn of other account to the instance of this account. For now only support instance type `VPC`.",
+        "Computed": true
+      },
       "cidr_block": {
         "Type": "List",
         "Description": "A network address block of the instance that is attached.",
@@ -1231,6 +1237,11 @@
         "Type": "String",
         "Optional": true,
         "Description": "Domain name acceleration region.  Valid values are `mainland`, `overseas` and `global`."
+      },
+      "cname": {
+        "Type": "String",
+        "Description": "CNAME address of domain name.",
+        "Computed": true
       },
       "create_time": {
         "Type": "String",
@@ -1435,7 +1446,7 @@
       "service_type": {
         "Type": "String",
         "Required": true,
-        "Description": "Service type of Acceleration domain name. Valid values are `web`, `download` and `video`."
+        "Description": "Service type of Acceleration domain name. Valid values are `web`, `download` and `media`."
       },
       "status": {
         "Type": "String",
@@ -4634,6 +4645,15 @@
         "Description": "Expired time of the instance.",
         "Computed": true
       },
+      "force_delete": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Indicate whether to delete instance directly or not. Default is false. If set true, the instance will be permanently deleted instead of staying in recycle bin. Note: only works for `PREPAID` instance.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
       "hostname": {
         "Type": "String",
         "Optional": true,
@@ -4661,7 +4681,8 @@
       "instance_charge_type_prepaid_renew_flag": {
         "Type": "String",
         "Optional": true,
-        "Description": "When enabled, the CVM instance will be renew automatically when it reach the end of the prepaid tenancy. Valid values are `NOTIFY_AND_AUTO_RENEW`, `NOTIFY_AND_MANUAL_RENEW` and `DISABLE_NOTIFY_AND_MANUAL_RENEW`. NOTE: it only works when instance_charge_type is set to `PREPAID`."
+        "Description": "When enabled, the CVM instance will be renew automatically when it reach the end of the prepaid tenancy. Valid values are `NOTIFY_AND_AUTO_RENEW`, `NOTIFY_AND_MANUAL_RENEW` and `DISABLE_NOTIFY_AND_MANUAL_RENEW`. NOTE: it only works when instance_charge_type is set to `PREPAID`.",
+        "Computed": true
       },
       "instance_name": {
         "Type": "String",
@@ -5777,6 +5798,42 @@
               "Computed": true
             }
           }
+        }
+      }
+    },
+    "tencentcloud_kubernetes_cluster_attachment": {
+      "cluster_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "ID of the cluster."
+      },
+      "instance_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "ID of the CVM instance, this cvm will reinstall the system."
+      },
+      "key_ids": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "The key pair to use for the instance, it looks like skey-16jig7tx, it should be set if `password` not set.",
+        "MaxItems": 1,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "password": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Password to access, should be set if `key_ids` not set."
+      },
+      "security_groups": {
+        "Type": "Set",
+        "Description": "A list of security group ids after attach to cluster.",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
         }
       }
     },
@@ -7337,7 +7394,7 @@
       "zip_file": {
         "Type": "String",
         "Optional": true,
-        "Description": "Zip file of the SCF function, content is encoded by base64, conflict with `cos_bucket_name`, `cos_object_name`, `cos_bucket_region`.",
+        "Description": "Zip file of the SCF function, conflict with `cos_bucket_name`, `cos_object_name`, `cos_bucket_region`.",
         "ConflictsWith": [
           "cos_bucket_name",
           "cos_object_name",
@@ -16464,13 +16521,13 @@
             },
             "app_id": {
               "Type": "String",
-              "Optional": true,
-              "Description": "Id of the tcapplus application."
+              "Description": "Id of the tcapplus application.",
+              "Computed": true
             },
             "app_name": {
               "Type": "String",
-              "Optional": true,
-              "Description": "Name of the tcapplus application."
+              "Description": "Name of the tcapplus application.",
+              "Computed": true
             },
             "create_time": {
               "Type": "String",
