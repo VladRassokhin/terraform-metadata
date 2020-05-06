@@ -96,7 +96,8 @@ process_provider() {
   fi
 
   if output=$(git -C "$location" status --untracked-files=no --porcelain) && [[ -n "$output" ]]; then
-    echo "git working copy '$location' is not clear, cannot proceed"
+    mkdir -p "$CUR/logs"
+    echo "git working copy '$location' is not clear, cannot proceed" | tee "$CUR/logs/$name.log"
     echo "$name" >>"$CUR/failure.txt"
     return 2
   fi
