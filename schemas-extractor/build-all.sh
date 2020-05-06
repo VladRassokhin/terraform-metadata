@@ -63,8 +63,17 @@ echo "All providers updated"
 echo
 
 generate_one() {
-  go run generate-schema/generate-schema.go || echo "$1" >>"$2/failure.txt"
+  mkdir -p "$2/logs"
+  set +e
+  go run generate-schema/generate-schema.go 2>&1 | tee "$2/logs/$1.log"
+  ec=$?
+  if [[ $ec -eq 0 ]]; then
+    rm "$2/logs/$1.log"
+  else
+    echo "$1" >>"$2/failure.txt"
+  fi
   echo "Finished $1"
+  set -e
 }
 
 process_provider() {
@@ -87,7 +96,7 @@ process_provider() {
   fi
 
   if output=$(git -C "$location" status --untracked-files=no --porcelain) && [[ -n "$output" ]]; then
-    echo "git working copy is not clear, cannot proceed"
+    echo "git working copy '$location' is not clear, cannot proceed"
     echo "$name" >>"$CUR/failure.txt"
     return 2
   fi
