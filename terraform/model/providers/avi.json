@@ -2,7 +2,7 @@
   ".schema_version": "1",
   "name": "avi",
   "type": "provider",
-  "version": "v18.2.5",
+  "version": "v18.2.8",
   "provider": {
     "avi_api_timeout": {
       "Type": "Int",
@@ -1474,6 +1474,11 @@
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
+            "ip_mask": {
+              "Type": "Int",
+              "Optional": true,
+              "Computed": true
+            },
             "ip_persistent_timeout": {
               "Type": "Int",
               "Optional": true,
@@ -4691,6 +4696,14 @@
                 "Value": "false"
               }
             },
+            "enable_chunk_merge": {
+              "Type": "Bool",
+              "Optional": true,
+              "Default": {
+                "Type": "bool",
+                "Value": "true"
+              }
+            },
             "enable_fire_and_forget": {
               "Type": "Bool",
               "Optional": true,
@@ -4761,14 +4774,6 @@
               "Default": {
                 "Type": "bool",
                 "Value": "false"
-              }
-            },
-            "http_upstream_buffer_size": {
-              "Type": "Int",
-              "Optional": true,
-              "Default": {
-                "Type": "int",
-                "Value": "0"
               }
             },
             "httponly_enabled": {
@@ -4952,22 +4957,6 @@
                 "Value": "false"
               }
             },
-            "spdy_enabled": {
-              "Type": "Bool",
-              "Optional": true,
-              "Default": {
-                "Type": "bool",
-                "Value": "false"
-              }
-            },
-            "spdy_fwd_proxy_mode": {
-              "Type": "Bool",
-              "Optional": true,
-              "Default": {
-                "Type": "bool",
-                "Value": "false"
-              }
-            },
             "ssl_client_certificate_action": {
               "Type": "Set",
               "Optional": true,
@@ -5013,14 +5002,6 @@
               "Default": {
                 "Type": "string",
                 "Value": "SSL_CLIENT_CERTIFICATE_NONE"
-              }
-            },
-            "ssl_everywhere_enabled": {
-              "Type": "Bool",
-              "Optional": true,
-              "Default": {
-                "Type": "bool",
-                "Value": "false"
               }
             },
             "use_app_keepalive_timeout": {
@@ -6630,6 +6611,11 @@
               "Optional": true,
               "Computed": true
             },
+            "encryption_key_id": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
             "firewall_target_tags": {
               "Type": "List",
               "Optional": true,
@@ -7052,6 +7038,25 @@
               "Default": {
                 "Type": "bool",
                 "Value": "false"
+              }
+            },
+            "custom_se_image_properties": {
+              "Type": "List",
+              "Optional": true,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "name": {
+                    "Type": "String",
+                    "Required": true
+                  },
+                  "value": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  }
+                }
               }
             },
             "external_networks": {
@@ -7595,6 +7600,14 @@
                 "Value": "true"
               }
             },
+            "enable_route_ingress_hardening": {
+              "Type": "Bool",
+              "Optional": true,
+              "Default": {
+                "Type": "bool",
+                "Value": "true"
+              }
+            },
             "feproxy_vips_enable_proxy_arp": {
               "Type": "Bool",
               "Optional": true,
@@ -7726,6 +7739,86 @@
                 "Value": "true"
               }
             },
+            "persistent_volume_claim": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "routes": {
+              "Type": "List",
+              "Optional": true,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "if_name": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "network_namespace": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "string",
+                      "Value": "HOST_NAMESPACE"
+                    }
+                  },
+                  "nexthop": {
+                    "Type": "Set",
+                    "Optional": true,
+                    "Computed": true,
+                    "IsBlock": true,
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "addr": {
+                          "Type": "String",
+                          "Required": true
+                        },
+                        "type": {
+                          "Type": "String",
+                          "Required": true
+                        }
+                      }
+                    }
+                  },
+                  "subnet": {
+                    "Type": "Set",
+                    "Optional": true,
+                    "Computed": true,
+                    "IsBlock": true,
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "ip_addr": {
+                          "Type": "Set",
+                          "Required": true,
+                          "IsBlock": true,
+                          "Elem": {
+                            "Type": "SchemaInfo",
+                            "Info": {
+                              "addr": {
+                                "Type": "String",
+                                "Required": true
+                              },
+                              "type": {
+                                "Type": "String",
+                                "Required": true
+                              }
+                            }
+                          }
+                        },
+                        "mask": {
+                          "Type": "Int",
+                          "Required": true
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
             "sdn_overlay": {
               "Type": "Bool",
               "Optional": true,
@@ -7783,6 +7876,14 @@
                     "Computed": true
                   }
                 }
+              }
+            },
+            "se_namespace": {
+              "Type": "String",
+              "Optional": true,
+              "Default": {
+                "Type": "string",
+                "Value": "default"
               }
             },
             "se_pod_tolerations": {
@@ -7938,73 +8039,6 @@
                   "type": {
                     "Type": "String",
                     "Required": true
-                  }
-                }
-              }
-            },
-            "vip_next_hops": {
-              "Type": "List",
-              "Optional": true,
-              "IsBlock": true,
-              "Elem": {
-                "Type": "SchemaInfo",
-                "Info": {
-                  "if_name": {
-                    "Type": "String",
-                    "Optional": true,
-                    "Computed": true
-                  },
-                  "nexthop": {
-                    "Type": "Set",
-                    "Optional": true,
-                    "Computed": true,
-                    "IsBlock": true,
-                    "Elem": {
-                      "Type": "SchemaInfo",
-                      "Info": {
-                        "addr": {
-                          "Type": "String",
-                          "Required": true
-                        },
-                        "type": {
-                          "Type": "String",
-                          "Required": true
-                        }
-                      }
-                    }
-                  },
-                  "subnet": {
-                    "Type": "Set",
-                    "Optional": true,
-                    "Computed": true,
-                    "IsBlock": true,
-                    "Elem": {
-                      "Type": "SchemaInfo",
-                      "Info": {
-                        "ip_addr": {
-                          "Type": "Set",
-                          "Required": true,
-                          "IsBlock": true,
-                          "Elem": {
-                            "Type": "SchemaInfo",
-                            "Info": {
-                              "addr": {
-                                "Type": "String",
-                                "Required": true
-                              },
-                              "type": {
-                                "Type": "String",
-                                "Required": true
-                              }
-                            }
-                          }
-                        },
-                        "mask": {
-                          "Type": "Int",
-                          "Required": true
-                        }
-                      }
-                    }
                   }
                 }
               }
@@ -8881,6 +8915,14 @@
               "Elem": {
                 "Type": "SchemaInfo",
                 "Info": {
+                  "allow_admin_network_updates": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "bool",
+                      "Value": "false"
+                    }
+                  },
                   "allow_ip_forwarding": {
                     "Type": "Bool",
                     "Optional": true,
@@ -9086,6 +9128,14 @@
                       "Value": "3"
                     }
                   },
+                  "permission_scoped_shared_admin_networks": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "bool",
+                      "Value": "false"
+                    }
+                  },
                   "persistence_key_rotate_period": {
                     "Type": "Int",
                     "Optional": true,
@@ -9190,6 +9240,14 @@
                     "Default": {
                       "Type": "int",
                       "Value": "60"
+                    }
+                  },
+                  "seupgrade_copy_pool_size": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "int",
+                      "Value": "5"
                     }
                   },
                   "seupgrade_fabric_pool_size": {
@@ -9476,6 +9534,32 @@
       }
     },
     "avi_cluster": {
+      "cluster_state": {
+        "Type": "Set",
+        "Optional": true,
+        "Computed": true,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "progress": {
+              "Type": "Int",
+              "Optional": true,
+              "Computed": true
+            },
+            "state": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "up_since": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            }
+          }
+        }
+      },
       "name": {
         "Type": "String",
         "Required": true
@@ -9701,6 +9785,14 @@
       }
     },
     "avi_controllerproperties": {
+      "allow_admin_network_updates": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
       "allow_ip_forwarding": {
         "Type": "Bool",
         "Optional": true,
@@ -9906,6 +9998,14 @@
           "Value": "3"
         }
       },
+      "permission_scoped_shared_admin_networks": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
       "persistence_key_rotate_period": {
         "Type": "Int",
         "Optional": true,
@@ -10010,6 +10110,14 @@
         "Default": {
           "Type": "int",
           "Value": "60"
+        }
+      },
+      "seupgrade_copy_pool_size": {
+        "Type": "Int",
+        "Optional": true,
+        "Default": {
+          "Type": "int",
+          "Value": "5"
         }
       },
       "seupgrade_fabric_pool_size": {
@@ -11737,6 +11845,25 @@
                 }
               }
             },
+            "fallback_ip6": {
+              "Type": "Set",
+              "Optional": true,
+              "Computed": true,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "addr": {
+                    "Type": "String",
+                    "Required": true
+                  },
+                  "type": {
+                    "Type": "String",
+                    "Required": true
+                  }
+                }
+              }
+            },
             "type": {
               "Type": "String",
               "Optional": true,
@@ -11772,6 +11899,11 @@
               }
             },
             "consistent_hash_mask": {
+              "Type": "Int",
+              "Optional": true,
+              "Computed": true
+            },
+            "consistent_hash_mask6": {
               "Type": "Int",
               "Optional": true,
               "Computed": true
@@ -11936,6 +12068,14 @@
                     "Default": {
                       "Type": "int",
                       "Value": "1"
+                    }
+                  },
+                  "resolve_fqdn_to_v6": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "bool",
+                      "Value": "false"
                     }
                   },
                   "vs_uuid": {
@@ -12327,8 +12467,18 @@
       }
     },
     "avi_healthmonitor": {
+      "allow_duplicate_monitors": {
+        "Type": "Bool",
+        "Optional": true,
+        "Computed": true
+      },
       "description": {
         "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "disable_quickstart": {
+        "Type": "Bool",
         "Optional": true,
         "Computed": true
       },
@@ -15159,6 +15309,26 @@
                     "Type": "Bool",
                     "Optional": true,
                     "Computed": true
+                  },
+                  "reboot_list": {
+                    "Type": "List",
+                    "Optional": true,
+                    "IsBlock": true,
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "patch_version": {
+                          "Type": "String",
+                          "Optional": true,
+                          "Computed": true
+                        },
+                        "reboot": {
+                          "Type": "Bool",
+                          "Optional": true,
+                          "Computed": true
+                        }
+                      }
+                    }
                   }
                 }
               }
@@ -15170,6 +15340,11 @@
             }
           }
         }
+      },
+      "controller_patch_uuid": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
       },
       "migrations": {
         "Type": "Set",
@@ -15206,6 +15381,22 @@
               "Default": {
                 "Type": "int",
                 "Value": "2"
+              }
+            },
+            "rollback_controller_disk_space": {
+              "Type": "Int",
+              "Optional": true,
+              "Default": {
+                "Type": "int",
+                "Value": "2"
+              }
+            },
+            "rollback_se_disk_space": {
+              "Type": "Int",
+              "Optional": true,
+              "Default": {
+                "Type": "int",
+                "Value": "1"
               }
             },
             "se_host_min_free_disk_size": {
@@ -15321,6 +15512,26 @@
                     "Type": "Bool",
                     "Optional": true,
                     "Computed": true
+                  },
+                  "reboot_list": {
+                    "Type": "List",
+                    "Optional": true,
+                    "IsBlock": true,
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "patch_version": {
+                          "Type": "String",
+                          "Optional": true,
+                          "Computed": true
+                        },
+                        "reboot": {
+                          "Type": "Bool",
+                          "Optional": true,
+                          "Computed": true
+                        }
+                      }
+                    }
                   }
                 }
               }
@@ -15332,6 +15543,11 @@
             }
           }
         }
+      },
+      "se_patch_uuid": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
       },
       "status": {
         "Type": "String",
@@ -15347,6 +15563,14 @@
         "Type": "String",
         "Optional": true,
         "Computed": true
+      },
+      "uber_bundle": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
       },
       "uuid": {
         "Type": "String",
@@ -15939,6 +16163,41 @@
                 "Value": "default"
               }
             },
+            "extensible_attributes": {
+              "Type": "List",
+              "Optional": true,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "is_dynamic": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "bool",
+                      "Value": "false"
+                    }
+                  },
+                  "is_sensitive": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "bool",
+                      "Value": "false"
+                    }
+                  },
+                  "name": {
+                    "Type": "String",
+                    "Required": true
+                  },
+                  "value": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  }
+                }
+              }
+            },
             "ip_address": {
               "Type": "Set",
               "Required": true,
@@ -15969,44 +16228,88 @@
               "Type": "String",
               "Required": true
             },
-            "usable_domains": {
-              "Type": "List",
-              "Optional": true,
-              "Elem": {
-                "Type": "SchemaElements",
-                "ElementsType": "String"
-              }
-            },
-            "usable_subnets": {
+            "usable_alloc_subnets": {
               "Type": "List",
               "Optional": true,
               "IsBlock": true,
               "Elem": {
                 "Type": "SchemaInfo",
                 "Info": {
-                  "ip_addr": {
+                  "subnet": {
                     "Type": "Set",
-                    "Required": true,
+                    "Optional": true,
+                    "Computed": true,
                     "IsBlock": true,
                     "Elem": {
                       "Type": "SchemaInfo",
                       "Info": {
-                        "addr": {
-                          "Type": "String",
-                          "Required": true
+                        "ip_addr": {
+                          "Type": "Set",
+                          "Required": true,
+                          "IsBlock": true,
+                          "Elem": {
+                            "Type": "SchemaInfo",
+                            "Info": {
+                              "addr": {
+                                "Type": "String",
+                                "Required": true
+                              },
+                              "type": {
+                                "Type": "String",
+                                "Required": true
+                              }
+                            }
+                          }
                         },
-                        "type": {
-                          "Type": "String",
+                        "mask": {
+                          "Type": "Int",
                           "Required": true
                         }
                       }
                     }
                   },
-                  "mask": {
-                    "Type": "Int",
-                    "Required": true
+                  "subnet6": {
+                    "Type": "Set",
+                    "Optional": true,
+                    "Computed": true,
+                    "IsBlock": true,
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "ip_addr": {
+                          "Type": "Set",
+                          "Required": true,
+                          "IsBlock": true,
+                          "Elem": {
+                            "Type": "SchemaInfo",
+                            "Info": {
+                              "addr": {
+                                "Type": "String",
+                                "Required": true
+                              },
+                              "type": {
+                                "Type": "String",
+                                "Required": true
+                              }
+                            }
+                          }
+                        },
+                        "mask": {
+                          "Type": "Int",
+                          "Required": true
+                        }
+                      }
+                    }
                   }
                 }
+              }
+            },
+            "usable_domains": {
+              "Type": "List",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
               }
             },
             "username": {
@@ -17199,6 +17502,25 @@
           "Value": "true"
         }
       },
+      "labels": {
+        "Type": "List",
+        "Optional": true,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "key": {
+              "Type": "String",
+              "Required": true
+            },
+            "value": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            }
+          }
+        }
+      },
       "name": {
         "Type": "String",
         "Required": true
@@ -18036,6 +18358,74 @@
         "Computed": true
       },
       "vrf_ref": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      }
+    },
+    "avi_objectaccesspolicy": {
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "rules": {
+        "Type": "List",
+        "Optional": true,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "matches": {
+              "Type": "List",
+              "Optional": true,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "label_key": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "label_values": {
+                    "Type": "List",
+                    "Optional": true,
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  }
+                }
+              }
+            },
+            "name": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "obj_types": {
+              "Type": "List",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "privilege": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            }
+          }
+        }
+      },
+      "tenant_ref": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "uuid": {
         "Type": "String",
         "Optional": true,
         "Computed": true
@@ -22196,6 +22586,14 @@
                 "Value": "false"
               }
             },
+            "link_up": {
+              "Type": "Bool",
+              "Optional": true,
+              "Default": {
+                "Type": "bool",
+                "Value": "true"
+              }
+            },
             "linux_name": {
               "Type": "String",
               "Optional": true,
@@ -22599,6 +22997,14 @@
               "Default": {
                 "Type": "bool",
                 "Value": "false"
+              }
+            },
+            "link_up": {
+              "Type": "Bool",
+              "Optional": true,
+              "Default": {
+                "Type": "bool",
+                "Value": "true"
               }
             },
             "linux_name": {
@@ -23070,6 +23476,22 @@
           "Value": "50"
         }
       },
+      "core_shm_app_cache": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "core_shm_app_learning": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
       "cpu_reserve": {
         "Type": "Bool",
         "Optional": true,
@@ -23246,10 +23668,7 @@
       "enable_pcap_tx_ring": {
         "Type": "Bool",
         "Optional": true,
-        "Default": {
-          "Type": "bool",
-          "Value": "true"
-        }
+        "Computed": true
       },
       "ephemeral_portrange_end": {
         "Type": "Int",
@@ -23583,6 +24002,11 @@
           "Value": "10000"
         }
       },
+      "max_concurrent_external_hm": {
+        "Type": "Int",
+        "Optional": true,
+        "Computed": true
+      },
       "max_cpu_usage": {
         "Type": "Int",
         "Optional": true,
@@ -23605,6 +24029,14 @@
         "Default": {
           "Type": "int",
           "Value": "30"
+        }
+      },
+      "max_queues_per_vnic": {
+        "Type": "Int",
+        "Optional": true,
+        "Default": {
+          "Type": "int",
+          "Value": "1"
         }
       },
       "max_rules_per_lb": {
@@ -23795,6 +24227,14 @@
           "Value": "0"
         }
       },
+      "pcap_tx_mode": {
+        "Type": "String",
+        "Optional": true,
+        "Default": {
+          "Type": "string",
+          "Value": "PCAP_TX_AUTO"
+        }
+      },
       "per_app": {
         "Type": "Bool",
         "Optional": true,
@@ -23979,6 +24419,11 @@
           "Type": "bool",
           "Value": "true"
         }
+      },
+      "se_mtu": {
+        "Type": "Int",
+        "Optional": true,
+        "Computed": true
       },
       "se_name_prefix": {
         "Type": "String",
@@ -24527,7 +24972,7 @@
         "Optional": true,
         "Default": {
           "Type": "int",
-          "Value": "25"
+          "Value": "60"
         }
       },
       "vs_switchover_timeout": {
@@ -25858,6 +26303,14 @@
           }
         }
       },
+      "longest_match": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
       "name": {
         "Type": "String",
         "Required": true
@@ -25906,6 +26359,11 @@
               "Elem": {
                 "Type": "SchemaInfo",
                 "Info": {
+                  "assign_policy": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
                   "assign_role": {
                     "Type": "String",
                     "Optional": true,
@@ -25975,6 +26433,19 @@
                   },
                   "is_superuser": {
                     "Type": "Bool",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "object_access_policy_refs": {
+                    "Type": "List",
+                    "Optional": true,
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  },
+                  "policy_attribute_name": {
+                    "Type": "String",
                     "Optional": true,
                     "Computed": true
                   },
@@ -27037,11 +27508,6 @@
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
-            "bypass_secure_channel_must_checks": {
-              "Type": "Bool",
-              "Optional": true,
-              "Computed": true
-            },
             "sslkeyandcertificate_refs": {
               "Type": "List",
               "Optional": true,
@@ -27249,6 +27715,67 @@
       "name": {
         "Type": "String",
         "Required": true
+      },
+      "uuid": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      }
+    },
+    "avi_testsedatastorelevel1": {
+      "name": {
+        "Type": "String",
+        "Required": true
+      },
+      "tenant_ref": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "test_se_datastore_level_2_ref": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "uuid": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      }
+    },
+    "avi_testsedatastorelevel2": {
+      "name": {
+        "Type": "String",
+        "Required": true
+      },
+      "tenant_ref": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "test_se_datastore_level_3_refs": {
+        "Type": "List",
+        "Optional": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "uuid": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      }
+    },
+    "avi_testsedatastorelevel3": {
+      "name": {
+        "Type": "String",
+        "Required": true
+      },
+      "tenant_ref": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
       },
       "uuid": {
         "Type": "String",
@@ -27470,6 +27997,14 @@
                       "Value": "SUSPEND_UPGRADE_OPS_ON_ERROR"
                     }
                   },
+                  "disruptive": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "bool",
+                      "Value": "false"
+                    }
+                  },
                   "skip_suspended": {
                     "Type": "Bool",
                     "Optional": true,
@@ -27489,6 +28024,26 @@
         "Optional": true,
         "Computed": true
       },
+      "patch_list": {
+        "Type": "List",
+        "Optional": true,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "patch_image_ref": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "patch_version": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            }
+          }
+        }
+      },
       "patch_version": {
         "Type": "String",
         "Optional": true,
@@ -27504,6 +28059,26 @@
         "Optional": true,
         "Computed": true
       },
+      "previous_patch_list": {
+        "Type": "List",
+        "Optional": true,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "patch_image_ref": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "patch_version": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            }
+          }
+        }
+      },
       "previous_patch_version": {
         "Type": "String",
         "Optional": true,
@@ -27513,6 +28088,14 @@
         "Type": "String",
         "Optional": true,
         "Computed": true
+      },
+      "progress": {
+        "Type": "Int",
+        "Optional": true,
+        "Default": {
+          "Type": "int",
+          "Value": "0"
+        }
       },
       "se_upgrade_events": {
         "Type": "List",
@@ -28111,6 +28694,14 @@
                       "Type": "bool",
                       "Value": "false"
                     }
+                  },
+                  "sub_tasks": {
+                    "Type": "List",
+                    "Optional": true,
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
                   }
                 }
               }
@@ -28122,6 +28713,129 @@
             }
           }
         }
+      },
+      "upgrade_ops": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "uuid": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "version": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      }
+    },
+    "avi_upgradestatussummary": {
+      "enable_patch_rollback": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "enable_rollback": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "end_time": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "image_ref": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "node_type": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "obj_cloud_ref": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "patch_image_ref": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "start_time": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "state": {
+        "Type": "Set",
+        "Optional": true,
+        "Computed": true,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "last_changed_time": {
+              "Type": "Set",
+              "Optional": true,
+              "Computed": true,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "secs": {
+                    "Type": "Int",
+                    "Required": true
+                  },
+                  "usecs": {
+                    "Type": "Int",
+                    "Required": true
+                  }
+                }
+              }
+            },
+            "reason": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "state": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            }
+          }
+        }
+      },
+      "tasks_completed": {
+        "Type": "Int",
+        "Optional": true,
+        "Computed": true
+      },
+      "tenant_ref": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "total_tasks": {
+        "Type": "Int",
+        "Optional": true,
+        "Computed": true
       },
       "upgrade_ops": {
         "Type": "String",
@@ -31412,6 +32126,25 @@
           }
         }
       },
+      "labels": {
+        "Type": "List",
+        "Optional": true,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "key": {
+              "Type": "String",
+              "Required": true
+            },
+            "value": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            }
+          }
+        }
+      },
       "name": {
         "Type": "String",
         "Required": true
@@ -34398,7 +35131,7 @@
                     "Optional": true,
                     "Default": {
                       "Type": "int",
-                      "Value": "100"
+                      "Value": "500"
                     }
                   },
                   "min_hits_to_learn": {
@@ -35713,6 +36446,11 @@
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
+            "ip_mask": {
+              "Type": "Int",
+              "Optional": true,
+              "Computed": true
+            },
             "ip_persistent_timeout": {
               "Type": "Int",
               "Optional": true,
@@ -38914,6 +39652,14 @@
                 "Value": "false"
               }
             },
+            "enable_chunk_merge": {
+              "Type": "Bool",
+              "Optional": true,
+              "Default": {
+                "Type": "bool",
+                "Value": "true"
+              }
+            },
             "enable_fire_and_forget": {
               "Type": "Bool",
               "Optional": true,
@@ -38984,14 +39730,6 @@
               "Default": {
                 "Type": "bool",
                 "Value": "false"
-              }
-            },
-            "http_upstream_buffer_size": {
-              "Type": "Int",
-              "Optional": true,
-              "Default": {
-                "Type": "int",
-                "Value": "0"
               }
             },
             "httponly_enabled": {
@@ -39175,22 +39913,6 @@
                 "Value": "false"
               }
             },
-            "spdy_enabled": {
-              "Type": "Bool",
-              "Optional": true,
-              "Default": {
-                "Type": "bool",
-                "Value": "false"
-              }
-            },
-            "spdy_fwd_proxy_mode": {
-              "Type": "Bool",
-              "Optional": true,
-              "Default": {
-                "Type": "bool",
-                "Value": "false"
-              }
-            },
             "ssl_client_certificate_action": {
               "Type": "Set",
               "Optional": true,
@@ -39236,14 +39958,6 @@
               "Default": {
                 "Type": "string",
                 "Value": "SSL_CLIENT_CERTIFICATE_NONE"
-              }
-            },
-            "ssl_everywhere_enabled": {
-              "Type": "Bool",
-              "Optional": true,
-              "Default": {
-                "Type": "bool",
-                "Value": "false"
               }
             },
             "use_app_keepalive_timeout": {
@@ -40769,6 +41483,11 @@
               "Optional": true,
               "Computed": true
             },
+            "encryption_key_id": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
             "firewall_target_tags": {
               "Type": "List",
               "Optional": true,
@@ -41174,6 +41893,25 @@
               "Default": {
                 "Type": "bool",
                 "Value": "false"
+              }
+            },
+            "custom_se_image_properties": {
+              "Type": "List",
+              "Optional": true,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "name": {
+                    "Type": "String",
+                    "Required": true
+                  },
+                  "value": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  }
+                }
               }
             },
             "external_networks": {
@@ -41715,6 +42453,14 @@
                 "Value": "true"
               }
             },
+            "enable_route_ingress_hardening": {
+              "Type": "Bool",
+              "Optional": true,
+              "Default": {
+                "Type": "bool",
+                "Value": "true"
+              }
+            },
             "feproxy_vips_enable_proxy_arp": {
               "Type": "Bool",
               "Optional": true,
@@ -41846,6 +42592,86 @@
                 "Value": "true"
               }
             },
+            "persistent_volume_claim": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "routes": {
+              "Type": "List",
+              "Optional": true,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "if_name": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "network_namespace": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "string",
+                      "Value": "HOST_NAMESPACE"
+                    }
+                  },
+                  "nexthop": {
+                    "Type": "Set",
+                    "Optional": true,
+                    "Computed": true,
+                    "IsBlock": true,
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "addr": {
+                          "Type": "String",
+                          "Required": true
+                        },
+                        "type": {
+                          "Type": "String",
+                          "Required": true
+                        }
+                      }
+                    }
+                  },
+                  "subnet": {
+                    "Type": "Set",
+                    "Optional": true,
+                    "Computed": true,
+                    "IsBlock": true,
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "ip_addr": {
+                          "Type": "Set",
+                          "Required": true,
+                          "IsBlock": true,
+                          "Elem": {
+                            "Type": "SchemaInfo",
+                            "Info": {
+                              "addr": {
+                                "Type": "String",
+                                "Required": true
+                              },
+                              "type": {
+                                "Type": "String",
+                                "Required": true
+                              }
+                            }
+                          }
+                        },
+                        "mask": {
+                          "Type": "Int",
+                          "Required": true
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
             "sdn_overlay": {
               "Type": "Bool",
               "Optional": true,
@@ -41903,6 +42729,14 @@
                     "Computed": true
                   }
                 }
+              }
+            },
+            "se_namespace": {
+              "Type": "String",
+              "Optional": true,
+              "Default": {
+                "Type": "string",
+                "Value": "default"
               }
             },
             "se_pod_tolerations": {
@@ -42058,73 +42892,6 @@
                   "type": {
                     "Type": "String",
                     "Required": true
-                  }
-                }
-              }
-            },
-            "vip_next_hops": {
-              "Type": "List",
-              "Optional": true,
-              "IsBlock": true,
-              "Elem": {
-                "Type": "SchemaInfo",
-                "Info": {
-                  "if_name": {
-                    "Type": "String",
-                    "Optional": true,
-                    "Computed": true
-                  },
-                  "nexthop": {
-                    "Type": "Set",
-                    "Optional": true,
-                    "Computed": true,
-                    "IsBlock": true,
-                    "Elem": {
-                      "Type": "SchemaInfo",
-                      "Info": {
-                        "addr": {
-                          "Type": "String",
-                          "Required": true
-                        },
-                        "type": {
-                          "Type": "String",
-                          "Required": true
-                        }
-                      }
-                    }
-                  },
-                  "subnet": {
-                    "Type": "Set",
-                    "Optional": true,
-                    "Computed": true,
-                    "IsBlock": true,
-                    "Elem": {
-                      "Type": "SchemaInfo",
-                      "Info": {
-                        "ip_addr": {
-                          "Type": "Set",
-                          "Required": true,
-                          "IsBlock": true,
-                          "Elem": {
-                            "Type": "SchemaInfo",
-                            "Info": {
-                              "addr": {
-                                "Type": "String",
-                                "Required": true
-                              },
-                              "type": {
-                                "Type": "String",
-                                "Required": true
-                              }
-                            }
-                          }
-                        },
-                        "mask": {
-                          "Type": "Int",
-                          "Required": true
-                        }
-                      }
-                    }
                   }
                 }
               }
@@ -42968,6 +43735,14 @@
               "Elem": {
                 "Type": "SchemaInfo",
                 "Info": {
+                  "allow_admin_network_updates": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "bool",
+                      "Value": "false"
+                    }
+                  },
                   "allow_ip_forwarding": {
                     "Type": "Bool",
                     "Optional": true,
@@ -43173,6 +43948,14 @@
                       "Value": "3"
                     }
                   },
+                  "permission_scoped_shared_admin_networks": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "bool",
+                      "Value": "false"
+                    }
+                  },
                   "persistence_key_rotate_period": {
                     "Type": "Int",
                     "Optional": true,
@@ -43277,6 +44060,14 @@
                     "Default": {
                       "Type": "int",
                       "Value": "60"
+                    }
+                  },
+                  "seupgrade_copy_pool_size": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "int",
+                      "Value": "5"
                     }
                   },
                   "seupgrade_fabric_pool_size": {
@@ -43563,6 +44354,32 @@
       }
     },
     "avi_cluster": {
+      "cluster_state": {
+        "Type": "Set",
+        "Optional": true,
+        "Computed": true,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "progress": {
+              "Type": "Int",
+              "Optional": true,
+              "Computed": true
+            },
+            "state": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "up_since": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            }
+          }
+        }
+      },
       "name": {
         "Type": "String",
         "Optional": true,
@@ -43777,6 +44594,10 @@
       }
     },
     "avi_controllerproperties": {
+      "allow_admin_network_updates": {
+        "Type": "Bool",
+        "Computed": true
+      },
       "allow_ip_forwarding": {
         "Type": "Bool",
         "Computed": true
@@ -43881,6 +44702,10 @@
         "Type": "Int",
         "Computed": true
       },
+      "permission_scoped_shared_admin_networks": {
+        "Type": "Bool",
+        "Computed": true
+      },
       "persistence_key_rotate_period": {
         "Type": "Int",
         "Computed": true
@@ -43934,6 +44759,10 @@
         "Computed": true
       },
       "secure_channel_se_token_timeout": {
+        "Type": "Int",
+        "Computed": true
+      },
+      "seupgrade_copy_pool_size": {
         "Type": "Int",
         "Computed": true
       },
@@ -45516,6 +46345,25 @@
                 }
               }
             },
+            "fallback_ip6": {
+              "Type": "Set",
+              "Optional": true,
+              "Computed": true,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "addr": {
+                    "Type": "String",
+                    "Required": true
+                  },
+                  "type": {
+                    "Type": "String",
+                    "Required": true
+                  }
+                }
+              }
+            },
             "type": {
               "Type": "String",
               "Optional": true,
@@ -45546,6 +46394,11 @@
               }
             },
             "consistent_hash_mask": {
+              "Type": "Int",
+              "Optional": true,
+              "Computed": true
+            },
+            "consistent_hash_mask6": {
               "Type": "Int",
               "Optional": true,
               "Computed": true
@@ -45710,6 +46563,14 @@
                     "Default": {
                       "Type": "int",
                       "Value": "1"
+                    }
+                  },
+                  "resolve_fqdn_to_v6": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "bool",
+                      "Value": "false"
                     }
                   },
                   "vs_uuid": {
@@ -46067,8 +46928,16 @@
       }
     },
     "avi_healthmonitor": {
+      "allow_duplicate_monitors": {
+        "Type": "Bool",
+        "Computed": true
+      },
       "description": {
         "Type": "String",
+        "Computed": true
+      },
+      "disable_quickstart": {
+        "Type": "Bool",
         "Computed": true
       },
       "dns_monitor": {
@@ -48848,6 +49717,26 @@
                     "Type": "Bool",
                     "Optional": true,
                     "Computed": true
+                  },
+                  "reboot_list": {
+                    "Type": "List",
+                    "Optional": true,
+                    "IsBlock": true,
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "patch_version": {
+                          "Type": "String",
+                          "Optional": true,
+                          "Computed": true
+                        },
+                        "reboot": {
+                          "Type": "Bool",
+                          "Optional": true,
+                          "Computed": true
+                        }
+                      }
+                    }
                   }
                 }
               }
@@ -48859,6 +49748,10 @@
             }
           }
         }
+      },
+      "controller_patch_uuid": {
+        "Type": "String",
+        "Computed": true
       },
       "migrations": {
         "Type": "Set",
@@ -48893,6 +49786,22 @@
               "Default": {
                 "Type": "int",
                 "Value": "2"
+              }
+            },
+            "rollback_controller_disk_space": {
+              "Type": "Int",
+              "Optional": true,
+              "Default": {
+                "Type": "int",
+                "Value": "2"
+              }
+            },
+            "rollback_se_disk_space": {
+              "Type": "Int",
+              "Optional": true,
+              "Default": {
+                "Type": "int",
+                "Value": "1"
               }
             },
             "se_host_min_free_disk_size": {
@@ -49006,6 +49915,26 @@
                     "Type": "Bool",
                     "Optional": true,
                     "Computed": true
+                  },
+                  "reboot_list": {
+                    "Type": "List",
+                    "Optional": true,
+                    "IsBlock": true,
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "patch_version": {
+                          "Type": "String",
+                          "Optional": true,
+                          "Computed": true
+                        },
+                        "reboot": {
+                          "Type": "Bool",
+                          "Optional": true,
+                          "Computed": true
+                        }
+                      }
+                    }
                   }
                 }
               }
@@ -49018,6 +49947,10 @@
           }
         }
       },
+      "se_patch_uuid": {
+        "Type": "String",
+        "Computed": true
+      },
       "status": {
         "Type": "String",
         "Computed": true
@@ -49029,6 +49962,10 @@
       },
       "type": {
         "Type": "String",
+        "Computed": true
+      },
+      "uber_bundle": {
+        "Type": "Bool",
         "Computed": true
       },
       "uuid": {
@@ -49601,6 +50538,41 @@
                 "Value": "default"
               }
             },
+            "extensible_attributes": {
+              "Type": "List",
+              "Optional": true,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "is_dynamic": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "bool",
+                      "Value": "false"
+                    }
+                  },
+                  "is_sensitive": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "bool",
+                      "Value": "false"
+                    }
+                  },
+                  "name": {
+                    "Type": "String",
+                    "Required": true
+                  },
+                  "value": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  }
+                }
+              }
+            },
             "ip_address": {
               "Type": "Set",
               "Required": true,
@@ -49631,44 +50603,88 @@
               "Type": "String",
               "Required": true
             },
-            "usable_domains": {
-              "Type": "List",
-              "Optional": true,
-              "Elem": {
-                "Type": "SchemaElements",
-                "ElementsType": "String"
-              }
-            },
-            "usable_subnets": {
+            "usable_alloc_subnets": {
               "Type": "List",
               "Optional": true,
               "IsBlock": true,
               "Elem": {
                 "Type": "SchemaInfo",
                 "Info": {
-                  "ip_addr": {
+                  "subnet": {
                     "Type": "Set",
-                    "Required": true,
+                    "Optional": true,
+                    "Computed": true,
                     "IsBlock": true,
                     "Elem": {
                       "Type": "SchemaInfo",
                       "Info": {
-                        "addr": {
-                          "Type": "String",
-                          "Required": true
+                        "ip_addr": {
+                          "Type": "Set",
+                          "Required": true,
+                          "IsBlock": true,
+                          "Elem": {
+                            "Type": "SchemaInfo",
+                            "Info": {
+                              "addr": {
+                                "Type": "String",
+                                "Required": true
+                              },
+                              "type": {
+                                "Type": "String",
+                                "Required": true
+                              }
+                            }
+                          }
                         },
-                        "type": {
-                          "Type": "String",
+                        "mask": {
+                          "Type": "Int",
                           "Required": true
                         }
                       }
                     }
                   },
-                  "mask": {
-                    "Type": "Int",
-                    "Required": true
+                  "subnet6": {
+                    "Type": "Set",
+                    "Optional": true,
+                    "Computed": true,
+                    "IsBlock": true,
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "ip_addr": {
+                          "Type": "Set",
+                          "Required": true,
+                          "IsBlock": true,
+                          "Elem": {
+                            "Type": "SchemaInfo",
+                            "Info": {
+                              "addr": {
+                                "Type": "String",
+                                "Required": true
+                              },
+                              "type": {
+                                "Type": "String",
+                                "Required": true
+                              }
+                            }
+                          }
+                        },
+                        "mask": {
+                          "Type": "Int",
+                          "Required": true
+                        }
+                      }
+                    }
                   }
                 }
+              }
+            },
+            "usable_domains": {
+              "Type": "List",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
               }
             },
             "username": {
@@ -50827,6 +51843,24 @@
         "Type": "Bool",
         "Computed": true
       },
+      "labels": {
+        "Type": "List",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "key": {
+              "Type": "String",
+              "Required": true
+            },
+            "value": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            }
+          }
+        }
+      },
       "name": {
         "Type": "String",
         "Optional": true,
@@ -51644,6 +52678,73 @@
       },
       "vrf_ref": {
         "Type": "String",
+        "Computed": true
+      }
+    },
+    "avi_objectaccesspolicy": {
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "rules": {
+        "Type": "List",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "matches": {
+              "Type": "List",
+              "Optional": true,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "label_key": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "label_values": {
+                    "Type": "List",
+                    "Optional": true,
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  }
+                }
+              }
+            },
+            "name": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "obj_types": {
+              "Type": "List",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "privilege": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            }
+          }
+        }
+      },
+      "tenant_ref": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "uuid": {
+        "Type": "String",
+        "Optional": true,
         "Computed": true
       }
     },
@@ -55509,6 +56610,14 @@
                 "Value": "false"
               }
             },
+            "link_up": {
+              "Type": "Bool",
+              "Optional": true,
+              "Default": {
+                "Type": "bool",
+                "Value": "true"
+              }
+            },
             "linux_name": {
               "Type": "String",
               "Optional": true,
@@ -55903,6 +57012,14 @@
               "Default": {
                 "Type": "bool",
                 "Value": "false"
+              }
+            },
+            "link_up": {
+              "Type": "Bool",
+              "Optional": true,
+              "Default": {
+                "Type": "bool",
+                "Value": "true"
               }
             },
             "linux_name": {
@@ -56306,6 +57423,14 @@
         "Type": "Int",
         "Computed": true
       },
+      "core_shm_app_cache": {
+        "Type": "Bool",
+        "Computed": true
+      },
+      "core_shm_app_learning": {
+        "Type": "Bool",
+        "Computed": true
+      },
       "cpu_reserve": {
         "Type": "Bool",
         "Computed": true
@@ -56682,6 +57807,10 @@
         "Type": "Int",
         "Computed": true
       },
+      "max_concurrent_external_hm": {
+        "Type": "Int",
+        "Computed": true
+      },
       "max_cpu_usage": {
         "Type": "Int",
         "Computed": true
@@ -56691,6 +57820,10 @@
         "Computed": true
       },
       "max_public_ips_per_lb": {
+        "Type": "Int",
+        "Computed": true
+      },
+      "max_queues_per_vnic": {
         "Type": "Int",
         "Computed": true
       },
@@ -56814,6 +57947,10 @@
         "Type": "Int",
         "Computed": true
       },
+      "pcap_tx_mode": {
+        "Type": "String",
+        "Computed": true
+      },
       "per_app": {
         "Type": "Bool",
         "Computed": true
@@ -56932,6 +58069,10 @@
       },
       "se_lro": {
         "Type": "Bool",
+        "Computed": true
+      },
+      "se_mtu": {
+        "Type": "Int",
         "Computed": true
       },
       "se_name_prefix": {
@@ -58555,6 +59696,10 @@
           }
         }
       },
+      "longest_match": {
+        "Type": "Bool",
+        "Computed": true
+      },
       "name": {
         "Type": "String",
         "Optional": true,
@@ -58602,6 +59747,11 @@
               "Elem": {
                 "Type": "SchemaInfo",
                 "Info": {
+                  "assign_policy": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
                   "assign_role": {
                     "Type": "String",
                     "Optional": true,
@@ -58671,6 +59821,19 @@
                   },
                   "is_superuser": {
                     "Type": "Bool",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "object_access_policy_refs": {
+                    "Type": "List",
+                    "Optional": true,
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  },
+                  "policy_attribute_name": {
+                    "Type": "String",
                     "Optional": true,
                     "Computed": true
                   },
@@ -59707,11 +60870,6 @@
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
-            "bypass_secure_channel_must_checks": {
-              "Type": "Bool",
-              "Optional": true,
-              "Computed": true
-            },
             "sslkeyandcertificate_refs": {
               "Type": "List",
               "Optional": true,
@@ -59903,6 +61061,69 @@
         "Computed": true
       },
       "name": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "uuid": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      }
+    },
+    "avi_testsedatastorelevel1": {
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "tenant_ref": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "test_se_datastore_level_2_ref": {
+        "Type": "String",
+        "Computed": true
+      },
+      "uuid": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      }
+    },
+    "avi_testsedatastorelevel2": {
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "tenant_ref": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "test_se_datastore_level_3_refs": {
+        "Type": "List",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "uuid": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      }
+    },
+    "avi_testsedatastorelevel3": {
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "tenant_ref": {
         "Type": "String",
         "Optional": true,
         "Computed": true
@@ -60107,6 +61328,14 @@
                       "Value": "SUSPEND_UPGRADE_OPS_ON_ERROR"
                     }
                   },
+                  "disruptive": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "bool",
+                      "Value": "false"
+                    }
+                  },
                   "skip_suspended": {
                     "Type": "Bool",
                     "Optional": true,
@@ -60125,6 +61354,25 @@
         "Type": "String",
         "Computed": true
       },
+      "patch_list": {
+        "Type": "List",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "patch_image_ref": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "patch_version": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            }
+          }
+        }
+      },
       "patch_version": {
         "Type": "String",
         "Computed": true
@@ -60137,12 +61385,35 @@
         "Type": "String",
         "Computed": true
       },
+      "previous_patch_list": {
+        "Type": "List",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "patch_image_ref": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "patch_version": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            }
+          }
+        }
+      },
       "previous_patch_version": {
         "Type": "String",
         "Computed": true
       },
       "previous_version": {
         "Type": "String",
+        "Computed": true
+      },
+      "progress": {
+        "Type": "Int",
         "Computed": true
       },
       "se_upgrade_events": {
@@ -60732,6 +62003,14 @@
                       "Type": "bool",
                       "Value": "false"
                     }
+                  },
+                  "sub_tasks": {
+                    "Type": "List",
+                    "Optional": true,
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
                   }
                 }
               }
@@ -60743,6 +62022,109 @@
             }
           }
         }
+      },
+      "upgrade_ops": {
+        "Type": "String",
+        "Computed": true
+      },
+      "uuid": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "version": {
+        "Type": "String",
+        "Computed": true
+      }
+    },
+    "avi_upgradestatussummary": {
+      "enable_patch_rollback": {
+        "Type": "Bool",
+        "Computed": true
+      },
+      "enable_rollback": {
+        "Type": "Bool",
+        "Computed": true
+      },
+      "end_time": {
+        "Type": "String",
+        "Computed": true
+      },
+      "image_ref": {
+        "Type": "String",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "node_type": {
+        "Type": "String",
+        "Computed": true
+      },
+      "obj_cloud_ref": {
+        "Type": "String",
+        "Computed": true
+      },
+      "patch_image_ref": {
+        "Type": "String",
+        "Computed": true
+      },
+      "start_time": {
+        "Type": "String",
+        "Computed": true
+      },
+      "state": {
+        "Type": "Set",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "last_changed_time": {
+              "Type": "Set",
+              "Optional": true,
+              "Computed": true,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "secs": {
+                    "Type": "Int",
+                    "Required": true
+                  },
+                  "usecs": {
+                    "Type": "Int",
+                    "Required": true
+                  }
+                }
+              }
+            },
+            "reason": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "state": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            }
+          }
+        }
+      },
+      "tasks_completed": {
+        "Type": "Int",
+        "Computed": true
+      },
+      "tenant_ref": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "total_tasks": {
+        "Type": "Int",
+        "Computed": true
       },
       "upgrade_ops": {
         "Type": "String",
@@ -63829,6 +65211,24 @@
           }
         }
       },
+      "labels": {
+        "Type": "List",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "key": {
+              "Type": "String",
+              "Required": true
+            },
+            "value": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            }
+          }
+        }
+      },
       "name": {
         "Type": "String",
         "Optional": true,
@@ -66746,7 +68146,7 @@
                     "Optional": true,
                     "Default": {
                       "Type": "int",
-                      "Value": "100"
+                      "Value": "500"
                     }
                   },
                   "min_hits_to_learn": {

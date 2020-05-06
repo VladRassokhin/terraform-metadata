@@ -2,76 +2,19 @@
   ".schema_version": "1",
   "name": "helm",
   "type": "provider",
-  "version": "v0.10.2",
+  "version": "v1.2.0",
   "provider": {
-    "automount_service_account_token": {
-      "Type": "Bool",
-      "Optional": true,
-      "Description": "Auto-mount the given service account to tiller.",
-      "Default": {
-        "Type": "bool",
-        "Value": "true"
-      }
-    },
-    "ca_certificate": {
-      "Type": "String",
-      "Optional": true,
-      "Description": "PEM-encoded root certificates bundle for TLS authentication."
-    },
-    "client_certificate": {
-      "Type": "String",
-      "Optional": true,
-      "Description": "PEM-encoded client certificate for TLS authentication."
-    },
-    "client_key": {
-      "Type": "String",
-      "Optional": true,
-      "Description": "PEM-encoded client certificate key for TLS authentication."
-    },
     "debug": {
       "Type": "Bool",
       "Optional": true,
-      "Description": "Debug indicates whether or not Helm is running in Debug mode."
+      "Description": "Debug indicates whether or not Helm is running in Debug mode.",
+      "DefaultFunc": "ENV(HELM_DEBUG)"
     },
-    "enable_tls": {
-      "Type": "Bool",
-      "Optional": true,
-      "Description": "Enables TLS communications with the Tiller."
-    },
-    "home": {
+    "helm_driver": {
       "Type": "String",
-      "Required": true,
-      "Description": "Set an alternative location for Helm files. By default, these are stored in '~/.helm'.",
-      "DefaultFunc": "ENV(HELM_HOME)"
-    },
-    "host": {
-      "Type": "String",
-      "Required": true,
-      "Description": "Set an alternative Tiller host. The format is host:port.",
-      "DefaultFunc": "ENV(HELM_HOST)"
-    },
-    "init_helm_home": {
-      "Type": "Bool",
       "Optional": true,
-      "Description": "Initialize Helm home directory if it is not already initialized, defaults to true.",
-      "Default": {
-        "Type": "bool",
-        "Value": "true"
-      }
-    },
-    "insecure": {
-      "Type": "Bool",
-      "Optional": true,
-      "Description": "Whether server should be accessed without verifying the TLS certificate."
-    },
-    "install_tiller": {
-      "Type": "Bool",
-      "Optional": true,
-      "Description": "Install Tiller if it is not already installed.",
-      "Default": {
-        "Type": "bool",
-        "Value": "true"
-      }
+      "Description": "The backend storage driver. Values are: configmap, secret, memory, sql",
+      "DefaultFunc": "ENV(HELM_DRIVER)"
     },
     "kubernetes": {
       "Type": "List",
@@ -85,140 +28,211 @@
           "client_certificate": {
             "Type": "String",
             "Optional": true,
-            "Description": "PEM-encoded client certificate for TLS authentication. Can be sourced from `KUBE_CLIENT_CERT_DATA`.",
+            "Description": "PEM-encoded client certificate for TLS authentication.",
             "DefaultFunc": "ENV(KUBE_CLIENT_CERT_DATA)"
           },
           "client_key": {
             "Type": "String",
             "Optional": true,
-            "Description": "PEM-encoded client certificate key for TLS authentication. Can be sourced from `KUBE_CLIENT_KEY_DATA`.",
+            "Description": "PEM-encoded client certificate key for TLS authentication.",
             "DefaultFunc": "ENV(KUBE_CLIENT_KEY_DATA)"
           },
           "cluster_ca_certificate": {
             "Type": "String",
             "Optional": true,
-            "Description": "PEM-encoded root certificates bundle for TLS authentication. Can be sourced from `KUBE_CLUSTER_CA_CERT_DATA`.",
+            "Description": "PEM-encoded root certificates bundle for TLS authentication.",
             "DefaultFunc": "ENV(KUBE_CLUSTER_CA_CERT_DATA)"
           },
           "config_context": {
             "Type": "String",
             "Optional": true,
-            "Description": "Context to choose from the config file. Can be sourced from `KUBE_CTX`.",
             "DefaultFunc": "ENV(KUBE_CTX)"
+          },
+          "config_context_auth_info": {
+            "Type": "String",
+            "Optional": true,
+            "DefaultFunc": "ENV(KUBE_CTX_AUTH_INFO)"
+          },
+          "config_context_cluster": {
+            "Type": "String",
+            "Optional": true,
+            "DefaultFunc": "ENV(KUBE_CTX_CLUSTER)"
           },
           "config_path": {
             "Type": "String",
             "Optional": true,
-            "Description": "Path to the kube config file, defaults to ~/.kube/config. Can be sourced from `KUBE_CONFIG`.",
+            "Description": "Path to the kube config file, defaults to ~/.kube/config",
             "DefaultFunc": "MENV(KUBE_CONFIG,KUBECONFIG)"
+          },
+          "exec": {
+            "Type": "List",
+            "Optional": true,
+            "MaxItems": 1,
+            "IsBlock": true,
+            "Elem": {
+              "Type": "SchemaInfo",
+              "Info": {
+                "api_version": {
+                  "Type": "String",
+                  "Required": true
+                },
+                "args": {
+                  "Type": "List",
+                  "Optional": true,
+                  "Elem": {
+                    "Type": "SchemaElements",
+                    "ElementsType": "String"
+                  }
+                },
+                "command": {
+                  "Type": "String",
+                  "Required": true
+                },
+                "env": {
+                  "Type": "Map",
+                  "Optional": true,
+                  "Elem": {
+                    "Type": "SchemaElements",
+                    "ElementsType": "String"
+                  }
+                }
+              }
+            }
           },
           "host": {
             "Type": "String",
             "Optional": true,
-            "Description": "The hostname (in form of URI) of Kubernetes master. Can be sourced from `KUBE_HOST`.",
+            "Description": "The hostname (in form of URI) of Kubernetes master.",
             "DefaultFunc": "ENV(KUBE_HOST)"
-          },
-          "in_cluster": {
-            "Type": "Bool",
-            "Optional": true,
-            "Description": "Retrieve config from Kubernetes cluster."
           },
           "insecure": {
             "Type": "Bool",
             "Optional": true,
-            "Description": "Whether server should be accessed without verifying the TLS certificate. Can be sourced from `KUBE_INSECURE`.",
+            "Description": "Whether server should be accessed without verifying the TLS certificate.",
             "DefaultFunc": "ENV(KUBE_INSECURE)"
           },
           "load_config_file": {
             "Type": "Bool",
             "Optional": true,
-            "Description": "By default the local config (~/.kube/config) is loaded when you use this provider. This option at false disable this behaviour.",
+            "Description": "Load local kubeconfig.",
             "DefaultFunc": "ENV(KUBE_LOAD_CONFIG_FILE)"
           },
           "password": {
             "Type": "String",
             "Optional": true,
-            "Description": "The password to use for HTTP basic authentication when accessing the Kubernetes master endpoint. Can be sourced from `KUBE_PASSWORD`.",
+            "Description": "The password to use for HTTP basic authentication when accessing the Kubernetes master endpoint.",
             "DefaultFunc": "ENV(KUBE_PASSWORD)"
           },
           "token": {
             "Type": "String",
             "Optional": true,
-            "Description": "The bearer token to use for authentication when accessing the Kubernetes master endpoint. Can be sourced from `KUBE_BEARER_TOKEN`.",
-            "DefaultFunc": "ENV(KUBE_BEARER_TOKEN)"
+            "Description": "Token to authenticate an service account",
+            "DefaultFunc": "ENV(KUBE_TOKEN)"
           },
           "username": {
             "Type": "String",
             "Optional": true,
-            "Description": "The username to use for HTTP basic authentication when accessing the Kubernetes master endpoint. Can be sourced from `KUBE_USER`.",
+            "Description": "The username to use for HTTP basic authentication when accessing the Kubernetes master endpoint.",
             "DefaultFunc": "ENV(KUBE_USER)"
           }
         }
       }
     },
-    "max_history": {
-      "Type": "Int",
-      "Optional": true,
-      "Description": "Maximum number of release versions stored per release.",
-      "Default": {
-        "Type": "int",
-        "Value": "0"
-      }
-    },
-    "namespace": {
+    "plugins_path": {
       "Type": "String",
       "Optional": true,
-      "Description": "Set an alternative Tiller namespace.",
-      "Default": {
-        "Type": "string",
-        "Value": "kube-system"
-      }
+      "Description": "The path to the helm plugins directory",
+      "DefaultFunc": "ENV(HELM_PLUGINS)"
     },
-    "override": {
-      "Type": "List",
-      "Optional": true,
-      "Description": "Override values for the Tiller Deployment manifest.",
-      "Elem": {
-        "Type": "SchemaElements",
-        "ElementsType": "String"
-      }
-    },
-    "plugins_disable": {
-      "Type": "Bool",
-      "Optional": true,
-      "Description": "Disable plugins. Set HELM_NO_PLUGINS=0 to enable plugins.",
-      "DefaultFunc": "ENV(HELM_NO_PLUGINS)"
-    },
-    "service_account": {
+    "registry_config_path": {
       "Type": "String",
       "Optional": true,
-      "Description": "Service account to install Tiller with.",
-      "Default": {
-        "Type": "string",
-        "Value": "default"
-      }
+      "Description": "The path to the registry config file",
+      "DefaultFunc": "ENV(HELM_REGISTRY_CONFIG)"
     },
-    "tiller_image": {
+    "repository_cache": {
       "Type": "String",
       "Optional": true,
-      "Description": "Tiller image to install.",
-      "Default": {
-        "Type": "string",
-        "Value": "gcr.io/kubernetes-helm/tiller:v2.14.1"
-      }
+      "Description": "The path to the file containing cached repository indexes",
+      "DefaultFunc": "ENV(HELM_REPOSITORY_CACHE)"
+    },
+    "repository_config_path": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "The path to the file containing repository names and URLs",
+      "DefaultFunc": "ENV(HELM_REPOSITORY_CONFIG)"
     }
   },
   "resources": {
     "helm_release": {
+      "atomic": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "If set, installation process purges chart on fail. The wait flag will be set automatically if atomic is used",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
       "chart": {
         "Type": "String",
         "Required": true,
-        "Description": "Chart name to be installed."
+        "Description": "Chart name to be installed. A path may be used."
+      },
+      "cleanup_on_fail": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Allow deletion of new resources created in this upgrade when upgrade fails",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "create_namespace": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Create the namespace if it does not exist",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "dependency_update": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Run helm dependency update before installing the chart",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Add a custom description"
       },
       "devel": {
         "Type": "Bool",
         "Optional": true,
         "Description": "Use chart development versions, too. Equivalent to version '\u003e0.0.0-0'. If `version` is set, this is ignored"
+      },
+      "disable_crd_hooks": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Prevent CRD hooks from, running, but run other hooks.  See helm install --no-crd-hook",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "disable_openapi_validation": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "If set, the installation process will not validate rendered templates against the Kubernetes OpenAPI Schema",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
       },
       "disable_webhooks": {
         "Type": "Bool",
@@ -244,13 +258,23 @@
         "Description": "Location of public keys used for verification. Used only if `verify` is true",
         "Default": {
           "Type": "string",
-          "Value": "/home/vlad/.gnupg/pubring.gpg"
+          "Value": "/home/builduser/.gnupg/pubring.gpg"
+        }
+      },
+      "max_history": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Limit the maximum number of revisions saved per release. Use 0 for no limit",
+        "Default": {
+          "Type": "int",
+          "Value": "0"
         }
       },
       "metadata": {
         "Type": "List",
         "Description": "Status of the deployed release.",
         "Computed": true,
+        "MaxItems": 1,
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
@@ -276,7 +300,7 @@
             },
             "values": {
               "Type": "String",
-              "Description": "The raw yaml values used for the chart.",
+              "Description": "Set of extra values, added to the chart. The sensitive data is cloaked. JSON encoded.",
               "Computed": true
             },
             "version": {
@@ -296,9 +320,23 @@
         "Type": "String",
         "Optional": true,
         "Description": "Namespace to install the release into.",
-        "Default": {
-          "Type": "string",
-          "Value": "default"
+        "DefaultFunc": "ENV(HELM_NAMESPACE)"
+      },
+      "postrender": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Postrender command configuration.",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "binary_path": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The command binary path."
+            }
+          }
         }
       },
       "recreate_pods": {
@@ -310,15 +348,58 @@
           "Value": "false"
         }
       },
+      "render_subchart_notes": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "If set, render subchart notes along with the parent",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "replace": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Re-use the given name, even if that name is already used. This is unsafe in production",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
       "repository": {
         "Type": "String",
         "Optional": true,
-        "Description": "Repository where to locate the requested chart. If is an URL the chart is installed without installing the repository."
+        "Description": "Repository where to locate the requested chart. If is a URL the chart is installed without installing the repository."
       },
-      "reuse": {
+      "repository_ca_file": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The Repositories CA File"
+      },
+      "repository_cert_file": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The repositories cert file"
+      },
+      "repository_key_file": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The repositories cert key file"
+      },
+      "repository_password": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Password for HTTP basic authentication"
+      },
+      "repository_username": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Username for HTTP basic authentication"
+      },
+      "reset_values": {
         "Type": "Bool",
         "Optional": true,
-        "Description": "Instruct Tiller to re-use an existing name.",
+        "Description": "When upgrading, reset the values to the ones built into the chart",
         "Default": {
           "Type": "bool",
           "Value": "false"
@@ -327,7 +408,7 @@
       "reuse_values": {
         "Type": "Bool",
         "Optional": true,
-        "Description": "Reuse values when upgrading the release.",
+        "Description": "When upgrading, reuse the last release's values and merge in any overrides. If 'reset_values' is specified, this is ignored",
         "Default": {
           "Type": "bool",
           "Value": "false"
@@ -344,6 +425,10 @@
             "name": {
               "Type": "String",
               "Required": true
+            },
+            "type": {
+              "Type": "String",
+              "Optional": true
             },
             "value": {
               "Type": "String",
@@ -364,6 +449,10 @@
               "Type": "String",
               "Required": true
             },
+            "type": {
+              "Type": "String",
+              "Optional": true
+            },
             "value": {
               "Type": "String",
               "Required": true
@@ -375,6 +464,7 @@
         "Type": "Set",
         "Optional": true,
         "Description": "Custom string values to be merged with the values.",
+        "Deprecated": "This argument is deprecated and will be removed in the next major version. Use `set` argument with `type` equals to `string`",
         "IsBlock": true,
         "Elem": {
           "Type": "SchemaInfo",
@@ -388,6 +478,15 @@
               "Required": true
             }
           }
+        }
+      },
+      "skip_crds": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "If set, no CRDs will be installed. By default, CRDs are installed if not already present",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
         }
       },
       "status": {

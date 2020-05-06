@@ -2,7 +2,7 @@
   ".schema_version": "1",
   "name": "docker",
   "type": "provider",
-  "version": "v2.4.0",
+  "version": "v2.7.0",
   "provider": {
     "ca_material": {
       "Type": "String",
@@ -53,7 +53,18 @@
             "DefaultFunc": "ENV(DOCKER_CONFIG)",
             "ConflictsWith": [
               "registry_auth.username",
-              "registry_auth.password"
+              "registry_auth.password",
+              "registry_auth.config_file_content"
+            ]
+          },
+          "config_file_content": {
+            "Type": "String",
+            "Optional": true,
+            "Description": "Plain content of the docker json file for registry auth",
+            "ConflictsWith": [
+              "registry_auth.username",
+              "registry_auth.password",
+              "registry_auth.config_file"
             ]
           },
           "password": {
@@ -62,7 +73,8 @@
             "Description": "Password for the registry",
             "DefaultFunc": "ENV(DOCKER_REGISTRY_PASS)",
             "ConflictsWith": [
-              "registry_auth.config_file"
+              "registry_auth.config_file",
+              "registry_auth.config_file_content"
             ]
           },
           "username": {
@@ -71,7 +83,8 @@
             "Description": "Username for the registry",
             "DefaultFunc": "ENV(DOCKER_REGISTRY_USER)",
             "ConflictsWith": [
-              "registry_auth.config_file"
+              "registry_auth.config_file",
+              "registry_auth.config_file_content"
             ]
           }
         }
@@ -134,6 +147,7 @@
       "command": {
         "Type": "List",
         "Optional": true,
+        "Computed": true,
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -208,6 +222,7 @@
       "entrypoint": {
         "Type": "List",
         "Optional": true,
+        "Computed": true,
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -216,6 +231,7 @@
       "env": {
         "Type": "Set",
         "Optional": true,
+        "Computed": true,
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -316,7 +332,8 @@
       },
       "hostname": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Computed": true
       },
       "image": {
         "Type": "String",
@@ -335,11 +352,29 @@
       "ipc_mode": {
         "Type": "String",
         "Optional": true,
-        "Description": "IPC sharing mode for the container"
+        "Description": "IPC sharing mode for the container",
+        "Computed": true
       },
       "labels": {
-        "Type": "Map",
-        "Optional": true
+        "Type": "Set",
+        "Optional": true,
+        "Computed": true,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "label": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Name of the label"
+            },
+            "value": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Value of the label"
+            }
+          }
+        }
       },
       "links": {
         "Type": "Set",
@@ -473,12 +508,24 @@
                     }
                   },
                   "labels": {
-                    "Type": "Map",
+                    "Type": "Set",
                     "Optional": true,
                     "Description": "User-defined key/value metadata",
+                    "IsBlock": true,
                     "Elem": {
-                      "Type": "SchemaElements",
-                      "ElementsType": "String"
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "label": {
+                          "Type": "String",
+                          "Required": true,
+                          "Description": "Name of the label"
+                        },
+                        "value": {
+                          "Type": "String",
+                          "Required": true,
+                          "Description": "Value of the label"
+                        }
+                      }
                     }
                   },
                   "no_copy": {
@@ -629,6 +676,14 @@
         "Type": "Bool",
         "Optional": true
       },
+      "read_only": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
       "restart": {
         "Type": "String",
         "Optional": true,
@@ -647,7 +702,8 @@
       },
       "shm_size": {
         "Type": "Int",
-        "Optional": true
+        "Optional": true,
+        "Computed": true
       },
       "start": {
         "Type": "Bool",
@@ -713,6 +769,14 @@
             "file": {
               "Type": "String",
               "Required": true
+            },
+            "source": {
+              "Type": "String",
+              "Optional": true
+            },
+            "source_hash": {
+              "Type": "String",
+              "Optional": true
             }
           }
         }
@@ -820,6 +884,7 @@
       "ipam_config": {
         "Type": "Set",
         "Optional": true,
+        "Computed": true,
         "IsBlock": true,
         "Elem": {
           "Type": "SchemaInfo",
@@ -845,15 +910,35 @@
       },
       "ipam_driver": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Default": {
+          "Type": "string",
+          "Value": "default"
+        }
       },
       "ipv6": {
         "Type": "Bool",
         "Optional": true
       },
       "labels": {
-        "Type": "Map",
-        "Optional": true
+        "Type": "Set",
+        "Optional": true,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "label": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Name of the label"
+            },
+            "value": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Value of the label"
+            }
+          }
+        }
       },
       "name": {
         "Type": "String",
@@ -873,11 +958,27 @@
       "data": {
         "Type": "String",
         "Required": true,
-        "Description": "User-defined name of the secret"
+        "Description": "Base64-url-safe-encoded secret data"
       },
       "labels": {
-        "Type": "Map",
-        "Optional": true
+        "Type": "Set",
+        "Optional": true,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "label": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Name of the label"
+            },
+            "value": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Value of the label"
+            }
+          }
+        }
       },
       "name": {
         "Type": "String",
@@ -944,7 +1045,7 @@
               "Computed": true
             },
             "ports": {
-              "Type": "Set",
+              "Type": "List",
               "Optional": true,
               "Description": "List of exposed ports that this service is accessible on from the outside. Ports can only be provided if 'vip' resolution mode is used.",
               "IsBlock": true,
@@ -977,7 +1078,8 @@
                   "published_port": {
                     "Type": "Int",
                     "Optional": true,
-                    "Description": "The port on the swarm hosts."
+                    "Description": "The port on the swarm hosts.",
+                    "Computed": true
                   },
                   "target_port": {
                     "Type": "Int",
@@ -991,13 +1093,25 @@
         }
       },
       "labels": {
-        "Type": "Map",
+        "Type": "Set",
         "Optional": true,
         "Description": "User-defined key/value metadata",
         "Computed": true,
+        "IsBlock": true,
         "Elem": {
-          "Type": "SchemaElements",
-          "ElementsType": "String"
+          "Type": "SchemaInfo",
+          "Info": {
+            "label": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Name of the label"
+            },
+            "value": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Value of the label"
+            }
+          }
         }
       },
       "mode": {
@@ -1176,10 +1290,37 @@
                           "Optional": true,
                           "Description": "Name of the config that this references, but this is just provided for lookup/display purposes. The config in the reference will be identified by its ID"
                         },
+                        "file_gid": {
+                          "Type": "String",
+                          "Optional": true,
+                          "Description": "Represents the file GID",
+                          "Default": {
+                            "Type": "string",
+                            "Value": "0"
+                          }
+                        },
+                        "file_mode": {
+                          "Type": "Int",
+                          "Optional": true,
+                          "Description": "Represents represents the FileMode of the file",
+                          "Default": {
+                            "Type": "int",
+                            "Value": "292"
+                          }
+                        },
                         "file_name": {
                           "Type": "String",
                           "Required": true,
                           "Description": "Represents the final filename in the filesystem"
+                        },
+                        "file_uid": {
+                          "Type": "String",
+                          "Optional": true,
+                          "Description": "Represents the file UID",
+                          "Default": {
+                            "Type": "string",
+                            "Value": "0"
+                          }
                         }
                       }
                     }
@@ -1344,12 +1485,24 @@
                     }
                   },
                   "labels": {
-                    "Type": "Map",
+                    "Type": "Set",
                     "Optional": true,
                     "Description": "User-defined key/value metadata",
+                    "IsBlock": true,
                     "Elem": {
-                      "Type": "SchemaElements",
-                      "ElementsType": "String"
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "label": {
+                          "Type": "String",
+                          "Required": true,
+                          "Description": "Name of the label"
+                        },
+                        "value": {
+                          "Type": "String",
+                          "Required": true,
+                          "Description": "Value of the label"
+                        }
+                      }
                     }
                   },
                   "mounts": {
@@ -1443,12 +1596,24 @@
                                 }
                               },
                               "labels": {
-                                "Type": "Map",
+                                "Type": "Set",
                                 "Optional": true,
                                 "Description": "User-defined key/value metadata",
+                                "IsBlock": true,
                                 "Elem": {
-                                  "Type": "SchemaElements",
-                                  "ElementsType": "String"
+                                  "Type": "SchemaInfo",
+                                  "Info": {
+                                    "label": {
+                                      "Type": "String",
+                                      "Required": true,
+                                      "Description": "Name of the label"
+                                    },
+                                    "value": {
+                                      "Type": "String",
+                                      "Required": true,
+                                      "Description": "Value of the label"
+                                    }
+                                  }
                                 }
                               },
                               "no_copy": {
@@ -1546,10 +1711,37 @@
                     "Elem": {
                       "Type": "SchemaInfo",
                       "Info": {
+                        "file_gid": {
+                          "Type": "String",
+                          "Optional": true,
+                          "Description": "Represents the file GID",
+                          "Default": {
+                            "Type": "string",
+                            "Value": "0"
+                          }
+                        },
+                        "file_mode": {
+                          "Type": "Int",
+                          "Optional": true,
+                          "Description": "Represents represents the FileMode of the file",
+                          "Default": {
+                            "Type": "int",
+                            "Value": "292"
+                          }
+                        },
                         "file_name": {
                           "Type": "String",
                           "Required": true,
                           "Description": "Represents the final filename in the filesystem"
+                        },
+                        "file_uid": {
+                          "Type": "String",
+                          "Optional": true,
+                          "Description": "Represents the file UID",
+                          "Default": {
+                            "Type": "string",
+                            "Value": "0"
+                          }
                         },
                         "secret_id": {
                           "Type": "String",
@@ -1601,7 +1793,7 @@
                   "name": {
                     "Type": "String",
                     "Required": true,
-                    "Description": "The logging driver to use: one of none|json-file|syslog|journald|gelf|fluentd|awslogs|splunk|etwlogs|gcplogs"
+                    "Description": "The logging driver to use"
                   },
                   "options": {
                     "Type": "Map",
@@ -1890,8 +2082,24 @@
         "Optional": true
       },
       "labels": {
-        "Type": "Map",
-        "Optional": true
+        "Type": "Set",
+        "Optional": true,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "label": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Name of the label"
+            },
+            "value": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Value of the label"
+            }
+          }
+        }
       },
       "mountpoint": {
         "Type": "String",
@@ -1920,8 +2128,7 @@
       },
       "ipam_config": {
         "Type": "Set",
-        "Optional": true,
-        "IsBlock": true,
+        "Computed": true,
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {

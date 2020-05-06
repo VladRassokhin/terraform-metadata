@@ -2,7 +2,7 @@
   ".schema_version": "1",
   "name": "yandex",
   "type": "provider",
-  "version": "v0.17.0",
+  "version": "v0.39.0",
   "provider": {
     "cloud_id": {
       "Type": "String",
@@ -47,7 +47,28 @@
       "Type": "String",
       "Optional": true,
       "Description": "Path to file with Yandex.Cloud Service Account key.",
-      "DefaultFunc": "ENV(YC_SERVICE_ACCOUNT_KEY_FILE)"
+      "DefaultFunc": "ENV(YC_SERVICE_ACCOUNT_KEY_FILE)",
+      "ConflictsWith": [
+        "token"
+      ]
+    },
+    "storage_access_key": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "Yandex.Cloud storage service access key. \nUsed when a storage data/resource doesn't have an access key explicitly specified.",
+      "DefaultFunc": "ENV(YC_STORAGE_ACCESS_KEY)"
+    },
+    "storage_endpoint": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "Yandex.Cloud storage service endpoint. Default is \nstorage.yandexcloud.net",
+      "DefaultFunc": "ENV(YC_STORAGE_ENDPOINT_URL)"
+    },
+    "storage_secret_key": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "Yandex.Cloud storage service secret key. \nUsed when a storage data/resource doesn't have a secret key explicitly specified.",
+      "DefaultFunc": "ENV(YC_STORAGE_SECRET_KEY)"
     },
     "token": {
       "Type": "String",
@@ -386,7 +407,8 @@
       },
       "hostname": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Computed": true
       },
       "labels": {
         "Type": "Map",
@@ -411,6 +433,14 @@
           "Type": "string"
         }
       },
+      "network_acceleration_type": {
+        "Type": "String",
+        "Optional": true,
+        "Default": {
+          "Type": "string",
+          "Value": "standard"
+        }
+      },
       "network_interface": {
         "Type": "List",
         "Required": true,
@@ -426,6 +456,14 @@
               "Type": "String",
               "Optional": true,
               "Computed": true
+            },
+            "ipv4": {
+              "Type": "Bool",
+              "Optional": true,
+              "Default": {
+                "Type": "bool",
+                "Value": "true"
+              }
             },
             "ipv6": {
               "Type": "Bool",
@@ -448,6 +486,7 @@
             },
             "nat_ip_address": {
               "Type": "String",
+              "Optional": true,
               "Computed": true
             },
             "nat_ip_version": {
@@ -804,6 +843,10 @@
               "Type": "String",
               "Optional": true
             },
+            "hostname": {
+              "Type": "String",
+              "Optional": true
+            },
             "labels": {
               "Type": "Map",
               "Optional": true,
@@ -820,6 +863,10 @@
                 "ElementsType": "String"
               }
             },
+            "name": {
+              "Type": "String",
+              "Optional": true
+            },
             "network_interface": {
               "Type": "List",
               "Required": true,
@@ -827,6 +874,14 @@
               "Elem": {
                 "Type": "SchemaInfo",
                 "Info": {
+                  "ipv4": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "bool",
+                      "Value": "true"
+                    }
+                  },
                   "ipv6": {
                     "Type": "Bool",
                     "Optional": true,
@@ -848,6 +903,20 @@
                       "Type": "SchemaElements",
                       "ElementsType": "String"
                     }
+                  }
+                }
+              }
+            },
+            "network_settings": {
+              "Type": "List",
+              "Optional": true,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "type": {
+                    "Type": "String",
+                    "Optional": true
                   }
                 }
               }
@@ -985,6 +1054,92 @@
           }
         }
       },
+      "instances": {
+        "Type": "List",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "fqdn": {
+              "Type": "String",
+              "Computed": true
+            },
+            "instance_id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "name": {
+              "Type": "String",
+              "Computed": true
+            },
+            "network_interface": {
+              "Type": "List",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "index": {
+                    "Type": "Int",
+                    "Computed": true
+                  },
+                  "ip_address": {
+                    "Type": "String",
+                    "Computed": true
+                  },
+                  "ipv4": {
+                    "Type": "Bool",
+                    "Computed": true
+                  },
+                  "ipv6": {
+                    "Type": "Bool",
+                    "Computed": true
+                  },
+                  "ipv6_address": {
+                    "Type": "String",
+                    "Computed": true
+                  },
+                  "mac_address": {
+                    "Type": "String",
+                    "Computed": true
+                  },
+                  "nat": {
+                    "Type": "Bool",
+                    "Computed": true
+                  },
+                  "nat_ip_address": {
+                    "Type": "String",
+                    "Computed": true
+                  },
+                  "nat_ip_version": {
+                    "Type": "String",
+                    "Computed": true
+                  },
+                  "subnet_id": {
+                    "Type": "String",
+                    "Computed": true
+                  }
+                }
+              }
+            },
+            "status": {
+              "Type": "String",
+              "Computed": true
+            },
+            "status_changed_at": {
+              "Type": "String",
+              "Computed": true
+            },
+            "status_message": {
+              "Type": "String",
+              "Computed": true
+            },
+            "zone_id": {
+              "Type": "String",
+              "Computed": true
+            }
+          }
+        }
+      },
       "labels": {
         "Type": "Map",
         "Optional": true,
@@ -1053,7 +1208,41 @@
                 "Info": {
                   "cpu_utilization_target": {
                     "Type": "Float",
-                    "Required": true
+                    "Optional": true
+                  },
+                  "custom_rule": {
+                    "Type": "List",
+                    "Optional": true,
+                    "IsBlock": true,
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "labels": {
+                          "Type": "Map",
+                          "Optional": true,
+                          "Elem": {
+                            "Type": "SchemaElements",
+                            "ElementsType": "String"
+                          }
+                        },
+                        "metric_name": {
+                          "Type": "String",
+                          "Required": true
+                        },
+                        "metric_type": {
+                          "Type": "String",
+                          "Required": true
+                        },
+                        "rule_type": {
+                          "Type": "String",
+                          "Required": true
+                        },
+                        "target": {
+                          "Type": "Float",
+                          "Required": true
+                        }
+                      }
+                    }
                   },
                   "initial_size": {
                     "Type": "Int",
@@ -1116,6 +1305,18 @@
       "service_account_id": {
         "Type": "String",
         "Required": true
+      },
+      "status": {
+        "Type": "String",
+        "Computed": true
+      },
+      "variables": {
+        "Type": "Map",
+        "Optional": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       }
     },
     "yandex_compute_snapshot": {
@@ -1196,6 +1397,495 @@
       "status": {
         "Type": "String",
         "Computed": true
+      }
+    },
+    "yandex_dataproc_cluster": {
+      "__timeouts__": [
+        "create",
+        "update",
+        "delete"
+      ],
+      "bucket": {
+        "Type": "String",
+        "Optional": true
+      },
+      "cluster_config": {
+        "Type": "List",
+        "Required": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "hadoop": {
+              "Type": "List",
+              "Optional": true,
+              "MaxItems": 1,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "properties": {
+                    "Type": "Map",
+                    "Optional": true,
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  },
+                  "services": {
+                    "Type": "Set",
+                    "Optional": true,
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  },
+                  "ssh_public_keys": {
+                    "Type": "Set",
+                    "Optional": true,
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  }
+                }
+              }
+            },
+            "subcluster_spec": {
+              "Type": "List",
+              "Required": true,
+              "MinItems": 1,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "hosts_count": {
+                    "Type": "Int",
+                    "Required": true
+                  },
+                  "id": {
+                    "Type": "String",
+                    "Computed": true
+                  },
+                  "name": {
+                    "Type": "String",
+                    "Required": true
+                  },
+                  "resources": {
+                    "Type": "List",
+                    "Required": true,
+                    "MaxItems": 1,
+                    "IsBlock": true,
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "disk_size": {
+                          "Type": "Int",
+                          "Required": true
+                        },
+                        "disk_type_id": {
+                          "Type": "String",
+                          "Optional": true,
+                          "Default": {
+                            "Type": "string",
+                            "Value": "network-hdd"
+                          }
+                        },
+                        "resource_preset_id": {
+                          "Type": "String",
+                          "Required": true
+                        }
+                      }
+                    }
+                  },
+                  "role": {
+                    "Type": "String",
+                    "Required": true
+                  },
+                  "subnet_id": {
+                    "Type": "String",
+                    "Required": true
+                  }
+                }
+              }
+            },
+            "version_id": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            }
+          }
+        }
+      },
+      "created_at": {
+        "Type": "String",
+        "Computed": true
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true
+      },
+      "folder_id": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "labels": {
+        "Type": "Map",
+        "Optional": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Required": true
+      },
+      "service_account_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "zone_id": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      }
+    },
+    "yandex_function": {
+      "__timeouts__": [
+        "create",
+        "update",
+        "delete"
+      ],
+      "content": {
+        "Type": "List",
+        "Optional": true,
+        "MaxItems": 1,
+        "ConflictsWith": [
+          "package"
+        ],
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "zip_filename": {
+              "Type": "String",
+              "Required": true
+            }
+          }
+        }
+      },
+      "created_at": {
+        "Type": "String",
+        "Computed": true
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true
+      },
+      "entrypoint": {
+        "Type": "String",
+        "Required": true
+      },
+      "environment": {
+        "Type": "Map",
+        "Optional": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "execution_timeout": {
+        "Type": "String",
+        "Optional": true
+      },
+      "folder_id": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "image_size": {
+        "Type": "Int",
+        "Computed": true
+      },
+      "labels": {
+        "Type": "Map",
+        "Optional": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "loggroup_id": {
+        "Type": "String",
+        "Computed": true
+      },
+      "memory": {
+        "Type": "Int",
+        "Required": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true
+      },
+      "package": {
+        "Type": "List",
+        "Optional": true,
+        "MaxItems": 1,
+        "ConflictsWith": [
+          "content"
+        ],
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "bucket_name": {
+              "Type": "String",
+              "Required": true
+            },
+            "object_name": {
+              "Type": "String",
+              "Required": true
+            },
+            "sha_256": {
+              "Type": "String",
+              "Optional": true
+            }
+          }
+        }
+      },
+      "runtime": {
+        "Type": "String",
+        "Required": true
+      },
+      "service_account_id": {
+        "Type": "String",
+        "Optional": true
+      },
+      "tags": {
+        "Type": "Set",
+        "Optional": true,
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "user_hash": {
+        "Type": "String",
+        "Required": true
+      },
+      "version": {
+        "Type": "String",
+        "Computed": true
+      }
+    },
+    "yandex_function_trigger": {
+      "__timeouts__": [
+        "create",
+        "update",
+        "delete"
+      ],
+      "created_at": {
+        "Type": "String",
+        "Computed": true
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true
+      },
+      "dlq": {
+        "Type": "List",
+        "Optional": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "queue_id": {
+              "Type": "String",
+              "Required": true
+            },
+            "service_account_id": {
+              "Type": "String",
+              "Required": true
+            }
+          }
+        }
+      },
+      "folder_id": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "function": {
+        "Type": "List",
+        "Required": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "id": {
+              "Type": "String",
+              "Required": true
+            },
+            "retry_attempts": {
+              "Type": "String",
+              "Optional": true
+            },
+            "retry_interval": {
+              "Type": "String",
+              "Optional": true
+            },
+            "service_account_id": {
+              "Type": "String",
+              "Optional": true
+            },
+            "tag": {
+              "Type": "String",
+              "Optional": true
+            }
+          }
+        }
+      },
+      "iot": {
+        "Type": "List",
+        "Optional": true,
+        "MaxItems": 1,
+        "ConflictsWith": [
+          "message_queue",
+          "object_storage",
+          "timer"
+        ],
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "device_id": {
+              "Type": "String",
+              "Optional": true
+            },
+            "registry_id": {
+              "Type": "String",
+              "Required": true
+            },
+            "topic": {
+              "Type": "String",
+              "Optional": true
+            }
+          }
+        }
+      },
+      "labels": {
+        "Type": "Map",
+        "Optional": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "message_queue": {
+        "Type": "List",
+        "Optional": true,
+        "MaxItems": 1,
+        "ConflictsWith": [
+          "iot",
+          "object_storage",
+          "timer"
+        ],
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "batch_cutoff": {
+              "Type": "String",
+              "Required": true
+            },
+            "batch_size": {
+              "Type": "String",
+              "Optional": true
+            },
+            "queue_id": {
+              "Type": "String",
+              "Required": true
+            },
+            "service_account_id": {
+              "Type": "String",
+              "Required": true
+            },
+            "visibility_timeout": {
+              "Type": "String",
+              "Optional": true
+            }
+          }
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Required": true
+      },
+      "object_storage": {
+        "Type": "List",
+        "Optional": true,
+        "MaxItems": 1,
+        "ConflictsWith": [
+          "iot",
+          "message_queue",
+          "timer"
+        ],
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "bucket_id": {
+              "Type": "String",
+              "Required": true
+            },
+            "create": {
+              "Type": "Bool",
+              "Optional": true
+            },
+            "delete": {
+              "Type": "Bool",
+              "Optional": true
+            },
+            "prefix": {
+              "Type": "String",
+              "Optional": true
+            },
+            "suffix": {
+              "Type": "String",
+              "Optional": true
+            },
+            "update": {
+              "Type": "Bool",
+              "Optional": true
+            }
+          }
+        }
+      },
+      "timer": {
+        "Type": "List",
+        "Optional": true,
+        "MaxItems": 1,
+        "ConflictsWith": [
+          "iot",
+          "message_queue",
+          "object_storage"
+        ],
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "cron_expression": {
+              "Type": "String",
+              "Required": true
+            }
+          }
+        }
       }
     },
     "yandex_iam_service_account": {
@@ -1389,6 +2079,181 @@
         "Required": true
       }
     },
+    "yandex_iot_core_device": {
+      "__timeouts__": [
+        "create",
+        "update",
+        "delete"
+      ],
+      "aliases": {
+        "Type": "Map",
+        "Optional": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "certificates": {
+        "Type": "Set",
+        "Optional": true,
+        "MaxItems": 5,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "created_at": {
+        "Type": "String",
+        "Computed": true
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true
+      },
+      "passwords": {
+        "Type": "Set",
+        "Optional": true,
+        "MaxItems": 5,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "registry_id": {
+        "Type": "String",
+        "Required": true
+      }
+    },
+    "yandex_iot_core_registry": {
+      "__timeouts__": [
+        "create",
+        "update",
+        "delete"
+      ],
+      "certificates": {
+        "Type": "Set",
+        "Optional": true,
+        "MaxItems": 5,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "created_at": {
+        "Type": "String",
+        "Computed": true
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true
+      },
+      "folder_id": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "labels": {
+        "Type": "Map",
+        "Optional": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Required": true
+      },
+      "passwords": {
+        "Type": "Set",
+        "Optional": true,
+        "MaxItems": 5,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      }
+    },
+    "yandex_kms_secret_ciphertext": {
+      "__timeouts__": [
+        "create",
+        "read",
+        "delete"
+      ],
+      "aad_context": {
+        "Type": "String",
+        "Optional": true
+      },
+      "ciphertext": {
+        "Type": "String",
+        "Computed": true
+      },
+      "key_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "plaintext": {
+        "Type": "String",
+        "Required": true
+      }
+    },
+    "yandex_kms_symmetric_key": {
+      "__timeouts__": [
+        "create",
+        "read",
+        "update",
+        "delete"
+      ],
+      "created_at": {
+        "Type": "String",
+        "Computed": true
+      },
+      "default_algorithm": {
+        "Type": "String",
+        "Optional": true,
+        "Default": {
+          "Type": "string",
+          "Value": "AES_128"
+        }
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true
+      },
+      "folder_id": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "labels": {
+        "Type": "Map",
+        "Optional": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true
+      },
+      "rotated_at": {
+        "Type": "String",
+        "Computed": true
+      },
+      "rotation_period": {
+        "Type": "String",
+        "Optional": true
+      },
+      "status": {
+        "Type": "String",
+        "Computed": true
+      }
+    },
     "yandex_kubernetes_cluster": {
       "__timeouts__": [
         "create",
@@ -1418,6 +2283,21 @@
       "health": {
         "Type": "String",
         "Computed": true
+      },
+      "kms_provider": {
+        "Type": "List",
+        "Optional": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "key_id": {
+              "Type": "String",
+              "Optional": true
+            }
+          }
+        }
       },
       "labels": {
         "Type": "Map",
@@ -1456,9 +2336,49 @@
               "Type": "String",
               "Computed": true
             },
+            "maintenance_policy": {
+              "Type": "List",
+              "Optional": true,
+              "Computed": true,
+              "MaxItems": 1,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "auto_upgrade": {
+                    "Type": "Bool",
+                    "Required": true
+                  },
+                  "maintenance_window": {
+                    "Type": "Set",
+                    "Optional": true,
+                    "IsBlock": true,
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "day": {
+                          "Type": "String",
+                          "Optional": true,
+                          "Computed": true
+                        },
+                        "duration": {
+                          "Type": "String",
+                          "Required": true
+                        },
+                        "start_time": {
+                          "Type": "String",
+                          "Required": true
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
             "public_ip": {
               "Type": "Bool",
-              "Optional": true
+              "Optional": true,
+              "Computed": true
             },
             "regional": {
               "Type": "List",
@@ -1493,15 +2413,15 @@
                   },
                   "region": {
                     "Type": "String",
-                    "Optional": true,
-                    "Computed": true
+                    "Required": true
                   }
                 }
               }
             },
             "version": {
               "Type": "String",
-              "Optional": true
+              "Optional": true,
+              "Computed": true
             },
             "version_info": {
               "Type": "List",
@@ -1564,6 +2484,18 @@
       "network_id": {
         "Type": "String",
         "Required": true
+      },
+      "network_policy_provider": {
+        "Type": "String",
+        "Optional": true
+      },
+      "node_ipv4_cidr_mask_size": {
+        "Type": "Int",
+        "Optional": true,
+        "Default": {
+          "Type": "int",
+          "Value": "24"
+        }
       },
       "node_service_account_id": {
         "Type": "String",
@@ -1628,6 +2560,14 @@
           }
         }
       },
+      "allowed_unsafe_sysctls": {
+        "Type": "List",
+        "Optional": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
       "cluster_id": {
         "Type": "String",
         "Required": true
@@ -1635,6 +2575,26 @@
       "created_at": {
         "Type": "String",
         "Computed": true
+      },
+      "deploy_policy": {
+        "Type": "List",
+        "Optional": true,
+        "Computed": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "max_expansion": {
+              "Type": "Int",
+              "Required": true
+            },
+            "max_unavailable": {
+              "Type": "Int",
+              "Required": true
+            }
+          }
+        }
       },
       "description": {
         "Type": "String",
@@ -1752,18 +2712,43 @@
       },
       "maintenance_policy": {
         "Type": "List",
+        "Optional": true,
         "Computed": true,
         "MaxItems": 1,
+        "IsBlock": true,
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
             "auto_repair": {
               "Type": "Bool",
-              "Computed": true
+              "Required": true
             },
             "auto_upgrade": {
               "Type": "Bool",
-              "Computed": true
+              "Required": true
+            },
+            "maintenance_window": {
+              "Type": "Set",
+              "Optional": true,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "day": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "duration": {
+                    "Type": "String",
+                    "Required": true
+                  },
+                  "start_time": {
+                    "Type": "String",
+                    "Required": true
+                  }
+                }
+              }
             }
           }
         }
@@ -1773,6 +2758,22 @@
         "Optional": true,
         "Computed": true
       },
+      "node_labels": {
+        "Type": "Map",
+        "Optional": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "node_taints": {
+        "Type": "List",
+        "Optional": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
       "scale_policy": {
         "Type": "List",
         "Required": true,
@@ -1781,11 +2782,39 @@
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
+            "auto_scale": {
+              "Type": "List",
+              "Optional": true,
+              "MaxItems": 1,
+              "ConflictsWith": [
+                "scale_policy.0.fixed_scale"
+              ],
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "initial": {
+                    "Type": "Int",
+                    "Required": true
+                  },
+                  "max": {
+                    "Type": "Int",
+                    "Required": true
+                  },
+                  "min": {
+                    "Type": "Int",
+                    "Required": true
+                  }
+                }
+              }
+            },
             "fixed_scale": {
               "Type": "List",
               "Optional": true,
-              "Computed": true,
               "MaxItems": 1,
+              "ConflictsWith": [
+                "scale_policy.0.auto_scale"
+              ],
               "IsBlock": true,
               "Elem": {
                 "Type": "SchemaInfo",
@@ -1803,6 +2832,11 @@
       },
       "status": {
         "Type": "String",
+        "Computed": true
+      },
+      "version": {
+        "Type": "String",
+        "Optional": true,
         "Computed": true
       },
       "version_info": {
@@ -1962,8 +2996,11 @@
           "Info": {
             "external_address_spec": {
               "Type": "List",
-              "Required": true,
+              "Optional": true,
               "MaxItems": 1,
+              "ConflictsWith": [
+                "listener.internal_address_spec"
+              ],
               "IsBlock": true,
               "Elem": {
                 "Type": "SchemaInfo",
@@ -1980,6 +3017,37 @@
                       "Type": "string",
                       "Value": "ipv4"
                     }
+                  }
+                }
+              }
+            },
+            "internal_address_spec": {
+              "Type": "List",
+              "Optional": true,
+              "MaxItems": 1,
+              "ConflictsWith": [
+                "listener.external_address_spec"
+              ],
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "address": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "ip_version": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "string",
+                      "Value": "ipv4"
+                    }
+                  },
+                  "subnet_id": {
+                    "Type": "String",
+                    "Required": true
                   }
                 }
               }
@@ -2087,6 +3155,1019 @@
         }
       }
     },
+    "yandex_mdb_clickhouse_cluster": {
+      "__timeouts__": [
+        "create",
+        "update",
+        "delete"
+      ],
+      "access": {
+        "Type": "List",
+        "Optional": true,
+        "Computed": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "data_lens": {
+              "Type": "Bool",
+              "Optional": true,
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
+              }
+            },
+            "metrika": {
+              "Type": "Bool",
+              "Optional": true,
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
+              }
+            },
+            "serverless": {
+              "Type": "Bool",
+              "Optional": true,
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
+              }
+            },
+            "web_sql": {
+              "Type": "Bool",
+              "Optional": true,
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
+              }
+            }
+          }
+        }
+      },
+      "backup_window_start": {
+        "Type": "List",
+        "Optional": true,
+        "Computed": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "hours": {
+              "Type": "Int",
+              "Optional": true,
+              "Default": {
+                "Type": "int",
+                "Value": "0"
+              }
+            },
+            "minutes": {
+              "Type": "Int",
+              "Optional": true,
+              "Default": {
+                "Type": "int",
+                "Value": "0"
+              }
+            }
+          }
+        }
+      },
+      "clickhouse": {
+        "Type": "List",
+        "Required": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "resources": {
+              "Type": "List",
+              "Required": true,
+              "MaxItems": 1,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "disk_size": {
+                    "Type": "Int",
+                    "Required": true
+                  },
+                  "disk_type_id": {
+                    "Type": "String",
+                    "Required": true
+                  },
+                  "resource_preset_id": {
+                    "Type": "String",
+                    "Required": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "created_at": {
+        "Type": "String",
+        "Computed": true
+      },
+      "database": {
+        "Type": "Set",
+        "Required": true,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "name": {
+              "Type": "String",
+              "Required": true
+            }
+          }
+        }
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true
+      },
+      "environment": {
+        "Type": "String",
+        "Required": true
+      },
+      "folder_id": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "health": {
+        "Type": "String",
+        "Computed": true
+      },
+      "host": {
+        "Type": "List",
+        "Required": true,
+        "MinItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "assign_public_ip": {
+              "Type": "Bool",
+              "Optional": true,
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
+              }
+            },
+            "fqdn": {
+              "Type": "String",
+              "Computed": true
+            },
+            "shard_name": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "subnet_id": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "type": {
+              "Type": "String",
+              "Required": true
+            },
+            "zone": {
+              "Type": "String",
+              "Required": true
+            }
+          }
+        }
+      },
+      "labels": {
+        "Type": "Map",
+        "Optional": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Required": true
+      },
+      "network_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "status": {
+        "Type": "String",
+        "Computed": true
+      },
+      "user": {
+        "Type": "Set",
+        "Required": true,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "name": {
+              "Type": "String",
+              "Required": true
+            },
+            "password": {
+              "Type": "String",
+              "Required": true
+            },
+            "permission": {
+              "Type": "Set",
+              "Optional": true,
+              "Computed": true,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "database_name": {
+                    "Type": "String",
+                    "Required": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "version": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "zookeeper": {
+        "Type": "List",
+        "Optional": true,
+        "Computed": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "resources": {
+              "Type": "List",
+              "Optional": true,
+              "Computed": true,
+              "MaxItems": 1,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "disk_size": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "disk_type_id": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "resource_preset_id": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "yandex_mdb_mongodb_cluster": {
+      "__timeouts__": [
+        "create",
+        "update",
+        "delete"
+      ],
+      "cluster_config": {
+        "Type": "List",
+        "Required": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "access": {
+              "Type": "List",
+              "Optional": true,
+              "Computed": true,
+              "MaxItems": 1,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "data_lens": {
+                    "Type": "Bool",
+                    "Computed": true
+                  }
+                }
+              }
+            },
+            "backup_window_start": {
+              "Type": "List",
+              "Optional": true,
+              "Computed": true,
+              "MaxItems": 1,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "hours": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "int",
+                      "Value": "0"
+                    }
+                  },
+                  "minutes": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "int",
+                      "Value": "0"
+                    }
+                  }
+                }
+              }
+            },
+            "feature_compatibility_version": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "version": {
+              "Type": "String",
+              "Required": true
+            }
+          }
+        }
+      },
+      "cluster_id": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "created_at": {
+        "Type": "String",
+        "Computed": true
+      },
+      "database": {
+        "Type": "Set",
+        "Required": true,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "name": {
+              "Type": "String",
+              "Required": true
+            }
+          }
+        }
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "environment": {
+        "Type": "String",
+        "Required": true
+      },
+      "folder_id": {
+        "Type": "String",
+        "Computed": true
+      },
+      "health": {
+        "Type": "String",
+        "Computed": true
+      },
+      "host": {
+        "Type": "List",
+        "Required": true,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "assign_public_ip": {
+              "Type": "Bool",
+              "Optional": true,
+              "Computed": true
+            },
+            "health": {
+              "Type": "String",
+              "Computed": true
+            },
+            "name": {
+              "Type": "String",
+              "Computed": true
+            },
+            "role": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "shard_name": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "subnet_id": {
+              "Type": "String",
+              "Required": true
+            },
+            "type": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "zone_id": {
+              "Type": "String",
+              "Required": true
+            }
+          }
+        }
+      },
+      "labels": {
+        "Type": "Map",
+        "Optional": true,
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Required": true
+      },
+      "network_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "resources": {
+        "Type": "List",
+        "Required": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "disk_size": {
+              "Type": "Int",
+              "Required": true
+            },
+            "disk_type_id": {
+              "Type": "String",
+              "Required": true
+            },
+            "resource_preset_id": {
+              "Type": "String",
+              "Required": true
+            }
+          }
+        }
+      },
+      "sharded": {
+        "Type": "Bool",
+        "Computed": true
+      },
+      "status": {
+        "Type": "String",
+        "Computed": true
+      },
+      "user": {
+        "Type": "Set",
+        "Required": true,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "name": {
+              "Type": "String",
+              "Required": true
+            },
+            "password": {
+              "Type": "String",
+              "Required": true
+            },
+            "permission": {
+              "Type": "Set",
+              "Optional": true,
+              "Computed": true,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "database_name": {
+                    "Type": "String",
+                    "Required": true
+                  },
+                  "roles": {
+                    "Type": "List",
+                    "Optional": true,
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "yandex_mdb_mysql_cluster": {
+      "__timeouts__": [
+        "create",
+        "update",
+        "delete"
+      ],
+      "backup_window_start": {
+        "Type": "List",
+        "Optional": true,
+        "Computed": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "hours": {
+              "Type": "Int",
+              "Optional": true,
+              "Default": {
+                "Type": "int",
+                "Value": "0"
+              }
+            },
+            "minutes": {
+              "Type": "Int",
+              "Optional": true,
+              "Default": {
+                "Type": "int",
+                "Value": "0"
+              }
+            }
+          }
+        }
+      },
+      "created_at": {
+        "Type": "String",
+        "Computed": true
+      },
+      "database": {
+        "Type": "Set",
+        "Required": true,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "name": {
+              "Type": "String",
+              "Required": true
+            }
+          }
+        }
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true
+      },
+      "environment": {
+        "Type": "String",
+        "Required": true
+      },
+      "folder_id": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "health": {
+        "Type": "String",
+        "Computed": true
+      },
+      "host": {
+        "Type": "List",
+        "Required": true,
+        "MinItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "assign_public_ip": {
+              "Type": "Bool",
+              "Optional": true,
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
+              }
+            },
+            "fqdn": {
+              "Type": "String",
+              "Computed": true
+            },
+            "subnet_id": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "zone": {
+              "Type": "String",
+              "Required": true
+            }
+          }
+        }
+      },
+      "labels": {
+        "Type": "Map",
+        "Optional": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Required": true
+      },
+      "network_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "resources": {
+        "Type": "List",
+        "Required": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "disk_size": {
+              "Type": "Int",
+              "Required": true
+            },
+            "disk_type_id": {
+              "Type": "String",
+              "Required": true
+            },
+            "resource_preset_id": {
+              "Type": "String",
+              "Required": true
+            }
+          }
+        }
+      },
+      "status": {
+        "Type": "String",
+        "Computed": true
+      },
+      "user": {
+        "Type": "Set",
+        "Required": true,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "name": {
+              "Type": "String",
+              "Required": true
+            },
+            "password": {
+              "Type": "String",
+              "Required": true
+            },
+            "permission": {
+              "Type": "Set",
+              "Optional": true,
+              "Computed": true,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "database_name": {
+                    "Type": "String",
+                    "Required": true
+                  },
+                  "roles": {
+                    "Type": "List",
+                    "Optional": true,
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "version": {
+        "Type": "String",
+        "Required": true
+      }
+    },
+    "yandex_mdb_postgresql_cluster": {
+      "__timeouts__": [
+        "create",
+        "update",
+        "delete"
+      ],
+      "config": {
+        "Type": "List",
+        "Required": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "access": {
+              "Type": "List",
+              "Optional": true,
+              "Computed": true,
+              "MaxItems": 1,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "data_lens": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "bool",
+                      "Value": "false"
+                    }
+                  }
+                }
+              }
+            },
+            "autofailover": {
+              "Type": "Bool",
+              "Optional": true,
+              "Computed": true
+            },
+            "backup_window_start": {
+              "Type": "List",
+              "Optional": true,
+              "Computed": true,
+              "MaxItems": 1,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "hours": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "int",
+                      "Value": "0"
+                    }
+                  },
+                  "minutes": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "int",
+                      "Value": "0"
+                    }
+                  }
+                }
+              }
+            },
+            "pooler_config": {
+              "Type": "List",
+              "Optional": true,
+              "MaxItems": 1,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "pool_discard": {
+                    "Type": "Bool",
+                    "Optional": true
+                  },
+                  "pooling_mode": {
+                    "Type": "String",
+                    "Optional": true
+                  }
+                }
+              }
+            },
+            "resources": {
+              "Type": "List",
+              "Required": true,
+              "MaxItems": 1,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "disk_size": {
+                    "Type": "Int",
+                    "Required": true
+                  },
+                  "disk_type_id": {
+                    "Type": "String",
+                    "Optional": true
+                  },
+                  "resource_preset_id": {
+                    "Type": "String",
+                    "Required": true
+                  }
+                }
+              }
+            },
+            "version": {
+              "Type": "String",
+              "Required": true
+            }
+          }
+        }
+      },
+      "created_at": {
+        "Type": "String",
+        "Computed": true
+      },
+      "database": {
+        "Type": "Set",
+        "Required": true,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "extension": {
+              "Type": "Set",
+              "Optional": true,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "name": {
+                    "Type": "String",
+                    "Required": true
+                  },
+                  "version": {
+                    "Type": "String",
+                    "Optional": true
+                  }
+                }
+              }
+            },
+            "lc_collate": {
+              "Type": "String",
+              "Optional": true,
+              "Default": {
+                "Type": "string",
+                "Value": "C"
+              }
+            },
+            "lc_type": {
+              "Type": "String",
+              "Optional": true,
+              "Default": {
+                "Type": "string",
+                "Value": "C"
+              }
+            },
+            "name": {
+              "Type": "String",
+              "Required": true
+            },
+            "owner": {
+              "Type": "String",
+              "Required": true
+            }
+          }
+        }
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true
+      },
+      "environment": {
+        "Type": "String",
+        "Required": true
+      },
+      "folder_id": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "health": {
+        "Type": "String",
+        "Computed": true
+      },
+      "host": {
+        "Type": "List",
+        "Required": true,
+        "MinItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "assign_public_ip": {
+              "Type": "Bool",
+              "Optional": true,
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
+              }
+            },
+            "fqdn": {
+              "Type": "String",
+              "Computed": true
+            },
+            "subnet_id": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "zone": {
+              "Type": "String",
+              "Required": true
+            }
+          }
+        }
+      },
+      "labels": {
+        "Type": "Map",
+        "Optional": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Required": true
+      },
+      "network_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "status": {
+        "Type": "String",
+        "Computed": true
+      },
+      "user": {
+        "Type": "Set",
+        "Required": true,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "grants": {
+              "Type": "List",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "login": {
+              "Type": "Bool",
+              "Optional": true,
+              "Default": {
+                "Type": "bool",
+                "Value": "true"
+              }
+            },
+            "name": {
+              "Type": "String",
+              "Required": true
+            },
+            "password": {
+              "Type": "String",
+              "Required": true
+            },
+            "permission": {
+              "Type": "Set",
+              "Optional": true,
+              "Computed": true,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "database_name": {
+                    "Type": "String",
+                    "Required": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "yandex_mdb_redis_cluster": {
       "__timeouts__": [
         "create",
@@ -2103,7 +4184,8 @@
           "Info": {
             "maxmemory_policy": {
               "Type": "String",
-              "Optional": true
+              "Optional": true,
+              "Computed": true
             },
             "password": {
               "Type": "String",
@@ -2111,7 +4193,8 @@
             },
             "timeout": {
               "Type": "Int",
-              "Optional": true
+              "Optional": true,
+              "Computed": true
             }
           }
         }
@@ -2144,9 +4227,14 @@
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
+            "fqdn": {
+              "Type": "String",
+              "Computed": true
+            },
             "shard_name": {
               "Type": "String",
-              "Optional": true
+              "Optional": true,
+              "Computed": true
             },
             "subnet_id": {
               "Type": "String",
@@ -2298,6 +4386,212 @@
         "Required": true
       }
     },
+    "yandex_storage_bucket": {
+      "access_key": {
+        "Type": "String",
+        "Optional": true
+      },
+      "acl": {
+        "Type": "String",
+        "Optional": true,
+        "ConflictsWith": [
+          "grant"
+        ],
+        "Default": {
+          "Type": "string",
+          "Value": "private"
+        }
+      },
+      "bucket": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true,
+        "ConflictsWith": [
+          "bucket_prefix"
+        ]
+      },
+      "bucket_domain_name": {
+        "Type": "String",
+        "Computed": true
+      },
+      "bucket_prefix": {
+        "Type": "String",
+        "Optional": true,
+        "ConflictsWith": [
+          "bucket"
+        ]
+      },
+      "cors_rule": {
+        "Type": "List",
+        "Optional": true,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "allowed_headers": {
+              "Type": "List",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "allowed_methods": {
+              "Type": "List",
+              "Required": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "allowed_origins": {
+              "Type": "List",
+              "Required": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "expose_headers": {
+              "Type": "List",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "max_age_seconds": {
+              "Type": "Int",
+              "Optional": true
+            }
+          }
+        }
+      },
+      "force_destroy": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "grant": {
+        "Type": "Set",
+        "Optional": true,
+        "ConflictsWith": [
+          "acl"
+        ],
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "id": {
+              "Type": "String",
+              "Optional": true
+            },
+            "permissions": {
+              "Type": "Set",
+              "Required": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "type": {
+              "Type": "String",
+              "Required": true
+            },
+            "uri": {
+              "Type": "String",
+              "Optional": true
+            }
+          }
+        }
+      },
+      "secret_key": {
+        "Type": "String",
+        "Optional": true
+      },
+      "website": {
+        "Type": "List",
+        "Optional": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "error_document": {
+              "Type": "String",
+              "Optional": true
+            },
+            "index_document": {
+              "Type": "String",
+              "Optional": true
+            }
+          }
+        }
+      },
+      "website_domain": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "website_endpoint": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      }
+    },
+    "yandex_storage_object": {
+      "access_key": {
+        "Type": "String",
+        "Optional": true
+      },
+      "acl": {
+        "Type": "String",
+        "Optional": true,
+        "Default": {
+          "Type": "string",
+          "Value": "private"
+        }
+      },
+      "bucket": {
+        "Type": "String",
+        "Required": true
+      },
+      "content": {
+        "Type": "String",
+        "Optional": true,
+        "ConflictsWith": [
+          "source",
+          "content_base64"
+        ]
+      },
+      "content_base64": {
+        "Type": "String",
+        "Optional": true,
+        "ConflictsWith": [
+          "source",
+          "content"
+        ]
+      },
+      "key": {
+        "Type": "String",
+        "Required": true
+      },
+      "secret_key": {
+        "Type": "String",
+        "Optional": true
+      },
+      "source": {
+        "Type": "String",
+        "Optional": true,
+        "ConflictsWith": [
+          "content",
+          "content_base64"
+        ]
+      }
+    },
     "yandex_vpc_network": {
       "__timeouts__": [
         "create",
@@ -2328,9 +4622,7 @@
       "name": {
         "Type": "String",
         "Optional": true,
-        "Default": {
-          "Type": "string"
-        }
+        "Computed": true
       },
       "subnet_ids": {
         "Type": "List",
@@ -2398,6 +4690,189 @@
         }
       }
     },
+    "yandex_vpc_security_group": {
+      "__timeouts__": [
+        "create",
+        "update",
+        "delete"
+      ],
+      "created_at": {
+        "Type": "String",
+        "Computed": true
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true
+      },
+      "egress": {
+        "Type": "Set",
+        "Optional": true,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "description": {
+              "Type": "String",
+              "Optional": true
+            },
+            "from_port": {
+              "Type": "Int",
+              "Optional": true,
+              "Default": {
+                "Type": "int",
+                "Value": "-1"
+              }
+            },
+            "id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "labels": {
+              "Type": "Map",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "port": {
+              "Type": "Int",
+              "Optional": true,
+              "Default": {
+                "Type": "int",
+                "Value": "-1"
+              }
+            },
+            "protocol": {
+              "Type": "String",
+              "Required": true
+            },
+            "to_port": {
+              "Type": "Int",
+              "Optional": true,
+              "Default": {
+                "Type": "int",
+                "Value": "-1"
+              }
+            },
+            "v4_cidr_blocks": {
+              "Type": "List",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "v6_cidr_blocks": {
+              "Type": "List",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
+      "folder_id": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "ingress": {
+        "Type": "Set",
+        "Optional": true,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "description": {
+              "Type": "String",
+              "Optional": true
+            },
+            "from_port": {
+              "Type": "Int",
+              "Optional": true,
+              "Default": {
+                "Type": "int",
+                "Value": "-1"
+              }
+            },
+            "id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "labels": {
+              "Type": "Map",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "port": {
+              "Type": "Int",
+              "Optional": true,
+              "Default": {
+                "Type": "int",
+                "Value": "-1"
+              }
+            },
+            "protocol": {
+              "Type": "String",
+              "Required": true
+            },
+            "to_port": {
+              "Type": "Int",
+              "Optional": true,
+              "Default": {
+                "Type": "int",
+                "Value": "-1"
+              }
+            },
+            "v4_cidr_blocks": {
+              "Type": "List",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "v6_cidr_blocks": {
+              "Type": "List",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
+      "labels": {
+        "Type": "Map",
+        "Optional": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Default": {
+          "Type": "string"
+        }
+      },
+      "network_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "status": {
+        "Type": "String",
+        "Computed": true
+      }
+    },
     "yandex_vpc_subnet": {
       "__timeouts__": [
         "create",
@@ -2428,9 +4903,7 @@
       "name": {
         "Type": "String",
         "Optional": true,
-        "Default": {
-          "Type": "string"
-        }
+        "Computed": true
       },
       "network_id": {
         "Type": "String",
@@ -2670,6 +5143,7 @@
       },
       "folder_id": {
         "Type": "String",
+        "Optional": true,
         "Computed": true
       },
       "fqdn": {
@@ -2700,6 +5174,10 @@
       "name": {
         "Type": "String",
         "Optional": true,
+        "Computed": true
+      },
+      "network_acceleration_type": {
+        "Type": "String",
         "Computed": true
       },
       "network_interface": {
@@ -3015,6 +5493,10 @@
               "Type": "String",
               "Computed": true
             },
+            "hostname": {
+              "Type": "String",
+              "Computed": true
+            },
             "labels": {
               "Type": "Map",
               "Computed": true,
@@ -3031,12 +5513,20 @@
                 "ElementsType": "String"
               }
             },
+            "name": {
+              "Type": "String",
+              "Computed": true
+            },
             "network_interface": {
               "Type": "List",
               "Computed": true,
               "Elem": {
                 "Type": "SchemaInfo",
                 "Info": {
+                  "ipv4": {
+                    "Type": "Bool",
+                    "Computed": true
+                  },
                   "ipv6": {
                     "Type": "Bool",
                     "Computed": true
@@ -3056,6 +5546,19 @@
                       "Type": "SchemaElements",
                       "ElementsType": "String"
                     }
+                  }
+                }
+              }
+            },
+            "network_settings": {
+              "Type": "List",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "type": {
+                    "Type": "String",
+                    "Computed": true
                   }
                 }
               }
@@ -3190,6 +5693,10 @@
                     "Type": "String",
                     "Computed": true
                   },
+                  "ipv4": {
+                    "Type": "Bool",
+                    "Computed": true
+                  },
                   "ipv6": {
                     "Type": "Bool",
                     "Computed": true
@@ -3222,6 +5729,10 @@
               }
             },
             "status": {
+              "Type": "String",
+              "Computed": true
+            },
+            "status_changed_at": {
               "Type": "String",
               "Computed": true
             },
@@ -3317,6 +5828,39 @@
                     "Type": "Float",
                     "Computed": true
                   },
+                  "custom_rule": {
+                    "Type": "List",
+                    "Computed": true,
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "labels": {
+                          "Type": "Map",
+                          "Computed": true,
+                          "Elem": {
+                            "Type": "SchemaElements",
+                            "ElementsType": "String"
+                          }
+                        },
+                        "metric_name": {
+                          "Type": "String",
+                          "Computed": true
+                        },
+                        "metric_type": {
+                          "Type": "String",
+                          "Computed": true
+                        },
+                        "rule_type": {
+                          "Type": "String",
+                          "Computed": true
+                        },
+                        "target": {
+                          "Type": "Float",
+                          "Computed": true
+                        }
+                      }
+                    }
+                  },
                   "initial_size": {
                     "Type": "Int",
                     "Computed": true
@@ -3363,6 +5907,18 @@
       "service_account_id": {
         "Type": "String",
         "Computed": true
+      },
+      "status": {
+        "Type": "String",
+        "Computed": true
+      },
+      "variables": {
+        "Type": "Map",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       }
     },
     "yandex_compute_snapshot": {
@@ -3429,6 +5985,7 @@
       },
       "folder_id": {
         "Type": "String",
+        "Optional": true,
         "Computed": true
       },
       "labels": {
@@ -3452,6 +6009,406 @@
       "status": {
         "Type": "String",
         "Computed": true
+      }
+    },
+    "yandex_dataproc_cluster": {
+      "bucket": {
+        "Type": "String",
+        "Computed": true
+      },
+      "cluster_config": {
+        "Type": "List",
+        "Computed": true,
+        "MaxItems": 1,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "hadoop": {
+              "Type": "List",
+              "Computed": true,
+              "MaxItems": 1,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "properties": {
+                    "Type": "Map",
+                    "Computed": true,
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  },
+                  "services": {
+                    "Type": "Set",
+                    "Computed": true,
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  },
+                  "ssh_public_keys": {
+                    "Type": "Set",
+                    "Computed": true,
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  }
+                }
+              }
+            },
+            "subcluster_spec": {
+              "Type": "List",
+              "Computed": true,
+              "MinItems": 1,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "hosts_count": {
+                    "Type": "Int",
+                    "Computed": true
+                  },
+                  "id": {
+                    "Type": "String",
+                    "Computed": true
+                  },
+                  "name": {
+                    "Type": "String",
+                    "Computed": true
+                  },
+                  "resources": {
+                    "Type": "List",
+                    "Computed": true,
+                    "MaxItems": 1,
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "disk_size": {
+                          "Type": "Int",
+                          "Computed": true
+                        },
+                        "disk_type_id": {
+                          "Type": "String",
+                          "Computed": true
+                        },
+                        "resource_preset_id": {
+                          "Type": "String",
+                          "Computed": true
+                        }
+                      }
+                    }
+                  },
+                  "role": {
+                    "Type": "String",
+                    "Computed": true
+                  },
+                  "subnet_id": {
+                    "Type": "String",
+                    "Computed": true
+                  }
+                }
+              }
+            },
+            "version_id": {
+              "Type": "String",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "cluster_id": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "created_at": {
+        "Type": "String",
+        "Computed": true
+      },
+      "description": {
+        "Type": "String",
+        "Computed": true
+      },
+      "folder_id": {
+        "Type": "String",
+        "Computed": true
+      },
+      "labels": {
+        "Type": "Map",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "service_account_id": {
+        "Type": "String",
+        "Computed": true
+      },
+      "zone_id": {
+        "Type": "String",
+        "Computed": true
+      }
+    },
+    "yandex_function": {
+      "created_at": {
+        "Type": "String",
+        "Computed": true
+      },
+      "description": {
+        "Type": "String",
+        "Computed": true
+      },
+      "entrypoint": {
+        "Type": "String",
+        "Computed": true
+      },
+      "environment": {
+        "Type": "Map",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "execution_timeout": {
+        "Type": "String",
+        "Computed": true
+      },
+      "folder_id": {
+        "Type": "String",
+        "Optional": true
+      },
+      "function_id": {
+        "Type": "String",
+        "Optional": true
+      },
+      "image_size": {
+        "Type": "Int",
+        "Computed": true
+      },
+      "labels": {
+        "Type": "Map",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "loggroup_id": {
+        "Type": "String",
+        "Computed": true
+      },
+      "memory": {
+        "Type": "Int",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true
+      },
+      "runtime": {
+        "Type": "String",
+        "Computed": true
+      },
+      "service_account_id": {
+        "Type": "String",
+        "Computed": true
+      },
+      "tags": {
+        "Type": "Set",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "version": {
+        "Type": "String",
+        "Computed": true
+      }
+    },
+    "yandex_function_trigger": {
+      "created_at": {
+        "Type": "String",
+        "Computed": true
+      },
+      "description": {
+        "Type": "String",
+        "Computed": true
+      },
+      "dlq": {
+        "Type": "List",
+        "Computed": true,
+        "MaxItems": 1,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "queue_id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "service_account_id": {
+              "Type": "String",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "folder_id": {
+        "Type": "String",
+        "Optional": true
+      },
+      "function": {
+        "Type": "List",
+        "Computed": true,
+        "MaxItems": 1,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "retry_attempts": {
+              "Type": "String",
+              "Computed": true
+            },
+            "retry_interval": {
+              "Type": "String",
+              "Computed": true
+            },
+            "service_account_id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "tag": {
+              "Type": "String",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "iot": {
+        "Type": "List",
+        "Computed": true,
+        "MaxItems": 1,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "device_id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "registry_id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "topic": {
+              "Type": "String",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "labels": {
+        "Type": "Map",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "message_queue": {
+        "Type": "List",
+        "Computed": true,
+        "MaxItems": 1,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "batch_cutoff": {
+              "Type": "String",
+              "Computed": true
+            },
+            "batch_size": {
+              "Type": "String",
+              "Computed": true
+            },
+            "queue_id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "service_account_id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "visibility_timeout": {
+              "Type": "String",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true
+      },
+      "object_storage": {
+        "Type": "List",
+        "Computed": true,
+        "MaxItems": 1,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "bucket_id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "create": {
+              "Type": "Bool",
+              "Computed": true
+            },
+            "delete": {
+              "Type": "Bool",
+              "Computed": true
+            },
+            "prefix": {
+              "Type": "String",
+              "Computed": true
+            },
+            "suffix": {
+              "Type": "String",
+              "Computed": true
+            },
+            "update": {
+              "Type": "Bool",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "timer": {
+        "Type": "List",
+        "Computed": true,
+        "MaxItems": 1,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "cron_expression": {
+              "Type": "String",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "trigger_id": {
+        "Type": "String",
+        "Optional": true
       }
     },
     "yandex_iam_policy": {
@@ -3537,10 +6494,110 @@
         ]
       }
     },
+    "yandex_iot_core_device": {
+      "aliases": {
+        "Type": "Map",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "certificates": {
+        "Type": "Set",
+        "Computed": true,
+        "MaxItems": 5,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "created_at": {
+        "Type": "String",
+        "Computed": true
+      },
+      "description": {
+        "Type": "String",
+        "Computed": true
+      },
+      "device_id": {
+        "Type": "String",
+        "Optional": true
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true
+      },
+      "passwords": {
+        "Type": "Set",
+        "Computed": true,
+        "MaxItems": 5,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "registry_id": {
+        "Type": "String",
+        "Computed": true
+      }
+    },
+    "yandex_iot_core_registry": {
+      "certificates": {
+        "Type": "Set",
+        "Computed": true,
+        "MaxItems": 5,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "created_at": {
+        "Type": "String",
+        "Computed": true
+      },
+      "description": {
+        "Type": "String",
+        "Computed": true
+      },
+      "folder_id": {
+        "Type": "String",
+        "Optional": true
+      },
+      "labels": {
+        "Type": "Map",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true
+      },
+      "passwords": {
+        "Type": "Set",
+        "Computed": true,
+        "MaxItems": 5,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "registry_id": {
+        "Type": "String",
+        "Optional": true
+      }
+    },
     "yandex_kubernetes_cluster": {
       "cluster_id": {
         "Type": "String",
         "Optional": true,
+        "Computed": true
+      },
+      "cluster_ipv4_range": {
+        "Type": "String",
         "Computed": true
       },
       "created_at": {
@@ -3553,11 +6610,26 @@
       },
       "folder_id": {
         "Type": "String",
+        "Optional": true,
         "Computed": true
       },
       "health": {
         "Type": "String",
         "Computed": true
+      },
+      "kms_provider": {
+        "Type": "List",
+        "Computed": true,
+        "MaxItems": 1,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "key_id": {
+              "Type": "String",
+              "Computed": true
+            }
+          }
+        }
       },
       "labels": {
         "Type": "Map",
@@ -3594,6 +6666,45 @@
               "Type": "String",
               "Computed": true
             },
+            "maintenance_policy": {
+              "Type": "List",
+              "Computed": true,
+              "MaxItems": 1,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "auto_upgrade": {
+                    "Type": "Bool",
+                    "Computed": true
+                  },
+                  "maintenance_window": {
+                    "Type": "Set",
+                    "Computed": true,
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "day": {
+                          "Type": "String",
+                          "Computed": true
+                        },
+                        "duration": {
+                          "Type": "String",
+                          "Computed": true
+                        },
+                        "start_time": {
+                          "Type": "String",
+                          "Computed": true
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "public_ip": {
+              "Type": "Bool",
+              "Computed": true
+            },
             "regional": {
               "Type": "List",
               "Computed": true,
@@ -3607,6 +6718,10 @@
                   }
                 }
               }
+            },
+            "version": {
+              "Type": "String",
+              "Computed": true
             },
             "version_info": {
               "Type": "List",
@@ -3660,6 +6775,14 @@
         "Type": "String",
         "Computed": true
       },
+      "network_policy_provider": {
+        "Type": "String",
+        "Computed": true
+      },
+      "node_ipv4_cidr_mask_size": {
+        "Type": "Int",
+        "Computed": true
+      },
       "node_service_account_id": {
         "Type": "String",
         "Computed": true
@@ -3669,6 +6792,10 @@
         "Computed": true
       },
       "service_account_id": {
+        "Type": "String",
+        "Computed": true
+      },
+      "service_ipv4_range": {
         "Type": "String",
         "Computed": true
       },
@@ -3705,6 +6832,14 @@
           }
         }
       },
+      "allowed_unsafe_sysctls": {
+        "Type": "List",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
       "cluster_id": {
         "Type": "String",
         "Computed": true
@@ -3713,8 +6848,31 @@
         "Type": "String",
         "Computed": true
       },
+      "deploy_policy": {
+        "Type": "List",
+        "Computed": true,
+        "MaxItems": 1,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "max_expansion": {
+              "Type": "Int",
+              "Computed": true
+            },
+            "max_unavailable": {
+              "Type": "Int",
+              "Computed": true
+            }
+          }
+        }
+      },
       "description": {
         "Type": "String",
+        "Computed": true
+      },
+      "folder_id": {
+        "Type": "String",
+        "Optional": true,
         "Computed": true
       },
       "instance_group_id": {
@@ -3823,6 +6981,27 @@
             "auto_upgrade": {
               "Type": "Bool",
               "Computed": true
+            },
+            "maintenance_window": {
+              "Type": "Set",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "day": {
+                    "Type": "String",
+                    "Computed": true
+                  },
+                  "duration": {
+                    "Type": "String",
+                    "Computed": true
+                  },
+                  "start_time": {
+                    "Type": "String",
+                    "Computed": true
+                  }
+                }
+              }
             }
           }
         }
@@ -3837,6 +7016,22 @@
         "Optional": true,
         "Computed": true
       },
+      "node_labels": {
+        "Type": "Map",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "node_taints": {
+        "Type": "List",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
       "scale_policy": {
         "Type": "List",
         "Computed": true,
@@ -3844,6 +7039,28 @@
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
+            "auto_scale": {
+              "Type": "List",
+              "Computed": true,
+              "MaxItems": 1,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "initial": {
+                    "Type": "Int",
+                    "Computed": true
+                  },
+                  "max": {
+                    "Type": "Int",
+                    "Computed": true
+                  },
+                  "min": {
+                    "Type": "Int",
+                    "Computed": true
+                  }
+                }
+              }
+            },
             "fixed_scale": {
               "Type": "List",
               "Computed": true,
@@ -3977,6 +7194,7 @@
       },
       "folder_id": {
         "Type": "String",
+        "Optional": true,
         "Computed": true
       },
       "labels": {
@@ -4005,6 +7223,28 @@
                     "Computed": true
                   },
                   "ip_version": {
+                    "Type": "String",
+                    "Computed": true
+                  }
+                }
+              }
+            },
+            "internal_address_spec": {
+              "Type": "List",
+              "Computed": true,
+              "MaxItems": 1,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "address": {
+                    "Type": "String",
+                    "Computed": true
+                  },
+                  "ip_version": {
+                    "Type": "String",
+                    "Computed": true
+                  },
+                  "subnet_id": {
                     "Type": "String",
                     "Computed": true
                   }
@@ -4060,6 +7300,7 @@
       },
       "folder_id": {
         "Type": "String",
+        "Optional": true,
         "Computed": true
       },
       "labels": {
@@ -4096,6 +7337,901 @@
         "Type": "String",
         "Optional": true,
         "Computed": true
+      }
+    },
+    "yandex_mdb_clickhouse_cluster": {
+      "access": {
+        "Type": "List",
+        "Computed": true,
+        "MaxItems": 1,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "data_lens": {
+              "Type": "Bool",
+              "Computed": true
+            },
+            "metrika": {
+              "Type": "Bool",
+              "Computed": true
+            },
+            "serverless": {
+              "Type": "Bool",
+              "Computed": true
+            },
+            "web_sql": {
+              "Type": "Bool",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "backup_window_start": {
+        "Type": "List",
+        "Computed": true,
+        "MaxItems": 1,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "hours": {
+              "Type": "Int",
+              "Computed": true
+            },
+            "minutes": {
+              "Type": "Int",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "clickhouse": {
+        "Type": "List",
+        "Computed": true,
+        "MaxItems": 1,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "resources": {
+              "Type": "List",
+              "Computed": true,
+              "MaxItems": 1,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "disk_size": {
+                    "Type": "Int",
+                    "Computed": true
+                  },
+                  "disk_type_id": {
+                    "Type": "String",
+                    "Computed": true
+                  },
+                  "resource_preset_id": {
+                    "Type": "String",
+                    "Computed": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "cluster_id": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "created_at": {
+        "Type": "String",
+        "Computed": true
+      },
+      "database": {
+        "Type": "Set",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "name": {
+              "Type": "String",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "description": {
+        "Type": "String",
+        "Computed": true
+      },
+      "environment": {
+        "Type": "String",
+        "Computed": true
+      },
+      "folder_id": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "health": {
+        "Type": "String",
+        "Computed": true
+      },
+      "host": {
+        "Type": "List",
+        "Computed": true,
+        "MinItems": 1,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "assign_public_ip": {
+              "Type": "Bool",
+              "Computed": true
+            },
+            "fqdn": {
+              "Type": "String",
+              "Computed": true
+            },
+            "shard_name": {
+              "Type": "String",
+              "Computed": true
+            },
+            "subnet_id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "type": {
+              "Type": "String",
+              "Computed": true
+            },
+            "zone": {
+              "Type": "String",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "labels": {
+        "Type": "Map",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "network_id": {
+        "Type": "String",
+        "Computed": true
+      },
+      "status": {
+        "Type": "String",
+        "Computed": true
+      },
+      "user": {
+        "Type": "Set",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "name": {
+              "Type": "String",
+              "Computed": true
+            },
+            "permission": {
+              "Type": "Set",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "database_name": {
+                    "Type": "String",
+                    "Computed": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "version": {
+        "Type": "String",
+        "Computed": true
+      },
+      "zookeeper": {
+        "Type": "List",
+        "Computed": true,
+        "MaxItems": 1,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "resources": {
+              "Type": "List",
+              "Computed": true,
+              "MaxItems": 1,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "disk_size": {
+                    "Type": "Int",
+                    "Computed": true
+                  },
+                  "disk_type_id": {
+                    "Type": "String",
+                    "Computed": true
+                  },
+                  "resource_preset_id": {
+                    "Type": "String",
+                    "Computed": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "yandex_mdb_mongodb_cluster": {
+      "cluster_config": {
+        "Type": "List",
+        "Computed": true,
+        "MaxItems": 1,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "access": {
+              "Type": "List",
+              "Computed": true,
+              "MaxItems": 1,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "data_lens": {
+                    "Type": "Bool",
+                    "Computed": true
+                  }
+                }
+              }
+            },
+            "backup_window_start": {
+              "Type": "List",
+              "Optional": true,
+              "Computed": true,
+              "MaxItems": 1,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "hours": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "int",
+                      "Value": "0"
+                    }
+                  },
+                  "minutes": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "int",
+                      "Value": "0"
+                    }
+                  }
+                }
+              }
+            },
+            "feature_compatibility_version": {
+              "Type": "String",
+              "Computed": true
+            },
+            "version": {
+              "Type": "String",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "cluster_id": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "created_at": {
+        "Type": "String",
+        "Computed": true
+      },
+      "database": {
+        "Type": "Set",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "name": {
+              "Type": "String",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "description": {
+        "Type": "String",
+        "Computed": true
+      },
+      "environment": {
+        "Type": "String",
+        "Computed": true
+      },
+      "folder_id": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "health": {
+        "Type": "String",
+        "Computed": true
+      },
+      "host": {
+        "Type": "List",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "assign_public_ip": {
+              "Type": "Bool",
+              "Computed": true
+            },
+            "health": {
+              "Type": "String",
+              "Computed": true
+            },
+            "name": {
+              "Type": "String",
+              "Computed": true
+            },
+            "role": {
+              "Type": "String",
+              "Computed": true
+            },
+            "shard_name": {
+              "Type": "String",
+              "Computed": true
+            },
+            "subnet_id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "type": {
+              "Type": "String",
+              "Computed": true
+            },
+            "zone_id": {
+              "Type": "String",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "labels": {
+        "Type": "Map",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "network_id": {
+        "Type": "String",
+        "Computed": true
+      },
+      "resources": {
+        "Type": "List",
+        "Computed": true,
+        "MaxItems": 1,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "disk_size": {
+              "Type": "Int",
+              "Computed": true
+            },
+            "disk_type_id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "resource_preset_id": {
+              "Type": "String",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "sharded": {
+        "Type": "Bool",
+        "Computed": true
+      },
+      "status": {
+        "Type": "String",
+        "Computed": true
+      },
+      "user": {
+        "Type": "Set",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "name": {
+              "Type": "String",
+              "Computed": true
+            },
+            "permission": {
+              "Type": "Set",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "database_name": {
+                    "Type": "String",
+                    "Computed": true
+                  },
+                  "roles": {
+                    "Type": "List",
+                    "Optional": true,
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "yandex_mdb_mysql_cluster": {
+      "backup_window_start": {
+        "Type": "List",
+        "Computed": true,
+        "MaxItems": 1,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "hours": {
+              "Type": "Int",
+              "Optional": true,
+              "Default": {
+                "Type": "int",
+                "Value": "0"
+              }
+            },
+            "minutes": {
+              "Type": "Int",
+              "Optional": true,
+              "Default": {
+                "Type": "int",
+                "Value": "0"
+              }
+            }
+          }
+        }
+      },
+      "cluster_id": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "created_at": {
+        "Type": "String",
+        "Computed": true
+      },
+      "database": {
+        "Type": "Set",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "name": {
+              "Type": "String",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true
+      },
+      "environment": {
+        "Type": "String",
+        "Computed": true
+      },
+      "folder_id": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "health": {
+        "Type": "String",
+        "Computed": true
+      },
+      "host": {
+        "Type": "List",
+        "Computed": true,
+        "MinItems": 1,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "assign_public_ip": {
+              "Type": "Bool",
+              "Optional": true,
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
+              }
+            },
+            "fqdn": {
+              "Type": "String",
+              "Computed": true
+            },
+            "subnet_id": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "zone": {
+              "Type": "String",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "labels": {
+        "Type": "Map",
+        "Optional": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "network_id": {
+        "Type": "String",
+        "Computed": true
+      },
+      "resources": {
+        "Type": "List",
+        "Computed": true,
+        "MaxItems": 1,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "disk_size": {
+              "Type": "Int",
+              "Computed": true
+            },
+            "disk_type_id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "resource_preset_id": {
+              "Type": "String",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "status": {
+        "Type": "String",
+        "Computed": true
+      },
+      "user": {
+        "Type": "Set",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "name": {
+              "Type": "String",
+              "Computed": true
+            },
+            "password": {
+              "Type": "String",
+              "Computed": true
+            },
+            "permission": {
+              "Type": "Set",
+              "Optional": true,
+              "Computed": true,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "database_name": {
+                    "Type": "String",
+                    "Computed": true
+                  },
+                  "roles": {
+                    "Type": "List",
+                    "Optional": true,
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "version": {
+        "Type": "String",
+        "Computed": true
+      }
+    },
+    "yandex_mdb_postgresql_cluster": {
+      "cluster_id": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "config": {
+        "Type": "List",
+        "Computed": true,
+        "MaxItems": 1,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "access": {
+              "Type": "List",
+              "Computed": true,
+              "MaxItems": 1,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "data_lens": {
+                    "Type": "Bool",
+                    "Computed": true
+                  }
+                }
+              }
+            },
+            "autofailover": {
+              "Type": "Bool",
+              "Computed": true
+            },
+            "backup_window_start": {
+              "Type": "List",
+              "Computed": true,
+              "MaxItems": 1,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "hours": {
+                    "Type": "Int",
+                    "Computed": true
+                  },
+                  "minutes": {
+                    "Type": "Int",
+                    "Computed": true
+                  }
+                }
+              }
+            },
+            "pooler_config": {
+              "Type": "List",
+              "Computed": true,
+              "MaxItems": 1,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "pool_discard": {
+                    "Type": "Bool",
+                    "Computed": true
+                  },
+                  "pooling_mode": {
+                    "Type": "String",
+                    "Computed": true
+                  }
+                }
+              }
+            },
+            "resources": {
+              "Type": "List",
+              "Computed": true,
+              "MaxItems": 1,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "disk_size": {
+                    "Type": "Int",
+                    "Computed": true
+                  },
+                  "disk_type_id": {
+                    "Type": "String",
+                    "Computed": true
+                  },
+                  "resource_preset_id": {
+                    "Type": "String",
+                    "Computed": true
+                  }
+                }
+              }
+            },
+            "version": {
+              "Type": "String",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "created_at": {
+        "Type": "String",
+        "Computed": true
+      },
+      "database": {
+        "Type": "Set",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "extension": {
+              "Type": "Set",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "name": {
+                    "Type": "String",
+                    "Computed": true
+                  },
+                  "version": {
+                    "Type": "String",
+                    "Computed": true
+                  }
+                }
+              }
+            },
+            "lc_collate": {
+              "Type": "String",
+              "Computed": true
+            },
+            "lc_type": {
+              "Type": "String",
+              "Computed": true
+            },
+            "name": {
+              "Type": "String",
+              "Computed": true
+            },
+            "owner": {
+              "Type": "String",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true
+      },
+      "environment": {
+        "Type": "String",
+        "Computed": true
+      },
+      "folder_id": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "health": {
+        "Type": "String",
+        "Computed": true
+      },
+      "host": {
+        "Type": "List",
+        "Computed": true,
+        "MinItems": 1,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "assign_public_ip": {
+              "Type": "Bool",
+              "Computed": true
+            },
+            "fqdn": {
+              "Type": "String",
+              "Computed": true
+            },
+            "subnet_id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "zone": {
+              "Type": "String",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "labels": {
+        "Type": "Map",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "network_id": {
+        "Type": "String",
+        "Computed": true
+      },
+      "status": {
+        "Type": "String",
+        "Computed": true
+      },
+      "user": {
+        "Type": "Set",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "grants": {
+              "Type": "List",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "login": {
+              "Type": "Bool",
+              "Optional": true,
+              "Default": {
+                "Type": "bool",
+                "Value": "true"
+              }
+            },
+            "name": {
+              "Type": "String",
+              "Computed": true
+            },
+            "password": {
+              "Type": "String",
+              "Computed": true
+            },
+            "permission": {
+              "Type": "Set",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "database_name": {
+                    "Type": "String",
+                    "Computed": true
+                  }
+                }
+              }
+            }
+          }
+        }
       }
     },
     "yandex_mdb_redis_cluster": {
@@ -4136,6 +8272,7 @@
       },
       "folder_id": {
         "Type": "String",
+        "Optional": true,
         "Computed": true
       },
       "health": {
@@ -4148,6 +8285,10 @@
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
+            "fqdn": {
+              "Type": "String",
+              "Computed": true
+            },
             "shard_name": {
               "Type": "String",
               "Computed": true
@@ -4275,6 +8416,7 @@
       },
       "folder_id": {
         "Type": "String",
+        "Optional": true,
         "Computed": true
       },
       "labels": {
@@ -4315,6 +8457,7 @@
       },
       "folder_id": {
         "Type": "String",
+        "Optional": true,
         "Computed": true
       },
       "labels": {
@@ -4357,6 +8500,166 @@
         }
       }
     },
+    "yandex_vpc_security_group": {
+      "created_at": {
+        "Type": "String",
+        "Computed": true
+      },
+      "description": {
+        "Type": "String",
+        "Computed": true
+      },
+      "egress": {
+        "Type": "Set",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "description": {
+              "Type": "String",
+              "Computed": true
+            },
+            "direction": {
+              "Type": "String",
+              "Computed": true
+            },
+            "from_port": {
+              "Type": "Int",
+              "Computed": true
+            },
+            "id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "labels": {
+              "Type": "Map",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "protocol_name": {
+              "Type": "String",
+              "Computed": true
+            },
+            "protocol_number": {
+              "Type": "Int",
+              "Computed": true
+            },
+            "to_port": {
+              "Type": "Int",
+              "Computed": true
+            },
+            "v4_cidr_blocks": {
+              "Type": "Set",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "v6_cidr_blocks": {
+              "Type": "Set",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
+      "folder_id": {
+        "Type": "String",
+        "Computed": true
+      },
+      "ingress": {
+        "Type": "Set",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "description": {
+              "Type": "String",
+              "Computed": true
+            },
+            "direction": {
+              "Type": "String",
+              "Computed": true
+            },
+            "from_port": {
+              "Type": "Int",
+              "Computed": true
+            },
+            "id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "labels": {
+              "Type": "Map",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "protocol_name": {
+              "Type": "String",
+              "Computed": true
+            },
+            "protocol_number": {
+              "Type": "Int",
+              "Computed": true
+            },
+            "to_port": {
+              "Type": "Int",
+              "Computed": true
+            },
+            "v4_cidr_blocks": {
+              "Type": "Set",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "v6_cidr_blocks": {
+              "Type": "Set",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
+      "labels": {
+        "Type": "Map",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Computed": true
+      },
+      "network_id": {
+        "Type": "String",
+        "Computed": true
+      },
+      "security_group_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "status": {
+        "Type": "String",
+        "Computed": true
+      }
+    },
     "yandex_vpc_subnet": {
       "created_at": {
         "Type": "String",
@@ -4368,6 +8671,7 @@
       },
       "folder_id": {
         "Type": "String",
+        "Optional": true,
         "Computed": true
       },
       "labels": {
