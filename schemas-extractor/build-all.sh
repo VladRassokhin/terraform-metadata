@@ -3,8 +3,8 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-if [[ ! -f 'providers.list.full' ]]; then
-  echo "File 'providers.list.full' required to operate"
+if [[ ! -f 'providers.json' ]]; then
+  echo "File 'providers.json' required to operate"
   exit 1
 fi
 if [[ -z "$GOPATH" ]]; then
@@ -20,22 +20,36 @@ rm -f "$CUR/failure.txt"
 
 mkdir -p "$GOPATH/src/github.com/terraform-providers"
 
+function jq_get() {
+  name="$1"
+  prop="$2"
+  jq -r ".\"$name\".$prop // .__NAME__.$prop " <"$CUR/providers.json" | sed -e "s/__NAME__/$name/"
+}
+
 update_or_clone() {
   name="$1"
-  location="$GOPATH/src/github.com/terraform-providers/$name"
+  if [[ "$name" == "__NAME__" ]]; then
+    return 0
+  fi
+  skip_generation="$(jq_get "$name" 'skip_generation')"
+  if [[ $skip_generation == "true" ]]; then
+    return 0
+  fi
+  repository="$(jq_get "$name" 'repository')"
+  location="$GOPATH/src/$repository"
   if [[ -d "$location" ]]; then
     echo "Updating $name"
     git -C "$location" fetch --tags >/dev/null 2>&1 || echo "ERROR: Failed to update '$name'"
   else
     echo "Cloning $name"
-    git clone --quiet "https://github.com/terraform-providers/$name.git" "$location" >/dev/null 2>&1
+    git clone --quiet "https://$repository" "$location" >/dev/null 2>&1
   fi
 }
 
 if [[ -z "${SKIP_UPDATE:-}" ]]; then
   while IFS= read -r p; do
     update_or_clone "$p" &
-  done < <(grep '^terraform-provider-' <"$CUR/providers.list.full")
+  done < <(jq -r 'keys[]' <"$CUR/providers.json")
 fi
 
 pushd "$GOPATH/src/github.com/terraform-providers" >/dev/null
@@ -53,44 +67,41 @@ generate_one() {
   echo "Finished $1"
 }
 
-process_repository() {
-  full_name="$1"
-  location="$GOPATH/src/github.com/terraform-providers/$full_name"
-  name="${full_name#terraform-provider-}"
-  pkg_name="$name"
-  provider_args=""
+process_provider() {
+  name="$1"
+  if [[ "$name" == "__NAME__" ]]; then
+    return 0
+  fi
+  skip_generation="$(jq_get "$name" 'skip_generation')"
+  if [[ $skip_generation == "true" ]]; then
+    return 0
+  fi
+  repository="$(jq_get "$name" 'repository')"
+  pkg_name="$(jq_get "$name" 'pkg_name')"
+  provider_args="$(jq_get "$name" 'provider_args')"
+  location="$GOPATH/src/$repository"
 
-  case "$pkg_name" in
-  "terraform" | "scaffolding")
-    echo "Skipping $full_name"
-    return
-    ;;
-  "azure-classic")
-    pkg_name="azure"
-    ;;
-  "oci")
-    provider_args="prvdr.ProviderConfig"
-    ;;
-  esac
-
-  echo "Processing $full_name"
+  if [[ ! -d "$location" ]]; then
+    echo "$location doesn't exist, skipping"
+    return 1
+  fi
 
   if output=$(git -C "$location" status --untracked-files=no --porcelain) && [[ -n "$output" ]]; then
     echo "git working copy is not clear, cannot proceed"
-    echo "$full_name" >>"$CUR/failure.txt"
+    echo "$name" >>"$CUR/failure.txt"
     return 2
   fi
 
   pushd "$location" >/dev/null
 
-  echo "Preparing $full_name"
+  echo "Preparing $name"
 
   # All tags:
   echo "Repository newest tags:"
   git tag -l --sort=-v:refname | head
   latest=$(git tag -l --sort=-v:refname | head -n 1)
   if [[ -z "$latest" ]]; then
-    echo "There's no tags in $full_name, will use current state"
+    echo "There's no tags in $name, will use current state"
   else
     echo "Will generate schema for tag '$latest'"
   fi
@@ -136,7 +147,7 @@ EOF
   rm -rf generate-schema
   mkdir generate-schema
   sed \
-    -e "s/__FULL_NAME__/$full_name/g" \
+    -e "s~__REPOSITORY__~$repository~g" \
     -e "s/__NAME__/${name}/g" \
     -e "s/__PKG_NAME__/${pkg_name}/g" \
     -e "s/__REVISION__/$revision/g" \
@@ -146,13 +157,13 @@ EOF
     "$CUR/template/generate-schema.go" \
     >generate-schema/generate-schema.go
 
-  echo "Generating schema for $full_name"
+  echo "Generating schema for $name"
   if [[ "${KILL_CPU:-}" == "1" ]]; then
     (
-      generate_one "$full_name" "$CUR"
+      generate_one "$name" "$CUR"
     ) &
   else
-    generate_one "$full_name" "$CUR"
+    generate_one "$name" "$CUR"
   fi
 
   # Revert to previous state
@@ -161,8 +172,8 @@ EOF
 }
 
 while IFS= read -r p; do
-  process_repository "$p" || true
-done < <(grep '^terraform-provider-' <"$CUR/providers.list.full")
+  process_provider "$p" || true
+done < <(jq -r 'keys[]' <"$CUR/providers.json")
 
 echo
 echo "========================================"
