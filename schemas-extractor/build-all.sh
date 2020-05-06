@@ -96,10 +96,15 @@ process_provider() {
   fi
 
   if output=$(git -C "$location" status --untracked-files=no --porcelain) && [[ -n "$output" ]]; then
-    mkdir -p "$CUR/logs"
-    echo "git working copy '$location' is not clear, cannot proceed" | tee "$CUR/logs/$name.log"
-    echo "$name" >>"$CUR/failure.txt"
-    return 2
+    if [[ -z "${RESET_REPOS:-}" ]]; then
+      mkdir -p "$CUR/logs"
+      echo "git working copy '$location' is not clear, cannot proceed" | tee "$CUR/logs/$name.log"
+      echo "$name" >>"$CUR/failure.txt"
+      return 2
+    else
+      git -C "$location" reset --hard
+      git -C "$location" clean -fdx
+    fi
   fi
 
   pushd "$location" >/dev/null
