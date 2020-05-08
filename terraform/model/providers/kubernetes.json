@@ -2,7 +2,7 @@
   ".schema_version": "1",
   "name": "kubernetes",
   "type": "provider",
-  "version": "v1.11.1",
+  "version": "v1.11.2",
   "provider": {
     "client_certificate": {
       "Type": "String",
@@ -5041,6 +5041,11 @@
                               }
                             }
                           }
+                        },
+                        "ttl_seconds_after_finished": {
+                          "Type": "Int",
+                          "Optional": true,
+                          "Description": "ttlSecondsAfterFinished limits the lifetime of a Job that has finished execution (either Complete or Failed). If this field is set, ttlSecondsAfterFinished after the Job finishes, it is eligible to be automatically deleted. When the Job is being deleted, its lifecycle guarantees (e.g. finalizers) will be honored. If this field is unset, the Job won't be automatically deleted. If this field is set to zero, the Job becomes eligible to be deleted immediately after it finishes."
                         }
                       }
                     }
@@ -14160,6 +14165,414 @@
               "Required": true,
               "Description": "Upper limit for the number of pods that can be set by the autoscaler."
             },
+            "metric": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "The specifications for which to use to calculate the desired replica count (the maximum replica count across all metrics will be used). The desired replica count is calculated multiplying the ratio between the target value and the current value by the current number of pods. Ergo, metrics used must decrease as the pod count is increased, and vice-versa. See the individual metric source types for more information about how each type of metric must respond. If not set, the default metric will be set to 80% average CPU utilization.",
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "external": {
+                    "Type": "List",
+                    "Optional": true,
+                    "MaxItems": 1,
+                    "IsBlock": true,
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "metric": {
+                          "Type": "List",
+                          "Required": true,
+                          "Description": "metric identifies the target metric by name and selector",
+                          "MaxItems": 1,
+                          "IsBlock": true,
+                          "Elem": {
+                            "Type": "SchemaInfo",
+                            "Info": {
+                              "name": {
+                                "Type": "String",
+                                "Required": true,
+                                "Description": "name is the name of the given metric"
+                              },
+                              "selector": {
+                                "Type": "List",
+                                "Optional": true,
+                                "Description": "selector is the string-encoded form of a standard kubernetes label selector for the given metric When set, it is passed as an additional parameter to the metrics server for more specific metrics scoping. When unset, just the metricName will be used to gather metrics.",
+                                "IsBlock": true,
+                                "Elem": {
+                                  "Type": "SchemaInfo",
+                                  "Info": {
+                                    "match_expressions": {
+                                      "Type": "List",
+                                      "Optional": true,
+                                      "Description": "A list of label selector requirements. The requirements are ANDed.",
+                                      "IsBlock": true,
+                                      "Elem": {
+                                        "Type": "SchemaInfo",
+                                        "Info": {
+                                          "key": {
+                                            "Type": "String",
+                                            "Optional": true,
+                                            "Description": "The label key that the selector applies to."
+                                          },
+                                          "operator": {
+                                            "Type": "String",
+                                            "Optional": true,
+                                            "Description": "A key's relationship to a set of values. Valid operators ard `In`, `NotIn`, `Exists` and `DoesNotExist`."
+                                          },
+                                          "values": {
+                                            "Type": "Set",
+                                            "Optional": true,
+                                            "Description": "An array of string values. If the operator is `In` or `NotIn`, the values array must be non-empty. If the operator is `Exists` or `DoesNotExist`, the values array must be empty. This array is replaced during a strategic merge patch.",
+                                            "Elem": {
+                                              "Type": "SchemaElements",
+                                              "ElementsType": "String"
+                                            }
+                                          }
+                                        }
+                                      }
+                                    },
+                                    "match_labels": {
+                                      "Type": "Map",
+                                      "Optional": true,
+                                      "Description": "A map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of `match_expressions`, whose key field is \"key\", the operator is \"In\", and the values array contains only \"value\". The requirements are ANDed."
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        },
+                        "target": {
+                          "Type": "List",
+                          "Optional": true,
+                          "Description": "target specifies the target value for the given metric",
+                          "MaxItems": 1,
+                          "IsBlock": true,
+                          "Elem": {
+                            "Type": "SchemaInfo",
+                            "Info": {
+                              "average_utilization": {
+                                "Type": "Int",
+                                "Optional": true,
+                                "Description": "averageUtilization is the target value of the average of the resource metric across all relevant pods, represented as a percentage of the requested value of the resource for the pods. Currently only valid for Resource metric source type"
+                              },
+                              "average_value": {
+                                "Type": "String",
+                                "Optional": true,
+                                "Description": "averageValue is the target value of the average of the metric across all relevant pods (as a quantity)"
+                              },
+                              "type": {
+                                "Type": "String",
+                                "Required": true,
+                                "Description": "type represents whether the metric type is Utilization, Value, or AverageValue"
+                              },
+                              "value": {
+                                "Type": "String",
+                                "Optional": true,
+                                "Description": "value is the target value of the metric (as a quantity)."
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "object": {
+                    "Type": "List",
+                    "Optional": true,
+                    "MaxItems": 1,
+                    "IsBlock": true,
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "described_object": {
+                          "Type": "List",
+                          "Required": true,
+                          "MaxItems": 1,
+                          "IsBlock": true,
+                          "Elem": {
+                            "Type": "SchemaInfo",
+                            "Info": {
+                              "api_version": {
+                                "Type": "String",
+                                "Required": true,
+                                "Description": "API version of the referent"
+                              },
+                              "kind": {
+                                "Type": "String",
+                                "Required": true,
+                                "Description": "Kind of the referent; More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds"
+                              },
+                              "name": {
+                                "Type": "String",
+                                "Required": true,
+                                "Description": "Name of the referent; More info: http://kubernetes.io/docs/user-guide/identifiers#names"
+                              }
+                            }
+                          }
+                        },
+                        "metric": {
+                          "Type": "List",
+                          "Required": true,
+                          "Description": "metric identifies the target metric by name and selector",
+                          "MaxItems": 1,
+                          "IsBlock": true,
+                          "Elem": {
+                            "Type": "SchemaInfo",
+                            "Info": {
+                              "name": {
+                                "Type": "String",
+                                "Required": true,
+                                "Description": "name is the name of the given metric"
+                              },
+                              "selector": {
+                                "Type": "List",
+                                "Optional": true,
+                                "Description": "selector is the string-encoded form of a standard kubernetes label selector for the given metric When set, it is passed as an additional parameter to the metrics server for more specific metrics scoping. When unset, just the metricName will be used to gather metrics.",
+                                "IsBlock": true,
+                                "Elem": {
+                                  "Type": "SchemaInfo",
+                                  "Info": {
+                                    "match_expressions": {
+                                      "Type": "List",
+                                      "Optional": true,
+                                      "Description": "A list of label selector requirements. The requirements are ANDed.",
+                                      "IsBlock": true,
+                                      "Elem": {
+                                        "Type": "SchemaInfo",
+                                        "Info": {
+                                          "key": {
+                                            "Type": "String",
+                                            "Optional": true,
+                                            "Description": "The label key that the selector applies to."
+                                          },
+                                          "operator": {
+                                            "Type": "String",
+                                            "Optional": true,
+                                            "Description": "A key's relationship to a set of values. Valid operators ard `In`, `NotIn`, `Exists` and `DoesNotExist`."
+                                          },
+                                          "values": {
+                                            "Type": "Set",
+                                            "Optional": true,
+                                            "Description": "An array of string values. If the operator is `In` or `NotIn`, the values array must be non-empty. If the operator is `Exists` or `DoesNotExist`, the values array must be empty. This array is replaced during a strategic merge patch.",
+                                            "Elem": {
+                                              "Type": "SchemaElements",
+                                              "ElementsType": "String"
+                                            }
+                                          }
+                                        }
+                                      }
+                                    },
+                                    "match_labels": {
+                                      "Type": "Map",
+                                      "Optional": true,
+                                      "Description": "A map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of `match_expressions`, whose key field is \"key\", the operator is \"In\", and the values array contains only \"value\". The requirements are ANDed."
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        },
+                        "target": {
+                          "Type": "List",
+                          "Optional": true,
+                          "Description": "target specifies the target value for the given metric",
+                          "MaxItems": 1,
+                          "IsBlock": true,
+                          "Elem": {
+                            "Type": "SchemaInfo",
+                            "Info": {
+                              "average_utilization": {
+                                "Type": "Int",
+                                "Optional": true,
+                                "Description": "averageUtilization is the target value of the average of the resource metric across all relevant pods, represented as a percentage of the requested value of the resource for the pods. Currently only valid for Resource metric source type"
+                              },
+                              "average_value": {
+                                "Type": "String",
+                                "Optional": true,
+                                "Description": "averageValue is the target value of the average of the metric across all relevant pods (as a quantity)"
+                              },
+                              "type": {
+                                "Type": "String",
+                                "Required": true,
+                                "Description": "type represents whether the metric type is Utilization, Value, or AverageValue"
+                              },
+                              "value": {
+                                "Type": "String",
+                                "Optional": true,
+                                "Description": "value is the target value of the metric (as a quantity)."
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "pods": {
+                    "Type": "List",
+                    "Optional": true,
+                    "MaxItems": 1,
+                    "IsBlock": true,
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "metric": {
+                          "Type": "List",
+                          "Required": true,
+                          "Description": "metric identifies the target metric by name and selector",
+                          "MaxItems": 1,
+                          "IsBlock": true,
+                          "Elem": {
+                            "Type": "SchemaInfo",
+                            "Info": {
+                              "name": {
+                                "Type": "String",
+                                "Required": true,
+                                "Description": "name is the name of the given metric"
+                              },
+                              "selector": {
+                                "Type": "List",
+                                "Optional": true,
+                                "Description": "selector is the string-encoded form of a standard kubernetes label selector for the given metric When set, it is passed as an additional parameter to the metrics server for more specific metrics scoping. When unset, just the metricName will be used to gather metrics.",
+                                "IsBlock": true,
+                                "Elem": {
+                                  "Type": "SchemaInfo",
+                                  "Info": {
+                                    "match_expressions": {
+                                      "Type": "List",
+                                      "Optional": true,
+                                      "Description": "A list of label selector requirements. The requirements are ANDed.",
+                                      "IsBlock": true,
+                                      "Elem": {
+                                        "Type": "SchemaInfo",
+                                        "Info": {
+                                          "key": {
+                                            "Type": "String",
+                                            "Optional": true,
+                                            "Description": "The label key that the selector applies to."
+                                          },
+                                          "operator": {
+                                            "Type": "String",
+                                            "Optional": true,
+                                            "Description": "A key's relationship to a set of values. Valid operators ard `In`, `NotIn`, `Exists` and `DoesNotExist`."
+                                          },
+                                          "values": {
+                                            "Type": "Set",
+                                            "Optional": true,
+                                            "Description": "An array of string values. If the operator is `In` or `NotIn`, the values array must be non-empty. If the operator is `Exists` or `DoesNotExist`, the values array must be empty. This array is replaced during a strategic merge patch.",
+                                            "Elem": {
+                                              "Type": "SchemaElements",
+                                              "ElementsType": "String"
+                                            }
+                                          }
+                                        }
+                                      }
+                                    },
+                                    "match_labels": {
+                                      "Type": "Map",
+                                      "Optional": true,
+                                      "Description": "A map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of `match_expressions`, whose key field is \"key\", the operator is \"In\", and the values array contains only \"value\". The requirements are ANDed."
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        },
+                        "target": {
+                          "Type": "List",
+                          "Optional": true,
+                          "Description": "target specifies the target value for the given metric",
+                          "MaxItems": 1,
+                          "IsBlock": true,
+                          "Elem": {
+                            "Type": "SchemaInfo",
+                            "Info": {
+                              "average_utilization": {
+                                "Type": "Int",
+                                "Optional": true,
+                                "Description": "averageUtilization is the target value of the average of the resource metric across all relevant pods, represented as a percentage of the requested value of the resource for the pods. Currently only valid for Resource metric source type"
+                              },
+                              "average_value": {
+                                "Type": "String",
+                                "Optional": true,
+                                "Description": "averageValue is the target value of the average of the metric across all relevant pods (as a quantity)"
+                              },
+                              "type": {
+                                "Type": "String",
+                                "Required": true,
+                                "Description": "type represents whether the metric type is Utilization, Value, or AverageValue"
+                              },
+                              "value": {
+                                "Type": "String",
+                                "Optional": true,
+                                "Description": "value is the target value of the metric (as a quantity)."
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "resource": {
+                    "Type": "List",
+                    "Optional": true,
+                    "MaxItems": 1,
+                    "IsBlock": true,
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "name": {
+                          "Type": "String",
+                          "Required": true,
+                          "Description": "name is the name of the resource in question."
+                        },
+                        "target": {
+                          "Type": "List",
+                          "Optional": true,
+                          "Description": "Target specifies the target value for the given metric",
+                          "MaxItems": 1,
+                          "IsBlock": true,
+                          "Elem": {
+                            "Type": "SchemaInfo",
+                            "Info": {
+                              "average_utilization": {
+                                "Type": "Int",
+                                "Optional": true,
+                                "Description": "averageUtilization is the target value of the average of the resource metric across all relevant pods, represented as a percentage of the requested value of the resource for the pods. Currently only valid for Resource metric source type"
+                              },
+                              "average_value": {
+                                "Type": "String",
+                                "Optional": true,
+                                "Description": "averageValue is the target value of the average of the metric across all relevant pods (as a quantity)"
+                              },
+                              "type": {
+                                "Type": "String",
+                                "Required": true,
+                                "Description": "type represents whether the metric type is Utilization, Value, or AverageValue"
+                              },
+                              "value": {
+                                "Type": "String",
+                                "Optional": true,
+                                "Description": "value is the target value of the metric (as a quantity)."
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "type": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "type is the type of metric source. It should be one of \"Object\", \"Pods\", \"External\" or \"Resource\", each mapping to a matching field in the object."
+                  }
+                }
+              }
+            },
             "min_replicas": {
               "Type": "Int",
               "Optional": true,
@@ -14425,6 +14838,15 @@
               }
             }
           }
+        }
+      },
+      "wait_for_load_balancer": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Terraform will wait for the load balancer to have at least 1 endpoint before considering the resource created.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
         }
       }
     },
@@ -18779,6 +19201,11 @@
                   }
                 }
               }
+            },
+            "ttl_seconds_after_finished": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "ttlSecondsAfterFinished limits the lifetime of a Job that has finished execution (either Complete or Failed). If this field is set, ttlSecondsAfterFinished after the Job finishes, it is eligible to be automatically deleted. When the Job is being deleted, its lifecycle guarantees (e.g. finalizers) will be honored. If this field is unset, the Job won't be automatically deleted. If this field is set to zero, the Job becomes eligible to be deleted immediately after it finishes."
             }
           }
         }
@@ -18910,6 +19337,351 @@
                     "Description": "Type of resource that this limit applies to."
                   }
                 }
+              }
+            }
+          }
+        }
+      }
+    },
+    "kubernetes_mutating_webhook_configuration": {
+      "metadata": {
+        "Type": "List",
+        "Required": true,
+        "Description": "Standard mutating webhook configuration's metadata. More info: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#metadata",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "annotations": {
+              "Type": "Map",
+              "Optional": true,
+              "Description": "An unstructured key value map stored with the mutating webhook configuration that may be used to store arbitrary metadata. More info: http://kubernetes.io/docs/user-guide/annotations",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "generate_name": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Prefix, used by the server, to generate a unique name ONLY IF the `name` field has not been provided. This value will also be combined with a unique suffix. Read more: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#idempotency",
+              "ConflictsWith": [
+                "metadata.0.name"
+              ]
+            },
+            "generation": {
+              "Type": "Int",
+              "Description": "A sequence number representing a specific generation of the desired state.",
+              "Computed": true
+            },
+            "labels": {
+              "Type": "Map",
+              "Optional": true,
+              "Description": "Map of string keys and values that can be used to organize and categorize (scope and select) the mutating webhook configuration. May match selectors of replication controllers and services. More info: http://kubernetes.io/docs/user-guide/labels",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "name": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Name of the mutating webhook configuration, must be unique. Cannot be updated. More info: http://kubernetes.io/docs/user-guide/identifiers#names",
+              "Computed": true,
+              "ConflictsWith": [
+                "metadata.0.generate_name"
+              ]
+            },
+            "resource_version": {
+              "Type": "String",
+              "Description": "An opaque value that represents the internal version of this mutating webhook configuration that can be used by clients to determine when mutating webhook configuration has changed. Read more: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency",
+              "Computed": true
+            },
+            "self_link": {
+              "Type": "String",
+              "Description": "A URL representing this mutating webhook configuration.",
+              "Computed": true
+            },
+            "uid": {
+              "Type": "String",
+              "Description": "The unique in time and space value for this mutating webhook configuration. More info: http://kubernetes.io/docs/user-guide/identifiers#uids",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "webhook": {
+        "Type": "List",
+        "Required": true,
+        "Description": "Webhooks is a list of webhooks and the affected resources and operations.",
+        "MinItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "admission_review_versions": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "AdmissionReviewVersions is an ordered list of preferred `AdmissionReview` versions the Webhook expects. API server will try to use first version in the list which it supports. If none of the versions specified in this list supported by API server, validation will fail for this object. If a persisted webhook configuration specifies allowed versions and does not include any versions known to the API Server, calls to the webhook will fail and be subject to the failure policy.",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "client_config": {
+              "Type": "List",
+              "Required": true,
+              "Description": "ClientConfig defines how to communicate with the hook. Required",
+              "MaxItems": 1,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "ca_bundle": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "`caBundle` is a PEM encoded CA bundle which will be used to validate the webhook's server certificate. If unspecified, system trust roots on the apiserver are used."
+                  },
+                  "service": {
+                    "Type": "List",
+                    "Required": true,
+                    "Description": "`service` is a reference to the service for this webhook. Either `service` or `url` must be specified.\n\nIf the webhook is running within the cluster, then you should use `service`.",
+                    "MaxItems": 1,
+                    "IsBlock": true,
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "name": {
+                          "Type": "String",
+                          "Required": true,
+                          "Description": "`name` is the name of the service. Required"
+                        },
+                        "namespace": {
+                          "Type": "String",
+                          "Required": true,
+                          "Description": "`namespace` is the namespace of the service. Required"
+                        },
+                        "path": {
+                          "Type": "String",
+                          "Optional": true,
+                          "Description": "`path` is an optional URL path which will be sent in any request to this service."
+                        },
+                        "port": {
+                          "Type": "Int",
+                          "Optional": true,
+                          "Description": "If specified, the port on the service that hosting webhook. Default to 443 for backward compatibility. `port` should be a valid port number (1-65535, inclusive).",
+                          "Default": {
+                            "Type": "int",
+                            "Value": "443"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "url": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "`url` gives the location of the webhook, in standard URL form (`scheme://host:port/path`). Exactly one of `url` or `service` must be specified.\n\nThe `host` should not refer to a service running in the cluster; use the `service` field instead. The host might be resolved via external DNS in some apiservers (e.g., `kube-apiserver` cannot resolve in-cluster DNS as that would be a layering violation). `host` may also be an IP address.\n\nPlease note that using `localhost` or `127.0.0.1` as a `host` is risky unless you take great care to run this webhook on all hosts which run an apiserver which might need to make calls to this webhook. Such installs are likely to be non-portable, i.e., not easy to turn up in a new cluster.\n\nThe scheme must be \"https\"; the URL must begin with \"https://\".\n\nA path is optional, and if present may be any string permissible in a URL. You may use the path to pass an arbitrary string to the webhook, for example, a cluster identifier.\n\nAttempting to use a user or basic auth e.g. \"user:password@\" is not allowed. Fragments (\"#...\") and query parameters (\"?...\") are not allowed, either."
+                  }
+                }
+              }
+            },
+            "failure_policy": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "FailurePolicy defines how unrecognized errors from the admission endpoint are handled - allowed values are Ignore or Fail. Defaults to Fail.",
+              "Default": {
+                "Type": "string",
+                "Value": "Fail"
+              }
+            },
+            "match_policy": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "matchPolicy defines how the \"rules\" list is used to match incoming requests. Allowed values are \"Exact\" or \"Equivalent\".\n\n- Exact: match a request only if it exactly matches a specified rule. For example, if deployments can be modified via apps/v1, apps/v1beta1, and extensions/v1beta1, but \"rules\" only included `apiGroups:[\"apps\"], apiVersions:[\"v1\"], resources: [\"deployments\"]`, a request to apps/v1beta1 or extensions/v1beta1 would not be sent to the webhook.\n\n- Equivalent: match a request if modifies a resource listed in rules, even via another API group or version. For example, if deployments can be modified via apps/v1, apps/v1beta1, and extensions/v1beta1, and \"rules\" only included `apiGroups:[\"apps\"], apiVersions:[\"v1\"], resources: [\"deployments\"]`, a request to apps/v1beta1 or extensions/v1beta1 would be converted to apps/v1 and sent to the webhook.\n\nDefaults to \"Equivalent\"",
+              "Default": {
+                "Type": "string",
+                "Value": "Equivalent"
+              }
+            },
+            "name": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The name of the admission webhook. Name should be fully qualified, e.g., imagepolicy.kubernetes.io, where \"imagepolicy\" is the name of the webhook, and kubernetes.io is the name of the organization. Required."
+            },
+            "namespace_selector": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "NamespaceSelector decides whether to run the webhook on an object based on whether the namespace for that object matches the selector. If the object itself is a namespace, the matching is performed on object.metadata.labels. If the object is another cluster scoped resource, it never skips the webhook.\n\nFor example, to run the webhook on any objects whose namespace is not associated with \"runlevel\" of \"0\" or \"1\";  you will set the selector as follows: \"namespaceSelector\": {\n  \"matchExpressions\": [\n    {\n      \"key\": \"runlevel\",\n      \"operator\": \"NotIn\",\n      \"values\": [\n        \"0\",\n        \"1\"\n      ]\n    }\n  ]\n}\n\nIf instead you want to only run the webhook on any objects whose namespace is associated with the \"environment\" of \"prod\" or \"staging\"; you will set the selector as follows: \"namespaceSelector\": {\n  \"matchExpressions\": [\n    {\n      \"key\": \"environment\",\n      \"operator\": \"In\",\n      \"values\": [\n        \"prod\",\n        \"staging\"\n      ]\n    }\n  ]\n}\n\nSee https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/ for more examples of label selectors.\n\nDefault to the empty LabelSelector, which matches everything.",
+              "MaxItems": 1,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "match_expressions": {
+                    "Type": "List",
+                    "Optional": true,
+                    "Description": "A list of label selector requirements. The requirements are ANDed.",
+                    "IsBlock": true,
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "key": {
+                          "Type": "String",
+                          "Optional": true,
+                          "Description": "The label key that the selector applies to."
+                        },
+                        "operator": {
+                          "Type": "String",
+                          "Optional": true,
+                          "Description": "A key's relationship to a set of values. Valid operators ard `In`, `NotIn`, `Exists` and `DoesNotExist`."
+                        },
+                        "values": {
+                          "Type": "Set",
+                          "Optional": true,
+                          "Description": "An array of string values. If the operator is `In` or `NotIn`, the values array must be non-empty. If the operator is `Exists` or `DoesNotExist`, the values array must be empty. This array is replaced during a strategic merge patch.",
+                          "Elem": {
+                            "Type": "SchemaElements",
+                            "ElementsType": "String"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "match_labels": {
+                    "Type": "Map",
+                    "Optional": true,
+                    "Description": "A map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of `match_expressions`, whose key field is \"key\", the operator is \"In\", and the values array contains only \"value\". The requirements are ANDed."
+                  }
+                }
+              }
+            },
+            "object_selector": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "ObjectSelector decides whether to run the webhook based on if the object has matching labels. objectSelector is evaluated against both the oldObject and newObject that would be sent to the webhook, and is considered to match if either object matches the selector. A null object (oldObject in the case of create, or newObject in the case of delete) or an object that cannot have labels (like a DeploymentRollback or a PodProxyOptions object) is not considered to match. Use the object selector only if the webhook is opt-in, because end users may skip the admission webhook by setting the labels. Default to the empty LabelSelector, which matches everything.",
+              "MaxItems": 1,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "match_expressions": {
+                    "Type": "List",
+                    "Optional": true,
+                    "Description": "A list of label selector requirements. The requirements are ANDed.",
+                    "IsBlock": true,
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "key": {
+                          "Type": "String",
+                          "Optional": true,
+                          "Description": "The label key that the selector applies to."
+                        },
+                        "operator": {
+                          "Type": "String",
+                          "Optional": true,
+                          "Description": "A key's relationship to a set of values. Valid operators ard `In`, `NotIn`, `Exists` and `DoesNotExist`."
+                        },
+                        "values": {
+                          "Type": "Set",
+                          "Optional": true,
+                          "Description": "An array of string values. If the operator is `In` or `NotIn`, the values array must be non-empty. If the operator is `Exists` or `DoesNotExist`, the values array must be empty. This array is replaced during a strategic merge patch.",
+                          "Elem": {
+                            "Type": "SchemaElements",
+                            "ElementsType": "String"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "match_labels": {
+                    "Type": "Map",
+                    "Optional": true,
+                    "Description": "A map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of `match_expressions`, whose key field is \"key\", the operator is \"In\", and the values array contains only \"value\". The requirements are ANDed."
+                  }
+                }
+              }
+            },
+            "reinvocation_policy": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "reinvocationPolicy indicates whether this webhook should be called multiple times as part of a single admission evaluation. Allowed values are \"Never\" and \"IfNeeded\".\n\nNever: the webhook will not be called more than once in a single admission evaluation.\n\nIfNeeded: the webhook will be called at least one additional time as part of the admission evaluation if the object being admitted is modified by other admission plugins after the initial webhook call. Webhooks that specify this option *must* be idempotent, able to process objects they previously admitted. Note: * the number of additional invocations is not guaranteed to be exactly one. * if additional invocations result in further modifications to the object, webhooks are not guaranteed to be invoked again. * webhooks that use this option may be reordered to minimize the number of additional invocations. * to validate an object after all mutations are guaranteed complete, use a validating admission webhook instead.\n\nDefaults to \"Never\".",
+              "Default": {
+                "Type": "string",
+                "Value": "Never"
+              }
+            },
+            "rule": {
+              "Type": "List",
+              "Required": true,
+              "Description": "Rules describes what operations on what resources/subresources the webhook cares about. The webhook cares about an operation if it matches _any_ Rule. However, in order to prevent ValidatingAdmissionWebhooks and MutatingAdmissionWebhooks from putting the cluster in a state which cannot be recovered from without completely disabling the plugin, ValidatingAdmissionWebhooks and MutatingAdmissionWebhooks are never called on admission requests for ValidatingWebhookConfiguration and MutatingWebhookConfiguration objects.",
+              "MinItems": 1,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "api_groups": {
+                    "Type": "List",
+                    "Required": true,
+                    "MinItems": 1,
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  },
+                  "api_versions": {
+                    "Type": "List",
+                    "Required": true,
+                    "MinItems": 1,
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  },
+                  "operations": {
+                    "Type": "List",
+                    "Required": true,
+                    "Description": "Operations is the operations the admission hook cares about - CREATE, UPDATE, or * for all operations. If '*' is present, the length of the slice must be one. Required.",
+                    "MinItems": 1,
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  },
+                  "resources": {
+                    "Type": "List",
+                    "Required": true,
+                    "MinItems": 1,
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  },
+                  "scope": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "string",
+                      "Value": "*"
+                    }
+                  }
+                }
+              }
+            },
+            "side_effects": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "SideEffects states whether this webhook has side effects. Acceptable values are: None, NoneOnDryRun (webhooks created via v1beta1 may also specify Some or Unknown). Webhooks with side effects MUST implement a reconciliation system, since a request may be rejected by a future step in the admission change and the side effects therefore need to be undone. Requests with the dryRun attribute will be auto-rejected if they match a webhook with sideEffects == Unknown or Some."
+            },
+            "timeout_seconds": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "TimeoutSeconds specifies the timeout for this webhook. After the timeout passes, the webhook call will be ignored or the API call will fail based on the failure policy. The timeout value must be between 1 and 30 seconds. Default to 10 seconds.",
+              "Default": {
+                "Type": "int",
+                "Value": "10"
               }
             }
           }
@@ -38915,9 +39687,422 @@
           "Value": "Immediate"
         }
       }
+    },
+    "kubernetes_validating_webhook_configuration": {
+      "metadata": {
+        "Type": "List",
+        "Required": true,
+        "Description": "Standard validating webhook configuration's metadata. More info: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#metadata",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "annotations": {
+              "Type": "Map",
+              "Optional": true,
+              "Description": "An unstructured key value map stored with the validating webhook configuration that may be used to store arbitrary metadata. More info: http://kubernetes.io/docs/user-guide/annotations",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "generate_name": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Prefix, used by the server, to generate a unique name ONLY IF the `name` field has not been provided. This value will also be combined with a unique suffix. Read more: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#idempotency",
+              "ConflictsWith": [
+                "metadata.0.name"
+              ]
+            },
+            "generation": {
+              "Type": "Int",
+              "Description": "A sequence number representing a specific generation of the desired state.",
+              "Computed": true
+            },
+            "labels": {
+              "Type": "Map",
+              "Optional": true,
+              "Description": "Map of string keys and values that can be used to organize and categorize (scope and select) the validating webhook configuration. May match selectors of replication controllers and services. More info: http://kubernetes.io/docs/user-guide/labels",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "name": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Name of the validating webhook configuration, must be unique. Cannot be updated. More info: http://kubernetes.io/docs/user-guide/identifiers#names",
+              "Computed": true,
+              "ConflictsWith": [
+                "metadata.0.generate_name"
+              ]
+            },
+            "resource_version": {
+              "Type": "String",
+              "Description": "An opaque value that represents the internal version of this validating webhook configuration that can be used by clients to determine when validating webhook configuration has changed. Read more: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency",
+              "Computed": true
+            },
+            "self_link": {
+              "Type": "String",
+              "Description": "A URL representing this validating webhook configuration.",
+              "Computed": true
+            },
+            "uid": {
+              "Type": "String",
+              "Description": "The unique in time and space value for this validating webhook configuration. More info: http://kubernetes.io/docs/user-guide/identifiers#uids",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "webhook": {
+        "Type": "List",
+        "Required": true,
+        "Description": "Webhooks is a list of webhooks and the affected resources and operations.",
+        "MinItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "admission_review_versions": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "AdmissionReviewVersions is an ordered list of preferred `AdmissionReview` versions the Webhook expects. API server will try to use first version in the list which it supports. If none of the versions specified in this list supported by API server, validation will fail for this object. If a persisted webhook configuration specifies allowed versions and does not include any versions known to the API Server, calls to the webhook will fail and be subject to the failure policy.",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "client_config": {
+              "Type": "List",
+              "Required": true,
+              "Description": "ClientConfig defines how to communicate with the hook. Required",
+              "MaxItems": 1,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "ca_bundle": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "`caBundle` is a PEM encoded CA bundle which will be used to validate the webhook's server certificate. If unspecified, system trust roots on the apiserver are used."
+                  },
+                  "service": {
+                    "Type": "List",
+                    "Required": true,
+                    "Description": "`service` is a reference to the service for this webhook. Either `service` or `url` must be specified.\n\nIf the webhook is running within the cluster, then you should use `service`.",
+                    "MaxItems": 1,
+                    "IsBlock": true,
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "name": {
+                          "Type": "String",
+                          "Required": true,
+                          "Description": "`name` is the name of the service. Required"
+                        },
+                        "namespace": {
+                          "Type": "String",
+                          "Required": true,
+                          "Description": "`namespace` is the namespace of the service. Required"
+                        },
+                        "path": {
+                          "Type": "String",
+                          "Optional": true,
+                          "Description": "`path` is an optional URL path which will be sent in any request to this service."
+                        },
+                        "port": {
+                          "Type": "Int",
+                          "Optional": true,
+                          "Description": "If specified, the port on the service that hosting webhook. Default to 443 for backward compatibility. `port` should be a valid port number (1-65535, inclusive).",
+                          "Default": {
+                            "Type": "int",
+                            "Value": "443"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "url": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "`url` gives the location of the webhook, in standard URL form (`scheme://host:port/path`). Exactly one of `url` or `service` must be specified.\n\nThe `host` should not refer to a service running in the cluster; use the `service` field instead. The host might be resolved via external DNS in some apiservers (e.g., `kube-apiserver` cannot resolve in-cluster DNS as that would be a layering violation). `host` may also be an IP address.\n\nPlease note that using `localhost` or `127.0.0.1` as a `host` is risky unless you take great care to run this webhook on all hosts which run an apiserver which might need to make calls to this webhook. Such installs are likely to be non-portable, i.e., not easy to turn up in a new cluster.\n\nThe scheme must be \"https\"; the URL must begin with \"https://\".\n\nA path is optional, and if present may be any string permissible in a URL. You may use the path to pass an arbitrary string to the webhook, for example, a cluster identifier.\n\nAttempting to use a user or basic auth e.g. \"user:password@\" is not allowed. Fragments (\"#...\") and query parameters (\"?...\") are not allowed, either."
+                  }
+                }
+              }
+            },
+            "failure_policy": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "FailurePolicy defines how unrecognized errors from the admission endpoint are handled - allowed values are Ignore or Fail. Defaults to Fail.",
+              "Default": {
+                "Type": "string",
+                "Value": "Fail"
+              }
+            },
+            "match_policy": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "matchPolicy defines how the \"rules\" list is used to match incoming requests. Allowed values are \"Exact\" or \"Equivalent\".\n\n- Exact: match a request only if it exactly matches a specified rule. For example, if deployments can be modified via apps/v1, apps/v1beta1, and extensions/v1beta1, but \"rules\" only included `apiGroups:[\"apps\"], apiVersions:[\"v1\"], resources: [\"deployments\"]`, a request to apps/v1beta1 or extensions/v1beta1 would not be sent to the webhook.\n\n- Equivalent: match a request if modifies a resource listed in rules, even via another API group or version. For example, if deployments can be modified via apps/v1, apps/v1beta1, and extensions/v1beta1, and \"rules\" only included `apiGroups:[\"apps\"], apiVersions:[\"v1\"], resources: [\"deployments\"]`, a request to apps/v1beta1 or extensions/v1beta1 would be converted to apps/v1 and sent to the webhook.\n\nDefaults to \"Equivalent\"",
+              "Default": {
+                "Type": "string",
+                "Value": "Equivalent"
+              }
+            },
+            "name": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The name of the admission webhook. Name should be fully qualified, e.g., imagepolicy.kubernetes.io, where \"imagepolicy\" is the name of the webhook, and kubernetes.io is the name of the organization. Required."
+            },
+            "namespace_selector": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "NamespaceSelector decides whether to run the webhook on an object based on whether the namespace for that object matches the selector. If the object itself is a namespace, the matching is performed on object.metadata.labels. If the object is another cluster scoped resource, it never skips the webhook.\n\nFor example, to run the webhook on any objects whose namespace is not associated with \"runlevel\" of \"0\" or \"1\";  you will set the selector as follows: \"namespaceSelector\": {\n  \"matchExpressions\": [\n    {\n      \"key\": \"runlevel\",\n      \"operator\": \"NotIn\",\n      \"values\": [\n        \"0\",\n        \"1\"\n      ]\n    }\n  ]\n}\n\nIf instead you want to only run the webhook on any objects whose namespace is associated with the \"environment\" of \"prod\" or \"staging\"; you will set the selector as follows: \"namespaceSelector\": {\n  \"matchExpressions\": [\n    {\n      \"key\": \"environment\",\n      \"operator\": \"In\",\n      \"values\": [\n        \"prod\",\n        \"staging\"\n      ]\n    }\n  ]\n}\n\nSee https://kubernetes.io/docs/concepts/overview/working-with-objects/labels for more examples of label selectors.\n\nDefault to the empty LabelSelector, which matches everything.",
+              "MaxItems": 1,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "match_expressions": {
+                    "Type": "List",
+                    "Optional": true,
+                    "Description": "A list of label selector requirements. The requirements are ANDed.",
+                    "IsBlock": true,
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "key": {
+                          "Type": "String",
+                          "Optional": true,
+                          "Description": "The label key that the selector applies to."
+                        },
+                        "operator": {
+                          "Type": "String",
+                          "Optional": true,
+                          "Description": "A key's relationship to a set of values. Valid operators ard `In`, `NotIn`, `Exists` and `DoesNotExist`."
+                        },
+                        "values": {
+                          "Type": "Set",
+                          "Optional": true,
+                          "Description": "An array of string values. If the operator is `In` or `NotIn`, the values array must be non-empty. If the operator is `Exists` or `DoesNotExist`, the values array must be empty. This array is replaced during a strategic merge patch.",
+                          "Elem": {
+                            "Type": "SchemaElements",
+                            "ElementsType": "String"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "match_labels": {
+                    "Type": "Map",
+                    "Optional": true,
+                    "Description": "A map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of `match_expressions`, whose key field is \"key\", the operator is \"In\", and the values array contains only \"value\". The requirements are ANDed."
+                  }
+                }
+              }
+            },
+            "object_selector": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "ObjectSelector decides whether to run the webhook based on if the object has matching labels. objectSelector is evaluated against both the oldObject and newObject that would be sent to the webhook, and is considered to match if either object matches the selector. A null object (oldObject in the case of create, or newObject in the case of delete) or an object that cannot have labels (like a DeploymentRollback or a PodProxyOptions object) is not considered to match. Use the object selector only if the webhook is opt-in, because end users may skip the admission webhook by setting the labels. Default to the empty LabelSelector, which matches everything.",
+              "MaxItems": 1,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "match_expressions": {
+                    "Type": "List",
+                    "Optional": true,
+                    "Description": "A list of label selector requirements. The requirements are ANDed.",
+                    "IsBlock": true,
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "key": {
+                          "Type": "String",
+                          "Optional": true,
+                          "Description": "The label key that the selector applies to."
+                        },
+                        "operator": {
+                          "Type": "String",
+                          "Optional": true,
+                          "Description": "A key's relationship to a set of values. Valid operators ard `In`, `NotIn`, `Exists` and `DoesNotExist`."
+                        },
+                        "values": {
+                          "Type": "Set",
+                          "Optional": true,
+                          "Description": "An array of string values. If the operator is `In` or `NotIn`, the values array must be non-empty. If the operator is `Exists` or `DoesNotExist`, the values array must be empty. This array is replaced during a strategic merge patch.",
+                          "Elem": {
+                            "Type": "SchemaElements",
+                            "ElementsType": "String"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "match_labels": {
+                    "Type": "Map",
+                    "Optional": true,
+                    "Description": "A map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of `match_expressions`, whose key field is \"key\", the operator is \"In\", and the values array contains only \"value\". The requirements are ANDed."
+                  }
+                }
+              }
+            },
+            "rule": {
+              "Type": "List",
+              "Required": true,
+              "Description": "Rules describes what operations on what resources/subresources the webhook cares about. The webhook cares about an operation if it matches _any_ Rule. However, in order to prevent ValidatingAdmissionWebhooks and MutatingAdmissionWebhooks from putting the cluster in a state which cannot be recovered from without completely disabling the plugin, ValidatingAdmissionWebhooks and MutatingAdmissionWebhooks are never called on admission requests for ValidatingWebhookConfiguration and MutatingWebhookConfiguration objects.",
+              "MinItems": 1,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "api_groups": {
+                    "Type": "List",
+                    "Required": true,
+                    "MinItems": 1,
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  },
+                  "api_versions": {
+                    "Type": "List",
+                    "Required": true,
+                    "MinItems": 1,
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  },
+                  "operations": {
+                    "Type": "List",
+                    "Required": true,
+                    "Description": "Operations is the operations the admission hook cares about - CREATE, UPDATE, or * for all operations. If '*' is present, the length of the slice must be one. Required.",
+                    "MinItems": 1,
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  },
+                  "resources": {
+                    "Type": "List",
+                    "Required": true,
+                    "MinItems": 1,
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  },
+                  "scope": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "string",
+                      "Value": "*"
+                    }
+                  }
+                }
+              }
+            },
+            "side_effects": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "SideEffects states whether this webhook has side effects. Acceptable values are: None, NoneOnDryRun (webhooks created via v1beta1 may also specify Some or Unknown). Webhooks with side effects MUST implement a reconciliation system, since a request may be rejected by a future step in the admission change and the side effects therefore need to be undone. Requests with the dryRun attribute will be auto-rejected if they match a webhook with sideEffects == Unknown or Some."
+            },
+            "timeout_seconds": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "TimeoutSeconds specifies the timeout for this webhook. After the timeout passes, the webhook call will be ignored or the API call will fail based on the failure policy. The timeout value must be between 1 and 30 seconds. Default to 10 seconds.",
+              "Default": {
+                "Type": "int",
+                "Value": "10"
+              }
+            }
+          }
+        }
+      }
     }
   },
   "data-sources": {
+    "kubernetes_config_map": {
+      "binary_data": {
+        "Type": "Map",
+        "Description": "A map of the config map binary data.",
+        "Computed": true
+      },
+      "data": {
+        "Type": "Map",
+        "Description": "A map of the config map data.",
+        "Computed": true
+      },
+      "metadata": {
+        "Type": "List",
+        "Required": true,
+        "Description": "Standard config_map's metadata. More info: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#metadata",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "annotations": {
+              "Type": "Map",
+              "Optional": true,
+              "Description": "An unstructured key value map stored with the config_map that may be used to store arbitrary metadata. More info: http://kubernetes.io/docs/user-guide/annotations",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "generation": {
+              "Type": "Int",
+              "Description": "A sequence number representing a specific generation of the desired state.",
+              "Computed": true
+            },
+            "labels": {
+              "Type": "Map",
+              "Optional": true,
+              "Description": "Map of string keys and values that can be used to organize and categorize (scope and select) the config_map. May match selectors of replication controllers and services. More info: http://kubernetes.io/docs/user-guide/labels",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "name": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Name of the config_map, must be unique. Cannot be updated. More info: http://kubernetes.io/docs/user-guide/identifiers#names",
+              "Computed": true
+            },
+            "namespace": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Namespace defines the space within which name of the config_map must be unique.",
+              "Default": {
+                "Type": "string",
+                "Value": "default"
+              }
+            },
+            "resource_version": {
+              "Type": "String",
+              "Description": "An opaque value that represents the internal version of this config_map that can be used by clients to determine when config_map has changed. Read more: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency",
+              "Computed": true
+            },
+            "self_link": {
+              "Type": "String",
+              "Description": "A URL representing this config_map.",
+              "Computed": true
+            },
+            "uid": {
+              "Type": "String",
+              "Description": "The unique in time and space value for this config_map. More info: http://kubernetes.io/docs/user-guide/identifiers#uids",
+              "Computed": true
+            }
+          }
+        }
+      }
+    },
     "kubernetes_secret": {
       "data": {
         "Type": "Map",
@@ -39183,6 +40368,112 @@
             "type": {
               "Type": "String",
               "Description": "Determines how the service is exposed. Defaults to `ClusterIP`. Valid options are `ExternalName`, `ClusterIP`, `NodePort`, and `LoadBalancer`. `ExternalName` maps to the specified `external_name`. More info: http://kubernetes.io/docs/user-guide/services#overview",
+              "Computed": true
+            }
+          }
+        }
+      }
+    },
+    "kubernetes_service_account": {
+      "automount_service_account_token": {
+        "Type": "Bool",
+        "Description": "True to enable automatic mounting of the service account token",
+        "Computed": true
+      },
+      "default_secret_name": {
+        "Type": "String",
+        "Computed": true
+      },
+      "image_pull_secret": {
+        "Type": "List",
+        "Description": "A list of references to secrets in the same namespace to use for pulling any images in pods that reference this Service Account. More info: http://kubernetes.io/docs/user-guide/secrets#manually-specifying-an-imagepullsecret",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "name": {
+              "Type": "String",
+              "Description": "Name of the referent. More info: http://kubernetes.io/docs/user-guide/identifiers#names",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "metadata": {
+        "Type": "List",
+        "Required": true,
+        "Description": "Standard service account's metadata. More info: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#metadata",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "annotations": {
+              "Type": "Map",
+              "Optional": true,
+              "Description": "An unstructured key value map stored with the service account that may be used to store arbitrary metadata. More info: http://kubernetes.io/docs/user-guide/annotations",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "generation": {
+              "Type": "Int",
+              "Description": "A sequence number representing a specific generation of the desired state.",
+              "Computed": true
+            },
+            "labels": {
+              "Type": "Map",
+              "Optional": true,
+              "Description": "Map of string keys and values that can be used to organize and categorize (scope and select) the service account. May match selectors of replication controllers and services. More info: http://kubernetes.io/docs/user-guide/labels",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "name": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Name of the service account, must be unique. Cannot be updated. More info: http://kubernetes.io/docs/user-guide/identifiers#names",
+              "Computed": true
+            },
+            "namespace": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Namespace defines the space within which name of the service account must be unique.",
+              "Default": {
+                "Type": "string",
+                "Value": "default"
+              }
+            },
+            "resource_version": {
+              "Type": "String",
+              "Description": "An opaque value that represents the internal version of this service account that can be used by clients to determine when service account has changed. Read more: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency",
+              "Computed": true
+            },
+            "self_link": {
+              "Type": "String",
+              "Description": "A URL representing this service account.",
+              "Computed": true
+            },
+            "uid": {
+              "Type": "String",
+              "Description": "The unique in time and space value for this service account. More info: http://kubernetes.io/docs/user-guide/identifiers#uids",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "secret": {
+        "Type": "List",
+        "Description": "A list of secrets allowed to be used by pods running using this Service Account. More info: http://kubernetes.io/docs/user-guide/secrets",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "name": {
+              "Type": "String",
+              "Description": "Name of the referent. More info: http://kubernetes.io/docs/user-guide/identifiers#names",
               "Computed": true
             }
           }

@@ -2,7 +2,7 @@
   ".schema_version": "1",
   "name": "spotinst",
   "type": "provider",
-  "version": "v1.14.3",
+  "version": "v1.15.0",
   "provider": {
     "account": {
       "Type": "String",
@@ -426,7 +426,11 @@
             },
             "autoscale_cooldown": {
               "Type": "Int",
-              "Optional": true
+              "Optional": true,
+              "Default": {
+                "Type": "int",
+                "Value": "300"
+              }
             },
             "autoscale_down": {
               "Type": "List",
@@ -1500,6 +1504,37 @@
                           "Default": {
                             "Type": "int",
                             "Value": "50"
+                          }
+                        },
+                        "on_failure": {
+                          "Type": "List",
+                          "Optional": true,
+                          "MaxItems": 1,
+                          "IsBlock": true,
+                          "Elem": {
+                            "Type": "SchemaInfo",
+                            "Info": {
+                              "action_type": {
+                                "Type": "String",
+                                "Required": true
+                              },
+                              "batch_num": {
+                                "Type": "Int",
+                                "Optional": true
+                              },
+                              "draining_timeout": {
+                                "Type": "Int",
+                                "Optional": true
+                              },
+                              "should_decrement_target_capacity": {
+                                "Type": "Bool",
+                                "Optional": true
+                              },
+                              "should_handle_all_batches": {
+                                "Type": "Bool",
+                                "Optional": true
+                              }
+                            }
                           }
                         },
                         "should_drain_instances": {
@@ -3618,7 +3653,7 @@
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
-            "end_point": {
+            "endpoint": {
               "Type": "String",
               "Required": true
             },
@@ -3638,7 +3673,7 @@
               "Type": "String",
               "Required": true
             },
-            "time_out": {
+            "timeout": {
               "Type": "Int",
               "Required": true
             },
@@ -4322,6 +4357,14 @@
           }
         }
       },
+      "core_unit": {
+        "Type": "String",
+        "Optional": true,
+        "Default": {
+          "Type": "string",
+          "Value": "instance"
+        }
+      },
       "custom_ami_id": {
         "Type": "String",
         "Optional": true
@@ -4795,6 +4838,86 @@
           }
         }
       },
+      "task_unit": {
+        "Type": "String",
+        "Optional": true,
+        "Default": {
+          "Type": "string",
+          "Value": "instance"
+        }
+      },
+      "termination_policies": {
+        "Type": "List",
+        "Optional": true,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "statements": {
+              "Type": "List",
+              "Required": true,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "evaluation_periods": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "int",
+                      "Value": "1"
+                    }
+                  },
+                  "metric_name": {
+                    "Type": "String",
+                    "Required": true
+                  },
+                  "namespace": {
+                    "Type": "String",
+                    "Required": true
+                  },
+                  "operator": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "string",
+                      "Value": "gte"
+                    }
+                  },
+                  "period": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "int",
+                      "Value": "300"
+                    }
+                  },
+                  "statistic": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "string",
+                      "Value": "sum"
+                    }
+                  },
+                  "threshold": {
+                    "Type": "Float",
+                    "Required": true
+                  },
+                  "unit": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "string",
+                      "Value": "count"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
       "termination_protected": {
         "Type": "Bool",
         "Optional": true
@@ -5206,7 +5329,11 @@
             },
             "autoscale_is_enabled": {
               "Type": "Bool",
-              "Optional": true
+              "Optional": true,
+              "Default": {
+                "Type": "bool",
+                "Value": "true"
+              }
             },
             "resource_limits": {
               "Type": "List",
@@ -5304,7 +5431,10 @@
       "max_size": {
         "Type": "Int",
         "Optional": true,
-        "Computed": true
+        "Default": {
+          "Type": "int",
+          "Value": "1000"
+        }
       },
       "min_size": {
         "Type": "Int",
@@ -5938,12 +6068,131 @@
           "ElementsType": "String"
         }
       },
+      "tags": {
+        "Type": "Set",
+        "Optional": true,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "key": {
+              "Type": "String",
+              "Required": true
+            },
+            "value": {
+              "Type": "String",
+              "Required": true
+            }
+          }
+        }
+      },
       "user_data": {
         "Type": "String",
         "Optional": true
       }
     },
     "spotinst_ocean_gke_import": {
+      "autoscaler": {
+        "Type": "List",
+        "Optional": true,
+        "Computed": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "auto_headroom_percentage": {
+              "Type": "Int",
+              "Optional": true
+            },
+            "cooldown": {
+              "Type": "Int",
+              "Optional": true
+            },
+            "down": {
+              "Type": "List",
+              "Optional": true,
+              "MaxItems": 1,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "evaluation_periods": {
+                    "Type": "Int",
+                    "Optional": true
+                  },
+                  "max_scale_down_percentage": {
+                    "Type": "Float",
+                    "Optional": true
+                  }
+                }
+              }
+            },
+            "headroom": {
+              "Type": "List",
+              "Optional": true,
+              "MaxItems": 1,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "cpu_per_unit": {
+                    "Type": "Int",
+                    "Optional": true
+                  },
+                  "gpu_per_unit": {
+                    "Type": "Int",
+                    "Optional": true
+                  },
+                  "memory_per_unit": {
+                    "Type": "Int",
+                    "Optional": true
+                  },
+                  "num_of_units": {
+                    "Type": "Int",
+                    "Optional": true
+                  }
+                }
+              }
+            },
+            "is_auto_config": {
+              "Type": "Bool",
+              "Optional": true,
+              "Default": {
+                "Type": "bool",
+                "Value": "true"
+              }
+            },
+            "is_enabled": {
+              "Type": "Bool",
+              "Optional": true,
+              "Default": {
+                "Type": "bool",
+                "Value": "true"
+              }
+            },
+            "resource_limits": {
+              "Type": "List",
+              "Optional": true,
+              "MaxItems": 1,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "max_memory_gib": {
+                    "Type": "Int",
+                    "Optional": true
+                  },
+                  "max_vcpu": {
+                    "Type": "Int",
+                    "Optional": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
       "backend_services": {
         "Type": "Set",
         "Optional": true,

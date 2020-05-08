@@ -2,7 +2,7 @@
   ".schema_version": "1",
   "name": "yandex",
   "type": "provider",
-  "version": "v0.35.0",
+  "version": "v0.39.0",
   "provider": {
     "cloud_id": {
       "Type": "String",
@@ -457,6 +457,14 @@
               "Optional": true,
               "Computed": true
             },
+            "ipv4": {
+              "Type": "Bool",
+              "Optional": true,
+              "Default": {
+                "Type": "bool",
+                "Value": "true"
+              }
+            },
             "ipv6": {
               "Type": "Bool",
               "Optional": true,
@@ -835,6 +843,10 @@
               "Type": "String",
               "Optional": true
             },
+            "hostname": {
+              "Type": "String",
+              "Optional": true
+            },
             "labels": {
               "Type": "Map",
               "Optional": true,
@@ -851,6 +863,10 @@
                 "ElementsType": "String"
               }
             },
+            "name": {
+              "Type": "String",
+              "Optional": true
+            },
             "network_interface": {
               "Type": "List",
               "Required": true,
@@ -858,6 +874,14 @@
               "Elem": {
                 "Type": "SchemaInfo",
                 "Info": {
+                  "ipv4": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "bool",
+                      "Value": "true"
+                    }
+                  },
                   "ipv6": {
                     "Type": "Bool",
                     "Optional": true,
@@ -1062,6 +1086,10 @@
                     "Type": "String",
                     "Computed": true
                   },
+                  "ipv4": {
+                    "Type": "Bool",
+                    "Computed": true
+                  },
                   "ipv6": {
                     "Type": "Bool",
                     "Computed": true
@@ -1094,6 +1122,10 @@
               }
             },
             "status": {
+              "Type": "String",
+              "Computed": true
+            },
+            "status_changed_at": {
               "Type": "String",
               "Computed": true
             },
@@ -1273,6 +1305,18 @@
       "service_account_id": {
         "Type": "String",
         "Required": true
+      },
+      "status": {
+        "Type": "String",
+        "Computed": true
+      },
+      "variables": {
+        "Type": "Map",
+        "Optional": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       }
     },
     "yandex_compute_snapshot": {
@@ -1544,6 +1588,14 @@
       "entrypoint": {
         "Type": "String",
         "Required": true
+      },
+      "environment": {
+        "Type": "Map",
+        "Optional": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       },
       "execution_timeout": {
         "Type": "String",
@@ -2232,6 +2284,21 @@
         "Type": "String",
         "Computed": true
       },
+      "kms_provider": {
+        "Type": "List",
+        "Optional": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "key_id": {
+              "Type": "String",
+              "Optional": true
+            }
+          }
+        }
+      },
       "labels": {
         "Type": "Map",
         "Optional": true,
@@ -2422,6 +2489,14 @@
         "Type": "String",
         "Optional": true
       },
+      "node_ipv4_cidr_mask_size": {
+        "Type": "Int",
+        "Optional": true,
+        "Default": {
+          "Type": "int",
+          "Value": "24"
+        }
+      },
       "node_service_account_id": {
         "Type": "String",
         "Required": true
@@ -2500,6 +2575,26 @@
       "created_at": {
         "Type": "String",
         "Computed": true
+      },
+      "deploy_policy": {
+        "Type": "List",
+        "Optional": true,
+        "Computed": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "max_expansion": {
+              "Type": "Int",
+              "Required": true
+            },
+            "max_unavailable": {
+              "Type": "Int",
+              "Required": true
+            }
+          }
+        }
       },
       "description": {
         "Type": "String",
@@ -3576,6 +3671,14 @@
                   "database_name": {
                     "Type": "String",
                     "Required": true
+                  },
+                  "roles": {
+                    "Type": "List",
+                    "Optional": true,
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
                   }
                 }
               }
@@ -4291,6 +4394,9 @@
       "acl": {
         "Type": "String",
         "Optional": true,
+        "ConflictsWith": [
+          "grant"
+        ],
         "Default": {
           "Type": "string",
           "Value": "private"
@@ -4367,6 +4473,39 @@
         "Default": {
           "Type": "bool",
           "Value": "false"
+        }
+      },
+      "grant": {
+        "Type": "Set",
+        "Optional": true,
+        "ConflictsWith": [
+          "acl"
+        ],
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "id": {
+              "Type": "String",
+              "Optional": true
+            },
+            "permissions": {
+              "Type": "Set",
+              "Required": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "type": {
+              "Type": "String",
+              "Required": true
+            },
+            "uri": {
+              "Type": "String",
+              "Optional": true
+            }
+          }
         }
       },
       "secret_key": {
@@ -4549,6 +4688,189 @@
             }
           }
         }
+      }
+    },
+    "yandex_vpc_security_group": {
+      "__timeouts__": [
+        "create",
+        "update",
+        "delete"
+      ],
+      "created_at": {
+        "Type": "String",
+        "Computed": true
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true
+      },
+      "egress": {
+        "Type": "Set",
+        "Optional": true,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "description": {
+              "Type": "String",
+              "Optional": true
+            },
+            "from_port": {
+              "Type": "Int",
+              "Optional": true,
+              "Default": {
+                "Type": "int",
+                "Value": "-1"
+              }
+            },
+            "id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "labels": {
+              "Type": "Map",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "port": {
+              "Type": "Int",
+              "Optional": true,
+              "Default": {
+                "Type": "int",
+                "Value": "-1"
+              }
+            },
+            "protocol": {
+              "Type": "String",
+              "Required": true
+            },
+            "to_port": {
+              "Type": "Int",
+              "Optional": true,
+              "Default": {
+                "Type": "int",
+                "Value": "-1"
+              }
+            },
+            "v4_cidr_blocks": {
+              "Type": "List",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "v6_cidr_blocks": {
+              "Type": "List",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
+      "folder_id": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "ingress": {
+        "Type": "Set",
+        "Optional": true,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "description": {
+              "Type": "String",
+              "Optional": true
+            },
+            "from_port": {
+              "Type": "Int",
+              "Optional": true,
+              "Default": {
+                "Type": "int",
+                "Value": "-1"
+              }
+            },
+            "id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "labels": {
+              "Type": "Map",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "port": {
+              "Type": "Int",
+              "Optional": true,
+              "Default": {
+                "Type": "int",
+                "Value": "-1"
+              }
+            },
+            "protocol": {
+              "Type": "String",
+              "Required": true
+            },
+            "to_port": {
+              "Type": "Int",
+              "Optional": true,
+              "Default": {
+                "Type": "int",
+                "Value": "-1"
+              }
+            },
+            "v4_cidr_blocks": {
+              "Type": "List",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "v6_cidr_blocks": {
+              "Type": "List",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
+      "labels": {
+        "Type": "Map",
+        "Optional": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Default": {
+          "Type": "string"
+        }
+      },
+      "network_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "status": {
+        "Type": "String",
+        "Computed": true
       }
     },
     "yandex_vpc_subnet": {
@@ -5171,6 +5493,10 @@
               "Type": "String",
               "Computed": true
             },
+            "hostname": {
+              "Type": "String",
+              "Computed": true
+            },
             "labels": {
               "Type": "Map",
               "Computed": true,
@@ -5187,12 +5513,20 @@
                 "ElementsType": "String"
               }
             },
+            "name": {
+              "Type": "String",
+              "Computed": true
+            },
             "network_interface": {
               "Type": "List",
               "Computed": true,
               "Elem": {
                 "Type": "SchemaInfo",
                 "Info": {
+                  "ipv4": {
+                    "Type": "Bool",
+                    "Computed": true
+                  },
                   "ipv6": {
                     "Type": "Bool",
                     "Computed": true
@@ -5359,6 +5693,10 @@
                     "Type": "String",
                     "Computed": true
                   },
+                  "ipv4": {
+                    "Type": "Bool",
+                    "Computed": true
+                  },
                   "ipv6": {
                     "Type": "Bool",
                     "Computed": true
@@ -5391,6 +5729,10 @@
               }
             },
             "status": {
+              "Type": "String",
+              "Computed": true
+            },
+            "status_changed_at": {
               "Type": "String",
               "Computed": true
             },
@@ -5565,6 +5907,18 @@
       "service_account_id": {
         "Type": "String",
         "Computed": true
+      },
+      "status": {
+        "Type": "String",
+        "Computed": true
+      },
+      "variables": {
+        "Type": "Map",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       }
     },
     "yandex_compute_snapshot": {
@@ -5813,6 +6167,14 @@
       "entrypoint": {
         "Type": "String",
         "Computed": true
+      },
+      "environment": {
+        "Type": "Map",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       },
       "execution_timeout": {
         "Type": "String",
@@ -6255,6 +6617,20 @@
         "Type": "String",
         "Computed": true
       },
+      "kms_provider": {
+        "Type": "List",
+        "Computed": true,
+        "MaxItems": 1,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "key_id": {
+              "Type": "String",
+              "Computed": true
+            }
+          }
+        }
+      },
       "labels": {
         "Type": "Map",
         "Computed": true,
@@ -6403,6 +6779,10 @@
         "Type": "String",
         "Computed": true
       },
+      "node_ipv4_cidr_mask_size": {
+        "Type": "Int",
+        "Computed": true
+      },
       "node_service_account_id": {
         "Type": "String",
         "Computed": true
@@ -6467,6 +6847,24 @@
       "created_at": {
         "Type": "String",
         "Computed": true
+      },
+      "deploy_policy": {
+        "Type": "List",
+        "Computed": true,
+        "MaxItems": 1,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "max_expansion": {
+              "Type": "Int",
+              "Computed": true
+            },
+            "max_unavailable": {
+              "Type": "Int",
+              "Computed": true
+            }
+          }
+        }
       },
       "description": {
         "Type": "String",
@@ -7382,6 +7780,14 @@
                   "database_name": {
                     "Type": "String",
                     "Computed": true
+                  },
+                  "roles": {
+                    "Type": "List",
+                    "Optional": true,
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
                   }
                 }
               }
@@ -8092,6 +8498,166 @@
             }
           }
         }
+      }
+    },
+    "yandex_vpc_security_group": {
+      "created_at": {
+        "Type": "String",
+        "Computed": true
+      },
+      "description": {
+        "Type": "String",
+        "Computed": true
+      },
+      "egress": {
+        "Type": "Set",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "description": {
+              "Type": "String",
+              "Computed": true
+            },
+            "direction": {
+              "Type": "String",
+              "Computed": true
+            },
+            "from_port": {
+              "Type": "Int",
+              "Computed": true
+            },
+            "id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "labels": {
+              "Type": "Map",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "protocol_name": {
+              "Type": "String",
+              "Computed": true
+            },
+            "protocol_number": {
+              "Type": "Int",
+              "Computed": true
+            },
+            "to_port": {
+              "Type": "Int",
+              "Computed": true
+            },
+            "v4_cidr_blocks": {
+              "Type": "Set",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "v6_cidr_blocks": {
+              "Type": "Set",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
+      "folder_id": {
+        "Type": "String",
+        "Computed": true
+      },
+      "ingress": {
+        "Type": "Set",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "description": {
+              "Type": "String",
+              "Computed": true
+            },
+            "direction": {
+              "Type": "String",
+              "Computed": true
+            },
+            "from_port": {
+              "Type": "Int",
+              "Computed": true
+            },
+            "id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "labels": {
+              "Type": "Map",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "protocol_name": {
+              "Type": "String",
+              "Computed": true
+            },
+            "protocol_number": {
+              "Type": "Int",
+              "Computed": true
+            },
+            "to_port": {
+              "Type": "Int",
+              "Computed": true
+            },
+            "v4_cidr_blocks": {
+              "Type": "Set",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "v6_cidr_blocks": {
+              "Type": "Set",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
+      "labels": {
+        "Type": "Map",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Computed": true
+      },
+      "network_id": {
+        "Type": "String",
+        "Computed": true
+      },
+      "security_group_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "status": {
+        "Type": "String",
+        "Computed": true
       }
     },
     "yandex_vpc_subnet": {
