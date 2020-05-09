@@ -2,7 +2,7 @@
   ".schema_version": "1",
   "name": "aviatrix",
   "type": "provider",
-  "version": "v2.13.0",
+  "version": "v2.14.0",
   "provider": {
     "controller_ip": {
       "Type": "String",
@@ -471,6 +471,40 @@
         "Type": "String",
         "Required": true,
         "Description": "This parameter represents the name of an AWS TGW."
+      }
+    },
+    "aviatrix_aws_tgw_peering": {
+      "tgw_name1": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the first AWS tgw to make a peer pair."
+      },
+      "tgw_name2": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the second AWS tgw to make a peer pair."
+      }
+    },
+    "aviatrix_aws_tgw_peering_domain_conn": {
+      "domain_name1": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The name of the source domain to make a connection."
+      },
+      "domain_name2": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The name of the destination domain to make a connection."
+      },
+      "tgw_name1": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The AWS tgw name of the source domain to make a connection."
+      },
+      "tgw_name2": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The AWS tgw name of the destination domain to make a connection."
       }
     },
     "aviatrix_aws_tgw_transit_gateway_attachment": {
@@ -1208,11 +1242,6 @@
           "Value": "true"
         }
       },
-      "backup_public_ip": {
-        "Type": "String",
-        "Description": "Private IP address of the Gateway created.",
-        "Computed": true
-      },
       "cloud_instance_id": {
         "Type": "String",
         "Description": "Instance ID of the gateway.",
@@ -1457,6 +1486,11 @@
         "Description": "Public IP address that you want assigned to the HA peering instance.",
         "Computed": true
       },
+      "peering_ha_gw_name": {
+        "Type": "String",
+        "Description": "Aviatrix gateway unique name of HA gateway.",
+        "Computed": true
+      },
       "peering_ha_gw_size": {
         "Type": "String",
         "Optional": true,
@@ -1472,6 +1506,11 @@
         "Default": {
           "Type": "string"
         }
+      },
+      "peering_ha_private_ip": {
+        "Type": "String",
+        "Description": "Private IP address of HA gateway.",
+        "Computed": true
       },
       "peering_ha_subnet": {
         "Type": "String",
@@ -1497,11 +1536,6 @@
       "public_dns_server": {
         "Type": "String",
         "Description": "NS server used by the gateway.",
-        "Computed": true
-      },
-      "public_ip": {
-        "Type": "String",
-        "Description": "Public IP address of the Gateway created.",
         "Computed": true
       },
       "saml_enabled": {
@@ -1839,6 +1873,24 @@
       }
     },
     "aviatrix_saml_endpoint": {
+      "access_set_by": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Access type.",
+        "Default": {
+          "Type": "string",
+          "Value": "controller"
+        }
+      },
+      "controller_login": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Switch to differentiate if it is for controller login.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
       "custom_entity_id": {
         "Type": "String",
         "Optional": true,
@@ -1869,6 +1921,15 @@
         "Type": "String",
         "Required": true,
         "Description": "Type of IDP Metadata."
+      },
+      "rbac_groups": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "List of RBAC groups.",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       }
     },
     "aviatrix_site2cloud": {
@@ -2158,6 +2219,11 @@
         "Description": "Public IP address that you want assigned to the HA Spoke Gateway.",
         "Computed": true
       },
+      "ha_gw_name": {
+        "Type": "String",
+        "Description": "Aviatrix spoke gateway unique name of HA spoke gateway.",
+        "Computed": true
+      },
       "ha_gw_size": {
         "Type": "String",
         "Optional": true,
@@ -2173,6 +2239,11 @@
         "Default": {
           "Type": "string"
         }
+      },
+      "ha_private_ip": {
+        "Type": "String",
+        "Description": "Private IP address of the spoke gateway created.",
+        "Computed": true
       },
       "ha_subnet": {
         "Type": "String",
@@ -2394,6 +2465,188 @@
         "Description": "Name of Source gateway."
       }
     },
+    "aviatrix_transit_external_device_conn": {
+      "backup_bgp_remote_as_num": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Backup BGP remote ASN (Autonomous System Number). Integer between 1-65535.",
+        "Default": {
+          "Type": "string"
+        }
+      },
+      "backup_direct_connect": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Backup direct connect for backup external device.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "backup_local_tunnel_cidr": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Source CIDR for the tunnel from the backup Aviatrix transit gateway.",
+        "Default": {
+          "Type": "string"
+        }
+      },
+      "backup_pre_shared_key": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Backup pre shared key.",
+        "Default": {
+          "Type": "string"
+        }
+      },
+      "backup_remote_gateway_ip": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Backup remote gateway IP.",
+        "Default": {
+          "Type": "string"
+        }
+      },
+      "backup_remote_tunnel_cidr": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Destination CIDR for the tunnel to the backup external device.",
+        "Default": {
+          "Type": "string"
+        }
+      },
+      "bgp_local_as_num": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "BGP local ASN (Autonomous System Number). Integer between 1-65535."
+      },
+      "bgp_remote_as_num": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "BGP remote ASN (Autonomous System Number). Integer between 1-65535."
+      },
+      "connection_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The name of the transit external device connection which is going to be created."
+      },
+      "connection_type": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Connection type. Valid values: 'bpg', 'static'. Default value: 'bgp'.",
+        "Default": {
+          "Type": "string",
+          "Value": "bgp"
+        }
+      },
+      "custom_algorithms": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Switch to enable custom/non-default algorithms for IPSec Authentication/Encryption.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "direct_connect": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Set true for private network infrastructure.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "enable_edge_segmentation": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Switch to allow this connection to communicate with a Security Domain via Connection Policy.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "gw_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the Transit Gateway."
+      },
+      "ha_enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Set as true if there are two external devices.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "local_tunnel_cidr": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Source CIDR for the tunnel from the Aviatrix transit gateway.",
+        "Default": {
+          "Type": "string"
+        }
+      },
+      "phase_1_authentication": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Phase one Authentication. Valid values: 'SHA-1', 'SHA-256', 'SHA-384' and 'SHA-512'."
+      },
+      "phase_1_dh_groups": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Phase one DH Groups. Valid values: '1', '2', '5', '14', '15', '16', '17' and '18'."
+      },
+      "phase_1_encryption": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Phase one Encryption. Valid values: '3DES', 'AES-128-CBC', 'AES-192-CBC' and 'AES-256-CBC'."
+      },
+      "phase_2_authentication": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Phase two Authentication. Valid values: 'NO-AUTH', 'HMAC-SHA-1', 'HMAC-SHA-256', 'HMAC-SHA-384' and 'HMAC-SHA-512'."
+      },
+      "phase_2_dh_groups": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Phase two DH Groups. Valid values: '1', '2', '5', '14', '15', '16', '17' and '18'."
+      },
+      "phase_2_encryption": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Phase two Encryption. Valid values: '3DES', 'AES-128-CBC', 'AES-192-CBC', 'AES-256-CBC', 'AES-128-GCM-64', 'AES-128-GCM-96' and 'AES-128-GCM-128'."
+      },
+      "pre_shared_key": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "If left blank, the pre-shared key will be auto generated."
+      },
+      "remote_gateway_ip": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Remote Gateway IP."
+      },
+      "remote_subnet": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Remote CIDRs joined as a string with ','. Required for a 'static' type connection."
+      },
+      "remote_tunnel_cidr": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Destination CIDR for the tunnel to the external device.",
+        "Default": {
+          "Type": "string"
+        }
+      },
+      "vpc_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "ID of the VPC where the Transit Gateway is located."
+      }
+    },
     "aviatrix_transit_firenet_policy": {
       "inspected_resource_name": {
         "Type": "String",
@@ -2576,6 +2829,11 @@
         "Description": "Public IP address that you want assigned to the HA Transit Gateway.",
         "Computed": true
       },
+      "ha_gw_name": {
+        "Type": "String",
+        "Description": "Aviatrix transit gateway unique name of HA transit gateway.",
+        "Computed": true
+      },
       "ha_gw_size": {
         "Type": "String",
         "Optional": true,
@@ -2591,6 +2849,11 @@
         "Default": {
           "Type": "string"
         }
+      },
+      "ha_private_ip": {
+        "Type": "String",
+        "Description": "Private IP address of HA transit gateway.",
+        "Computed": true
       },
       "ha_subnet": {
         "Type": "String",
@@ -2853,7 +3116,7 @@
       "bgp_local_as_num": {
         "Type": "String",
         "Required": true,
-        "Description": "BGP Local ASN (Autonomous System Number). Integer between 1-65535."
+        "Description": "BGP local ASN (Autonomous System Number). Integer between 1-65535."
       },
       "bgp_vgw_account": {
         "Type": "String",
@@ -2873,7 +3136,7 @@
       "conn_name": {
         "Type": "String",
         "Required": true,
-        "Description": "The name of for Transit GW to VGW connection connection which is going to be created."
+        "Description": "The name of the VGW connection which is going to be created."
       },
       "gw_name": {
         "Type": "String",
@@ -3247,12 +3510,87 @@
     "aviatrix_gateway": {
       "account_name": {
         "Type": "String",
-        "Optional": true,
-        "Description": "Account name. This can be used for logging in to CloudN console or UserConnect controller."
+        "Description": "Account name. This account will be used to launch Aviatrix gateway.",
+        "Computed": true
+      },
+      "additional_cidrs": {
+        "Type": "String",
+        "Description": "A list of destination CIDR ranges that will also go through the VPN tunnel when Split Tunnel Mode is enabled.",
+        "Computed": true
+      },
+      "additional_cidrs_designated_gateway": {
+        "Type": "String",
+        "Description": "A list of CIDR ranges separated by comma to configure when 'designated_gateway' feature is enabled.",
+        "Computed": true
+      },
+      "allocate_new_eip": {
+        "Type": "Bool",
+        "Description": "When value is false, reuse an idle address in Elastic IP pool for this gateway. Otherwise, allocate a new Elastic IP and use it for this gateway.",
+        "Computed": true
+      },
+      "cloud_instance_id": {
+        "Type": "String",
+        "Description": "Instance ID of the gateway.",
+        "Computed": true
       },
       "cloud_type": {
         "Type": "Int",
         "Description": "Type of cloud service provider.",
+        "Computed": true
+      },
+      "duo_api_hostname": {
+        "Type": "String",
+        "Description": "API hostname for DUO auth mode.",
+        "Computed": true
+      },
+      "duo_integration_key": {
+        "Type": "String",
+        "Description": "Integration key for DUO auth mode.",
+        "Computed": true
+      },
+      "duo_push_mode": {
+        "Type": "String",
+        "Description": "Push mode for DUO auth.",
+        "Computed": true
+      },
+      "elb_dns_name": {
+        "Type": "String",
+        "Description": "ELB DNS Name.",
+        "Computed": true
+      },
+      "elb_name": {
+        "Type": "String",
+        "Description": "A name for the ELB that is created.",
+        "Computed": true
+      },
+      "enable_designated_gateway": {
+        "Type": "Bool",
+        "Description": "Enable 'designated_gateway' feature for Gateway. Only supports AWS. Valid values: true, false.",
+        "Computed": true
+      },
+      "enable_elb": {
+        "Type": "Bool",
+        "Description": "Specify whether to enable ELB or not.",
+        "Computed": true
+      },
+      "enable_encrypt_volume": {
+        "Type": "Bool",
+        "Description": "Enable encrypt gateway EBS volume. Only supported for AWS provider. Valid values: true, false. Default value: false.",
+        "Computed": true
+      },
+      "enable_ldap": {
+        "Type": "Bool",
+        "Description": "Specify whether to enable LDAP or not. Supported values: 'yes' and 'no'.",
+        "Computed": true
+      },
+      "enable_vpc_dns_server": {
+        "Type": "Bool",
+        "Description": "Enable vpc_dns_server for Gateway. Only supports AWS. Valid values: true, false.",
+        "Computed": true
+      },
+      "enable_vpn_nat": {
+        "Type": "Bool",
+        "Description": "This field indicates whether to enable VPN NAT or not. Only supported for VPN gateway. Valid values: true, false. Default value: true.",
         "Computed": true
       },
       "gw_name": {
@@ -3260,36 +3598,200 @@
         "Required": true,
         "Description": "Gateway name. This can be used for getting gateway."
       },
+      "gw_size": {
+        "Type": "String",
+        "Description": "Size of Gateway Instance.",
+        "Computed": true
+      },
+      "insane_mode": {
+        "Type": "Bool",
+        "Description": "Enable Insane Mode for Gateway. Valid values: true, false.",
+        "Computed": true
+      },
+      "insane_mode_az": {
+        "Type": "String",
+        "Description": "AZ of subnet being created for Insane Mode Gateway. Required if insane_mode is set.",
+        "Computed": true
+      },
+      "ldap_base_dn": {
+        "Type": "String",
+        "Description": "LDAP base DN. Required: Yes if enable_ldap is 'yes'.",
+        "Computed": true
+      },
+      "ldap_bind_dn": {
+        "Type": "String",
+        "Description": "LDAP bind DN. Required: Yes if enable_ldap is 'yes'.",
+        "Computed": true
+      },
+      "ldap_server": {
+        "Type": "String",
+        "Description": "LDAP server address. Required: Yes if enable_ldap is 'yes'.",
+        "Computed": true
+      },
+      "ldap_username_attribute": {
+        "Type": "String",
+        "Description": "LDAP user attribute. Required: Yes if enable_ldap is 'yes'.",
+        "Computed": true
+      },
+      "max_vpn_conn": {
+        "Type": "String",
+        "Description": "Maximum connection of VPN access.",
+        "Computed": true
+      },
+      "name_servers": {
+        "Type": "String",
+        "Description": "A list of DNS servers used to resolve domain names by a connected VPN user when Split Tunnel Mode is enabled.",
+        "Computed": true
+      },
+      "okta_url": {
+        "Type": "String",
+        "Description": "URL for Okta auth mode.",
+        "Computed": true
+      },
+      "okta_username_suffix": {
+        "Type": "String",
+        "Description": "Username suffix for Okta auth mode.",
+        "Computed": true
+      },
+      "otp_mode": {
+        "Type": "String",
+        "Description": "Two step authentication mode.",
+        "Computed": true
+      },
+      "peering_ha_cloud_instance_id": {
+        "Type": "String",
+        "Description": "Instance ID of the peering HA gateway.",
+        "Computed": true
+      },
+      "peering_ha_gw_name": {
+        "Type": "String",
+        "Description": "Aviatrix gateway unique name of HA gateway.",
+        "Computed": true
+      },
+      "peering_ha_gw_size": {
+        "Type": "String",
+        "Description": "Peering HA Gateway Size.",
+        "Computed": true
+      },
+      "peering_ha_insane_mode_az": {
+        "Type": "String",
+        "Description": "AZ of subnet being created for Insane Mode Peering HA Gateway. Required if insane_mode is set.",
+        "Computed": true
+      },
+      "peering_ha_private_ip": {
+        "Type": "String",
+        "Description": "Private IP address of HA gateway.",
+        "Computed": true
+      },
+      "peering_ha_public_ip": {
+        "Type": "String",
+        "Description": "Public IP address that you want assigned to the HA peering instance.",
+        "Computed": true
+      },
+      "peering_ha_subnet": {
+        "Type": "String",
+        "Description": "Public Subnet Information while creating Peering HA Gateway, only subnet is accepted. Required to create peering ha gateway if cloud_type = 1 or 8 (AWS or AZURE)",
+        "Computed": true
+      },
+      "peering_ha_zone": {
+        "Type": "String",
+        "Description": "Zone information for creating Peering HA Gateway. Required to create peering ha gateway if cloud_type = 4 (gcp)",
+        "Computed": true
+      },
+      "private_ip": {
+        "Type": "String",
+        "Description": "Private IP address of the Gateway created.",
+        "Computed": true
+      },
+      "public_dns_server": {
+        "Type": "String",
+        "Description": "NS server used by the gateway.",
+        "Computed": true
+      },
       "public_ip": {
         "Type": "String",
         "Description": "Public IP address of the Gateway created.",
         "Computed": true
       },
+      "saml_enabled": {
+        "Type": "Bool",
+        "Description": "This field indicates whether to enable SAML or not.",
+        "Computed": true
+      },
+      "search_domains": {
+        "Type": "String",
+        "Description": "A list of domain names that will use the NameServer when a specific name is not in the destination when Split Tunnel Mode is enabled.",
+        "Computed": true
+      },
+      "security_group_id": {
+        "Type": "String",
+        "Description": "Security group used for the gateway.",
+        "Computed": true
+      },
+      "single_az_ha": {
+        "Type": "Bool",
+        "Description": "Set to true if this feature is desired.",
+        "Computed": true
+      },
+      "single_ip_snat": {
+        "Type": "Bool",
+        "Description": "Enable Source NAT for this container.",
+        "Computed": true
+      },
+      "split_tunnel": {
+        "Type": "Bool",
+        "Description": "Specify split tunnel mode.",
+        "Computed": true
+      },
+      "subnet": {
+        "Type": "String",
+        "Description": "A VPC Network address range selected from one of the available network ranges.",
+        "Computed": true
+      },
+      "tag_list": {
+        "Type": "List",
+        "Description": "Instance tag of cloud provider.",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
       "vpc_id": {
         "Type": "String",
-        "Description": "AWS VPC ID.",
+        "Description": "ID of legacy VPC/Vnet to be connected.",
         "Computed": true
       },
       "vpc_reg": {
         "Type": "String",
-        "Description": "AWS VPC Region.",
+        "Description": "Region where gateway is launched.",
         "Computed": true
       },
-      "vpc_size": {
+      "vpn_access": {
+        "Type": "Bool",
+        "Description": "Enable user access through VPN to this container.",
+        "Computed": true
+      },
+      "vpn_cidr": {
         "Type": "String",
-        "Description": "Instance type.",
+        "Description": "VPN CIDR block for the container.",
+        "Computed": true
+      },
+      "vpn_protocol": {
+        "Type": "String",
+        "Description": "Elb protocol for VPN gateway with elb enabled. Only supports AWS provider. Valid values: 'TCP', 'UDP'. If not specified, 'TCP'' will be used.",
         "Computed": true
       }
     },
     "aviatrix_spoke_gateway": {
       "account_name": {
         "Type": "String",
-        "Optional": true,
-        "Description": "Name of a Cloud-Account in Aviatrix controller."
+        "Description": "This parameter represents the name of a Cloud-Account in Aviatrix controller.",
+        "Computed": true
       },
       "allocate_new_eip": {
         "Type": "Bool",
-        "Description": "Whether the eip is newly allocated or not.",
+        "Description": "If false, reuse an idle address in Elastic IP pool for this gateway. Otherwise, allocate a new Elastic IP and use it for this gateway.",
         "Computed": true
       },
       "cloud_instance_id": {
@@ -3309,17 +3811,17 @@
       },
       "enable_active_mesh": {
         "Type": "Bool",
-        "Description": "Enable/Disable Active Mesh Mode for Spoke Gateway.",
+        "Description": "Switch to Enable/Disable Active Mesh Mode for Spoke Gateway. Valid values: true, false.",
         "Computed": true
       },
       "enable_encrypt_volume": {
         "Type": "Bool",
-        "Description": "Enable encrypt gateway EBS volume. Only supported for AWS provider.",
+        "Description": "Enable encrypt gateway EBS volume. Only supported for AWS provider. Valid values: true, false. Default value: false.",
         "Computed": true
       },
       "enable_vpc_dns_server": {
         "Type": "Bool",
-        "Description": "Enable/Disalbe vpc_dns_server for Gateway.",
+        "Description": "Enable vpc_dns_server for Gateway. Only supports AWS. Valid values: true, false.",
         "Computed": true
       },
       "filtered_spoke_vpc_routes": {
@@ -3334,7 +3836,47 @@
       },
       "gw_size": {
         "Type": "String",
-        "Description": "Instance type.",
+        "Description": "Size of the gateway instance.",
+        "Computed": true
+      },
+      "ha_cloud_instance_id": {
+        "Type": "String",
+        "Description": "Cloud instance ID of HA spoke gateway.",
+        "Computed": true
+      },
+      "ha_gw_name": {
+        "Type": "String",
+        "Description": "Aviatrix spoke gateway unique name of HA spoke gateway.",
+        "Computed": true
+      },
+      "ha_gw_size": {
+        "Type": "String",
+        "Description": "HA Gateway Size.",
+        "Computed": true
+      },
+      "ha_insane_mode_az": {
+        "Type": "String",
+        "Description": "AZ of subnet being created for Insane Mode Spoke HA Gateway. Required if insane_mode is true and ha_subnet is set.",
+        "Computed": true
+      },
+      "ha_private_ip": {
+        "Type": "String",
+        "Description": "Private IP address of HA spoke gateway.",
+        "Computed": true
+      },
+      "ha_public_ip": {
+        "Type": "String",
+        "Description": "Public IP address that you want assigned to the HA Spoke Gateway.",
+        "Computed": true
+      },
+      "ha_subnet": {
+        "Type": "String",
+        "Description": "HA Subnet. Required if enabling HA for AWS/AZURE.",
+        "Computed": true
+      },
+      "ha_zone": {
+        "Type": "String",
+        "Description": "HA Zone. Required if enabling HA for GCP.",
         "Computed": true
       },
       "included_advertised_spoke_routes": {
@@ -3344,7 +3886,7 @@
       },
       "insane_mode": {
         "Type": "Bool",
-        "Description": "Enable/Disable Insane Mode for Spoke Gateway.",
+        "Description": "Enable Insane Mode for Spoke Gateway. Valid values: true, false. If insane mode is enabled, gateway size has to at least be c5 size.",
         "Computed": true
       },
       "insane_mode_az": {
@@ -3352,24 +3894,39 @@
         "Description": "AZ of subnet being created for Insane Mode Spoke Gateway. Required if insane_mode is enabled for aws cloud.",
         "Computed": true
       },
+      "private_ip": {
+        "Type": "String",
+        "Description": "Private IP address of the spoke gateway created.",
+        "Computed": true
+      },
       "public_ip": {
         "Type": "String",
-        "Description": "Public IP address of the spoke gateway created.",
+        "Description": "Required when allocate_new_eip is false. It uses specified EIP for this gateway.",
+        "Computed": true
+      },
+      "security_group_id": {
+        "Type": "String",
+        "Description": "Security group used for the spoke gateway.",
         "Computed": true
       },
       "single_az_ha": {
         "Type": "Bool",
-        "Description": "Enable/Disable this feature.",
+        "Description": "Set to 'enabled' if this feature is desired.",
+        "Computed": true
+      },
+      "single_ip_snat": {
+        "Type": "Bool",
+        "Description": "Specify whether to enable Source NAT feature in 'single_ip' mode on the gateway or not.",
         "Computed": true
       },
       "subnet": {
         "Type": "String",
-        "Description": "Range of the subnet where the spoke gateway is launched.",
+        "Description": "Public Subnet Info.",
         "Computed": true
       },
       "tag_list": {
         "Type": "List",
-        "Description": "Instance tag of cloud provider. Only supported for AWS provider.",
+        "Description": "Instance tag of cloud provider.",
         "Computed": true,
         "Elem": {
           "Type": "SchemaElements",
@@ -3378,12 +3935,12 @@
       },
       "transit_gw": {
         "Type": "String",
-        "Description": "The transit gateway that the spoke gateway is attached to.",
+        "Description": "Specify the transit Gateway.",
         "Computed": true
       },
       "vpc_id": {
         "Type": "String",
-        "Description": "VPC ID.",
+        "Description": "VPC-ID/VNet-Name of cloud provider.",
         "Computed": true
       },
       "vpc_reg": {
@@ -3395,8 +3952,8 @@
     "aviatrix_transit_gateway": {
       "account_name": {
         "Type": "String",
-        "Optional": true,
-        "Description": "Name of a Cloud-Account in Aviatrix controller."
+        "Description": "Name of a Cloud-Account in Aviatrix controller.",
+        "Computed": true
       },
       "allocate_new_eip": {
         "Type": "Bool",
@@ -3406,6 +3963,11 @@
       "bgp_manual_spoke_advertise_cidrs": {
         "Type": "String",
         "Description": "Intended CIDR list to advertise to VGW.",
+        "Computed": true
+      },
+      "cloud_instance_id": {
+        "Type": "String",
+        "Description": "Instance ID of the transit gateway.",
         "Computed": true
       },
       "cloud_type": {
@@ -3448,6 +4010,16 @@
         "Description": "Sign of readiness for TGW connection.",
         "Computed": true
       },
+      "enable_learned_cidrs_approval": {
+        "Type": "Bool",
+        "Description": "Switch to enable/disable encrypted transit approval for transit gateway.",
+        "Computed": true
+      },
+      "enable_transit_firenet": {
+        "Type": "Bool",
+        "Description": "Switch to enable/disable transit firenet interfaces for transit gateway.",
+        "Computed": true
+      },
       "enable_vpc_dns_server": {
         "Type": "Bool",
         "Description": "Enable/Disable vpc_dns_server for Gateway. Only supports AWS.",
@@ -3473,6 +4045,46 @@
         "Description": "Instance type.",
         "Computed": true
       },
+      "ha_cloud_instance_id": {
+        "Type": "String",
+        "Description": "Cloud instance ID of HA transit gateway.",
+        "Computed": true
+      },
+      "ha_gw_name": {
+        "Type": "String",
+        "Description": "Aviatrix transit gateway unique name of HA transit gateway.",
+        "Computed": true
+      },
+      "ha_gw_size": {
+        "Type": "String",
+        "Description": "HA Gateway Size. Mandatory if HA is enabled (ha_subnet is set).",
+        "Computed": true
+      },
+      "ha_insane_mode_az": {
+        "Type": "String",
+        "Description": "AZ of subnet being created for Insane Mode Transit HA Gateway. Required if insane_mode is enabled and ha_subnet is set.",
+        "Computed": true
+      },
+      "ha_private_ip": {
+        "Type": "String",
+        "Description": "Private IP address of HA transit gateway.",
+        "Computed": true
+      },
+      "ha_public_ip": {
+        "Type": "String",
+        "Description": "Public IP address that you want assigned to the HA Transit Gateway.",
+        "Computed": true
+      },
+      "ha_subnet": {
+        "Type": "String",
+        "Description": "HA Subnet. Required for enabling HA for AWS/AZURE transit gateway.",
+        "Computed": true
+      },
+      "ha_zone": {
+        "Type": "String",
+        "Description": "HA Zone. Required if enabling HA for GCP.",
+        "Computed": true
+      },
       "insane_mode": {
         "Type": "Bool",
         "Description": "Enable/Disable Insane Mode for Spoke Gateway.",
@@ -3483,14 +4095,29 @@
         "Description": "AZ of subnet being created for Insane Mode Spoke Gateway. Required if insane_mode is enabled for aws cloud.",
         "Computed": true
       },
+      "private_ip": {
+        "Type": "String",
+        "Description": "Private IP address of the transit gateway created.",
+        "Computed": true
+      },
       "public_ip": {
         "Type": "String",
         "Description": "Public IP address of the Transit Gateway created.",
         "Computed": true
       },
+      "security_group_id": {
+        "Type": "String",
+        "Description": "Security group used for the transit gateway.",
+        "Computed": true
+      },
       "single_az_ha": {
         "Type": "Bool",
         "Description": "Enable/Disable this feature.",
+        "Computed": true
+      },
+      "single_ip_snat": {
+        "Type": "Bool",
+        "Description": "Enable or disable Source NAT feature in 'single_ip' mode for this container.",
         "Computed": true
       },
       "subnet": {
@@ -3515,6 +4142,123 @@
       "vpc_reg": {
         "Type": "String",
         "Description": "Region of cloud provider.",
+        "Computed": true
+      }
+    },
+    "aviatrix_vpc": {
+      "account_name": {
+        "Type": "String",
+        "Description": "Account name of the VPC created.",
+        "Computed": true
+      },
+      "aviatrix_firenet_vpc": {
+        "Type": "Bool",
+        "Description": "Switch if the VPC created is an Aviatrix FireNet VPC or not.",
+        "Computed": true
+      },
+      "aviatrix_transit_vpc": {
+        "Type": "Bool",
+        "Description": "Switch if the VPC created is an Aviatrix Transit VPC or not.",
+        "Computed": true
+      },
+      "cidr": {
+        "Type": "String",
+        "Description": "Subnet of the VPC created.",
+        "Computed": true
+      },
+      "cloud_type": {
+        "Type": "Int",
+        "Description": "Type of cloud service provider.",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the VPC created."
+      },
+      "private_subnets": {
+        "Type": "List",
+        "Description": "List of private subnet of the VPC to be created.",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "cidr": {
+              "Type": "String",
+              "Description": "Private subnet cidr.",
+              "Computed": true
+            },
+            "name": {
+              "Type": "String",
+              "Description": "Private subnet name.",
+              "Computed": true
+            },
+            "subnet_id": {
+              "Type": "String",
+              "Description": "Private subnet ID.",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "public_subnets": {
+        "Type": "List",
+        "Description": "List of public subnet of the VPC to be created.",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "cidr": {
+              "Type": "String",
+              "Description": "Public subnet cidr.",
+              "Computed": true
+            },
+            "name": {
+              "Type": "String",
+              "Description": "Public subnet name.",
+              "Computed": true
+            },
+            "subnet_id": {
+              "Type": "String",
+              "Description": "Public subnet ID.",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "region": {
+        "Type": "String",
+        "Description": "Region of the VPC created.",
+        "Computed": true
+      },
+      "subnets": {
+        "Type": "List",
+        "Description": "List of subnet of the VPC to be created.",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "cidr": {
+              "Type": "String",
+              "Description": "Subnet cidr.",
+              "Computed": true
+            },
+            "name": {
+              "Type": "String",
+              "Description": "Subnet name.",
+              "Computed": true
+            },
+            "subnet_id": {
+              "Type": "String",
+              "Description": "Subnet ID.",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "vpc_id": {
+        "Type": "String",
+        "Description": "ID of the VPC created.",
         "Computed": true
       }
     }
