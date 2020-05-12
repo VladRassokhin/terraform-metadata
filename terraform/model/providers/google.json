@@ -2,7 +2,7 @@
   ".schema_version": "1",
   "name": "google",
   "type": "provider",
-  "version": "v3.20.0",
+  "version": "v3.21.0",
   "provider": {
     "access_context_manager_custom_endpoint": {
       "Type": "String",
@@ -754,6 +754,10 @@
       }
     },
     "google_app_engine_application": {
+      "__timeouts__": [
+        "create",
+        "update"
+      ],
       "app_id": {
         "Type": "String",
         "Computed": true
@@ -2322,7 +2326,7 @@
             "role": {
               "Type": "String",
               "Optional": true,
-              "Description": "Describes the rights granted to the user specified by the other\nmember of the access object. Primitive, Predefined and custom\nroles are supported. Predefined roles that have equivalent\nprimitive roles are swapped by the API to their Primitive\ncounterparts, and will show a diff post-create. See\n[official docs](https://cloud.google.com/bigquery/docs/access-control)."
+              "Description": "Describes the rights granted to the user specified by the other\nmember of the access object. Primitive, Predefined and custom\nroles are supported. Predefined roles that have equivalent\nprimitive roles are swapped by the API to their Primitive\ncounterparts. See\n[official docs](https://cloud.google.com/bigquery/docs/access-control)."
             },
             "special_group": {
               "Type": "String",
@@ -5037,27 +5041,32 @@
             "max_backoff_duration": {
               "Type": "String",
               "Optional": true,
-              "Description": "The maximum amount of time to wait before retrying a job after it fails.\nA duration in seconds with up to nine fractional digits, terminated by 's'."
+              "Description": "The maximum amount of time to wait before retrying a job after it fails.\nA duration in seconds with up to nine fractional digits, terminated by 's'.",
+              "Computed": true
             },
             "max_doublings": {
               "Type": "Int",
               "Optional": true,
-              "Description": "The time between retries will double maxDoublings times.\nA job's retry interval starts at minBackoffDuration, \nthen doubles maxDoublings times, then increases linearly, \nand finally retries retries at intervals of maxBackoffDuration up to retryCount times."
+              "Description": "The time between retries will double maxDoublings times.\nA job's retry interval starts at minBackoffDuration, \nthen doubles maxDoublings times, then increases linearly, \nand finally retries retries at intervals of maxBackoffDuration up to retryCount times.",
+              "Computed": true
             },
             "max_retry_duration": {
               "Type": "String",
               "Optional": true,
-              "Description": "The time limit for retrying a failed job, measured from time when an execution was first attempted. \nIf specified with retryCount, the job will be retried until both limits are reached.\nA duration in seconds with up to nine fractional digits, terminated by 's'."
+              "Description": "The time limit for retrying a failed job, measured from time when an execution was first attempted. \nIf specified with retryCount, the job will be retried until both limits are reached.\nA duration in seconds with up to nine fractional digits, terminated by 's'.",
+              "Computed": true
             },
             "min_backoff_duration": {
               "Type": "String",
               "Optional": true,
-              "Description": "The minimum amount of time to wait before retrying a job after it fails.\nA duration in seconds with up to nine fractional digits, terminated by 's'."
+              "Description": "The minimum amount of time to wait before retrying a job after it fails.\nA duration in seconds with up to nine fractional digits, terminated by 's'.",
+              "Computed": true
             },
             "retry_count": {
               "Type": "Int",
               "Optional": true,
-              "Description": "The number of attempts that the system will make to run a \njob using the exponential backoff procedure described by maxDoublings.\nValues greater than 5 and negative values are not allowed."
+              "Description": "The number of attempts that the system will make to run a \njob using the exponential backoff procedure described by maxDoublings.\nValues greater than 5 and negative values are not allowed.",
+              "Computed": true
             }
           }
         }
@@ -6521,6 +6530,59 @@
           }
         }
       },
+      "circuit_breakers": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Settings controlling the volume of connections to a backend service. This field\nis applicable only when the load_balancing_scheme is set to INTERNAL_SELF_MANAGED.",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "max_connections": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "The maximum number of connections to the backend cluster.\nDefaults to 1024.",
+              "Default": {
+                "Type": "int",
+                "Value": "1024"
+              }
+            },
+            "max_pending_requests": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "The maximum number of pending requests to the backend cluster.\nDefaults to 1024.",
+              "Default": {
+                "Type": "int",
+                "Value": "1024"
+              }
+            },
+            "max_requests": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "The maximum number of parallel requests to the backend cluster.\nDefaults to 1024.",
+              "Default": {
+                "Type": "int",
+                "Value": "1024"
+              }
+            },
+            "max_requests_per_connection": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "Maximum requests for a single backend connection. This parameter\nis respected by both the HTTP/1.1 and HTTP/2 implementations. If\nnot specified, there is no limit. Setting this parameter to 1\nwill effectively disable keep alive."
+            },
+            "max_retries": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "The maximum number of parallel retries to the backend cluster.\nDefaults to 3.",
+              "Default": {
+                "Type": "int",
+                "Value": "3"
+              }
+            }
+          }
+        }
+      },
       "connection_draining_timeout_sec": {
         "Type": "Int",
         "Optional": true,
@@ -6530,10 +6592,89 @@
           "Value": "300"
         }
       },
+      "consistent_hash": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Consistent Hash-based load balancing can be used to provide soft session\naffinity based on HTTP headers, cookies or other properties. This load balancing\npolicy is applicable only for HTTP connections. The affinity to a particular\ndestination host will be lost when one or more hosts are added/removed from the\ndestination service. This field specifies parameters that control consistent\nhashing. This field only applies if the load_balancing_scheme is set to\nINTERNAL_SELF_MANAGED. This field is only applicable when locality_lb_policy is\nset to MAGLEV or RING_HASH.",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "http_cookie": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Hash is based on HTTP Cookie. This field describes a HTTP cookie\nthat will be used as the hash key for the consistent hash load\nbalancer. If the cookie is not present, it will be generated.\nThis field is applicable if the sessionAffinity is set to HTTP_COOKIE.",
+              "MaxItems": 1,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "name": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Name of the cookie."
+                  },
+                  "path": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Path to set for the cookie."
+                  },
+                  "ttl": {
+                    "Type": "List",
+                    "Optional": true,
+                    "Description": "Lifetime of the cookie.",
+                    "MaxItems": 1,
+                    "IsBlock": true,
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "nanos": {
+                          "Type": "Int",
+                          "Optional": true,
+                          "Description": "Span of time that's a fraction of a second at nanosecond\nresolution. Durations less than one second are represented\nwith a 0 seconds field and a positive nanos field. Must\nbe from 0 to 999,999,999 inclusive."
+                        },
+                        "seconds": {
+                          "Type": "Int",
+                          "Required": true,
+                          "Description": "Span of time at a resolution of a second.\nMust be from 0 to 315,576,000,000 inclusive."
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "http_header_name": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The hash based on the value of the specified header field.\nThis field is applicable if the sessionAffinity is set to HEADER_FIELD."
+            },
+            "minimum_ring_size": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "The minimum number of virtual nodes to use for the hash ring.\nLarger ring sizes result in more granular load\ndistributions. If the number of hosts in the load balancing pool\nis larger than the ring size, each host will be assigned a single\nvirtual node.\nDefaults to 1024.",
+              "Default": {
+                "Type": "int",
+                "Value": "1024"
+              }
+            }
+          }
+        }
+      },
       "creation_timestamp": {
         "Type": "String",
         "Description": "Creation timestamp in RFC3339 text format.",
         "Computed": true
+      },
+      "custom_request_headers": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Headers that the HTTP/S load balancer should add to proxied\nrequests.",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       },
       "description": {
         "Type": "String",
@@ -6597,10 +6738,175 @@
           "Value": "EXTERNAL"
         }
       },
+      "locality_lb_policy": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The load balancing algorithm used within the scope of the locality.\nThe possible values are -\n\nROUND_ROBIN - This is a simple policy in which each healthy backend\n              is selected in round robin order.\n\nLEAST_REQUEST - An O(1) algorithm which selects two random healthy\n                hosts and picks the host which has fewer active requests.\n\nRING_HASH - The ring/modulo hash load balancer implements consistent\n            hashing to backends. The algorithm has the property that the\n            addition/removal of a host from a set of N hosts only affects\n            1/N of the requests.\n\nRANDOM - The load balancer selects a random healthy host.\n\nORIGINAL_DESTINATION - Backend host is selected based on the client\n                       connection metadata, i.e., connections are opened\n                       to the same address as the destination address of\n                       the incoming connection before the connection\n                       was redirected to the load balancer.\n\nMAGLEV - used as a drop in replacement for the ring hash load balancer.\n         Maglev is not as stable as ring hash but has faster table lookup\n         build times and host selection times. For more information about\n         Maglev, refer to https://ai.google/research/pubs/pub44824\n\nThis field is applicable only when the load_balancing_scheme is set to\nINTERNAL_SELF_MANAGED. Possible values: [\"ROUND_ROBIN\", \"LEAST_REQUEST\", \"RING_HASH\", \"RANDOM\", \"ORIGINAL_DESTINATION\", \"MAGLEV\"]"
+      },
+      "log_config": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "This field denotes the logging options for the load balancer traffic served by this backend service.\nIf logging is enabled, logs will be exported to Stackdriver.",
+        "Computed": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "enable": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Whether to enable logging for the load balancer traffic served by this backend service."
+            },
+            "sample_rate": {
+              "Type": "Float",
+              "Optional": true,
+              "Description": "This field can only be specified if logging is enabled for this backend service. The value of\nthe field must be in [0, 1]. This configures the sampling rate of requests to the load balancer\nwhere 1.0 means all logged requests are reported and 0.0 means no logged requests are reported.\nThe default value is 1.0."
+            }
+          }
+        }
+      },
       "name": {
         "Type": "String",
         "Required": true,
         "Description": "Name of the resource. Provided by the client when the resource is\ncreated. The name must be 1-63 characters long, and comply with\nRFC1035. Specifically, the name must be 1-63 characters long and match\nthe regular expression '[a-z]([-a-z0-9]*[a-z0-9])?' which means the\nfirst character must be a lowercase letter, and all following\ncharacters must be a dash, lowercase letter, or digit, except the last\ncharacter, which cannot be a dash."
+      },
+      "outlier_detection": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Settings controlling eviction of unhealthy hosts from the load balancing pool.\nThis field is applicable only when the load_balancing_scheme is set\nto INTERNAL_SELF_MANAGED.",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "base_ejection_time": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "The base time that a host is ejected for. The real time is equal to the base\ntime multiplied by the number of times the host has been ejected. Defaults to\n30000ms or 30s.",
+              "MaxItems": 1,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "nanos": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Description": "Span of time that's a fraction of a second at nanosecond resolution. Durations\nless than one second are represented with a 0 'seconds' field and a positive\n'nanos' field. Must be from 0 to 999,999,999 inclusive."
+                  },
+                  "seconds": {
+                    "Type": "Int",
+                    "Required": true,
+                    "Description": "Span of time at a resolution of a second. Must be from 0 to 315,576,000,000\ninclusive."
+                  }
+                }
+              }
+            },
+            "consecutive_errors": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "Number of errors before a host is ejected from the connection pool. When the\nbackend host is accessed over HTTP, a 5xx return code qualifies as an error.\nDefaults to 5.",
+              "Default": {
+                "Type": "int",
+                "Value": "5"
+              }
+            },
+            "consecutive_gateway_failure": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "The number of consecutive gateway failures (502, 503, 504 status or connection\nerrors that are mapped to one of those status codes) before a consecutive\ngateway failure ejection occurs. Defaults to 5.",
+              "Default": {
+                "Type": "int",
+                "Value": "5"
+              }
+            },
+            "enforcing_consecutive_errors": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "The percentage chance that a host will be actually ejected when an outlier\nstatus is detected through consecutive 5xx. This setting can be used to disable\nejection or to ramp it up slowly. Defaults to 100.",
+              "Default": {
+                "Type": "int",
+                "Value": "100"
+              }
+            },
+            "enforcing_consecutive_gateway_failure": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "The percentage chance that a host will be actually ejected when an outlier\nstatus is detected through consecutive gateway failures. This setting can be\nused to disable ejection or to ramp it up slowly. Defaults to 0.",
+              "Default": {
+                "Type": "int",
+                "Value": "0"
+              }
+            },
+            "enforcing_success_rate": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "The percentage chance that a host will be actually ejected when an outlier\nstatus is detected through success rate statistics. This setting can be used to\ndisable ejection or to ramp it up slowly. Defaults to 100.",
+              "Default": {
+                "Type": "int",
+                "Value": "100"
+              }
+            },
+            "interval": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Time interval between ejection sweep analysis. This can result in both new\nejections as well as hosts being returned to service. Defaults to 10 seconds.",
+              "MaxItems": 1,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "nanos": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Description": "Span of time that's a fraction of a second at nanosecond resolution. Durations\nless than one second are represented with a 0 'seconds' field and a positive\n'nanos' field. Must be from 0 to 999,999,999 inclusive."
+                  },
+                  "seconds": {
+                    "Type": "Int",
+                    "Required": true,
+                    "Description": "Span of time at a resolution of a second. Must be from 0 to 315,576,000,000\ninclusive."
+                  }
+                }
+              }
+            },
+            "max_ejection_percent": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "Maximum percentage of hosts in the load balancing pool for the backend service\nthat can be ejected. Defaults to 10%.",
+              "Default": {
+                "Type": "int",
+                "Value": "10"
+              }
+            },
+            "success_rate_minimum_hosts": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "The number of hosts in a cluster that must have enough request volume to detect\nsuccess rate outliers. If the number of hosts is less than this setting, outlier\ndetection via success rate statistics is not performed for any host in the\ncluster. Defaults to 5.",
+              "Default": {
+                "Type": "int",
+                "Value": "5"
+              }
+            },
+            "success_rate_request_volume": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "The minimum number of total requests that must be collected in one interval (as\ndefined by the interval duration above) to include this host in success rate\nbased outlier detection. If the volume is lower than this setting, outlier\ndetection via success rate statistics is not performed for that host. Defaults\nto 100.",
+              "Default": {
+                "Type": "int",
+                "Value": "100"
+              }
+            },
+            "success_rate_stdev_factor": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "This factor is used to determine the ejection threshold for success rate outlier\nejection. The ejection threshold is the difference between the mean success\nrate, and the product of this factor and the standard deviation of the mean\nsuccess rate: mean - (stdev * success_rate_stdev_factor). This factor is divided\nby a thousand to get a double. That is, if the desired factor is 1.9, the\nruntime value should be 1900. Defaults to 1900.",
+              "Default": {
+                "Type": "int",
+                "Value": "1900"
+              }
+            }
+          }
+        }
       },
       "port_name": {
         "Type": "String",
@@ -9042,6 +9348,11 @@
       }
     },
     "google_compute_instance_group": {
+      "__timeouts__": [
+        "create",
+        "update",
+        "delete"
+      ],
       "description": {
         "Type": "String",
         "Optional": true
@@ -9419,6 +9730,10 @@
       }
     },
     "google_compute_instance_template": {
+      "__timeouts__": [
+        "create",
+        "delete"
+      ],
       "can_ip_forward": {
         "Type": "Bool",
         "Optional": true,
@@ -10098,6 +10413,10 @@
       }
     },
     "google_compute_network_peering": {
+      "__timeouts__": [
+        "create",
+        "delete"
+      ],
       "auto_create_routes": {
         "Type": "Bool",
         "Optional": true,
@@ -10304,6 +10623,9 @@
       }
     },
     "google_compute_project_default_network_tier": {
+      "__timeouts__": [
+        "create"
+      ],
       "network_tier": {
         "Type": "String",
         "Required": true
@@ -10315,6 +10637,10 @@
       }
     },
     "google_compute_project_metadata": {
+      "__timeouts__": [
+        "create",
+        "delete"
+      ],
       "metadata": {
         "Type": "Map",
         "Required": true,
@@ -10489,6 +10815,11 @@
         "update",
         "delete"
       ],
+      "affinity_cookie_ttl_sec": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Lifetime of cookies in seconds if session_affinity is\nGENERATED_COOKIE. If set to 0, the cookie is non-persistent and lasts\nonly until the end of the browser session (or equivalent). The\nmaximum allowed value for TTL is one day.\n\nWhen the load balancing scheme is INTERNAL, this field is not used."
+      },
       "backend": {
         "Type": "Set",
         "Optional": true,
@@ -10515,6 +10846,12 @@
               "Type": "String",
               "Optional": true,
               "Description": "An optional description of this resource.\nProvide this property when you create the resource."
+            },
+            "failover": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "This field designates whether this is a failover backend. More\nthan one failover backend can be configured for a given RegionBackendService.",
+              "Computed": true
             },
             "group": {
               "Type": "String",
@@ -10559,6 +10896,59 @@
           }
         }
       },
+      "circuit_breakers": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Settings controlling the volume of connections to a backend service. This field\nis applicable only when the 'load_balancing_scheme' is set to INTERNAL_MANAGED\nand the 'protocol' is set to HTTP, HTTPS, or HTTP2.",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "max_connections": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "The maximum number of connections to the backend cluster.\nDefaults to 1024.",
+              "Default": {
+                "Type": "int",
+                "Value": "1024"
+              }
+            },
+            "max_pending_requests": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "The maximum number of pending requests to the backend cluster.\nDefaults to 1024.",
+              "Default": {
+                "Type": "int",
+                "Value": "1024"
+              }
+            },
+            "max_requests": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "The maximum number of parallel requests to the backend cluster.\nDefaults to 1024.",
+              "Default": {
+                "Type": "int",
+                "Value": "1024"
+              }
+            },
+            "max_requests_per_connection": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "Maximum requests for a single backend connection. This parameter\nis respected by both the HTTP/1.1 and HTTP/2 implementations. If\nnot specified, there is no limit. Setting this parameter to 1\nwill effectively disable keep alive."
+            },
+            "max_retries": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "The maximum number of parallel retries to the backend cluster.\nDefaults to 3.",
+              "Default": {
+                "Type": "int",
+                "Value": "3"
+              }
+            }
+          }
+        }
+      },
       "connection_draining_timeout_sec": {
         "Type": "Int",
         "Optional": true,
@@ -10566,6 +10956,76 @@
         "Default": {
           "Type": "int",
           "Value": "0"
+        }
+      },
+      "consistent_hash": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Consistent Hash-based load balancing can be used to provide soft session\naffinity based on HTTP headers, cookies or other properties. This load balancing\npolicy is applicable only for HTTP connections. The affinity to a particular\ndestination host will be lost when one or more hosts are added/removed from the\ndestination service. This field specifies parameters that control consistent\nhashing.\nThis field only applies when all of the following are true -\n  * 'load_balancing_scheme' is set to INTERNAL_MANAGED\n  * 'protocol' is set to HTTP, HTTPS, or HTTP2\n  * 'locality_lb_policy' is set to MAGLEV or RING_HASH",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "http_cookie": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Hash is based on HTTP Cookie. This field describes a HTTP cookie\nthat will be used as the hash key for the consistent hash load\nbalancer. If the cookie is not present, it will be generated.\nThis field is applicable if the sessionAffinity is set to HTTP_COOKIE.",
+              "MaxItems": 1,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "name": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Name of the cookie."
+                  },
+                  "path": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Path to set for the cookie."
+                  },
+                  "ttl": {
+                    "Type": "List",
+                    "Optional": true,
+                    "Description": "Lifetime of the cookie.",
+                    "MaxItems": 1,
+                    "IsBlock": true,
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "nanos": {
+                          "Type": "Int",
+                          "Optional": true,
+                          "Description": "Span of time that's a fraction of a second at nanosecond\nresolution. Durations less than one second are represented\nwith a 0 seconds field and a positive nanos field. Must\nbe from 0 to 999,999,999 inclusive."
+                        },
+                        "seconds": {
+                          "Type": "Int",
+                          "Required": true,
+                          "Description": "Span of time at a resolution of a second.\nMust be from 0 to 315,576,000,000 inclusive."
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "http_header_name": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The hash based on the value of the specified header field.\nThis field is applicable if the sessionAffinity is set to HEADER_FIELD."
+            },
+            "minimum_ring_size": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "The minimum number of virtual nodes to use for the hash ring.\nLarger ring sizes result in more granular load\ndistributions. If the number of hosts in the load balancing pool\nis larger than the ring size, each host will be assigned a single\nvirtual node.\nDefaults to 1024.",
+              "Default": {
+                "Type": "int",
+                "Value": "1024"
+              }
+            }
+          }
         }
       },
       "creation_timestamp": {
@@ -10577,6 +11037,33 @@
         "Type": "String",
         "Optional": true,
         "Description": "An optional description of this resource."
+      },
+      "failover_policy": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Policy for failovers.",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "disable_connection_drain_on_failover": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "On failover or failback, this field indicates whether connection drain\nwill be honored. Setting this to true has the following effect: connections\nto the old active pool are not drained. Connections to the new active pool\nuse the timeout of 10 min (currently fixed). Setting to false has the\nfollowing effect: both old and new connections will have a drain timeout\nof 10 min.\nThis can be set to true only if the protocol is TCP.\nThe default is false."
+            },
+            "drop_traffic_if_unhealthy": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "This option is used only when no healthy VMs are detected in the primary\nand backup instance groups. When set to true, traffic is dropped. When\nset to false, new connections are sent across all VMs in the primary group.\nThe default is false."
+            },
+            "failover_ratio": {
+              "Type": "Float",
+              "Optional": true,
+              "Description": "The value of the field must be in [0, 1]. If the ratio of the healthy\nVMs in the primary backend is at or below this number, traffic arriving\nat the load-balanced IP will be directed to the failover backend.\nIn case where 'failoverRatio' is not set or all the VMs in the backup\nbackend are unhealthy, the traffic will be directed back to the primary\nbackend in the \"force\" mode, where traffic will be spread to the healthy\nVMs with the best effort, or to all VMs when no VM is healthy.\nThis field is only used with l4 load balancing."
+            }
+          }
+        }
       },
       "fingerprint": {
         "Type": "String",
@@ -10603,6 +11090,33 @@
           "Value": "INTERNAL"
         }
       },
+      "locality_lb_policy": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The load balancing algorithm used within the scope of the locality.\nThe possible values are -\n\nROUND_ROBIN - This is a simple policy in which each healthy backend\n              is selected in round robin order.\n\nLEAST_REQUEST - An O(1) algorithm which selects two random healthy\n                hosts and picks the host which has fewer active requests.\n\nRING_HASH - The ring/modulo hash load balancer implements consistent\n            hashing to backends. The algorithm has the property that the\n            addition/removal of a host from a set of N hosts only affects\n            1/N of the requests.\n\nRANDOM - The load balancer selects a random healthy host.\n\nORIGINAL_DESTINATION - Backend host is selected based on the client\n                       connection metadata, i.e., connections are opened\n                       to the same address as the destination address of\n                       the incoming connection before the connection\n                       was redirected to the load balancer.\n\nMAGLEV - used as a drop in replacement for the ring hash load balancer.\n         Maglev is not as stable as ring hash but has faster table lookup\n         build times and host selection times. For more information about\n         Maglev, refer to https://ai.google/research/pubs/pub44824\n\nThis field is applicable only when the 'load_balancing_scheme' is set to\nINTERNAL_MANAGED and the 'protocol' is set to HTTP, HTTPS, or HTTP2. Possible values: [\"ROUND_ROBIN\", \"LEAST_REQUEST\", \"RING_HASH\", \"RANDOM\", \"ORIGINAL_DESTINATION\", \"MAGLEV\"]"
+      },
+      "log_config": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "This field denotes the logging options for the load balancer traffic served by this backend service.\nIf logging is enabled, logs will be exported to Stackdriver.",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "enable": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Whether to enable logging for the load balancer traffic served by this backend service."
+            },
+            "sample_rate": {
+              "Type": "Float",
+              "Optional": true,
+              "Description": "This field can only be specified if logging is enabled for this backend service. The value of\nthe field must be in [0, 1]. This configures the sampling rate of requests to the load balancer\nwhere 1.0 means all logged requests are reported and 0.0 means no logged requests are reported.\nThe default value is 1.0."
+            }
+          }
+        }
+      },
       "name": {
         "Type": "String",
         "Required": true,
@@ -10612,6 +11126,143 @@
         "Type": "String",
         "Optional": true,
         "Description": "The URL of the network to which this backend service belongs.\nThis field can only be specified when the load balancing scheme is set to INTERNAL."
+      },
+      "outlier_detection": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Settings controlling eviction of unhealthy hosts from the load balancing pool.\nThis field is applicable only when the 'load_balancing_scheme' is set\nto INTERNAL_MANAGED and the 'protocol' is set to HTTP, HTTPS, or HTTP2.",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "base_ejection_time": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "The base time that a host is ejected for. The real time is equal to the base\ntime multiplied by the number of times the host has been ejected. Defaults to\n30000ms or 30s.",
+              "MaxItems": 1,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "nanos": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Description": "Span of time that's a fraction of a second at nanosecond resolution. Durations\nless than one second are represented with a 0 'seconds' field and a positive\n'nanos' field. Must be from 0 to 999,999,999 inclusive."
+                  },
+                  "seconds": {
+                    "Type": "Int",
+                    "Required": true,
+                    "Description": "Span of time at a resolution of a second. Must be from 0 to 315,576,000,000\ninclusive."
+                  }
+                }
+              }
+            },
+            "consecutive_errors": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "Number of errors before a host is ejected from the connection pool. When the\nbackend host is accessed over HTTP, a 5xx return code qualifies as an error.\nDefaults to 5.",
+              "Default": {
+                "Type": "int",
+                "Value": "5"
+              }
+            },
+            "consecutive_gateway_failure": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "The number of consecutive gateway failures (502, 503, 504 status or connection\nerrors that are mapped to one of those status codes) before a consecutive\ngateway failure ejection occurs. Defaults to 5.",
+              "Default": {
+                "Type": "int",
+                "Value": "5"
+              }
+            },
+            "enforcing_consecutive_errors": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "The percentage chance that a host will be actually ejected when an outlier\nstatus is detected through consecutive 5xx. This setting can be used to disable\nejection or to ramp it up slowly. Defaults to 100.",
+              "Default": {
+                "Type": "int",
+                "Value": "100"
+              }
+            },
+            "enforcing_consecutive_gateway_failure": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "The percentage chance that a host will be actually ejected when an outlier\nstatus is detected through consecutive gateway failures. This setting can be\nused to disable ejection or to ramp it up slowly. Defaults to 0.",
+              "Default": {
+                "Type": "int",
+                "Value": "0"
+              }
+            },
+            "enforcing_success_rate": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "The percentage chance that a host will be actually ejected when an outlier\nstatus is detected through success rate statistics. This setting can be used to\ndisable ejection or to ramp it up slowly. Defaults to 100.",
+              "Default": {
+                "Type": "int",
+                "Value": "100"
+              }
+            },
+            "interval": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Time interval between ejection sweep analysis. This can result in both new\nejections as well as hosts being returned to service. Defaults to 10 seconds.",
+              "MaxItems": 1,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "nanos": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Description": "Span of time that's a fraction of a second at nanosecond resolution. Durations\nless than one second are represented with a 0 'seconds' field and a positive\n'nanos' field. Must be from 0 to 999,999,999 inclusive."
+                  },
+                  "seconds": {
+                    "Type": "Int",
+                    "Required": true,
+                    "Description": "Span of time at a resolution of a second. Must be from 0 to 315,576,000,000\ninclusive."
+                  }
+                }
+              }
+            },
+            "max_ejection_percent": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "Maximum percentage of hosts in the load balancing pool for the backend service\nthat can be ejected. Defaults to 10%.",
+              "Default": {
+                "Type": "int",
+                "Value": "10"
+              }
+            },
+            "success_rate_minimum_hosts": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "The number of hosts in a cluster that must have enough request volume to detect\nsuccess rate outliers. If the number of hosts is less than this setting, outlier\ndetection via success rate statistics is not performed for any host in the\ncluster. Defaults to 5.",
+              "Default": {
+                "Type": "int",
+                "Value": "5"
+              }
+            },
+            "success_rate_request_volume": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "The minimum number of total requests that must be collected in one interval (as\ndefined by the interval duration above) to include this host in success rate\nbased outlier detection. If the volume is lower than this setting, outlier\ndetection via success rate statistics is not performed for that host. Defaults\nto 100.",
+              "Default": {
+                "Type": "int",
+                "Value": "100"
+              }
+            },
+            "success_rate_stdev_factor": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "This factor is used to determine the ejection threshold for success rate outlier\nejection. The ejection threshold is the difference between the mean success\nrate, and the product of this factor and the standard deviation of the mean\nsuccess rate: mean - (stdev * success_rate_stdev_factor). This factor is divided\nby a thousand to get a double. That is, if the desired factor is 1.9, the\nruntime value should be 1900. Defaults to 1900.",
+              "Default": {
+                "Type": "int",
+                "Value": "1900"
+              }
+            }
+          }
+        }
       },
       "project": {
         "Type": "String",
@@ -11438,6 +12089,1491 @@
         "Computed": true
       }
     },
+    "google_compute_region_target_http_proxy": {
+      "__timeouts__": [
+        "create",
+        "update",
+        "delete"
+      ],
+      "creation_timestamp": {
+        "Type": "String",
+        "Description": "Creation timestamp in RFC3339 text format.",
+        "Computed": true
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "An optional description of this resource."
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the resource. Provided by the client when the resource is\ncreated. The name must be 1-63 characters long, and comply with\nRFC1035. Specifically, the name must be 1-63 characters long and match\nthe regular expression '[a-z]([-a-z0-9]*[a-z0-9])?' which means the\nfirst character must be a lowercase letter, and all following\ncharacters must be a dash, lowercase letter, or digit, except the last\ncharacter, which cannot be a dash."
+      },
+      "project": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "proxy_id": {
+        "Type": "Int",
+        "Description": "The unique identifier for the resource.",
+        "Computed": true
+      },
+      "region": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The Region in which the created target https proxy should reside.\nIf it is not provided, the provider region is used.",
+        "Computed": true
+      },
+      "self_link": {
+        "Type": "String",
+        "Computed": true
+      },
+      "url_map": {
+        "Type": "String",
+        "Required": true,
+        "Description": "A reference to the RegionUrlMap resource that defines the mapping from URL\nto the BackendService."
+      }
+    },
+    "google_compute_region_target_https_proxy": {
+      "__timeouts__": [
+        "create",
+        "update",
+        "delete"
+      ],
+      "creation_timestamp": {
+        "Type": "String",
+        "Description": "Creation timestamp in RFC3339 text format.",
+        "Computed": true
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "An optional description of this resource."
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the resource. Provided by the client when the resource is\ncreated. The name must be 1-63 characters long, and comply with\nRFC1035. Specifically, the name must be 1-63 characters long and match\nthe regular expression '[a-z]([-a-z0-9]*[a-z0-9])?' which means the\nfirst character must be a lowercase letter, and all following\ncharacters must be a dash, lowercase letter, or digit, except the last\ncharacter, which cannot be a dash."
+      },
+      "project": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "proxy_id": {
+        "Type": "Int",
+        "Description": "The unique identifier for the resource.",
+        "Computed": true
+      },
+      "region": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The Region in which the created target https proxy should reside.\nIf it is not provided, the provider region is used.",
+        "Computed": true
+      },
+      "self_link": {
+        "Type": "String",
+        "Computed": true
+      },
+      "ssl_certificates": {
+        "Type": "List",
+        "Required": true,
+        "Description": "A list of RegionSslCertificate resources that are used to authenticate\nconnections between users and the load balancer. Currently, exactly\none SSL certificate must be specified.",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "url_map": {
+        "Type": "String",
+        "Required": true,
+        "Description": "A reference to the RegionUrlMap resource that defines the mapping from URL\nto the RegionBackendService."
+      }
+    },
+    "google_compute_region_url_map": {
+      "__timeouts__": [
+        "create",
+        "update",
+        "delete"
+      ],
+      "creation_timestamp": {
+        "Type": "String",
+        "Description": "Creation timestamp in RFC3339 text format.",
+        "Computed": true
+      },
+      "default_service": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The full or partial URL of the defaultService resource to which traffic is directed if\nnone of the hostRules match. If defaultRouteAction is additionally specified, advanced\nrouting actions like URL Rewrites, etc. take effect prior to sending the request to the\nbackend. However, if defaultService is specified, defaultRouteAction cannot contain any\nweightedBackendServices. Conversely, if routeAction specifies any\nweightedBackendServices, service must not be specified.  Only one of defaultService,\ndefaultUrlRedirect or defaultRouteAction.weightedBackendService must be set."
+      },
+      "default_url_redirect": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "When none of the specified hostRules match, the request is redirected to a URL specified\nby defaultUrlRedirect. If defaultUrlRedirect is specified, defaultService or\ndefaultRouteAction must not be set.",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "host_redirect": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The host that will be used in the redirect response instead of the one that was\nsupplied in the request. The value must be between 1 and 255 characters."
+            },
+            "https_redirect": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "If set to true, the URL scheme in the redirected request is set to https. If set to\nfalse, the URL scheme of the redirected request will remain the same as that of the\nrequest. This must only be set for UrlMaps used in TargetHttpProxys. Setting this\ntrue for TargetHttpsProxy is not permitted. The default is set to false.",
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
+              }
+            },
+            "path_redirect": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The path that will be used in the redirect response instead of the one that was\nsupplied in the request. pathRedirect cannot be supplied together with\nprefixRedirect. Supply one alone or neither. If neither is supplied, the path of the\noriginal request will be used for the redirect. The value must be between 1 and 1024\ncharacters."
+            },
+            "prefix_redirect": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The prefix that replaces the prefixMatch specified in the HttpRouteRuleMatch,\nretaining the remaining portion of the URL before redirecting the request.\nprefixRedirect cannot be supplied together with pathRedirect. Supply one alone or\nneither. If neither is supplied, the path of the original request will be used for\nthe redirect. The value must be between 1 and 1024 characters."
+            },
+            "redirect_response_code": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The HTTP Status code to use for this RedirectAction. Supported values are:\n- MOVED_PERMANENTLY_DEFAULT, which is the default value and corresponds to 301.\n- FOUND, which corresponds to 302.\n- SEE_OTHER which corresponds to 303.\n- TEMPORARY_REDIRECT, which corresponds to 307. In this case, the request method\nwill be retained.\n- PERMANENT_REDIRECT, which corresponds to 308. In this case,\nthe request method will be retained. Possible values: [\"FOUND\", \"MOVED_PERMANENTLY_DEFAULT\", \"PERMANENT_REDIRECT\", \"SEE_OTHER\", \"TEMPORARY_REDIRECT\"]"
+            },
+            "strip_query": {
+              "Type": "Bool",
+              "Required": true,
+              "Description": "If set to true, any accompanying query portion of the original URL is removed prior\nto redirecting the request. If set to false, the query portion of the original URL is\nretained.\n This field is required to ensure an empty block is not set. The normal default value is false."
+            }
+          }
+        }
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "An optional description of this resource. Provide this property when\nyou create the resource."
+      },
+      "fingerprint": {
+        "Type": "String",
+        "Description": "Fingerprint of this resource. This field is used internally during\nupdates of this resource.",
+        "Computed": true
+      },
+      "host_rule": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "The list of HostRules to use against the URL.",
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "description": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "An optional description of this HostRule. Provide this property\nwhen you create the resource."
+            },
+            "hosts": {
+              "Type": "Set",
+              "Required": true,
+              "Description": "The list of host patterns to match. They must be valid\nhostnames, except * will match any string of ([a-z0-9-.]*). In\nthat case, * must be the first character and must be followed in\nthe pattern by either - or ..",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "path_matcher": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The name of the PathMatcher to use to match the path portion of\nthe URL if the hostRule matches the URL's host portion."
+            }
+          }
+        }
+      },
+      "map_id": {
+        "Type": "Int",
+        "Description": "The unique identifier for the resource.",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the resource. Provided by the client when the resource is\ncreated. The name must be 1-63 characters long, and comply with\nRFC1035. Specifically, the name must be 1-63 characters long and match\nthe regular expression '[a-z]([-a-z0-9]*[a-z0-9])?' which means the\nfirst character must be a lowercase letter, and all following\ncharacters must be a dash, lowercase letter, or digit, except the last\ncharacter, which cannot be a dash."
+      },
+      "path_matcher": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "The list of named PathMatchers to use against the URL.",
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "default_service": {
+              "Type": "String",
+              "Required": true,
+              "Description": "A reference to a RegionBackendService resource. This will be used if\nnone of the pathRules defined by this PathMatcher is matched by\nthe URL's path portion."
+            },
+            "default_url_redirect": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "When none of the specified hostRules match, the request is redirected to a URL specified\nby defaultUrlRedirect. If defaultUrlRedirect is specified, defaultService or\ndefaultRouteAction must not be set.",
+              "MaxItems": 1,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "host_redirect": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "The host that will be used in the redirect response instead of the one that was\nsupplied in the request. The value must be between 1 and 255 characters."
+                  },
+                  "https_redirect": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Description": "If set to true, the URL scheme in the redirected request is set to https. If set to\nfalse, the URL scheme of the redirected request will remain the same as that of the\nrequest. This must only be set for UrlMaps used in TargetHttpProxys. Setting this\ntrue for TargetHttpsProxy is not permitted. The default is set to false.",
+                    "Default": {
+                      "Type": "bool",
+                      "Value": "false"
+                    }
+                  },
+                  "path_redirect": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "The path that will be used in the redirect response instead of the one that was\nsupplied in the request. pathRedirect cannot be supplied together with\nprefixRedirect. Supply one alone or neither. If neither is supplied, the path of the\noriginal request will be used for the redirect. The value must be between 1 and 1024\ncharacters."
+                  },
+                  "prefix_redirect": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "The prefix that replaces the prefixMatch specified in the HttpRouteRuleMatch,\nretaining the remaining portion of the URL before redirecting the request.\nprefixRedirect cannot be supplied together with pathRedirect. Supply one alone or\nneither. If neither is supplied, the path of the original request will be used for\nthe redirect. The value must be between 1 and 1024 characters."
+                  },
+                  "redirect_response_code": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "The HTTP Status code to use for this RedirectAction. Supported values are:\n- MOVED_PERMANENTLY_DEFAULT, which is the default value and corresponds to 301.\n- FOUND, which corresponds to 302.\n- SEE_OTHER which corresponds to 303.\n- TEMPORARY_REDIRECT, which corresponds to 307. In this case, the request method\nwill be retained.\n- PERMANENT_REDIRECT, which corresponds to 308. In this case,\nthe request method will be retained. Possible values: [\"FOUND\", \"MOVED_PERMANENTLY_DEFAULT\", \"PERMANENT_REDIRECT\", \"SEE_OTHER\", \"TEMPORARY_REDIRECT\"]"
+                  },
+                  "strip_query": {
+                    "Type": "Bool",
+                    "Required": true,
+                    "Description": "If set to true, any accompanying query portion of the original URL is removed prior\nto redirecting the request. If set to false, the query portion of the original URL is\nretained.\n This field is required to ensure an empty block is not set. The normal default value is false."
+                  }
+                }
+              }
+            },
+            "description": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "An optional description of this resource."
+            },
+            "name": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The name to which this PathMatcher is referred by the HostRule."
+            },
+            "path_rule": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "The list of path rules. Use this list instead of routeRules when routing based\non simple path matching is all that's required. The order by which path rules\nare specified does not matter. Matches are always done on the longest-path-first\nbasis. For example: a pathRule with a path /a/b/c/* will match before /a/b/*\nirrespective of the order in which those paths appear in this list. Within a\ngiven pathMatcher, only one of pathRules or routeRules must be set.",
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "paths": {
+                    "Type": "Set",
+                    "Required": true,
+                    "Description": "The list of path patterns to match. Each must start with / and the only place a\n* is allowed is at the end following a /. The string fed to the path matcher\ndoes not include any text after the first ? or #, and those chars are not\nallowed here.",
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  },
+                  "route_action": {
+                    "Type": "List",
+                    "Optional": true,
+                    "Description": "In response to a matching path, the load balancer performs advanced routing\nactions like URL rewrites, header transformations, etc. prior to forwarding the\nrequest to the selected backend. If routeAction specifies any\nweightedBackendServices, service must not be set. Conversely if service is set,\nrouteAction cannot contain any  weightedBackendServices. Only one of routeAction\nor urlRedirect must be set.",
+                    "MaxItems": 1,
+                    "IsBlock": true,
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "cors_policy": {
+                          "Type": "List",
+                          "Optional": true,
+                          "Description": "The specification for allowing client side cross-origin requests. Please see W3C\nRecommendation for Cross Origin Resource Sharing",
+                          "MaxItems": 1,
+                          "IsBlock": true,
+                          "Elem": {
+                            "Type": "SchemaInfo",
+                            "Info": {
+                              "allow_credentials": {
+                                "Type": "Bool",
+                                "Optional": true,
+                                "Description": "In response to a preflight request, setting this to true indicates that the\nactual request can include user credentials. This translates to the Access-\nControl-Allow-Credentials header. Defaults to false.",
+                                "Default": {
+                                  "Type": "bool",
+                                  "Value": "false"
+                                }
+                              },
+                              "allow_headers": {
+                                "Type": "List",
+                                "Optional": true,
+                                "Description": "Specifies the content for the Access-Control-Allow-Headers header.",
+                                "Elem": {
+                                  "Type": "SchemaElements",
+                                  "ElementsType": "String"
+                                }
+                              },
+                              "allow_methods": {
+                                "Type": "List",
+                                "Optional": true,
+                                "Description": "Specifies the content for the Access-Control-Allow-Methods header.",
+                                "Elem": {
+                                  "Type": "SchemaElements",
+                                  "ElementsType": "String"
+                                }
+                              },
+                              "allow_origin_regexes": {
+                                "Type": "List",
+                                "Optional": true,
+                                "Description": "Specifies the regualar expression patterns that match allowed origins. For\nregular expression grammar please see en.cppreference.com/w/cpp/regex/ecmascript\nAn origin is allowed if it matches either allow_origins or allow_origin_regex.",
+                                "Elem": {
+                                  "Type": "SchemaElements",
+                                  "ElementsType": "String"
+                                }
+                              },
+                              "allow_origins": {
+                                "Type": "List",
+                                "Optional": true,
+                                "Description": "Specifies the list of origins that will be allowed to do CORS requests. An\norigin is allowed if it matches either allow_origins or allow_origin_regex.",
+                                "Elem": {
+                                  "Type": "SchemaElements",
+                                  "ElementsType": "String"
+                                }
+                              },
+                              "disabled": {
+                                "Type": "Bool",
+                                "Required": true,
+                                "Description": "If true, specifies the CORS policy is disabled."
+                              },
+                              "expose_headers": {
+                                "Type": "List",
+                                "Optional": true,
+                                "Description": "Specifies the content for the Access-Control-Expose-Headers header.",
+                                "Elem": {
+                                  "Type": "SchemaElements",
+                                  "ElementsType": "String"
+                                }
+                              },
+                              "max_age": {
+                                "Type": "Int",
+                                "Optional": true,
+                                "Description": "Specifies how long the results of a preflight request can be cached. This\ntranslates to the content for the Access-Control-Max-Age header."
+                              }
+                            }
+                          }
+                        },
+                        "fault_injection_policy": {
+                          "Type": "List",
+                          "Optional": true,
+                          "Description": "The specification for fault injection introduced into traffic to test the\nresiliency of clients to backend service failure. As part of fault injection,\nwhen clients send requests to a backend service, delays can be introduced by\nLoadbalancer on a percentage of requests before sending those request to the\nbackend service. Similarly requests from clients can be aborted by the\nLoadbalancer for a percentage of requests. timeout and retry_policy will be\nignored by clients that are configured with a fault_injection_policy.",
+                          "MaxItems": 1,
+                          "IsBlock": true,
+                          "Elem": {
+                            "Type": "SchemaInfo",
+                            "Info": {
+                              "abort": {
+                                "Type": "List",
+                                "Optional": true,
+                                "Description": "The specification for how client requests are aborted as part of fault\ninjection.",
+                                "MaxItems": 1,
+                                "IsBlock": true,
+                                "Elem": {
+                                  "Type": "SchemaInfo",
+                                  "Info": {
+                                    "http_status": {
+                                      "Type": "Int",
+                                      "Required": true,
+                                      "Description": "The HTTP status code used to abort the request. The value must be between 200\nand 599 inclusive."
+                                    },
+                                    "percentage": {
+                                      "Type": "Float",
+                                      "Required": true,
+                                      "Description": "The percentage of traffic (connections/operations/requests) which will be\naborted as part of fault injection. The value must be between 0.0 and 100.0\ninclusive."
+                                    }
+                                  }
+                                }
+                              },
+                              "delay": {
+                                "Type": "List",
+                                "Optional": true,
+                                "Description": "The specification for how client requests are delayed as part of fault\ninjection, before being sent to a backend service.",
+                                "MaxItems": 1,
+                                "IsBlock": true,
+                                "Elem": {
+                                  "Type": "SchemaInfo",
+                                  "Info": {
+                                    "fixed_delay": {
+                                      "Type": "List",
+                                      "Required": true,
+                                      "Description": "Specifies the value of the fixed delay interval.",
+                                      "MaxItems": 1,
+                                      "IsBlock": true,
+                                      "Elem": {
+                                        "Type": "SchemaInfo",
+                                        "Info": {
+                                          "nanos": {
+                                            "Type": "Int",
+                                            "Optional": true,
+                                            "Description": "Span of time that's a fraction of a second at nanosecond resolution. Durations\nless than one second are represented with a 0 'seconds' field and a positive\n'nanos' field. Must be from 0 to 999,999,999 inclusive."
+                                          },
+                                          "seconds": {
+                                            "Type": "String",
+                                            "Required": true,
+                                            "Description": "Span of time at a resolution of a second. Must be from 0 to 315,576,000,000\ninclusive."
+                                          }
+                                        }
+                                      }
+                                    },
+                                    "percentage": {
+                                      "Type": "Float",
+                                      "Required": true,
+                                      "Description": "The percentage of traffic (connections/operations/requests) on which delay will\nbe introduced as part of fault injection. The value must be between 0.0 and\n100.0 inclusive."
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        },
+                        "request_mirror_policy": {
+                          "Type": "List",
+                          "Optional": true,
+                          "Description": "Specifies the policy on how requests intended for the route's backends are\nshadowed to a separate mirrored backend service. Loadbalancer does not wait for\nresponses from the shadow service. Prior to sending traffic to the shadow\nservice, the host / authority header is suffixed with -shadow.",
+                          "MaxItems": 1,
+                          "IsBlock": true,
+                          "Elem": {
+                            "Type": "SchemaInfo",
+                            "Info": {
+                              "backend_service": {
+                                "Type": "String",
+                                "Required": true,
+                                "Description": "The RegionBackendService resource being mirrored to."
+                              }
+                            }
+                          }
+                        },
+                        "retry_policy": {
+                          "Type": "List",
+                          "Optional": true,
+                          "Description": "Specifies the retry policy associated with this route.",
+                          "MaxItems": 1,
+                          "IsBlock": true,
+                          "Elem": {
+                            "Type": "SchemaInfo",
+                            "Info": {
+                              "num_retries": {
+                                "Type": "Int",
+                                "Optional": true,
+                                "Description": "Specifies the allowed number retries. This number must be \u003e 0."
+                              },
+                              "per_try_timeout": {
+                                "Type": "List",
+                                "Optional": true,
+                                "Description": "Specifies a non-zero timeout per retry attempt.",
+                                "MaxItems": 1,
+                                "IsBlock": true,
+                                "Elem": {
+                                  "Type": "SchemaInfo",
+                                  "Info": {
+                                    "nanos": {
+                                      "Type": "Int",
+                                      "Optional": true,
+                                      "Description": "Span of time that's a fraction of a second at nanosecond resolution. Durations\nless than one second are represented with a 0 'seconds' field and a positive\n'nanos' field. Must be from 0 to 999,999,999 inclusive."
+                                    },
+                                    "seconds": {
+                                      "Type": "String",
+                                      "Required": true,
+                                      "Description": "Span of time at a resolution of a second. Must be from 0 to 315,576,000,000\ninclusive."
+                                    }
+                                  }
+                                }
+                              },
+                              "retry_conditions": {
+                                "Type": "List",
+                                "Optional": true,
+                                "Description": "Specifies one or more conditions when this retry rule applies. Valid values are:\n- 5xx: Loadbalancer will attempt a retry if the backend service responds with\nany 5xx response code, or if the backend service does not respond at all,\nexample: disconnects, reset, read timeout, connection failure, and refused\nstreams.\n- gateway-error: Similar to 5xx, but only applies to response codes\n502, 503 or 504.\n- connect-failure: Loadbalancer will retry on failures\nconnecting to backend services, for example due to connection timeouts.\n- retriable-4xx: Loadbalancer will retry for retriable 4xx response codes.\nCurrently the only retriable error supported is 409.\n- refused-stream: Loadbalancer will retry if the backend service resets the stream with a\nREFUSED_STREAM error code. This reset type indicates that it is safe to retry.\n- cancelled: Loadbalancer will retry if the gRPC status code in the response\nheader is set to cancelled\n- deadline-exceeded: Loadbalancer will retry if the\ngRPC status code in the response header is set to deadline-exceeded\n- resource-exhausted: Loadbalancer will retry if the gRPC status code in the response\nheader is set to resource-exhausted\n- unavailable: Loadbalancer will retry if\nthe gRPC status code in the response header is set to unavailable",
+                                "Elem": {
+                                  "Type": "SchemaElements",
+                                  "ElementsType": "String"
+                                }
+                              }
+                            }
+                          }
+                        },
+                        "timeout": {
+                          "Type": "List",
+                          "Optional": true,
+                          "Description": "Specifies the timeout for the selected route. Timeout is computed from the time\nthe request is has been fully processed (i.e. end-of-stream) up until the\nresponse has been completely processed. Timeout includes all retries. If not\nspecified, the default value is 15 seconds.",
+                          "MaxItems": 1,
+                          "IsBlock": true,
+                          "Elem": {
+                            "Type": "SchemaInfo",
+                            "Info": {
+                              "nanos": {
+                                "Type": "Int",
+                                "Optional": true,
+                                "Description": "Span of time that's a fraction of a second at nanosecond resolution. Durations\nless than one second are represented with a 0 'seconds' field and a positive\n'nanos' field. Must be from 0 to 999,999,999 inclusive."
+                              },
+                              "seconds": {
+                                "Type": "String",
+                                "Required": true,
+                                "Description": "Span of time at a resolution of a second. Must be from 0 to 315,576,000,000\ninclusive."
+                              }
+                            }
+                          }
+                        },
+                        "url_rewrite": {
+                          "Type": "List",
+                          "Optional": true,
+                          "Description": "The spec to modify the URL of the request, prior to forwarding the request to\nthe matched service",
+                          "MaxItems": 1,
+                          "IsBlock": true,
+                          "Elem": {
+                            "Type": "SchemaInfo",
+                            "Info": {
+                              "host_rewrite": {
+                                "Type": "String",
+                                "Optional": true,
+                                "Description": "Prior to forwarding the request to the selected service, the request's host\nheader is replaced with contents of hostRewrite. The value must be between 1 and\n255 characters."
+                              },
+                              "path_prefix_rewrite": {
+                                "Type": "String",
+                                "Optional": true,
+                                "Description": "Prior to forwarding the request to the selected backend service, the matching\nportion of the request's path is replaced by pathPrefixRewrite. The value must\nbe between 1 and 1024 characters."
+                              }
+                            }
+                          }
+                        },
+                        "weighted_backend_services": {
+                          "Type": "List",
+                          "Optional": true,
+                          "Description": "A list of weighted backend services to send traffic to when a route match\noccurs. The weights determine the fraction of traffic that flows to their\ncorresponding backend service. If all traffic needs to go to a single backend\nservice, there must be one  weightedBackendService with weight set to a non 0\nnumber. Once a backendService is identified and before forwarding the request to\nthe backend service, advanced routing actions like Url rewrites and header\ntransformations are applied depending on additional settings specified in this\nHttpRouteAction.",
+                          "IsBlock": true,
+                          "Elem": {
+                            "Type": "SchemaInfo",
+                            "Info": {
+                              "backend_service": {
+                                "Type": "String",
+                                "Required": true,
+                                "Description": "The default RegionBackendService resource. Before\nforwarding the request to backendService, the loadbalancer applies any relevant\nheaderActions specified as part of this backendServiceWeight."
+                              },
+                              "header_action": {
+                                "Type": "List",
+                                "Optional": true,
+                                "Description": "Specifies changes to request and response headers that need to take effect for\nthe selected backendService. headerAction specified here take effect before\nheaderAction in the enclosing HttpRouteRule, PathMatcher and UrlMap.",
+                                "MaxItems": 1,
+                                "IsBlock": true,
+                                "Elem": {
+                                  "Type": "SchemaInfo",
+                                  "Info": {
+                                    "request_headers_to_add": {
+                                      "Type": "List",
+                                      "Optional": true,
+                                      "Description": "Headers to add to a matching request prior to forwarding the request to the\nbackendService.",
+                                      "IsBlock": true,
+                                      "Elem": {
+                                        "Type": "SchemaInfo",
+                                        "Info": {
+                                          "header_name": {
+                                            "Type": "String",
+                                            "Required": true,
+                                            "Description": "The name of the header."
+                                          },
+                                          "header_value": {
+                                            "Type": "String",
+                                            "Required": true,
+                                            "Description": "The value of the header to add."
+                                          },
+                                          "replace": {
+                                            "Type": "Bool",
+                                            "Required": true,
+                                            "Description": "If false, headerValue is appended to any values that already exist for the\nheader. If true, headerValue is set for the header, discarding any values that\nwere set for that header."
+                                          }
+                                        }
+                                      }
+                                    },
+                                    "request_headers_to_remove": {
+                                      "Type": "List",
+                                      "Optional": true,
+                                      "Description": "A list of header names for headers that need to be removed from the request\nprior to forwarding the request to the backendService.",
+                                      "Elem": {
+                                        "Type": "SchemaElements",
+                                        "ElementsType": "String"
+                                      }
+                                    },
+                                    "response_headers_to_add": {
+                                      "Type": "List",
+                                      "Optional": true,
+                                      "Description": "Headers to add the response prior to sending the response back to the client.",
+                                      "IsBlock": true,
+                                      "Elem": {
+                                        "Type": "SchemaInfo",
+                                        "Info": {
+                                          "header_name": {
+                                            "Type": "String",
+                                            "Required": true,
+                                            "Description": "The name of the header."
+                                          },
+                                          "header_value": {
+                                            "Type": "String",
+                                            "Required": true,
+                                            "Description": "The value of the header to add."
+                                          },
+                                          "replace": {
+                                            "Type": "Bool",
+                                            "Required": true,
+                                            "Description": "If false, headerValue is appended to any values that already exist for the\nheader. If true, headerValue is set for the header, discarding any values that\nwere set for that header."
+                                          }
+                                        }
+                                      }
+                                    },
+                                    "response_headers_to_remove": {
+                                      "Type": "List",
+                                      "Optional": true,
+                                      "Description": "A list of header names for headers that need to be removed from the response\nprior to sending the response back to the client.",
+                                      "Elem": {
+                                        "Type": "SchemaElements",
+                                        "ElementsType": "String"
+                                      }
+                                    }
+                                  }
+                                }
+                              },
+                              "weight": {
+                                "Type": "Int",
+                                "Required": true,
+                                "Description": "Specifies the fraction of traffic sent to backendService, computed as weight /\n(sum of all weightedBackendService weights in routeAction) . The selection of a\nbackend service is determined only for new traffic. Once a user's request has\nbeen directed to a backendService, subsequent requests will be sent to the same\nbackendService as determined by the BackendService's session affinity policy.\nThe value must be between 0 and 1000"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "service": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "The region backend service resource to which traffic is\ndirected if this rule is matched. If routeAction is additionally specified,\nadvanced routing actions like URL Rewrites, etc. take effect prior to sending\nthe request to the backend. However, if service is specified, routeAction cannot\ncontain any weightedBackendService s. Conversely, if routeAction specifies any\nweightedBackendServices, service must not be specified. Only one of urlRedirect,\nservice or routeAction.weightedBackendService must be set."
+                  },
+                  "url_redirect": {
+                    "Type": "List",
+                    "Optional": true,
+                    "Description": "When a path pattern is matched, the request is redirected to a URL specified\nby urlRedirect. If urlRedirect is specified, service or routeAction must not\nbe set.",
+                    "MaxItems": 1,
+                    "IsBlock": true,
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "host_redirect": {
+                          "Type": "String",
+                          "Optional": true,
+                          "Description": "The host that will be used in the redirect response instead of the one\nthat was supplied in the request. The value must be between 1 and 255\ncharacters."
+                        },
+                        "https_redirect": {
+                          "Type": "Bool",
+                          "Optional": true,
+                          "Description": "If set to true, the URL scheme in the redirected request is set to https.\nIf set to false, the URL scheme of the redirected request will remain the\nsame as that of the request. This must only be set for UrlMaps used in\nTargetHttpProxys. Setting this true for TargetHttpsProxy is not\npermitted. The default is set to false.",
+                          "Default": {
+                            "Type": "bool",
+                            "Value": "false"
+                          }
+                        },
+                        "path_redirect": {
+                          "Type": "String",
+                          "Optional": true,
+                          "Description": "The path that will be used in the redirect response instead of the one\nthat was supplied in the request. pathRedirect cannot be supplied\ntogether with prefixRedirect. Supply one alone or neither. If neither is\nsupplied, the path of the original request will be used for the redirect.\nThe value must be between 1 and 1024 characters."
+                        },
+                        "prefix_redirect": {
+                          "Type": "String",
+                          "Optional": true,
+                          "Description": "The prefix that replaces the prefixMatch specified in the\nHttpRouteRuleMatch, retaining the remaining portion of the URL before\nredirecting the request. prefixRedirect cannot be supplied together with\npathRedirect. Supply one alone or neither. If neither is supplied, the\npath of the original request will be used for the redirect. The value\nmust be between 1 and 1024 characters."
+                        },
+                        "redirect_response_code": {
+                          "Type": "String",
+                          "Optional": true,
+                          "Description": "The HTTP Status code to use for this RedirectAction. Supported values are:\n- MOVED_PERMANENTLY_DEFAULT, which is the default value and corresponds to 301.\n- FOUND, which corresponds to 302.\n- SEE_OTHER which corresponds to 303.\n- TEMPORARY_REDIRECT, which corresponds to 307. In this case, the request method\nwill be retained.\n- PERMANENT_REDIRECT, which corresponds to 308. In this case,\nthe request method will be retained. Possible values: [\"FOUND\", \"MOVED_PERMANENTLY_DEFAULT\", \"PERMANENT_REDIRECT\", \"SEE_OTHER\", \"TEMPORARY_REDIRECT\"]"
+                        },
+                        "strip_query": {
+                          "Type": "Bool",
+                          "Required": true,
+                          "Description": "If set to true, any accompanying query portion of the original URL is removed\nprior to redirecting the request. If set to false, the query portion of the\noriginal URL is retained.\n This field is required to ensure an empty block is not set. The normal default value is false."
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "route_rules": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "The list of ordered HTTP route rules. Use this list instead of pathRules when\nadvanced route matching and routing actions are desired. The order of specifying\nrouteRules matters: the first rule that matches will cause its specified routing\naction to take effect. Within a given pathMatcher, only one of pathRules or\nrouteRules must be set. routeRules are not supported in UrlMaps intended for\nExternal load balancers.",
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "header_action": {
+                    "Type": "List",
+                    "Optional": true,
+                    "Description": "Specifies changes to request and response headers that need to take effect for\nthe selected backendService. The headerAction specified here are applied before\nthe matching pathMatchers[].headerAction and after pathMatchers[].routeRules[].r\nouteAction.weightedBackendService.backendServiceWeightAction[].headerAction",
+                    "MaxItems": 1,
+                    "IsBlock": true,
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "request_headers_to_add": {
+                          "Type": "List",
+                          "Optional": true,
+                          "Description": "Headers to add to a matching request prior to forwarding the request to the\nbackendService.",
+                          "IsBlock": true,
+                          "Elem": {
+                            "Type": "SchemaInfo",
+                            "Info": {
+                              "header_name": {
+                                "Type": "String",
+                                "Required": true,
+                                "Description": "The name of the header."
+                              },
+                              "header_value": {
+                                "Type": "String",
+                                "Required": true,
+                                "Description": "The value of the header to add."
+                              },
+                              "replace": {
+                                "Type": "Bool",
+                                "Required": true,
+                                "Description": "If false, headerValue is appended to any values that already exist for the\nheader. If true, headerValue is set for the header, discarding any values that\nwere set for that header."
+                              }
+                            }
+                          }
+                        },
+                        "request_headers_to_remove": {
+                          "Type": "List",
+                          "Optional": true,
+                          "Description": "A list of header names for headers that need to be removed from the request\nprior to forwarding the request to the backendService.",
+                          "Elem": {
+                            "Type": "SchemaElements",
+                            "ElementsType": "String"
+                          }
+                        },
+                        "response_headers_to_add": {
+                          "Type": "List",
+                          "Optional": true,
+                          "Description": "Headers to add the response prior to sending the response back to the client.",
+                          "IsBlock": true,
+                          "Elem": {
+                            "Type": "SchemaInfo",
+                            "Info": {
+                              "header_name": {
+                                "Type": "String",
+                                "Required": true,
+                                "Description": "The name of the header."
+                              },
+                              "header_value": {
+                                "Type": "String",
+                                "Required": true,
+                                "Description": "The value of the header to add."
+                              },
+                              "replace": {
+                                "Type": "Bool",
+                                "Required": true,
+                                "Description": "If false, headerValue is appended to any values that already exist for the\nheader. If true, headerValue is set for the header, discarding any values that\nwere set for that header."
+                              }
+                            }
+                          }
+                        },
+                        "response_headers_to_remove": {
+                          "Type": "List",
+                          "Optional": true,
+                          "Description": "A list of header names for headers that need to be removed from the response\nprior to sending the response back to the client.",
+                          "Elem": {
+                            "Type": "SchemaElements",
+                            "ElementsType": "String"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "match_rules": {
+                    "Type": "List",
+                    "Optional": true,
+                    "Description": "The rules for determining a match.",
+                    "IsBlock": true,
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "full_path_match": {
+                          "Type": "String",
+                          "Optional": true,
+                          "Description": "For satifying the matchRule condition, the path of the request must exactly\nmatch the value specified in fullPathMatch after removing any query parameters\nand anchor that may be part of the original URL. FullPathMatch must be between 1\nand 1024 characters. Only one of prefixMatch, fullPathMatch or regexMatch must\nbe specified."
+                        },
+                        "header_matches": {
+                          "Type": "List",
+                          "Optional": true,
+                          "Description": "Specifies a list of header match criteria, all of which must match corresponding\nheaders in the request.",
+                          "IsBlock": true,
+                          "Elem": {
+                            "Type": "SchemaInfo",
+                            "Info": {
+                              "exact_match": {
+                                "Type": "String",
+                                "Optional": true,
+                                "Description": "The value should exactly match contents of exactMatch. Only one of exactMatch,\nprefixMatch, suffixMatch, regexMatch, presentMatch or rangeMatch must be set."
+                              },
+                              "header_name": {
+                                "Type": "String",
+                                "Required": true,
+                                "Description": "The name of the HTTP header to match. For matching against the HTTP request's\nauthority, use a headerMatch with the header name \":authority\". For matching a\nrequest's method, use the headerName \":method\"."
+                              },
+                              "invert_match": {
+                                "Type": "Bool",
+                                "Optional": true,
+                                "Description": "If set to false, the headerMatch is considered a match if the match criteria\nabove are met. If set to true, the headerMatch is considered a match if the\nmatch criteria above are NOT met. Defaults to false.",
+                                "Default": {
+                                  "Type": "bool",
+                                  "Value": "false"
+                                }
+                              },
+                              "prefix_match": {
+                                "Type": "String",
+                                "Optional": true,
+                                "Description": "The value of the header must start with the contents of prefixMatch. Only one of\nexactMatch, prefixMatch, suffixMatch, regexMatch, presentMatch or rangeMatch\nmust be set."
+                              },
+                              "present_match": {
+                                "Type": "Bool",
+                                "Optional": true,
+                                "Description": "A header with the contents of headerName must exist. The match takes place\nwhether or not the request's header has a value or not. Only one of exactMatch,\nprefixMatch, suffixMatch, regexMatch, presentMatch or rangeMatch must be set."
+                              },
+                              "range_match": {
+                                "Type": "List",
+                                "Optional": true,
+                                "Description": "The header value must be an integer and its value must be in the range specified\nin rangeMatch. If the header does not contain an integer, number or is empty,\nthe match fails. For example for a range [-5, 0]   - -3 will match.  - 0 will\nnot match.  - 0.25 will not match.  - -3someString will not match.   Only one of\nexactMatch, prefixMatch, suffixMatch, regexMatch, presentMatch or rangeMatch\nmust be set.",
+                                "MaxItems": 1,
+                                "IsBlock": true,
+                                "Elem": {
+                                  "Type": "SchemaInfo",
+                                  "Info": {
+                                    "range_end": {
+                                      "Type": "Int",
+                                      "Required": true,
+                                      "Description": "The end of the range (exclusive)."
+                                    },
+                                    "range_start": {
+                                      "Type": "Int",
+                                      "Required": true,
+                                      "Description": "The start of the range (inclusive)."
+                                    }
+                                  }
+                                }
+                              },
+                              "regex_match": {
+                                "Type": "String",
+                                "Optional": true,
+                                "Description": "The value of the header must match the regualar expression specified in\nregexMatch. For regular expression grammar, please see:\nen.cppreference.com/w/cpp/regex/ecmascript  For matching against a port\nspecified in the HTTP request, use a headerMatch with headerName set to PORT and\na regular expression that satisfies the RFC2616 Host header's port specifier.\nOnly one of exactMatch, prefixMatch, suffixMatch, regexMatch, presentMatch or\nrangeMatch must be set."
+                              },
+                              "suffix_match": {
+                                "Type": "String",
+                                "Optional": true,
+                                "Description": "The value of the header must end with the contents of suffixMatch. Only one of\nexactMatch, prefixMatch, suffixMatch, regexMatch, presentMatch or rangeMatch\nmust be set."
+                              }
+                            }
+                          }
+                        },
+                        "ignore_case": {
+                          "Type": "Bool",
+                          "Optional": true,
+                          "Description": "Specifies that prefixMatch and fullPathMatch matches are case sensitive.\nDefaults to false.",
+                          "Default": {
+                            "Type": "bool",
+                            "Value": "false"
+                          }
+                        },
+                        "metadata_filters": {
+                          "Type": "List",
+                          "Optional": true,
+                          "Description": "Opaque filter criteria used by Loadbalancer to restrict routing configuration to\na limited set xDS compliant clients. In their xDS requests to Loadbalancer, xDS\nclients present node metadata. If a match takes place, the relevant routing\nconfiguration is made available to those proxies. For each metadataFilter in\nthis list, if its filterMatchCriteria is set to MATCH_ANY, at least one of the\nfilterLabels must match the corresponding label provided in the metadata. If its\nfilterMatchCriteria is set to MATCH_ALL, then all of its filterLabels must match\nwith corresponding labels in the provided metadata. metadataFilters specified\nhere can be overrides those specified in ForwardingRule that refers to this\nUrlMap. metadataFilters only applies to Loadbalancers that have their\nloadBalancingScheme set to INTERNAL_SELF_MANAGED.",
+                          "IsBlock": true,
+                          "Elem": {
+                            "Type": "SchemaInfo",
+                            "Info": {
+                              "filter_labels": {
+                                "Type": "List",
+                                "Required": true,
+                                "Description": "The list of label value pairs that must match labels in the provided metadata\nbased on filterMatchCriteria  This list must not be empty and can have at the\nmost 64 entries.",
+                                "MaxItems": 64,
+                                "MinItems": 1,
+                                "IsBlock": true,
+                                "Elem": {
+                                  "Type": "SchemaInfo",
+                                  "Info": {
+                                    "name": {
+                                      "Type": "String",
+                                      "Required": true,
+                                      "Description": "Name of metadata label. The name can have a maximum length of 1024 characters\nand must be at least 1 character long."
+                                    },
+                                    "value": {
+                                      "Type": "String",
+                                      "Required": true,
+                                      "Description": "The value of the label must match the specified value. value can have a maximum\nlength of 1024 characters."
+                                    }
+                                  }
+                                }
+                              },
+                              "filter_match_criteria": {
+                                "Type": "String",
+                                "Required": true,
+                                "Description": "Specifies how individual filterLabel matches within the list of filterLabels\ncontribute towards the overall metadataFilter match. Supported values are:\n  - MATCH_ANY: At least one of the filterLabels must have a matching label in the\nprovided metadata.\n  - MATCH_ALL: All filterLabels must have matching labels in\nthe provided metadata. Possible values: [\"MATCH_ALL\", \"MATCH_ANY\"]"
+                              }
+                            }
+                          }
+                        },
+                        "prefix_match": {
+                          "Type": "String",
+                          "Optional": true,
+                          "Description": "For satifying the matchRule condition, the request's path must begin with the\nspecified prefixMatch. prefixMatch must begin with a /. The value must be\nbetween 1 and 1024 characters. Only one of prefixMatch, fullPathMatch or\nregexMatch must be specified."
+                        },
+                        "query_parameter_matches": {
+                          "Type": "List",
+                          "Optional": true,
+                          "Description": "Specifies a list of query parameter match criteria, all of which must match\ncorresponding query parameters in the request.",
+                          "IsBlock": true,
+                          "Elem": {
+                            "Type": "SchemaInfo",
+                            "Info": {
+                              "exact_match": {
+                                "Type": "String",
+                                "Optional": true,
+                                "Description": "The queryParameterMatch matches if the value of the parameter exactly matches\nthe contents of exactMatch. Only one of presentMatch, exactMatch and regexMatch\nmust be set."
+                              },
+                              "name": {
+                                "Type": "String",
+                                "Required": true,
+                                "Description": "The name of the query parameter to match. The query parameter must exist in the\nrequest, in the absence of which the request match fails."
+                              },
+                              "present_match": {
+                                "Type": "Bool",
+                                "Optional": true,
+                                "Description": "Specifies that the queryParameterMatch matches if the request contains the query\nparameter, irrespective of whether the parameter has a value or not. Only one of\npresentMatch, exactMatch and regexMatch must be set."
+                              },
+                              "regex_match": {
+                                "Type": "String",
+                                "Optional": true,
+                                "Description": "The queryParameterMatch matches if the value of the parameter matches the\nregular expression specified by regexMatch. For the regular expression grammar,\nplease see en.cppreference.com/w/cpp/regex/ecmascript  Only one of presentMatch,\nexactMatch and regexMatch must be set."
+                              }
+                            }
+                          }
+                        },
+                        "regex_match": {
+                          "Type": "String",
+                          "Optional": true,
+                          "Description": "For satifying the matchRule condition, the path of the request must satisfy the\nregular expression specified in regexMatch after removing any query parameters\nand anchor supplied with the original URL. For regular expression grammar please\nsee en.cppreference.com/w/cpp/regex/ecmascript  Only one of prefixMatch,\nfullPathMatch or regexMatch must be specified."
+                        }
+                      }
+                    }
+                  },
+                  "priority": {
+                    "Type": "Int",
+                    "Required": true,
+                    "Description": "For routeRules within a given pathMatcher, priority determines the order\nin which load balancer will interpret routeRules. RouteRules are evaluated\nin order of priority, from the lowest to highest number. The priority of\na rule decreases as its number increases (1, 2, 3, N+1). The first rule\nthat matches the request is applied.\n\nYou cannot configure two or more routeRules with the same priority.\nPriority for each rule must be set to a number between 0 and\n2147483647 inclusive.\n\nPriority numbers can have gaps, which enable you to add or remove rules\nin the future without affecting the rest of the rules. For example,\n1, 2, 3, 4, 5, 9, 12, 16 is a valid series of priority numbers to which\nyou could add rules numbered from 6 to 8, 10 to 11, and 13 to 15 in the\nfuture without any impact on existing rules."
+                  },
+                  "route_action": {
+                    "Type": "List",
+                    "Optional": true,
+                    "Description": "In response to a matching matchRule, the load balancer performs advanced routing\nactions like URL rewrites, header transformations, etc. prior to forwarding the\nrequest to the selected backend. If  routeAction specifies any\nweightedBackendServices, service must not be set. Conversely if service is set,\nrouteAction cannot contain any  weightedBackendServices. Only one of routeAction\nor urlRedirect must be set.",
+                    "MaxItems": 1,
+                    "IsBlock": true,
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "cors_policy": {
+                          "Type": "List",
+                          "Optional": true,
+                          "Description": "The specification for allowing client side cross-origin requests. Please see W3C\nRecommendation for Cross Origin Resource Sharing",
+                          "MaxItems": 1,
+                          "IsBlock": true,
+                          "Elem": {
+                            "Type": "SchemaInfo",
+                            "Info": {
+                              "allow_credentials": {
+                                "Type": "Bool",
+                                "Optional": true,
+                                "Description": "In response to a preflight request, setting this to true indicates that the\nactual request can include user credentials. This translates to the Access-\nControl-Allow-Credentials header. Defaults to false.",
+                                "Default": {
+                                  "Type": "bool",
+                                  "Value": "false"
+                                }
+                              },
+                              "allow_headers": {
+                                "Type": "List",
+                                "Optional": true,
+                                "Description": "Specifies the content for the Access-Control-Allow-Headers header.",
+                                "Elem": {
+                                  "Type": "SchemaElements",
+                                  "ElementsType": "String"
+                                }
+                              },
+                              "allow_methods": {
+                                "Type": "List",
+                                "Optional": true,
+                                "Description": "Specifies the content for the Access-Control-Allow-Methods header.",
+                                "Elem": {
+                                  "Type": "SchemaElements",
+                                  "ElementsType": "String"
+                                }
+                              },
+                              "allow_origin_regexes": {
+                                "Type": "List",
+                                "Optional": true,
+                                "Description": "Specifies the regualar expression patterns that match allowed origins. For\nregular expression grammar please see en.cppreference.com/w/cpp/regex/ecmascript\nAn origin is allowed if it matches either allow_origins or allow_origin_regex.",
+                                "Elem": {
+                                  "Type": "SchemaElements",
+                                  "ElementsType": "String"
+                                }
+                              },
+                              "allow_origins": {
+                                "Type": "List",
+                                "Optional": true,
+                                "Description": "Specifies the list of origins that will be allowed to do CORS requests. An\norigin is allowed if it matches either allow_origins or allow_origin_regex.",
+                                "Elem": {
+                                  "Type": "SchemaElements",
+                                  "ElementsType": "String"
+                                }
+                              },
+                              "disabled": {
+                                "Type": "Bool",
+                                "Optional": true,
+                                "Description": "If true, specifies the CORS policy is disabled.\nwhich indicates that the CORS policy is in effect. Defaults to false.",
+                                "Default": {
+                                  "Type": "bool",
+                                  "Value": "false"
+                                }
+                              },
+                              "expose_headers": {
+                                "Type": "List",
+                                "Optional": true,
+                                "Description": "Specifies the content for the Access-Control-Expose-Headers header.",
+                                "Elem": {
+                                  "Type": "SchemaElements",
+                                  "ElementsType": "String"
+                                }
+                              },
+                              "max_age": {
+                                "Type": "Int",
+                                "Optional": true,
+                                "Description": "Specifies how long the results of a preflight request can be cached. This\ntranslates to the content for the Access-Control-Max-Age header."
+                              }
+                            }
+                          }
+                        },
+                        "fault_injection_policy": {
+                          "Type": "List",
+                          "Optional": true,
+                          "Description": "The specification for fault injection introduced into traffic to test the\nresiliency of clients to backend service failure. As part of fault injection,\nwhen clients send requests to a backend service, delays can be introduced by\nLoadbalancer on a percentage of requests before sending those request to the\nbackend service. Similarly requests from clients can be aborted by the\nLoadbalancer for a percentage of requests. timeout and retry_policy will be\nignored by clients that are configured with a fault_injection_policy.",
+                          "MaxItems": 1,
+                          "IsBlock": true,
+                          "Elem": {
+                            "Type": "SchemaInfo",
+                            "Info": {
+                              "abort": {
+                                "Type": "List",
+                                "Optional": true,
+                                "Description": "The specification for how client requests are aborted as part of fault\ninjection.",
+                                "MaxItems": 1,
+                                "IsBlock": true,
+                                "Elem": {
+                                  "Type": "SchemaInfo",
+                                  "Info": {
+                                    "http_status": {
+                                      "Type": "Int",
+                                      "Optional": true,
+                                      "Description": "The HTTP status code used to abort the request. The value must be between 200\nand 599 inclusive."
+                                    },
+                                    "percentage": {
+                                      "Type": "Float",
+                                      "Optional": true,
+                                      "Description": "The percentage of traffic (connections/operations/requests) which will be\naborted as part of fault injection. The value must be between 0.0 and 100.0\ninclusive."
+                                    }
+                                  }
+                                }
+                              },
+                              "delay": {
+                                "Type": "List",
+                                "Optional": true,
+                                "Description": "The specification for how client requests are delayed as part of fault\ninjection, before being sent to a backend service.",
+                                "MaxItems": 1,
+                                "IsBlock": true,
+                                "Elem": {
+                                  "Type": "SchemaInfo",
+                                  "Info": {
+                                    "fixed_delay": {
+                                      "Type": "List",
+                                      "Optional": true,
+                                      "Description": "Specifies the value of the fixed delay interval.",
+                                      "MaxItems": 1,
+                                      "IsBlock": true,
+                                      "Elem": {
+                                        "Type": "SchemaInfo",
+                                        "Info": {
+                                          "nanos": {
+                                            "Type": "Int",
+                                            "Optional": true,
+                                            "Description": "Span of time that's a fraction of a second at nanosecond resolution. Durations\nless than one second are represented with a 0 'seconds' field and a positive\n'nanos' field. Must be from 0 to 999,999,999 inclusive."
+                                          },
+                                          "seconds": {
+                                            "Type": "String",
+                                            "Required": true,
+                                            "Description": "Span of time at a resolution of a second. Must be from 0 to 315,576,000,000\ninclusive."
+                                          }
+                                        }
+                                      }
+                                    },
+                                    "percentage": {
+                                      "Type": "Float",
+                                      "Optional": true,
+                                      "Description": "The percentage of traffic (connections/operations/requests) on which delay will\nbe introduced as part of fault injection. The value must be between 0.0 and\n100.0 inclusive."
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        },
+                        "request_mirror_policy": {
+                          "Type": "List",
+                          "Optional": true,
+                          "Description": "Specifies the policy on how requests intended for the route's backends are\nshadowed to a separate mirrored backend service. Loadbalancer does not wait for\nresponses from the shadow service. Prior to sending traffic to the shadow\nservice, the host / authority header is suffixed with -shadow.",
+                          "MaxItems": 1,
+                          "IsBlock": true,
+                          "Elem": {
+                            "Type": "SchemaInfo",
+                            "Info": {
+                              "backend_service": {
+                                "Type": "String",
+                                "Required": true,
+                                "Description": "The RegionBackendService resource being mirrored to."
+                              }
+                            }
+                          }
+                        },
+                        "retry_policy": {
+                          "Type": "List",
+                          "Optional": true,
+                          "Description": "Specifies the retry policy associated with this route.",
+                          "MaxItems": 1,
+                          "IsBlock": true,
+                          "Elem": {
+                            "Type": "SchemaInfo",
+                            "Info": {
+                              "num_retries": {
+                                "Type": "Int",
+                                "Required": true,
+                                "Description": "Specifies the allowed number retries. This number must be \u003e 0."
+                              },
+                              "per_try_timeout": {
+                                "Type": "List",
+                                "Optional": true,
+                                "Description": "Specifies a non-zero timeout per retry attempt.",
+                                "MaxItems": 1,
+                                "IsBlock": true,
+                                "Elem": {
+                                  "Type": "SchemaInfo",
+                                  "Info": {
+                                    "nanos": {
+                                      "Type": "Int",
+                                      "Optional": true,
+                                      "Description": "Span of time that's a fraction of a second at nanosecond resolution. Durations\nless than one second are represented with a 0 'seconds' field and a positive\n'nanos' field. Must be from 0 to 999,999,999 inclusive."
+                                    },
+                                    "seconds": {
+                                      "Type": "String",
+                                      "Required": true,
+                                      "Description": "Span of time at a resolution of a second. Must be from 0 to 315,576,000,000\ninclusive."
+                                    }
+                                  }
+                                }
+                              },
+                              "retry_conditions": {
+                                "Type": "List",
+                                "Optional": true,
+                                "Description": "Specfies one or more conditions when this retry rule applies. Valid values are:\n- 5xx: Loadbalancer will attempt a retry if the backend service responds with\n  any 5xx response code, or if the backend service does not respond at all,\n  example: disconnects, reset, read timeout, connection failure, and refused\n  streams.\n- gateway-error: Similar to 5xx, but only applies to response codes\n  502, 503 or 504.\n- connect-failure: Loadbalancer will retry on failures\n  connecting to backend services, for example due to connection timeouts.\n- retriable-4xx: Loadbalancer will retry for retriable 4xx response codes.\n  Currently the only retriable error supported is 409.\n- refused-stream: Loadbalancer will retry if the backend service resets the stream with a\n  REFUSED_STREAM error code. This reset type indicates that it is safe to retry.\n- cancelled: Loadbalancer will retry if the gRPC status code in the response\n  header is set to cancelled\n- deadline-exceeded: Loadbalancer will retry if the\n  gRPC status code in the response header is set to deadline-exceeded\n- resource-exhausted: Loadbalancer will retry if the gRPC status code in the response\n  header is set to resource-exhausted\n- unavailable: Loadbalancer will retry if the gRPC status code in\n  the response header is set to unavailable",
+                                "Elem": {
+                                  "Type": "SchemaElements",
+                                  "ElementsType": "String"
+                                }
+                              }
+                            }
+                          }
+                        },
+                        "timeout": {
+                          "Type": "List",
+                          "Optional": true,
+                          "Description": "Specifies the timeout for the selected route. Timeout is computed from the time\nthe request is has been fully processed (i.e. end-of-stream) up until the\nresponse has been completely processed. Timeout includes all retries. If not\nspecified, the default value is 15 seconds.",
+                          "MaxItems": 1,
+                          "IsBlock": true,
+                          "Elem": {
+                            "Type": "SchemaInfo",
+                            "Info": {
+                              "nanos": {
+                                "Type": "Int",
+                                "Optional": true,
+                                "Description": "Span of time that's a fraction of a second at nanosecond resolution. Durations\nless than one second are represented with a 0 'seconds' field and a positive\n'nanos' field. Must be from 0 to 999,999,999 inclusive."
+                              },
+                              "seconds": {
+                                "Type": "String",
+                                "Required": true,
+                                "Description": "Span of time at a resolution of a second. Must be from 0 to 315,576,000,000\ninclusive."
+                              }
+                            }
+                          }
+                        },
+                        "url_rewrite": {
+                          "Type": "List",
+                          "Optional": true,
+                          "Description": "The spec to modify the URL of the request, prior to forwarding the request to\nthe matched service",
+                          "MaxItems": 1,
+                          "IsBlock": true,
+                          "Elem": {
+                            "Type": "SchemaInfo",
+                            "Info": {
+                              "host_rewrite": {
+                                "Type": "String",
+                                "Optional": true,
+                                "Description": "Prior to forwarding the request to the selected service, the request's host\nheader is replaced with contents of hostRewrite. The value must be between 1 and\n255 characters."
+                              },
+                              "path_prefix_rewrite": {
+                                "Type": "String",
+                                "Optional": true,
+                                "Description": "Prior to forwarding the request to the selected backend service, the matching\nportion of the request's path is replaced by pathPrefixRewrite. The value must\nbe between 1 and 1024 characters."
+                              }
+                            }
+                          }
+                        },
+                        "weighted_backend_services": {
+                          "Type": "List",
+                          "Optional": true,
+                          "Description": "A list of weighted backend services to send traffic to when a route match\noccurs. The weights determine the fraction of traffic that flows to their\ncorresponding backend service. If all traffic needs to go to a single backend\nservice, there must be one  weightedBackendService with weight set to a non 0\nnumber. Once a backendService is identified and before forwarding the request to\nthe backend service, advanced routing actions like Url rewrites and header\ntransformations are applied depending on additional settings specified in this\nHttpRouteAction.",
+                          "IsBlock": true,
+                          "Elem": {
+                            "Type": "SchemaInfo",
+                            "Info": {
+                              "backend_service": {
+                                "Type": "String",
+                                "Required": true,
+                                "Description": "The default RegionBackendService resource. Before\nforwarding the request to backendService, the loadbalancer applies any relevant\nheaderActions specified as part of this backendServiceWeight."
+                              },
+                              "header_action": {
+                                "Type": "List",
+                                "Optional": true,
+                                "Description": "Specifies changes to request and response headers that need to take effect for\nthe selected backendService. headerAction specified here take effect before\nheaderAction in the enclosing HttpRouteRule, PathMatcher and UrlMap.",
+                                "MaxItems": 1,
+                                "IsBlock": true,
+                                "Elem": {
+                                  "Type": "SchemaInfo",
+                                  "Info": {
+                                    "request_headers_to_add": {
+                                      "Type": "List",
+                                      "Optional": true,
+                                      "Description": "Headers to add to a matching request prior to forwarding the request to the\nbackendService.",
+                                      "IsBlock": true,
+                                      "Elem": {
+                                        "Type": "SchemaInfo",
+                                        "Info": {
+                                          "header_name": {
+                                            "Type": "String",
+                                            "Required": true,
+                                            "Description": "The name of the header."
+                                          },
+                                          "header_value": {
+                                            "Type": "String",
+                                            "Required": true,
+                                            "Description": "The value of the header to add."
+                                          },
+                                          "replace": {
+                                            "Type": "Bool",
+                                            "Required": true,
+                                            "Description": "If false, headerValue is appended to any values that already exist for the\nheader. If true, headerValue is set for the header, discarding any values that\nwere set for that header."
+                                          }
+                                        }
+                                      }
+                                    },
+                                    "request_headers_to_remove": {
+                                      "Type": "List",
+                                      "Optional": true,
+                                      "Description": "A list of header names for headers that need to be removed from the request\nprior to forwarding the request to the backendService.",
+                                      "Elem": {
+                                        "Type": "SchemaElements",
+                                        "ElementsType": "String"
+                                      }
+                                    },
+                                    "response_headers_to_add": {
+                                      "Type": "List",
+                                      "Optional": true,
+                                      "Description": "Headers to add the response prior to sending the response back to the client.",
+                                      "IsBlock": true,
+                                      "Elem": {
+                                        "Type": "SchemaInfo",
+                                        "Info": {
+                                          "header_name": {
+                                            "Type": "String",
+                                            "Required": true,
+                                            "Description": "The name of the header."
+                                          },
+                                          "header_value": {
+                                            "Type": "String",
+                                            "Required": true,
+                                            "Description": "The value of the header to add."
+                                          },
+                                          "replace": {
+                                            "Type": "Bool",
+                                            "Required": true,
+                                            "Description": "If false, headerValue is appended to any values that already exist for the\nheader. If true, headerValue is set for the header, discarding any values that\nwere set for that header."
+                                          }
+                                        }
+                                      }
+                                    },
+                                    "response_headers_to_remove": {
+                                      "Type": "List",
+                                      "Optional": true,
+                                      "Description": "A list of header names for headers that need to be removed from the response\nprior to sending the response back to the client.",
+                                      "Elem": {
+                                        "Type": "SchemaElements",
+                                        "ElementsType": "String"
+                                      }
+                                    }
+                                  }
+                                }
+                              },
+                              "weight": {
+                                "Type": "Int",
+                                "Required": true,
+                                "Description": "Specifies the fraction of traffic sent to backendService, computed as weight /\n(sum of all weightedBackendService weights in routeAction) . The selection of a\nbackend service is determined only for new traffic. Once a user's request has\nbeen directed to a backendService, subsequent requests will be sent to the same\nbackendService as determined by the BackendService's session affinity policy.\nThe value must be between 0 and 1000"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "service": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "The region backend service resource to which traffic is\ndirected if this rule is matched. If routeAction is additionally specified,\nadvanced routing actions like URL Rewrites, etc. take effect prior to sending\nthe request to the backend. However, if service is specified, routeAction cannot\ncontain any weightedBackendService s. Conversely, if routeAction specifies any\nweightedBackendServices, service must not be specified. Only one of urlRedirect,\nservice or routeAction.weightedBackendService must be set."
+                  },
+                  "url_redirect": {
+                    "Type": "List",
+                    "Optional": true,
+                    "Description": "When this rule is matched, the request is redirected to a URL specified by\nurlRedirect. If urlRedirect is specified, service or routeAction must not be\nset.",
+                    "MaxItems": 1,
+                    "IsBlock": true,
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "host_redirect": {
+                          "Type": "String",
+                          "Optional": true,
+                          "Description": "The host that will be used in the redirect response instead of the one\nthat was supplied in the request. The value must be between 1 and 255\ncharacters."
+                        },
+                        "https_redirect": {
+                          "Type": "Bool",
+                          "Optional": true,
+                          "Description": "If set to true, the URL scheme in the redirected request is set to https.\nIf set to false, the URL scheme of the redirected request will remain the\nsame as that of the request. This must only be set for UrlMaps used in\nTargetHttpProxys. Setting this true for TargetHttpsProxy is not\npermitted. The default is set to false.",
+                          "Default": {
+                            "Type": "bool",
+                            "Value": "false"
+                          }
+                        },
+                        "path_redirect": {
+                          "Type": "String",
+                          "Optional": true,
+                          "Description": "The path that will be used in the redirect response instead of the one\nthat was supplied in the request. pathRedirect cannot be supplied\ntogether with prefixRedirect. Supply one alone or neither. If neither is\nsupplied, the path of the original request will be used for the redirect.\nThe value must be between 1 and 1024 characters."
+                        },
+                        "prefix_redirect": {
+                          "Type": "String",
+                          "Optional": true,
+                          "Description": "The prefix that replaces the prefixMatch specified in the\nHttpRouteRuleMatch, retaining the remaining portion of the URL before\nredirecting the request. prefixRedirect cannot be supplied together with\npathRedirect. Supply one alone or neither. If neither is supplied, the\npath of the original request will be used for the redirect. The value\nmust be between 1 and 1024 characters."
+                        },
+                        "redirect_response_code": {
+                          "Type": "String",
+                          "Optional": true,
+                          "Description": "The HTTP Status code to use for this RedirectAction. Supported values are:\n- MOVED_PERMANENTLY_DEFAULT, which is the default value and corresponds to 301.\n- FOUND, which corresponds to 302.\n- SEE_OTHER which corresponds to 303.\n- TEMPORARY_REDIRECT, which corresponds to 307. In this case, the request method\nwill be retained.\n- PERMANENT_REDIRECT, which corresponds to 308. In this case,\nthe request method will be retained. Possible values: [\"FOUND\", \"MOVED_PERMANENTLY_DEFAULT\", \"PERMANENT_REDIRECT\", \"SEE_OTHER\", \"TEMPORARY_REDIRECT\"]"
+                        },
+                        "strip_query": {
+                          "Type": "Bool",
+                          "Optional": true,
+                          "Description": "If set to true, any accompanying query portion of the original URL is\nremoved prior to redirecting the request. If set to false, the query\nportion of the original URL is retained. The default value is false.",
+                          "Default": {
+                            "Type": "bool",
+                            "Value": "false"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "project": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "region": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The Region in which the url map should reside.\nIf it is not provided, the provider region is used.",
+        "Computed": true
+      },
+      "self_link": {
+        "Type": "String",
+        "Computed": true
+      },
+      "test": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "The list of expected URL mappings. Requests to update this UrlMap will\nsucceed only if all of the test cases pass.",
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "description": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Description of this test case."
+            },
+            "host": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Host portion of the URL."
+            },
+            "path": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Path portion of the URL."
+            },
+            "service": {
+              "Type": "String",
+              "Required": true,
+              "Description": "A reference to expected RegionBackendService resource the given URL should be mapped to."
+            }
+          }
+        }
+      }
+    },
     "google_compute_reservation": {
       "__timeouts__": [
         "create",
@@ -11995,6 +14131,10 @@
       }
     },
     "google_compute_router_interface": {
+      "__timeouts__": [
+        "create",
+        "delete"
+      ],
       "interconnect_attachment": {
         "Type": "String",
         "Optional": true,
@@ -12390,12 +14530,20 @@
       }
     },
     "google_compute_shared_vpc_host_project": {
+      "__timeouts__": [
+        "create",
+        "delete"
+      ],
       "project": {
         "Type": "String",
         "Required": true
       }
     },
     "google_compute_shared_vpc_service_project": {
+      "__timeouts__": [
+        "create",
+        "delete"
+      ],
       "host_project": {
         "Type": "String",
         "Required": true
@@ -13023,6 +15171,11 @@
       }
     },
     "google_compute_target_pool": {
+      "__timeouts__": [
+        "create",
+        "update",
+        "delete"
+      ],
       "backup_pool": {
         "Type": "String",
         "Optional": true
@@ -14931,6 +17084,7 @@
     "google_container_cluster": {
       "__timeouts__": [
         "create",
+        "read",
         "update",
         "delete"
       ],
@@ -14953,6 +17107,22 @@
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
+            "cloudrun_config": {
+              "Type": "List",
+              "Optional": true,
+              "Computed": true,
+              "MaxItems": 1,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "disabled": {
+                    "Type": "Bool",
+                    "Required": true
+                  }
+                }
+              }
+            },
             "horizontal_pod_autoscaling": {
               "Type": "List",
               "Optional": true,
@@ -15144,6 +17314,14 @@
         }
       },
       "enable_legacy_abac": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "enable_shielded_nodes": {
         "Type": "Bool",
         "Optional": true,
         "Default": {
@@ -15913,6 +18091,15 @@
               "Optional": true,
               "Computed": true
             },
+            "node_locations": {
+              "Type": "Set",
+              "Optional": true,
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
             "upgrade_settings": {
               "Type": "List",
               "Optional": true,
@@ -16384,6 +18571,15 @@
         "Type": "Int",
         "Optional": true,
         "Computed": true
+      },
+      "node_locations": {
+        "Type": "Set",
+        "Optional": true,
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       },
       "project": {
         "Type": "String",
@@ -18556,6 +20752,11 @@
       }
     },
     "google_endpoints_service": {
+      "__timeouts__": [
+        "create",
+        "update",
+        "delete"
+      ],
       "apis": {
         "Type": "List",
         "Computed": true,
@@ -22974,6 +25175,10 @@
       }
     },
     "google_project_usage_export_bucket": {
+      "__timeouts__": [
+        "create",
+        "delete"
+      ],
       "bucket_name": {
         "Type": "String",
         "Required": true
@@ -23777,6 +25982,11 @@
       }
     },
     "google_service_networking_connection": {
+      "__timeouts__": [
+        "create",
+        "update",
+        "delete"
+      ],
       "network": {
         "Type": "String",
         "Required": true
@@ -24629,6 +26839,10 @@
       }
     },
     "google_sql_ssl_cert": {
+      "__timeouts__": [
+        "create",
+        "delete"
+      ],
       "cert": {
         "Type": "String",
         "Computed": true
@@ -24672,6 +26886,11 @@
       }
     },
     "google_sql_user": {
+      "__timeouts__": [
+        "create",
+        "update",
+        "delete"
+      ],
       "host": {
         "Type": "String",
         "Optional": true
@@ -26309,15 +28528,119 @@
           }
         }
       },
+      "circuit_breakers": {
+        "Type": "List",
+        "Description": "Settings controlling the volume of connections to a backend service. This field\nis applicable only when the load_balancing_scheme is set to INTERNAL_SELF_MANAGED.",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "max_connections": {
+              "Type": "Int",
+              "Description": "The maximum number of connections to the backend cluster.\nDefaults to 1024.",
+              "Computed": true
+            },
+            "max_pending_requests": {
+              "Type": "Int",
+              "Description": "The maximum number of pending requests to the backend cluster.\nDefaults to 1024.",
+              "Computed": true
+            },
+            "max_requests": {
+              "Type": "Int",
+              "Description": "The maximum number of parallel requests to the backend cluster.\nDefaults to 1024.",
+              "Computed": true
+            },
+            "max_requests_per_connection": {
+              "Type": "Int",
+              "Description": "Maximum requests for a single backend connection. This parameter\nis respected by both the HTTP/1.1 and HTTP/2 implementations. If\nnot specified, there is no limit. Setting this parameter to 1\nwill effectively disable keep alive.",
+              "Computed": true
+            },
+            "max_retries": {
+              "Type": "Int",
+              "Description": "The maximum number of parallel retries to the backend cluster.\nDefaults to 3.",
+              "Computed": true
+            }
+          }
+        }
+      },
       "connection_draining_timeout_sec": {
         "Type": "Int",
         "Description": "Time for which instance will be drained (not accept new\nconnections, but still work to finish started).",
         "Computed": true
       },
+      "consistent_hash": {
+        "Type": "List",
+        "Description": "Consistent Hash-based load balancing can be used to provide soft session\naffinity based on HTTP headers, cookies or other properties. This load balancing\npolicy is applicable only for HTTP connections. The affinity to a particular\ndestination host will be lost when one or more hosts are added/removed from the\ndestination service. This field specifies parameters that control consistent\nhashing. This field only applies if the load_balancing_scheme is set to\nINTERNAL_SELF_MANAGED. This field is only applicable when locality_lb_policy is\nset to MAGLEV or RING_HASH.",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "http_cookie": {
+              "Type": "List",
+              "Description": "Hash is based on HTTP Cookie. This field describes a HTTP cookie\nthat will be used as the hash key for the consistent hash load\nbalancer. If the cookie is not present, it will be generated.\nThis field is applicable if the sessionAffinity is set to HTTP_COOKIE.",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "name": {
+                    "Type": "String",
+                    "Description": "Name of the cookie.",
+                    "Computed": true
+                  },
+                  "path": {
+                    "Type": "String",
+                    "Description": "Path to set for the cookie.",
+                    "Computed": true
+                  },
+                  "ttl": {
+                    "Type": "List",
+                    "Description": "Lifetime of the cookie.",
+                    "Computed": true,
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "nanos": {
+                          "Type": "Int",
+                          "Description": "Span of time that's a fraction of a second at nanosecond\nresolution. Durations less than one second are represented\nwith a 0 seconds field and a positive nanos field. Must\nbe from 0 to 999,999,999 inclusive.",
+                          "Computed": true
+                        },
+                        "seconds": {
+                          "Type": "Int",
+                          "Description": "Span of time at a resolution of a second.\nMust be from 0 to 315,576,000,000 inclusive.",
+                          "Computed": true
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "http_header_name": {
+              "Type": "String",
+              "Description": "The hash based on the value of the specified header field.\nThis field is applicable if the sessionAffinity is set to HEADER_FIELD.",
+              "Computed": true
+            },
+            "minimum_ring_size": {
+              "Type": "Int",
+              "Description": "The minimum number of virtual nodes to use for the hash ring.\nLarger ring sizes result in more granular load\ndistributions. If the number of hosts in the load balancing pool\nis larger than the ring size, each host will be assigned a single\nvirtual node.\nDefaults to 1024.",
+              "Computed": true
+            }
+          }
+        }
+      },
       "creation_timestamp": {
         "Type": "String",
         "Description": "Creation timestamp in RFC3339 text format.",
         "Computed": true
+      },
+      "custom_request_headers": {
+        "Type": "Set",
+        "Description": "Headers that the HTTP/S load balancer should add to proxied\nrequests.",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       },
       "description": {
         "Type": "String",
@@ -26373,10 +28696,130 @@
         "Description": "Indicates whether the backend service will be used with internal or\nexternal load balancing. A backend service created for one type of\nload balancing cannot be used with the other. Default value: \"EXTERNAL\" Possible values: [\"EXTERNAL\", \"INTERNAL_SELF_MANAGED\"]",
         "Computed": true
       },
+      "locality_lb_policy": {
+        "Type": "String",
+        "Description": "The load balancing algorithm used within the scope of the locality.\nThe possible values are -\n\nROUND_ROBIN - This is a simple policy in which each healthy backend\n              is selected in round robin order.\n\nLEAST_REQUEST - An O(1) algorithm which selects two random healthy\n                hosts and picks the host which has fewer active requests.\n\nRING_HASH - The ring/modulo hash load balancer implements consistent\n            hashing to backends. The algorithm has the property that the\n            addition/removal of a host from a set of N hosts only affects\n            1/N of the requests.\n\nRANDOM - The load balancer selects a random healthy host.\n\nORIGINAL_DESTINATION - Backend host is selected based on the client\n                       connection metadata, i.e., connections are opened\n                       to the same address as the destination address of\n                       the incoming connection before the connection\n                       was redirected to the load balancer.\n\nMAGLEV - used as a drop in replacement for the ring hash load balancer.\n         Maglev is not as stable as ring hash but has faster table lookup\n         build times and host selection times. For more information about\n         Maglev, refer to https://ai.google/research/pubs/pub44824\n\nThis field is applicable only when the load_balancing_scheme is set to\nINTERNAL_SELF_MANAGED. Possible values: [\"ROUND_ROBIN\", \"LEAST_REQUEST\", \"RING_HASH\", \"RANDOM\", \"ORIGINAL_DESTINATION\", \"MAGLEV\"]",
+        "Computed": true
+      },
+      "log_config": {
+        "Type": "List",
+        "Description": "This field denotes the logging options for the load balancer traffic served by this backend service.\nIf logging is enabled, logs will be exported to Stackdriver.",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "enable": {
+              "Type": "Bool",
+              "Description": "Whether to enable logging for the load balancer traffic served by this backend service.",
+              "Computed": true
+            },
+            "sample_rate": {
+              "Type": "Float",
+              "Description": "This field can only be specified if logging is enabled for this backend service. The value of\nthe field must be in [0, 1]. This configures the sampling rate of requests to the load balancer\nwhere 1.0 means all logged requests are reported and 0.0 means no logged requests are reported.\nThe default value is 1.0.",
+              "Computed": true
+            }
+          }
+        }
+      },
       "name": {
         "Type": "String",
         "Required": true,
         "Description": "Name of the resource. Provided by the client when the resource is\ncreated. The name must be 1-63 characters long, and comply with\nRFC1035. Specifically, the name must be 1-63 characters long and match\nthe regular expression '[a-z]([-a-z0-9]*[a-z0-9])?' which means the\nfirst character must be a lowercase letter, and all following\ncharacters must be a dash, lowercase letter, or digit, except the last\ncharacter, which cannot be a dash."
+      },
+      "outlier_detection": {
+        "Type": "List",
+        "Description": "Settings controlling eviction of unhealthy hosts from the load balancing pool.\nThis field is applicable only when the load_balancing_scheme is set\nto INTERNAL_SELF_MANAGED.",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "base_ejection_time": {
+              "Type": "List",
+              "Description": "The base time that a host is ejected for. The real time is equal to the base\ntime multiplied by the number of times the host has been ejected. Defaults to\n30000ms or 30s.",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "nanos": {
+                    "Type": "Int",
+                    "Description": "Span of time that's a fraction of a second at nanosecond resolution. Durations\nless than one second are represented with a 0 'seconds' field and a positive\n'nanos' field. Must be from 0 to 999,999,999 inclusive.",
+                    "Computed": true
+                  },
+                  "seconds": {
+                    "Type": "Int",
+                    "Description": "Span of time at a resolution of a second. Must be from 0 to 315,576,000,000\ninclusive.",
+                    "Computed": true
+                  }
+                }
+              }
+            },
+            "consecutive_errors": {
+              "Type": "Int",
+              "Description": "Number of errors before a host is ejected from the connection pool. When the\nbackend host is accessed over HTTP, a 5xx return code qualifies as an error.\nDefaults to 5.",
+              "Computed": true
+            },
+            "consecutive_gateway_failure": {
+              "Type": "Int",
+              "Description": "The number of consecutive gateway failures (502, 503, 504 status or connection\nerrors that are mapped to one of those status codes) before a consecutive\ngateway failure ejection occurs. Defaults to 5.",
+              "Computed": true
+            },
+            "enforcing_consecutive_errors": {
+              "Type": "Int",
+              "Description": "The percentage chance that a host will be actually ejected when an outlier\nstatus is detected through consecutive 5xx. This setting can be used to disable\nejection or to ramp it up slowly. Defaults to 100.",
+              "Computed": true
+            },
+            "enforcing_consecutive_gateway_failure": {
+              "Type": "Int",
+              "Description": "The percentage chance that a host will be actually ejected when an outlier\nstatus is detected through consecutive gateway failures. This setting can be\nused to disable ejection or to ramp it up slowly. Defaults to 0.",
+              "Computed": true
+            },
+            "enforcing_success_rate": {
+              "Type": "Int",
+              "Description": "The percentage chance that a host will be actually ejected when an outlier\nstatus is detected through success rate statistics. This setting can be used to\ndisable ejection or to ramp it up slowly. Defaults to 100.",
+              "Computed": true
+            },
+            "interval": {
+              "Type": "List",
+              "Description": "Time interval between ejection sweep analysis. This can result in both new\nejections as well as hosts being returned to service. Defaults to 10 seconds.",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "nanos": {
+                    "Type": "Int",
+                    "Description": "Span of time that's a fraction of a second at nanosecond resolution. Durations\nless than one second are represented with a 0 'seconds' field and a positive\n'nanos' field. Must be from 0 to 999,999,999 inclusive.",
+                    "Computed": true
+                  },
+                  "seconds": {
+                    "Type": "Int",
+                    "Description": "Span of time at a resolution of a second. Must be from 0 to 315,576,000,000\ninclusive.",
+                    "Computed": true
+                  }
+                }
+              }
+            },
+            "max_ejection_percent": {
+              "Type": "Int",
+              "Description": "Maximum percentage of hosts in the load balancing pool for the backend service\nthat can be ejected. Defaults to 10%.",
+              "Computed": true
+            },
+            "success_rate_minimum_hosts": {
+              "Type": "Int",
+              "Description": "The number of hosts in a cluster that must have enough request volume to detect\nsuccess rate outliers. If the number of hosts is less than this setting, outlier\ndetection via success rate statistics is not performed for any host in the\ncluster. Defaults to 5.",
+              "Computed": true
+            },
+            "success_rate_request_volume": {
+              "Type": "Int",
+              "Description": "The minimum number of total requests that must be collected in one interval (as\ndefined by the interval duration above) to include this host in success rate\nbased outlier detection. If the volume is lower than this setting, outlier\ndetection via success rate statistics is not performed for that host. Defaults\nto 100.",
+              "Computed": true
+            },
+            "success_rate_stdev_factor": {
+              "Type": "Int",
+              "Description": "This factor is used to determine the ejection threshold for success rate outlier\nejection. The ejection threshold is the difference between the mean success\nrate, and the product of this factor and the standard deviation of the mean\nsuccess rate: mean - (stdev * success_rate_stdev_factor). This factor is divided\nby a thousand to get a double. That is, if the desired factor is 1.9, the\nruntime value should be 1900. Defaults to 1900.",
+              "Computed": true
+            }
+          }
+        }
       },
       "port_name": {
         "Type": "String",
@@ -27606,6 +30049,19 @@
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
+            "cloudrun_config": {
+              "Type": "List",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "disabled": {
+                    "Type": "Bool",
+                    "Computed": true
+                  }
+                }
+              }
+            },
             "horizontal_pod_autoscaling": {
               "Type": "List",
               "Computed": true,
@@ -27754,6 +30210,10 @@
         "Computed": true
       },
       "enable_legacy_abac": {
+        "Type": "Bool",
+        "Computed": true
+      },
+      "enable_shielded_nodes": {
         "Type": "Bool",
         "Computed": true
       },
@@ -28357,6 +30817,14 @@
             "node_count": {
               "Type": "Int",
               "Computed": true
+            },
+            "node_locations": {
+              "Type": "Set",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
             },
             "upgrade_settings": {
               "Type": "List",
