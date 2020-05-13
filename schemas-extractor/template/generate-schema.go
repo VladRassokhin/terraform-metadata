@@ -19,7 +19,7 @@ import (
 // of the provider.
 func Export(p *schema.Provider) *ResourceProviderSchema {
 	result := new(ResourceProviderSchema)
-	result.SchemaVersion = "1"
+	result.SchemaVersion = "2"
 
 	result.Name = "__NAME__"
 	result.Type = "provider"
@@ -126,20 +126,25 @@ func export(v *schema.Schema) SchemaDefinition {
 
 	switch v.ConfigMode {
 	case schema.SchemaConfigModeAttr:
+		item.ConfigExplicitMode = "Attr"
 		return item
 	case schema.SchemaConfigModeBlock:
+		item.ConfigExplicitMode = "Block"
 		item.IsBlock = true
 		return item
 	default: // SchemaConfigModeAuto, or any other invalid value
 		if v.Computed && !v.Optional {
 			// Computed-only schemas are always handled as attributes,
 			// because they never appear in configuration.
+			item.ConfigImplicitMode = "Attr"
 			return item
 		}
 		switch v.Elem.(type) {
 		case *schema.Schema, schema.ValueType:
+			item.ConfigImplicitMode = "Attr"
 			item.IsBlock = false
 		case *schema.Resource:
+			item.ConfigImplicitMode = "Block"
 			item.IsBlock = true
 		default:
 			// Should never happen for a valid schema
@@ -235,6 +240,9 @@ type SchemaDefinition struct {
 	Removed    string `json:",omitempty"`
 
 	IsBlock bool `json:",omitempty"`
+
+	ConfigExplicitMode string `json:",omitempty"`
+	ConfigImplicitMode string `json:",omitempty"`
 
 	Default *SchemaElement `json:",omitempty"`
 	Elem    *SchemaElement `json:",omitempty"`
