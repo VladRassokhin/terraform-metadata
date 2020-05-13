@@ -1,8 +1,8 @@
 {
-  ".schema_version": "1",
+  ".schema_version": "2",
   "name": "consul",
   "type": "provider",
-  "version": "v2.5.0",
+  "version": "v2.7.0",
   "provider": {
     "address": {
       "Type": "String",
@@ -46,6 +46,10 @@
       "Optional": true,
       "DefaultFunc": "ENV(CONSUL_KEY_FILE)"
     },
+    "namespace": {
+      "Type": "String",
+      "Optional": true
+    },
     "scheme": {
       "Type": "String",
       "Optional": true,
@@ -58,11 +62,73 @@
     }
   },
   "resources": {
+    "consul_acl_auth_method": {
+      "config": {
+        "Type": "Map",
+        "Required": true,
+        "Description": "The raw configuration for this ACL auth method.",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "A free form human readable description of the auth method."
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The name of the ACL auth method."
+      },
+      "namespace": {
+        "Type": "String",
+        "Optional": true
+      },
+      "type": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The type of the ACL auth method."
+      }
+    },
+    "consul_acl_binding_rule": {
+      "auth_method": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The name of the ACL auth method this rule apply."
+      },
+      "bind_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The name to bind to a token at login-time."
+      },
+      "bind_type": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Specifies the way the binding rule affects a token created at login."
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "A free form human readable description of the binding rule."
+      },
+      "namespace": {
+        "Type": "String",
+        "Optional": true
+      },
+      "selector": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The expression used to math this rule against valid identities returned from an auth method validation."
+      }
+    },
     "consul_acl_policy": {
       "datacenters": {
         "Type": "Set",
         "Optional": true,
         "Description": "The ACL policy datacenters.",
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -78,13 +144,76 @@
         "Required": true,
         "Description": "The ACL policy name."
       },
+      "namespace": {
+        "Type": "String",
+        "Optional": true
+      },
       "rules": {
         "Type": "String",
         "Required": true,
         "Description": "The ACL policy rules."
       }
     },
+    "consul_acl_role": {
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "A free form human readable description of the role."
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The name of the ACL role."
+      },
+      "namespace": {
+        "Type": "String",
+        "Optional": true
+      },
+      "policies": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "The list of policies that should be applied to the role.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "service_identities": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "The list of service identities that should be applied to the role.",
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "datacenters": {
+              "Type": "Set",
+              "Optional": true,
+              "Description": "The datacenters the effective policy is valid within. When no datacenters are provided the effective policy is valid in all datacenters including those which do not yet exist but may in the future.",
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "service_name": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The name of the service."
+            }
+          }
+        }
+      }
+    },
     "consul_acl_token": {
+      "accessor_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The token id.",
+        "Computed": true
+      },
       "description": {
         "Type": "String",
         "Optional": true,
@@ -99,14 +228,41 @@
           "Value": "false"
         }
       },
+      "namespace": {
+        "Type": "String",
+        "Optional": true
+      },
       "policies": {
         "Type": "Set",
         "Optional": true,
         "Description": "List of policies.",
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
         }
+      },
+      "roles": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "List of roles",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      }
+    },
+    "consul_acl_token_policy_attachment": {
+      "policy": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The policy name."
+      },
+      "token_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The token accessor id."
       }
     },
     "consul_agent_service": {
@@ -126,6 +282,7 @@
       "tags": {
         "Type": "List",
         "Optional": true,
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -210,6 +367,7 @@
         "Type": "Set",
         "Optional": true,
         "IsBlock": true,
+        "ConfigImplicitMode": "Block",
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
@@ -233,6 +391,7 @@
             "tags": {
               "Type": "Set",
               "Optional": true,
+              "ConfigImplicitMode": "Attr",
               "Elem": {
                 "Type": "SchemaElements",
                 "ElementsType": "String"
@@ -244,6 +403,20 @@
       "token": {
         "Type": "String",
         "Optional": true
+      }
+    },
+    "consul_config_entry": {
+      "config_json": {
+        "Type": "String",
+        "Optional": true
+      },
+      "kind": {
+        "Type": "String",
+        "Required": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true
       }
     },
     "consul_intention": {
@@ -259,6 +432,14 @@
         "Type": "String",
         "Required": true
       },
+      "destination_namespace": {
+        "Type": "String",
+        "Optional": true,
+        "Default": {
+          "Type": "string",
+          "Value": "default"
+        }
+      },
       "meta": {
         "Type": "Map",
         "Optional": true,
@@ -270,6 +451,14 @@
       "source_name": {
         "Type": "String",
         "Required": true
+      },
+      "source_namespace": {
+        "Type": "String",
+        "Optional": true,
+        "Default": {
+          "Type": "string",
+          "Value": "default"
+        }
       }
     },
     "consul_key_prefix": {
@@ -277,6 +466,10 @@
         "Type": "String",
         "Optional": true,
         "Computed": true
+      },
+      "namespace": {
+        "Type": "String",
+        "Optional": true
       },
       "path_prefix": {
         "Type": "String",
@@ -286,6 +479,7 @@
         "Type": "Set",
         "Optional": true,
         "IsBlock": true,
+        "ConfigImplicitMode": "Block",
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
@@ -331,12 +525,16 @@
         "Type": "Set",
         "Optional": true,
         "IsBlock": true,
+        "ConfigImplicitMode": "Block",
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
             "default": {
               "Type": "String",
-              "Optional": true
+              "Optional": true,
+              "Default": {
+                "Type": "string"
+              }
             },
             "delete": {
               "Type": "Bool",
@@ -357,7 +555,10 @@
             "name": {
               "Type": "String",
               "Optional": true,
-              "Deprecated": "Using consul_keys resource to *read* is deprecated; please use consul_keys data source instead"
+              "Deprecated": "Using consul_keys resource to *read* is deprecated; please use consul_keys data source instead",
+              "Default": {
+                "Type": "string"
+              }
             },
             "path": {
               "Type": "String",
@@ -371,13 +572,153 @@
           }
         }
       },
+      "namespace": {
+        "Type": "String",
+        "Optional": true
+      },
       "token": {
         "Type": "String",
         "Optional": true
       },
       "var": {
         "Type": "Map",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      }
+    },
+    "consul_license": {
+      "customer_id": {
+        "Type": "String",
         "Computed": true
+      },
+      "datacenter": {
+        "Type": "String",
+        "Optional": true
+      },
+      "expiration_time": {
+        "Type": "String",
+        "Computed": true
+      },
+      "features": {
+        "Type": "List",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "flags": {
+        "Type": "Map",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "installation_id": {
+        "Type": "String",
+        "Computed": true
+      },
+      "issue_time": {
+        "Type": "String",
+        "Computed": true
+      },
+      "license": {
+        "Type": "String",
+        "Required": true
+      },
+      "license_id": {
+        "Type": "String",
+        "Computed": true
+      },
+      "product": {
+        "Type": "String",
+        "Computed": true
+      },
+      "start_time": {
+        "Type": "String",
+        "Computed": true
+      },
+      "valid": {
+        "Type": "Bool",
+        "Computed": true
+      },
+      "warnings": {
+        "Type": "List",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      }
+    },
+    "consul_namespace": {
+      "description": {
+        "Type": "String",
+        "Optional": true
+      },
+      "meta": {
+        "Type": "Map",
+        "Optional": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Required": true
+      },
+      "policy_defaults": {
+        "Type": "List",
+        "Optional": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "role_defaults": {
+        "Type": "List",
+        "Optional": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      }
+    },
+    "consul_network_area": {
+      "datacenter": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "peer_datacenter": {
+        "Type": "String",
+        "Required": true
+      },
+      "retry_join": {
+        "Type": "List",
+        "Optional": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "token": {
+        "Type": "String",
+        "Optional": true
+      },
+      "use_tls": {
+        "Type": "Bool",
+        "Optional": true
       }
     },
     "consul_node": {
@@ -392,7 +733,11 @@
       },
       "meta": {
         "Type": "Map",
-        "Optional": true
+        "Optional": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       },
       "name": {
         "Type": "String",
@@ -417,6 +762,7 @@
         "Optional": true,
         "MaxItems": 1,
         "IsBlock": true,
+        "ConfigImplicitMode": "Block",
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
@@ -432,12 +778,14 @@
         "Optional": true,
         "MaxItems": 1,
         "IsBlock": true,
+        "ConfigImplicitMode": "Block",
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
             "datacenters": {
               "Type": "List",
               "Optional": true,
+              "ConfigImplicitMode": "Attr",
               "Elem": {
                 "Type": "SchemaElements",
                 "ElementsType": "String"
@@ -477,6 +825,7 @@
       "tags": {
         "Type": "Set",
         "Optional": true,
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -487,6 +836,7 @@
         "Optional": true,
         "MaxItems": 1,
         "IsBlock": true,
+        "ConfigImplicitMode": "Block",
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
@@ -513,15 +863,16 @@
         "Computed": true
       },
       "check": {
-        "Type": "List",
+        "Type": "Set",
         "Optional": true,
         "IsBlock": true,
+        "ConfigImplicitMode": "Block",
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
             "check_id": {
               "Type": "String",
-              "Optional": true
+              "Required": true
             },
             "deregister_critical_service_after": {
               "Type": "String",
@@ -535,6 +886,7 @@
               "Type": "Set",
               "Optional": true,
               "IsBlock": true,
+              "ConfigImplicitMode": "Block",
               "Elem": {
                 "Type": "SchemaInfo",
                 "Info": {
@@ -545,6 +897,7 @@
                   "value": {
                     "Type": "List",
                     "Required": true,
+                    "ConfigImplicitMode": "Attr",
                     "Elem": {
                       "Type": "SchemaElements",
                       "ElementsType": "String"
@@ -580,10 +933,7 @@
             "status": {
               "Type": "String",
               "Optional": true,
-              "Default": {
-                "Type": "string",
-                "Value": "critical"
-              }
+              "Computed": true
             },
             "tcp": {
               "Type": "String",
@@ -614,9 +964,21 @@
         "Optional": true,
         "Deprecated": "The external field has been deprecated and does nothing."
       },
+      "meta": {
+        "Type": "Map",
+        "Optional": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
       "name": {
         "Type": "String",
         "Required": true
+      },
+      "namespace": {
+        "Type": "String",
+        "Optional": true
       },
       "node": {
         "Type": "String",
@@ -634,6 +996,7 @@
       "tags": {
         "Type": "List",
         "Optional": true,
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -642,6 +1005,171 @@
     }
   },
   "data-sources": {
+    "consul_acl_auth_method": {
+      "config": {
+        "Type": "Map",
+        "Optional": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true
+      },
+      "namespace": {
+        "Type": "String",
+        "Optional": true
+      },
+      "type": {
+        "Type": "String",
+        "Optional": true
+      }
+    },
+    "consul_acl_policy": {
+      "datacenters": {
+        "Type": "List",
+        "Optional": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true
+      },
+      "namespace": {
+        "Type": "String",
+        "Optional": true
+      },
+      "rules": {
+        "Type": "String",
+        "Optional": true
+      }
+    },
+    "consul_acl_role": {
+      "description": {
+        "Type": "String",
+        "Optional": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true
+      },
+      "namespace": {
+        "Type": "String",
+        "Optional": true
+      },
+      "policies": {
+        "Type": "List",
+        "Optional": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "name": {
+              "Type": "String",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "service_identities": {
+        "Type": "List",
+        "Optional": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "datacenters": {
+              "Type": "Set",
+              "Optional": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "service_name": {
+              "Type": "String",
+              "Optional": true
+            }
+          }
+        }
+      }
+    },
+    "consul_acl_token": {
+      "accessor_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true
+      },
+      "local": {
+        "Type": "Bool",
+        "Optional": true
+      },
+      "namespace": {
+        "Type": "String",
+        "Optional": true
+      },
+      "policies": {
+        "Type": "List",
+        "Optional": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "name": {
+              "Type": "String",
+              "Computed": true
+            }
+          }
+        }
+      }
+    },
+    "consul_acl_token_secret_id": {
+      "accessor_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "encrypted_secret_id": {
+        "Type": "String",
+        "Computed": true
+      },
+      "pgp_key": {
+        "Type": "String",
+        "Optional": true
+      },
+      "secret_id": {
+        "Type": "String",
+        "Computed": true
+      }
+    },
     "consul_agent_config": {
       "datacenter": {
         "Type": "String",
@@ -778,6 +1306,7 @@
       "dns_recursors": {
         "Type": "List",
         "Computed": true,
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -874,6 +1403,7 @@
       "retry_join": {
         "Type": "List",
         "Computed": true,
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -898,6 +1428,7 @@
       "retry_join_wan": {
         "Type": "List",
         "Computed": true,
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -934,6 +1465,7 @@
       "start_join": {
         "Type": "List",
         "Computed": true,
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -942,6 +1474,7 @@
       "start_join_wan": {
         "Type": "List",
         "Computed": true,
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -1040,6 +1573,7 @@
       "servers": {
         "Type": "List",
         "Computed": true,
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
@@ -1103,6 +1637,7 @@
       "node_ids": {
         "Type": "List",
         "Computed": true,
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -1111,6 +1646,7 @@
       "node_names": {
         "Type": "List",
         "Computed": true,
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -1119,6 +1655,7 @@
       "nodes": {
         "Type": "List",
         "Computed": true,
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
@@ -1132,7 +1669,11 @@
             },
             "meta": {
               "Type": "Map",
-              "Computed": true
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
             },
             "name": {
               "Type": "String",
@@ -1153,6 +1694,7 @@
         "Type": "Set",
         "Optional": true,
         "IsBlock": true,
+        "ConfigImplicitMode": "Block",
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
@@ -1174,7 +1716,11 @@
             },
             "node_meta": {
               "Type": "Map",
-              "Optional": true
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
             },
             "require_consistent": {
               "Type": "Bool",
@@ -1213,6 +1759,7 @@
         "Type": "Set",
         "Optional": true,
         "IsBlock": true,
+        "ConfigImplicitMode": "Block",
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
@@ -1228,13 +1775,21 @@
               "Type": "String",
               "Optional": true
             },
+            "namespace": {
+              "Type": "String",
+              "Optional": true
+            },
             "near": {
               "Type": "String",
               "Optional": true
             },
             "node_meta": {
               "Type": "Map",
-              "Optional": true
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
             },
             "require_consistent": {
               "Type": "Bool",
@@ -1262,6 +1817,7 @@
       "service": {
         "Type": "List",
         "Computed": true,
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
@@ -1281,6 +1837,14 @@
               "Type": "String",
               "Computed": true
             },
+            "meta": {
+              "Type": "Map",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
             "modify_index": {
               "Type": "String",
               "Computed": true
@@ -1299,7 +1863,11 @@
             },
             "node_meta": {
               "Type": "Map",
-              "Computed": true
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
             },
             "node_name": {
               "Type": "String",
@@ -1320,6 +1888,7 @@
             "tags": {
               "Type": "List",
               "Computed": true,
+              "ConfigImplicitMode": "Attr",
               "Elem": {
                 "Type": "SchemaElements",
                 "ElementsType": "String"
@@ -1341,6 +1910,7 @@
       "names": {
         "Type": "List",
         "Computed": true,
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -1350,6 +1920,7 @@
         "Type": "Set",
         "Optional": true,
         "IsBlock": true,
+        "ConfigImplicitMode": "Block",
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
@@ -1365,13 +1936,21 @@
               "Type": "String",
               "Optional": true
             },
+            "namespace": {
+              "Type": "String",
+              "Optional": true
+            },
             "near": {
               "Type": "String",
               "Optional": true
             },
             "node_meta": {
               "Type": "Map",
-              "Optional": true
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
             },
             "require_consistent": {
               "Type": "Bool",
@@ -1411,6 +1990,10 @@
         "Optional": true,
         "Computed": true
       },
+      "namespace": {
+        "Type": "String",
+        "Optional": true
+      },
       "path_prefix": {
         "Type": "String",
         "Required": true
@@ -1419,6 +2002,7 @@
         "Type": "Set",
         "Optional": true,
         "IsBlock": true,
+        "ConfigImplicitMode": "Block",
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
@@ -1451,7 +2035,11 @@
       },
       "var": {
         "Type": "Map",
-        "Computed": true
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       }
     },
     "consul_keys": {
@@ -1464,6 +2052,7 @@
         "Type": "Set",
         "Optional": true,
         "IsBlock": true,
+        "ConfigImplicitMode": "Block",
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
@@ -1482,13 +2071,106 @@
           }
         }
       },
+      "namespace": {
+        "Type": "String",
+        "Optional": true
+      },
       "token": {
         "Type": "String",
         "Optional": true
       },
       "var": {
         "Type": "Map",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      }
+    },
+    "consul_network_area_members": {
+      "datacenter": {
+        "Type": "String",
+        "Optional": true,
         "Computed": true
+      },
+      "members": {
+        "Type": "List",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "address": {
+              "Type": "String",
+              "Computed": true
+            },
+            "build": {
+              "Type": "String",
+              "Computed": true
+            },
+            "datacenter": {
+              "Type": "String",
+              "Computed": true
+            },
+            "id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "name": {
+              "Type": "String",
+              "Computed": true
+            },
+            "port": {
+              "Type": "Int",
+              "Computed": true
+            },
+            "protocol": {
+              "Type": "Int",
+              "Computed": true
+            },
+            "role": {
+              "Type": "String",
+              "Computed": true
+            },
+            "rtt": {
+              "Type": "Int",
+              "Computed": true
+            },
+            "status": {
+              "Type": "String",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "token": {
+        "Type": "String",
+        "Optional": true
+      },
+      "uuid": {
+        "Type": "String",
+        "Required": true
+      }
+    },
+    "consul_network_segments": {
+      "datacenter": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "segments": {
+        "Type": "List",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "token": {
+        "Type": "String",
+        "Optional": true
       }
     },
     "consul_nodes": {
@@ -1499,6 +2181,7 @@
       "node_ids": {
         "Type": "List",
         "Computed": true,
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -1507,6 +2190,7 @@
       "node_names": {
         "Type": "List",
         "Computed": true,
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -1515,6 +2199,7 @@
       "nodes": {
         "Type": "List",
         "Computed": true,
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
@@ -1528,7 +2213,11 @@
             },
             "meta": {
               "Type": "Map",
-              "Computed": true
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
             },
             "name": {
               "Type": "String",
@@ -1549,6 +2238,7 @@
         "Type": "Set",
         "Optional": true,
         "IsBlock": true,
+        "ConfigImplicitMode": "Block",
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
@@ -1570,7 +2260,11 @@
             },
             "node_meta": {
               "Type": "Map",
-              "Optional": true
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
             },
             "require_consistent": {
               "Type": "Bool",
@@ -1609,6 +2303,7 @@
         "Type": "Set",
         "Optional": true,
         "IsBlock": true,
+        "ConfigImplicitMode": "Block",
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
@@ -1624,13 +2319,21 @@
               "Type": "String",
               "Optional": true
             },
+            "namespace": {
+              "Type": "String",
+              "Optional": true
+            },
             "near": {
               "Type": "String",
               "Optional": true
             },
             "node_meta": {
               "Type": "Map",
-              "Optional": true
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
             },
             "require_consistent": {
               "Type": "Bool",
@@ -1658,6 +2361,7 @@
       "service": {
         "Type": "List",
         "Computed": true,
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
@@ -1677,6 +2381,14 @@
               "Type": "String",
               "Computed": true
             },
+            "meta": {
+              "Type": "Map",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
             "modify_index": {
               "Type": "String",
               "Computed": true
@@ -1695,7 +2407,11 @@
             },
             "node_meta": {
               "Type": "Map",
-              "Computed": true
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
             },
             "node_name": {
               "Type": "String",
@@ -1716,6 +2432,7 @@
             "tags": {
               "Type": "List",
               "Computed": true,
+              "ConfigImplicitMode": "Attr",
               "Elem": {
                 "Type": "SchemaElements",
                 "ElementsType": "String"
@@ -1744,7 +2461,11 @@
       },
       "node_meta": {
         "Type": "Map",
-        "Optional": true
+        "Optional": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       },
       "passing": {
         "Type": "Bool",
@@ -1757,12 +2478,14 @@
       "results": {
         "Type": "List",
         "Computed": true,
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
             "checks": {
               "Type": "List",
               "Computed": true,
+              "ConfigImplicitMode": "Attr",
               "Elem": {
                 "Type": "SchemaInfo",
                 "Info": {
@@ -1797,6 +2520,7 @@
                   "service_tags": {
                     "Type": "List",
                     "Computed": true,
+                    "ConfigImplicitMode": "Attr",
                     "Elem": {
                       "Type": "SchemaElements",
                       "ElementsType": "String"
@@ -1813,6 +2537,7 @@
               "Type": "List",
               "Computed": true,
               "MaxItems": 1,
+              "ConfigImplicitMode": "Attr",
               "Elem": {
                 "Type": "SchemaInfo",
                 "Info": {
@@ -1855,6 +2580,7 @@
               "Type": "List",
               "Computed": true,
               "MaxItems": 1,
+              "ConfigImplicitMode": "Attr",
               "Elem": {
                 "Type": "SchemaInfo",
                 "Info": {
@@ -1885,6 +2611,7 @@
                   "tags": {
                     "Type": "List",
                     "Computed": true,
+                    "ConfigImplicitMode": "Attr",
                     "Elem": {
                       "Type": "SchemaElements",
                       "ElementsType": "String"
@@ -1913,6 +2640,7 @@
       "names": {
         "Type": "List",
         "Computed": true,
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -1922,6 +2650,7 @@
         "Type": "Set",
         "Optional": true,
         "IsBlock": true,
+        "ConfigImplicitMode": "Block",
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
@@ -1937,13 +2666,21 @@
               "Type": "String",
               "Optional": true
             },
+            "namespace": {
+              "Type": "String",
+              "Optional": true
+            },
             "near": {
               "Type": "String",
               "Optional": true
             },
             "node_meta": {
               "Type": "Map",
-              "Optional": true
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
             },
             "require_consistent": {
               "Type": "Bool",

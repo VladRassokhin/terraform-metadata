@@ -1,8 +1,8 @@
 {
-  ".schema_version": "1",
+  ".schema_version": "2",
   "name": "bigip",
   "type": "provider",
-  "version": "v0.12.4",
+  "version": "v1.12",
   "provider": {
     "address": {
       "Type": "String",
@@ -25,6 +25,11 @@
       "Required": true,
       "Description": "The user's password",
       "DefaultFunc": "ENV(BIGIP_PASSWORD)"
+    },
+    "port": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "Management Port to connect to Bigip"
     },
     "token_auth": {
       "Type": "Bool",
@@ -52,12 +57,8 @@
       },
       "tenant_name": {
         "Type": "String",
-        "Optional": true,
-        "Description": "unique identifier for resource",
-        "Default": {
-          "Type": "string",
-          "Value": "as3"
-        }
+        "Required": true,
+        "Description": "Name of Tenant"
       }
     },
     "bigip_cm_device": {
@@ -101,6 +102,7 @@
         "Type": "List",
         "Optional": true,
         "IsBlock": true,
+        "ConfigImplicitMode": "Block",
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
@@ -173,6 +175,18 @@
         }
       }
     },
+    "bigip_do": {
+      "do_json": {
+        "Type": "String",
+        "Required": true,
+        "Description": "DO json"
+      },
+      "tenant_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "unique identifier for DO resource"
+      }
+    },
     "bigip_ltm_datagroup": {
       "name": {
         "Type": "String",
@@ -183,6 +197,7 @@
         "Type": "Set",
         "Optional": true,
         "IsBlock": true,
+        "ConfigImplicitMode": "Block",
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
@@ -233,6 +248,11 @@
         "Optional": true,
         "Description": "Specifies, when enabled, that the SSL options setting (in OpenSSL) is set to ALL. The default value is enabled.",
         "Computed": true
+      },
+      "database": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "the database in which your user is created"
       },
       "defaults_from": {
         "Type": "String",
@@ -344,11 +364,7 @@
       },
       "description": {
         "Type": "String",
-        "Optional": true,
-        "Default": {
-          "Type": "string",
-          "Value": "Test-Node"
-        }
+        "Optional": true
       },
       "dynamic_ratio": {
         "Type": "Int",
@@ -361,6 +377,7 @@
         "Optional": true,
         "MaxItems": 1,
         "IsBlock": true,
+        "ConfigImplicitMode": "Block",
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
@@ -415,14 +432,16 @@
         "Description": "Specifies the maximum number of connections per second allowed for a node or node address. The default value is 'disabled'.",
         "Computed": true
       },
+      "ratio": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Sets the ratio number for the node.",
+        "Computed": true
+      },
       "state": {
         "Type": "String",
         "Optional": true,
-        "Description": "Marks the node up or down. The default value is user-up.",
-        "Default": {
-          "Type": "string",
-          "Value": "user-up"
-        }
+        "Description": "Marks the node up or down. The default value is user-up."
       }
     },
     "bigip_ltm_persistence_profile_cookie": {
@@ -750,6 +769,7 @@
       "controls": {
         "Type": "Set",
         "Optional": true,
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -768,6 +788,7 @@
       "requires": {
         "Type": "Set",
         "Optional": true,
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -777,6 +798,7 @@
         "Type": "List",
         "Optional": true,
         "IsBlock": true,
+        "ConfigImplicitMode": "Block",
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
@@ -784,6 +806,7 @@
               "Type": "List",
               "Optional": true,
               "IsBlock": true,
+              "ConfigImplicitMode": "Block",
               "Elem": {
                 "Type": "SchemaInfo",
                 "Info": {
@@ -1303,6 +1326,7 @@
               "Type": "List",
               "Optional": true,
               "IsBlock": true,
+              "ConfigImplicitMode": "Block",
               "Elem": {
                 "Type": "SchemaInfo",
                 "Info": {
@@ -1740,6 +1764,7 @@
                     "Type": "List",
                     "Optional": true,
                     "Computed": true,
+                    "ConfigImplicitMode": "Attr",
                     "Elem": {
                       "Type": "SchemaElements",
                       "ElementsType": "String"
@@ -1796,11 +1821,7 @@
       },
       "description": {
         "Type": "String",
-        "Optional": true,
-        "Default": {
-          "Type": "string",
-          "Value": "Test-Pool"
-        }
+        "Optional": true
       },
       "load_balancing_mode": {
         "Type": "String",
@@ -1813,6 +1834,7 @@
         "Optional": true,
         "Description": "Assign monitors to a pool.",
         "Computed": true,
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -1908,6 +1930,7 @@
         "Optional": true,
         "Description": "Cert extension includes for ssl forward proxy",
         "Computed": true,
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -1918,6 +1941,7 @@
         "Optional": true,
         "Computed": true,
         "IsBlock": true,
+        "ConfigImplicitMode": "Block",
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
@@ -1989,7 +2013,10 @@
         "Type": "String",
         "Optional": true,
         "Description": "Profile name that this profile defaults from.",
-        "Computed": true
+        "Default": {
+          "Type": "string",
+          "Value": "/Common/clientssl"
+        }
       },
       "forward_proxy_bypass_default_action": {
         "Type": "String",
@@ -2000,12 +2027,14 @@
       "full_path": {
         "Type": "String",
         "Optional": true,
-        "Description": "full path of the profile"
+        "Description": "full path of the profile",
+        "Computed": true
       },
       "generation": {
         "Type": "Int",
         "Optional": true,
-        "Description": "generation"
+        "Description": "generation",
+        "Computed": true
       },
       "generic_alert": {
         "Type": "String",
@@ -2051,7 +2080,8 @@
       "partition": {
         "Type": "String",
         "Optional": true,
-        "Description": "name of partition"
+        "Description": "name of partition",
+        "Computed": true
       },
       "passphrase": {
         "Type": "String",
@@ -2183,6 +2213,7 @@
         "Type": "Set",
         "Optional": true,
         "Computed": true,
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -2398,6 +2429,7 @@
         "Type": "Set",
         "Optional": true,
         "Description": "Encrypts specified cookies that the BIG-IP system sends to a client system",
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -2416,6 +2448,7 @@
         "Type": "Set",
         "Optional": true,
         "Description": "Specifies one or more three-digit status codes that can be returned by an HTTP server.",
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -2511,6 +2544,7 @@
         "Type": "Set",
         "Optional": true,
         "Description": "Specifies headers that the BIG-IP system allows in an HTTP response.",
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -2564,6 +2598,7 @@
         "Type": "Set",
         "Optional": true,
         "Description": "Specifies alternative XFF headers instead of the default X-forwarded-for header",
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -2575,6 +2610,7 @@
         "Type": "Set",
         "Optional": true,
         "Description": "Servers Address",
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -2623,6 +2659,7 @@
         "Type": "Set",
         "Optional": true,
         "Description": "Specifies a list of content types for compression of HTTP Content-Type responses. Use a string list to specify a list of content types you want to exclude.",
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -2632,6 +2669,7 @@
         "Type": "Set",
         "Optional": true,
         "Description": "Specifies a list of content types for compression of HTTP Content-Type responses. Use a string list to specify a list of content types you want to compress.",
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -2651,6 +2689,7 @@
         "Type": "Set",
         "Optional": true,
         "Description": "Servers Address",
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -2660,6 +2699,7 @@
         "Type": "Set",
         "Optional": true,
         "Description": "Servers Address",
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -2792,7 +2832,10 @@
         "Type": "String",
         "Optional": true,
         "Description": "Profile name that this profile defaults from.",
-        "Computed": true
+        "Default": {
+          "Type": "string",
+          "Value": "/Common/serverssl"
+        }
       },
       "expire_cert_response_control": {
         "Type": "String",
@@ -2803,12 +2846,14 @@
       "full_path": {
         "Type": "String",
         "Optional": true,
-        "Description": "full path of the profile"
+        "Description": "full path of the profile",
+        "Computed": true
       },
       "generation": {
         "Type": "Int",
         "Optional": true,
-        "Description": "generation"
+        "Description": "generation",
+        "Computed": true
       },
       "generic_alert": {
         "Type": "String",
@@ -2848,7 +2893,8 @@
       "partition": {
         "Type": "String",
         "Optional": true,
-        "Description": "name of partition"
+        "Description": "name of partition",
+        "Computed": true
       },
       "passphrase": {
         "Type": "String",
@@ -2956,6 +3002,7 @@
         "Type": "Set",
         "Optional": true,
         "Computed": true,
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -3083,6 +3130,7 @@
         "Type": "List",
         "Required": true,
         "IsBlock": true,
+        "ConfigImplicitMode": "Block",
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
@@ -3123,6 +3171,7 @@
         "Type": "Set",
         "Optional": true,
         "Description": "Vlans or Vlan list",
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -3140,6 +3189,7 @@
         "Required": true,
         "Description": "Specifies a translation address to add to or delete from a SNAT pool, at least one address is required.",
         "MinItems": 1,
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -3226,18 +3276,19 @@
         "Type": "Set",
         "Optional": true,
         "Computed": true,
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
         }
       },
+      "default_persistence_profile": {
+        "Type": "String",
+        "Optional": true
+      },
       "description": {
         "Type": "String",
-        "Optional": true,
-        "Default": {
-          "Type": "string",
-          "Value": "VirtualServer-test"
-        }
+        "Optional": true
       },
       "destination": {
         "Type": "String",
@@ -3258,6 +3309,7 @@
       "irules": {
         "Type": "List",
         "Optional": true,
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -3281,6 +3333,7 @@
         "Type": "Set",
         "Optional": true,
         "Computed": true,
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -3289,6 +3342,7 @@
       "policies": {
         "Type": "Set",
         "Optional": true,
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -3308,6 +3362,7 @@
         "Type": "Set",
         "Optional": true,
         "Computed": true,
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -3317,6 +3372,7 @@
         "Type": "Set",
         "Optional": true,
         "Computed": true,
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -3343,6 +3399,15 @@
         "Description": "none, automap, snat",
         "Computed": true
       },
+      "state": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Specifies whether the virtual server and its resources are available for load balancing. The default is Enabled",
+        "Default": {
+          "Type": "string",
+          "Value": "enabled"
+        }
+      },
       "translate_address": {
         "Type": "String",
         "Optional": true,
@@ -3358,6 +3423,7 @@
       "vlans": {
         "Type": "Set",
         "Optional": true,
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -3419,6 +3485,7 @@
         "Optional": true,
         "Description": "Interface(s) attached to the VLAN",
         "IsBlock": true,
+        "ConfigImplicitMode": "Block",
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
@@ -3446,6 +3513,48 @@
         "Description": "VLAN ID (tag)"
       }
     },
+    "bigip_ssl_certificate": {
+      "content": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Content of certificate on Disk"
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of SSL Certificate with .crt extension"
+      },
+      "partition": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Partition of ssl certificate",
+        "Default": {
+          "Type": "string",
+          "Value": "Common"
+        }
+      }
+    },
+    "bigip_ssl_key": {
+      "content": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Content of SSL certificate key present on local Disk"
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of SSL Certificate key with .key extension"
+      },
+      "partition": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Partition of ssl certificate key",
+        "Default": {
+          "Type": "string",
+          "Value": "Common"
+        }
+      }
+    },
     "bigip_sys_bigiplicense": {
       "command": {
         "Type": "String",
@@ -3468,6 +3577,7 @@
         "Type": "Set",
         "Optional": true,
         "Description": "Servers Address",
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -3482,6 +3592,7 @@
         "Type": "Set",
         "Optional": true,
         "Description": "Servers search domain",
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -3535,6 +3646,7 @@
         "Type": "List",
         "Optional": true,
         "IsBlock": true,
+        "ConfigImplicitMode": "Block",
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
@@ -3559,6 +3671,7 @@
         "Type": "List",
         "Optional": true,
         "IsBlock": true,
+        "ConfigImplicitMode": "Block",
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
@@ -3606,12 +3719,14 @@
         "Type": "List",
         "Optional": true,
         "IsBlock": true,
+        "ConfigImplicitMode": "Block",
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
             "column_names": {
               "Type": "List",
               "Optional": true,
+              "ConfigImplicitMode": "Attr",
               "Elem": {
                 "Type": "SchemaElements",
                 "ElementsType": "String"
@@ -3631,12 +3746,14 @@
               "Type": "List",
               "Optional": true,
               "IsBlock": true,
+              "ConfigImplicitMode": "Block",
               "Elem": {
                 "Type": "SchemaInfo",
                 "Info": {
                   "row": {
                     "Type": "List",
                     "Optional": true,
+                    "ConfigImplicitMode": "Attr",
                     "Elem": {
                       "Type": "SchemaElements",
                       "ElementsType": "String"
@@ -3680,6 +3797,7 @@
         "Type": "List",
         "Optional": true,
         "IsBlock": true,
+        "ConfigImplicitMode": "Block",
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
@@ -3716,6 +3834,7 @@
         "Type": "Set",
         "Optional": true,
         "Description": "Servers Address",
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -3741,7 +3860,8 @@
       "full_path": {
         "Type": "String",
         "Optional": true,
-        "Description": "path"
+        "Description": "path",
+        "Computed": true
       },
       "level": {
         "Type": "String",
@@ -3768,6 +3888,7 @@
         "Type": "Set",
         "Optional": true,
         "Description": "List of SNMP addresses",
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
