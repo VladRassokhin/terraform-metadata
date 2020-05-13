@@ -65,7 +65,7 @@ echo
 generate_one() {
   mkdir -p "$2/logs"
   set +e
-  go run generate-schema/generate-schema.go 2>&1 | tee "$2/logs/$1.log"
+  GO111MODULE=off go run generate-schema/generate-schema.go 2>&1 | tee "$2/logs/$1.log"
   ec=$?
   if [[ $ec -eq 0 ]]; then
     rm "$2/logs/$1.log"
