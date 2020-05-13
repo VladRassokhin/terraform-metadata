@@ -20,6 +20,7 @@ import (
 func Export(p *schema.Provider) *ResourceProviderSchema {
 	result := new(ResourceProviderSchema)
 	result.SchemaVersion = "2"
+	result.SDKType = "__SDK__"
 
 	result.Name = "__NAME__"
 	result.Type = "provider"
@@ -116,11 +117,18 @@ func export(v *schema.Schema) SchemaDefinition {
 		return item
 	}
 	if v.Type == schema.TypeMap {
-		elem := &schema.Schema{
-			Type: schema.TypeString,
+		// For TypeMap in particular, it isn't valid for Elem to be a
+		// *Resource (since that would be ambiguous in flatmap) and
+		// so Elem is treated as a TypeString schema if so. This matches
+		// how the field readers treat this situation, for compatibility
+		// with configurations targeting Terraform 0.11 and earlier.
+		if _, isResource := v.Elem.(*schema.Resource); isResource {
+			elem := &schema.Schema{
+				Type: schema.TypeString,
+			}
+			item.Elem = exportValue(elem, fmt.Sprintf("%T", elem))
+			return item
 		}
-		item.Elem = exportValue(elem, fmt.Sprintf("%T", elem))
-		return item
 	}
 	item.Elem = exportValue(v.Elem, fmt.Sprintf("%T", v.Elem))
 
@@ -259,6 +267,7 @@ type SchemaInfoWithTimeouts map[string]interface{}
 // ResourceProviderSchema
 type ResourceProviderSchema struct {
 	SchemaVersion string `json:".schema_version"`
+	SDKType       string `json:".sdk_type"`
 
 	Name        string                            `json:"name"`
 	Type        string                            `json:"type"`
