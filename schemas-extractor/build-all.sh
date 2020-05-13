@@ -147,6 +147,10 @@ process_provider() {
   if [ -f "go.mod" ] && grep -q 'github.com/hashicorp/terraform-plugin-sdk' "go.mod"; then
     sdk="terraform-plugin-sdk"
   fi
+  if grep -q 'github.com/hashicorp/terraform-plugin-sdk' -r "$pkg_name"; then
+    sdk="terraform-plugin-sdk"
+  fi
+  echo "Using sdk: $sdk"
 
   cat >>'go.mod' <<'EOF'
 replace github.com/go-critic/go-critic v0.0.0-20181204210945-1df300866540 => github.com/go-critic/go-critic v0.3.5-0.20190526074819-1df300866540
@@ -164,7 +168,7 @@ EOF
   sed \
     -e "s~__REPOSITORY__~$repository~g" \
     -e "s/__NAME__/${name}/g" \
-    -e "s/__PKG_NAME__/${pkg_name}/g" \
+    -e "s~__PKG_NAME__~${pkg_name}~g" \
     -e "s/__REVISION__/$revision/g" \
     -e "s/__PROVIDER_ARGS__/$provider_args/g" \
     -e "s/__SDK__/$sdk/g" \
