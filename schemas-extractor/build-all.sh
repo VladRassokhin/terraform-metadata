@@ -144,13 +144,17 @@ process_provider() {
   fi
 
   sdk="terraform"
+  base_file="generate-schema-0-11.go"
   if [ -f "go.mod" ] && grep -q 'github.com/hashicorp/terraform-plugin-sdk' "go.mod"; then
     sdk="terraform-plugin-sdk"
+    base_file="generate-schema.go"
   fi
   if grep -q 'github.com/hashicorp/terraform-plugin-sdk' -r "$pkg_name"; then
     sdk="terraform-plugin-sdk"
+    base_file="generate-schema.go"
   fi
   echo "Using sdk: $sdk"
+  echo "Using base file: $base_file"
 
   cat >>'go.mod' <<'EOF'
 replace github.com/go-critic/go-critic v0.0.0-20181204210945-1df300866540 => github.com/go-critic/go-critic v0.3.5-0.20190526074819-1df300866540
@@ -173,7 +177,7 @@ EOF
     -e "s/__PROVIDER_ARGS__/$provider_args/g" \
     -e "s/__SDK__/$sdk/g" \
     -e "s~__OUT__~$out~g" \
-    "$CUR/template/generate-schema.go" \
+    "$CUR/template/$base_file" \
     >generate-schema/generate-schema.go
 
   echo "Generating schema for $name"
