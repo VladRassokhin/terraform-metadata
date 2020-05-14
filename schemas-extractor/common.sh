@@ -55,8 +55,8 @@ function update_all() {
       repository="$(jq_get "$p" 'repository')"
       repositories+=("$repository")
     done < <(jq -r 'keys[]' <"$CUR/$config_file")
-
-    for repo in $(printf "%s\n" "${repositories[@]}" | sort -u | tr '\n' ' '); do
+    mapfile -t uniq < <(sort -u <<<"${repositories[*]}")
+    for repo in "${uniq[@]}"; do
       repo=$(trim "$repo")
       if [[ "${UPDATE_PARALLEL:-}" == "1" ]]; then
         (
