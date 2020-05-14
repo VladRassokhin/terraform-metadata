@@ -117,7 +117,7 @@ function process_backend() {
   fi
 
   # Revert to previous state
-   [[ -n "$latest" ]] && git checkout --force -q '@{-1}'
+  [[ -n "$latest" ]] && git checkout --force -q '@{-1}'
   popd >/dev/null || return
 }
 

@@ -11,8 +11,6 @@ out="$CUR/schemas/provisioners"
 mkdir -p "$out"
 rm -f "$failures"
 
-UPDATE_PARALLEL=0
-
 update_all
 
 echo
@@ -44,9 +42,9 @@ function process_provisioner() {
 
   if output=$(git -C "$location" status --untracked-files=no --porcelain) && [[ -n "$output" ]]; then
     if [[ -z "${RESET_REPOS:-}" ]]; then
-      mkdir -p "$CUR/logs"
-      echo "git working copy '$location' is not clear, cannot proceed" | tee "$CUR/logs/$name.log"
-      echo "$name" >>"$CUR/provisioners-failure.txt"
+      mkdir -p "$logs"
+      echo "git working copy '$location' is not clear, cannot proceed" | tee "$logs/$name.log"
+      echo "$name" >>"$failures"
       return 2
     else
       git -C "$location" reset --hard
@@ -104,11 +102,11 @@ function process_provisioner() {
   mkdir generate-schema
   sed \
     -e "s~__REPOSITORY__~$repository~g" \
-    -e "s/__NAME__/${name}/g" \
+    -e "s~__NAME__~${name}~g" \
     -e "s~__PKG_NAME__~${pkg_name}~g" \
-    -e "s/__REVISION__/$revision/g" \
-    -e "s/__PROVISIONER_ARGS__/$provisioner_args/g" \
-    -e "s/__SDK__/$sdk/g" \
+    -e "s~__REVISION__~$revision~g" \
+    -e "s~__PROVISIONER_ARGS__~$provisioner_args~g" \
+    -e "s~__SDK__~$sdk~g" \
     -e "s~__OUT__~$out~g" \
     "$CUR/template/$base_file" \
     >generate-schema/generate-schema.go

@@ -1,60 +1,18 @@
 #!/usr/bin/env bash
 
-set -euo pipefail
-IFS=$'\n\t'
+config_file='providers.json'
 
-if [[ ! -f 'providers.json' ]]; then
-  echo "File 'providers.json' required to operate"
-  exit 1
-fi
-if [[ -z "$GOPATH" ]]; then
-  echo 'GOPATH env variable required to operate'
-  exit 1
-fi
+. common.sh
 
-CUR="$(pwd)"
+logs="$CUR/logs/providers"
+failures="$CUR/providers-failure.txt"
+out="$CUR/schemas/providers"
 
-out="$CUR/schemas"
 mkdir -p "$out"
-rm -f "$CUR/failure.txt"
+rm -f "$failures"
 
-mkdir -p "$GOPATH/src/github.com/terraform-providers"
+update_all
 
-function jq_get() {
-  name="$1"
-  prop="$2"
-  jq -r ".\"$name\".$prop // .__NAME__.$prop " <"$CUR/providers.json" | sed -e "s/__NAME__/$name/"
-}
-
-update_or_clone() {
-  name="$1"
-  if [[ "$name" == "__NAME__" ]]; then
-    return 0
-  fi
-  skip_generation="$(jq_get "$name" 'skip_generation')"
-  if [[ $skip_generation == "true" ]]; then
-    return 0
-  fi
-  repository="$(jq_get "$name" 'repository')"
-  location="$GOPATH/src/$repository"
-  if [[ -d "$location" ]]; then
-    echo "Updating $name"
-    git -C "$location" fetch --tags >/dev/null 2>&1 || echo "ERROR: Failed to update '$name'"
-  else
-    echo "Cloning $name"
-    git clone --quiet "https://$repository" "$location" >/dev/null 2>&1
-  fi
-}
-
-if [[ -z "${SKIP_UPDATE:-}" ]]; then
-  while IFS= read -r p; do
-    update_or_clone "$p" &
-  done < <(jq -r 'keys[]' <"$CUR/providers.json")
-fi
-
-pushd "$GOPATH/src/github.com/terraform-providers" >/dev/null
-
-sleep 1 # fix logs
 echo
 echo "========================================"
 echo "Waiting for update processes to finish"
@@ -62,21 +20,7 @@ wait
 echo "All providers updated"
 echo
 
-generate_one() {
-  mkdir -p "$2/logs"
-  set +e
-  GO111MODULE=off go run generate-schema/generate-schema.go 2>&1 | tee "$2/logs/$1.log"
-  ec=$?
-  if [[ $ec -eq 0 ]]; then
-    rm "$2/logs/$1.log"
-  else
-    echo "$1" >>"$2/failure.txt"
-  fi
-  echo "Finished $1"
-  set -e
-}
-
-process_provider() {
+function process_provider() {
   name="$1"
   if [[ "$name" == "__NAME__" ]]; then
     return 0
@@ -88,6 +32,7 @@ process_provider() {
   repository="$(jq_get "$name" 'repository')"
   pkg_name="$(jq_get "$name" 'pkg_name')"
   provider_args="$(jq_get "$name" 'provider_args')"
+  use_master="$(jq_get "$name" 'use_master')"
   location="$GOPATH/src/$repository"
 
   if [[ ! -d "$location" ]]; then
@@ -97,9 +42,9 @@ process_provider() {
 
   if output=$(git -C "$location" status --untracked-files=no --porcelain) && [[ -n "$output" ]]; then
     if [[ -z "${RESET_REPOS:-}" ]]; then
-      mkdir -p "$CUR/logs"
-      echo "git working copy '$location' is not clear, cannot proceed" | tee "$CUR/logs/$name.log"
-      echo "$name" >>"$CUR/failure.txt"
+      mkdir -p "$logs"
+      echo "git working copy '$location' is not clear, cannot proceed" | tee "$logs/$name.log"
+      echo "$name" >>"$failures"
       return 2
     else
       git -C "$location" reset --hard
@@ -107,18 +52,23 @@ process_provider() {
     fi
   fi
 
-  pushd "$location" >/dev/null
+  pushd "$location" >/dev/null || return
 
   echo "Preparing $name"
 
-  # All tags:
-  echo "Repository newest tags:"
-  git tag -l --sort=-v:refname | head
-  latest=$(git tag -l --sort=-v:refname | head -n 1)
-  if [[ -z "$latest" ]]; then
-    echo "There's no tags in $name, will use current state"
+  if [[ "$use_master" == "true" ]]; then
+    echo "Using master"
+    latest="master"
   else
-    echo "Will generate schema for tag '$latest'"
+    # All tags:
+    echo "Repository newest tags:"
+    git tag -l --sort=-v:refname | head -n 5
+    latest=$(git tag -l --sort=-v:refname | head -n 1)
+    if [[ -z "$latest" ]]; then
+      echo "There's no tags in $name, will use current state"
+    else
+      echo "Will generate schema for tag '$latest'"
+    fi
   fi
 
   [[ -n "$latest" ]] && git checkout -q "$latest"
@@ -171,17 +121,17 @@ EOF
   mkdir generate-schema
   sed \
     -e "s~__REPOSITORY__~$repository~g" \
-    -e "s/__NAME__/${name}/g" \
+    -e "s~__NAME__~${name}~g" \
     -e "s~__PKG_NAME__~${pkg_name}~g" \
-    -e "s/__REVISION__/$revision/g" \
-    -e "s/__PROVIDER_ARGS__/$provider_args/g" \
-    -e "s/__SDK__/$sdk/g" \
+    -e "s~__REVISION__~$revision~g" \
+    -e "s~__PROVIDER_ARGS__~$provider_args~g" \
+    -e "s~__SDK__~$sdk~g" \
     -e "s~__OUT__~$out~g" \
     "$CUR/template/$base_file" \
     >generate-schema/generate-schema.go
 
   echo "Generating schema for $name"
-  if [[ "${KILL_CPU:-}" == "1" ]]; then
+  if [[ "${GENERATE_PARALLEL:-}" == "1" ]]; then
     (
       generate_one "$name" "$CUR"
     ) &
@@ -191,12 +141,12 @@ EOF
 
   # Revert to previous state
   [[ -n "$latest" ]] && git checkout --force -q '@{-1}'
-  popd >/dev/null
+  popd >/dev/null || return
 }
 
 while IFS= read -r p; do
   process_provider "$p" || true
-done < <(jq -r 'keys[]' <"$CUR/providers.json")
+done < <(jq -r 'keys[]' <"$CUR/$config_file")
 
 echo
 echo "========================================"
@@ -207,5 +157,3 @@ echo
 echo "========================================"
 echo "Everything done!"
 echo
-
-popd >/dev/null
