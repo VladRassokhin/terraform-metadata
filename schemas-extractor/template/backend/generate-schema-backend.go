@@ -1,6 +1,8 @@
 package main
 
+//noinspection GoUnresolvedReference
 import (
+	"github.com/hashicorp/hcl/v2/ext/customdecode"
 	"github.com/hashicorp/terraform/backend"
 	binit "github.com/hashicorp/terraform/backend/init"
 	"github.com/hashicorp/terraform/configs/configschema"
@@ -220,7 +222,7 @@ func exportAttribute(v *configschema.Attribute) SchemaDefinition {
 	item := SchemaDefinition{}
 
 	//noinspection GoTypesCompatibility
-	item.Type, item.Elem = exportType(v.Type)
+	item.Type = exportType(v.Type)
 	item.Optional = v.Optional
 	item.Required = v.Required
 	item.Description = v.Description
@@ -230,15 +232,37 @@ func exportAttribute(v *configschema.Attribute) SchemaDefinition {
 	return item
 }
 
-func exportType(t cty.Type) (string, *SchemaElement) {
+func exportType(t cty.Type) string {
 	if t.IsPrimitiveType() {
-		return shortenType(t.GoString()), nil
+		return shortenType(t.GoString())
 	}
 	if t.IsListType() {
-		elementType := t.ListElementType()
-		if elementType != nil && elementType.IsPrimitiveType() {
-			return "List", &SchemaElement{Type: "SchemaElements", ElementsType: shortenType(elementType.GoString())}
+		et := t.ListElementType()
+		if et != nil {
+			return "List(" + exportType(*et) + ")"
 		}
+	}
+	if t.IsSetType() {
+		et := t.SetElementType()
+		if et != nil {
+			return "Set(" + exportType(*et) + ")"
+		}
+	}
+	if t.IsMapType() {
+		et := t.MapElementType()
+		if et != nil {
+			return "Map(" + exportType(*et) + ")"
+		}
+	}
+	if t == cty.DynamicPseudoType {
+		return "Any"
+	}
+	//noinspection GoUnresolvedReference
+	if t == customdecode.ExpressionClosureType {
+		return "Expression"
+	}
+	if t == cty.NilType {
+		return "NilType"
 	}
 	// TODO: Implement other cases
 
