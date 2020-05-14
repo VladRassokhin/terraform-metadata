@@ -20,37 +20,52 @@ function jq_get() {
   jq -r ".\"$name\".$prop // .__NAME__.$prop // \"\" " <"$CUR/$config_file" | sed -e "s/__NAME__/$name/"
 }
 
+function trim() {
+    local var="$*"
+    # remove leading whitespace characters
+    var="${var#"${var%%[![:space:]]*}"}"
+    # remove trailing whitespace characters
+    var="${var%"${var##*[![:space:]]}"}"
+    printf '%s' "$var"
+}
+
 function update_or_clone() {
-  name="$1"
-  if [[ "$name" == "__NAME__" ]]; then
-    return 0
-  fi
-  skip_generation="$(jq_get "$name" 'skip_generation')"
-  if [[ $skip_generation == "true" ]]; then
-    return 0
-  fi
-  repository="$(jq_get "$name" 'repository')"
+  repository="$1"
   location="$GOPATH/src/$repository"
   if [[ -d "$location" ]]; then
-    echo "Updating $name"
-    git -C "$location" fetch --tags >/dev/null 2>&1 || echo "ERROR: Failed to update '$name'"
+    echo "Updating $repository"
+    git -C "$location" fetch --tags >/dev/null 2>&1 || echo "ERROR: Failed to update '$repository'"
   else
-    echo "Cloning $name"
+    echo "Cloning $repository"
     git clone --quiet "https://$repository" "$location" >/dev/null 2>&1
   fi
 }
 
 function update_all() {
   if [[ -z "${UPDATE_SKIP:-}" ]]; then
+    repositories=()
     while IFS= read -r p; do
+      if [[ "$p" == "__NAME__" ]]; then
+        continue
+      fi
+      skip_generation="$(jq_get "$p" 'skip_generation')"
+      if [[ $skip_generation == "true" ]]; then
+        continue
+      fi
+      repository="$(jq_get "$p" 'repository')"
+      repositories+=("$repository")
+    done < <(jq -r 'keys[]' <"$CUR/$config_file")
+
+    for repo in $(printf "%s\n" "${repositories[@]}" | sort -u | tr '\n' ' '); do
+      repo=$(trim "$repo")
       if [[ "${UPDATE_PARALLEL:-}" == "1" ]]; then
         (
-          update_or_clone "$p"
+          update_or_clone "$repo"
         ) &
       else
-        update_or_clone "$p"
+        update_or_clone "$repo"
       fi
-    done < <(jq -r 'keys[]' <"$CUR/$config_file")
+    done
   fi
 }
 
