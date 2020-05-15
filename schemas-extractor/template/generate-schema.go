@@ -1,9 +1,9 @@
 package main
 
 import (
+	prvdr "__REPOSITORY__/__PKG_NAME__"
 	"github.com/hashicorp/__SDK__/helper/schema"
 	tf "github.com/hashicorp/__SDK__/terraform"
-	prvdr "__REPOSITORY__/__PKG_NAME__"
 
 	"encoding/json"
 	"fmt"
@@ -100,7 +100,7 @@ func export(v *schema.Schema) SchemaDefinition {
 	item.IsBlock = false
 
 	if defValue := v.Default; defValue != nil {
-		item.Default = exportValue(defValue, fmt.Sprintf("%T", defValue))
+		item.Default = exportDefaultValue(defValue)
 	}
 	if defFunc := v.DefaultFunc; defFunc != nil {
 		if reflect.ValueOf(defFunc).Pointer() == reflect.ValueOf(envDefaultFunc).Pointer() {
@@ -183,8 +183,20 @@ func exportValue(value interface{}, t string) *SchemaElement {
 	if ok {
 		return &SchemaElement{Value: shortenType(fmt.Sprintf("%v", vt))}
 	}
-	// Unknown case
-	return &SchemaElement{Type: t, Value: fmt.Sprintf("%v", value)}
+	panic(fmt.Errorf("unexpected case: %T; %s; %#v;", value, t, value))
+}
+
+func exportDefaultValue(value interface{}) *SchemaElement {
+	if _, ok := value.(*schema.Schema); ok {
+		panic("unexpected default value type: SchemaElements")
+	}
+	if _, ok := value.(*schema.Resource); ok {
+		panic("unexpected default value type: SchemaInfo")
+	}
+	if _, ok := value.(schema.ValueType); ok {
+		panic("unexpected default value type: ValueType")
+	}
+	return &SchemaElement{Type: fmt.Sprintf("%T", value), Value: fmt.Sprintf("%v", value)}
 }
 
 func Generate(provider *schema.Provider, name string, outputPath string) {
