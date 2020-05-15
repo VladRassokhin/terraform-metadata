@@ -2,7 +2,7 @@
   ".schema_version": "1",
   "name": "azurerm",
   "type": "provider",
-  "version": "v2.9.0",
+  "version": "v2.10.0",
   "provider": {
     "auxiliary_tenant_ids": {
       "Type": "List",
@@ -334,6 +334,50 @@
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
+            "developer_portal": {
+              "Type": "List",
+              "Optional": true,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "certificate": {
+                    "Type": "String",
+                    "Optional": true,
+                    "ConflictsWith": [
+                      "hostname_configuration.0.developer_portal.0.key_vault_id"
+                    ]
+                  },
+                  "certificate_password": {
+                    "Type": "String",
+                    "Optional": true,
+                    "ConflictsWith": [
+                      "hostname_configuration.0.developer_portal.0.key_vault_id"
+                    ]
+                  },
+                  "host_name": {
+                    "Type": "String",
+                    "Required": true
+                  },
+                  "key_vault_id": {
+                    "Type": "String",
+                    "Optional": true,
+                    "ConflictsWith": [
+                      "hostname_configuration.0.developer_portal.0.certificate",
+                      "hostname_configuration.0.developer_portal.0.certificate_password"
+                    ]
+                  },
+                  "negotiate_client_certificate": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "bool",
+                      "Value": "false"
+                    }
+                  }
+                }
+              }
+            },
             "management": {
               "Type": "List",
               "Optional": true,
@@ -526,6 +570,15 @@
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
+            "identity_ids": {
+              "Type": "Set",
+              "Optional": true,
+              "MinItems": 1,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
             "principal_id": {
               "Type": "String",
               "Computed": true
@@ -536,7 +589,11 @@
             },
             "type": {
               "Type": "String",
-              "Required": true
+              "Optional": true,
+              "Default": {
+                "Type": "string",
+                "Value": "None"
+              }
             }
           }
         }
@@ -1794,6 +1851,10 @@
         "update",
         "delete"
       ],
+      "api_management_logger_id": {
+        "Type": "String",
+        "Required": true
+      },
       "api_management_name": {
         "Type": "String",
         "Required": true
@@ -3620,6 +3681,7 @@
       },
       "resource_group_name": {
         "Type": "String",
+        "Optional": true,
         "Computed": true
       },
       "subnet_id": {
@@ -4603,6 +4665,10 @@
         "Type": "Bool",
         "Optional": true
       },
+      "firewall_policy_id": {
+        "Type": "String",
+        "Optional": true
+      },
       "frontend_ip_configuration": {
         "Type": "List",
         "Required": true,
@@ -5515,7 +5581,11 @@
       },
       "retention_in_days": {
         "Type": "Int",
-        "Optional": true
+        "Optional": true,
+        "Default": {
+          "Type": "int",
+          "Value": "90"
+        }
       },
       "sampling_percentage": {
         "Type": "Float",
@@ -12776,6 +12846,25 @@
         }
       }
     },
+    "azurerm_eventgrid_domain_topic": {
+      "__timeouts__": [
+        "create",
+        "read",
+        "delete"
+      ],
+      "domain_name": {
+        "Type": "String",
+        "Required": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true
+      },
+      "resource_group_name": {
+        "Type": "String",
+        "Required": true
+      }
+    },
     "azurerm_eventgrid_event_subscription": {
       "__timeouts__": [
         "create",
@@ -12796,9 +12885,9 @@
         "Optional": true,
         "MaxItems": 1,
         "ConflictsWith": [
+          "webhook_endpoint",
           "storage_queue_endpoint",
-          "hybrid_connection_endpoint",
-          "webhook_endpoint"
+          "hybrid_connection_endpoint"
         ],
         "IsBlock": true,
         "Elem": {
@@ -12816,9 +12905,9 @@
         "Optional": true,
         "MaxItems": 1,
         "ConflictsWith": [
+          "webhook_endpoint",
           "storage_queue_endpoint",
-          "eventhub_endpoint",
-          "webhook_endpoint"
+          "eventhub_endpoint"
         ],
         "IsBlock": true,
         "Elem": {
@@ -12900,9 +12989,9 @@
         "Optional": true,
         "MaxItems": 1,
         "ConflictsWith": [
+          "webhook_endpoint",
           "eventhub_endpoint",
-          "hybrid_connection_endpoint",
-          "webhook_endpoint"
+          "hybrid_connection_endpoint"
         ],
         "IsBlock": true,
         "Elem": {
@@ -14284,6 +14373,10 @@
             }
           }
         }
+      },
+      "header_frontdoor_id": {
+        "Type": "String",
+        "Computed": true
       },
       "load_balancer_enabled": {
         "Type": "Bool",
@@ -21432,6 +21525,10 @@
               "Type": "String",
               "Computed": true
             },
+            "tenant_id": {
+              "Type": "String",
+              "Computed": true
+            },
             "type": {
               "Type": "String",
               "Required": true
@@ -23479,15 +23576,52 @@
       ],
       "administrator_login": {
         "Type": "String",
-        "Required": true
+        "Optional": true,
+        "Computed": true
       },
       "administrator_login_password": {
         "Type": "String",
-        "Required": true
+        "Optional": true
+      },
+      "auto_grow_enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Computed": true,
+        "ConflictsWith": [
+          "storage_profile.0.auto_grow"
+        ]
+      },
+      "backup_retention_days": {
+        "Type": "Int",
+        "Optional": true,
+        "Computed": true,
+        "ConflictsWith": [
+          "storage_profile.0.backup_retention_days"
+        ]
+      },
+      "create_mode": {
+        "Type": "String",
+        "Optional": true,
+        "Default": {
+          "Type": "string",
+          "Value": "Default"
+        }
+      },
+      "creation_source_server_id": {
+        "Type": "String",
+        "Optional": true
       },
       "fqdn": {
         "Type": "String",
         "Computed": true
+      },
+      "geo_redundant_backup_enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Computed": true,
+        "ConflictsWith": [
+          "storage_profile.0.geo_redundant_backup"
+        ]
       },
       "location": {
         "Type": "String",
@@ -23497,9 +23631,21 @@
         "Type": "String",
         "Required": true
       },
+      "public_network_access_enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
       "resource_group_name": {
         "Type": "String",
         "Required": true
+      },
+      "restore_point_in_time": {
+        "Type": "String",
+        "Optional": true
       },
       "sku_name": {
         "Type": "String",
@@ -23507,12 +23653,26 @@
       },
       "ssl_enforcement": {
         "Type": "String",
-        "Required": true
+        "Optional": true,
+        "Computed": true,
+        "Deprecated": "this has been moved to the boolean attribute `ssl_enforcement_enabled` and will be removed in version 3.0 of the provider."
+      },
+      "ssl_enforcement_enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Computed": true
+      },
+      "storage_mb": {
+        "Type": "Int",
+        "Optional": true,
+        "Computed": true
       },
       "storage_profile": {
         "Type": "List",
-        "Required": true,
+        "Optional": true,
+        "Computed": true,
         "MaxItems": 1,
+        "Deprecated": "all storage_profile properties have been moved to the top level. This block will be removed in version 3.0 of the provider.",
         "IsBlock": true,
         "Elem": {
           "Type": "SchemaInfo",
@@ -23520,22 +23680,37 @@
             "auto_grow": {
               "Type": "String",
               "Optional": true,
-              "Default": {
-                "Type": "string",
-                "Value": "Enabled"
-              }
+              "Computed": true,
+              "ConflictsWith": [
+                "auto_grow_enabled"
+              ],
+              "Deprecated": "this has been moved to the top level boolean attribute `auto_grow_enabled` and will be removed in version 3.0 of the provider."
             },
             "backup_retention_days": {
               "Type": "Int",
-              "Optional": true
+              "Optional": true,
+              "Computed": true,
+              "ConflictsWith": [
+                "backup_retention_days"
+              ],
+              "Deprecated": "this has been moved to the top level and will be removed in version 3.0 of the provider."
             },
             "geo_redundant_backup": {
               "Type": "String",
-              "Optional": true
+              "Optional": true,
+              "Computed": true,
+              "ConflictsWith": [
+                "geo_redundant_backup_enabled"
+              ],
+              "Deprecated": "this has been moved to the top level boolean attribute `geo_redundant_backup_enabled` and will be removed in version 3.0 of the provider."
             },
             "storage_mb": {
               "Type": "Int",
-              "Required": true
+              "Optional": true,
+              "ConflictsWith": [
+                "storage_mb"
+              ],
+              "Deprecated": "this has been moved to the top level and will be removed in version 3.0 of the provider."
             }
           }
         }
@@ -25296,6 +25471,31 @@
         "Type": "String",
         "Required": true
       },
+      "azuread_administrator": {
+        "Type": "List",
+        "Optional": true,
+        "MaxItems": 1,
+        "MinItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "login_username": {
+              "Type": "String",
+              "Required": true
+            },
+            "object_id": {
+              "Type": "String",
+              "Required": true
+            },
+            "tenant_id": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            }
+          }
+        }
+      },
       "connection_policy": {
         "Type": "String",
         "Optional": true,
@@ -25702,15 +25902,56 @@
       ],
       "administrator_login": {
         "Type": "String",
-        "Required": true
+        "Optional": true,
+        "Computed": true
       },
       "administrator_login_password": {
         "Type": "String",
-        "Required": true
+        "Optional": true
+      },
+      "auto_grow_enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Computed": true,
+        "ConflictsWith": [
+          "storage_profile.0.auto_grow"
+        ]
+      },
+      "backup_retention_days": {
+        "Type": "Int",
+        "Optional": true,
+        "Computed": true,
+        "ConflictsWith": [
+          "storage_profile.0.backup_retention_days"
+        ]
+      },
+      "create_mode": {
+        "Type": "String",
+        "Optional": true,
+        "Default": {
+          "Type": "string",
+          "Value": "Default"
+        }
+      },
+      "creation_source_server_id": {
+        "Type": "String",
+        "Optional": true
       },
       "fqdn": {
         "Type": "String",
         "Computed": true
+      },
+      "geo_redundant_backup_enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Computed": true,
+        "ConflictsWith": [
+          "storage_profile.0.geo_redundant_backup"
+        ]
+      },
+      "infrastructure_encryption_enabled": {
+        "Type": "Bool",
+        "Optional": true
       },
       "location": {
         "Type": "String",
@@ -25732,18 +25973,44 @@
         "Type": "String",
         "Required": true
       },
+      "restore_point_in_time": {
+        "Type": "String",
+        "Optional": true
+      },
       "sku_name": {
         "Type": "String",
         "Required": true
       },
       "ssl_enforcement": {
         "Type": "String",
-        "Required": true
+        "Optional": true,
+        "Computed": true,
+        "Deprecated": "this has been moved to the boolean attribute `ssl_enforcement_enabled` and will be removed in version 3.0 of the provider."
+      },
+      "ssl_enforcement_enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Computed": true
+      },
+      "ssl_minimal_tls_version_enforced": {
+        "Type": "String",
+        "Optional": true,
+        "Default": {
+          "Type": "string",
+          "Value": "TLSEnforcementDisabled"
+        }
+      },
+      "storage_mb": {
+        "Type": "Int",
+        "Optional": true,
+        "Computed": true
       },
       "storage_profile": {
         "Type": "List",
-        "Required": true,
+        "Optional": true,
+        "Computed": true,
         "MaxItems": 1,
+        "Deprecated": "all storage_profile properties have been moved to the top level. This block will be removed in version 3.0 of the provider.",
         "IsBlock": true,
         "Elem": {
           "Type": "SchemaInfo",
@@ -25751,22 +26018,37 @@
             "auto_grow": {
               "Type": "String",
               "Optional": true,
-              "Default": {
-                "Type": "string",
-                "Value": "Enabled"
-              }
+              "Computed": true,
+              "ConflictsWith": [
+                "auto_grow_enabled"
+              ],
+              "Deprecated": "this has been moved to the top level boolean attribute `auto_grow_enabled` and will be removed in version 3.0 of the provider."
             },
             "backup_retention_days": {
               "Type": "Int",
-              "Optional": true
+              "Optional": true,
+              "Computed": true,
+              "ConflictsWith": [
+                "backup_retention_days"
+              ],
+              "Deprecated": "this has been moved to the top level and will be removed in version 3.0 of the provider."
             },
             "geo_redundant_backup": {
               "Type": "String",
-              "Optional": true
+              "Optional": true,
+              "Computed": true,
+              "ConflictsWith": [
+                "geo_redundant_backup_enabled"
+              ],
+              "Deprecated": "this has been moved to the top level boolean attribute `geo_redundant_backup_enabled` and will be removed in version 3.0 of the provider."
             },
             "storage_mb": {
               "Type": "Int",
-              "Required": true
+              "Optional": true,
+              "ConflictsWith": [
+                "storage_mb"
+              ],
+              "Deprecated": "this has been moved to the top level and will be removed in version 3.0 of the provider."
             }
           }
         }
@@ -27864,6 +28146,53 @@
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
+        }
+      },
+      "threat_detection_policy": {
+        "Type": "List",
+        "Optional": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "disabled_alerts": {
+              "Type": "Set",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "email_account_admins": {
+              "Type": "Bool",
+              "Optional": true
+            },
+            "email_addresses": {
+              "Type": "Set",
+              "Optional": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "enabled": {
+              "Type": "Bool",
+              "Optional": true
+            },
+            "retention_days": {
+              "Type": "Int",
+              "Optional": true
+            },
+            "storage_account_access_key": {
+              "Type": "String",
+              "Optional": true
+            },
+            "storage_endpoint": {
+              "Type": "String",
+              "Optional": true
+            }
+          }
         }
       },
       "version": {
@@ -36824,6 +37153,10 @@
               "Type": "String",
               "Computed": true
             },
+            "tenant_id": {
+              "Type": "String",
+              "Computed": true
+            },
             "type": {
               "Type": "String",
               "Required": true
@@ -37850,6 +38183,27 @@
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
+            "developer_portal": {
+              "Type": "List",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "host_name": {
+                    "Type": "String",
+                    "Computed": true
+                  },
+                  "key_vault_id": {
+                    "Type": "String",
+                    "Computed": true
+                  },
+                  "negotiate_client_certificate": {
+                    "Type": "Bool",
+                    "Computed": true
+                  }
+                }
+              }
+            },
             "management": {
               "Type": "List",
               "Computed": true,
@@ -37937,6 +38291,35 @@
                   }
                 }
               }
+            }
+          }
+        }
+      },
+      "identity": {
+        "Type": "List",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "identity_ids": {
+              "Type": "List",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "principal_id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "tenant_id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "type": {
+              "Type": "String",
+              "Computed": true
             }
           }
         }
@@ -40403,6 +40786,35 @@
         }
       }
     },
+    "azurerm_eventhub": {
+      "__timeouts__": [
+        "read"
+      ],
+      "name": {
+        "Type": "String",
+        "Required": true
+      },
+      "namespace_name": {
+        "Type": "String",
+        "Required": true
+      },
+      "partition_count": {
+        "Type": "Int",
+        "Computed": true
+      },
+      "partition_ids": {
+        "Type": "List",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "resource_group_name": {
+        "Type": "String",
+        "Required": true
+      }
+    },
     "azurerm_eventhub_authorization_rule": {
       "__timeouts__": [
         "read"
@@ -42480,10 +42892,6 @@
         "read"
       ],
       "administrator_login": {
-        "Type": "String",
-        "Computed": true
-      },
-      "administrator_login_password": {
         "Type": "String",
         "Computed": true
       },
@@ -46496,6 +46904,39 @@
       "__timeouts__": [
         "read"
       ],
+      "identity": {
+        "Type": "List",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "identity_ids": {
+              "Type": "List",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "principal_id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "tenant_id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "type": {
+              "Type": "String",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "location": {
+        "Type": "String",
+        "Computed": true
+      },
       "name": {
         "Type": "String",
         "Required": true
