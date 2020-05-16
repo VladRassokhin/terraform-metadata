@@ -109,22 +109,24 @@ func export(v *schema.Schema) SchemaDefinition {
 		item.IsBlock = true
 		return item
 	default: // SchemaConfigModeAuto, or any other invalid value
-		if v.Computed && !v.Optional {
-			// Computed-only schemas are always handled as attributes,
-			// because they never appear in configuration.
-			item.ConfigImplicitMode = "ComputedAttr"
-			return item
-		}
 		switch v.Elem.(type) {
 		case *schema.Schema, schema.ValueType:
 			item.ConfigImplicitMode = "Attr"
 			item.IsBlock = false
 		case *schema.Resource:
-			item.ConfigImplicitMode = "Block"
-			item.IsBlock = true
+			if v.Computed && !v.Optional {
+				// Computed-only schemas are always handled as attributes,
+				// because they never appear in configuration.
+				item.ConfigImplicitMode = "ComputedBlock"
+				item.IsBlock = true
+				return item
+			} else {
+				item.ConfigImplicitMode = "Block"
+				item.IsBlock = true
+			}
 		default:
 			// Should never happen for a valid schema
-			panic(fmt.Errorf("invalid Schema.Elem %#v; need *Schema or *Resource", v.Elem))
+			panic(fmt.Errorf("invalid Schema.Elem %#v; need *Schema, ValueType or *Resource", v.Elem))
 		}
 	}
 
