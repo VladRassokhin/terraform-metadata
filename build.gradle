@@ -8,17 +8,22 @@ apply plugin: 'maven-publish'
 group = 'org.intellij.plugins.hcl.terraform'
 
 def versionPrefix = '0.2'
+boolean isSnapshot = true
 if (System.getProperty('build.number') != null) {
     version = "${versionPrefix}.${System.getProperty('build.number')}"
+    isSnapshot = false
 } else {
     version = "${versionPrefix}.SNAPSHOT"
+    isSnapshot = true
 }
 
 processResources {
     doLast {
-        print "${outputs.files.asPath}"
-        fileTree(dir: outputs.files.asPath, include: '**/*.json').each {
-            file -> file.text = groovy.json.JsonOutput.toJson(new groovy.json.JsonSlurper().parse(file))
+        if (!isSnapshot) {
+            print "${outputs.files.asPath}"
+            fileTree(dir: outputs.files.asPath, include: '**/*.json').each {
+                file -> file.text = groovy.json.JsonOutput.toJson(new groovy.json.JsonSlurper().parse(file))
+            }
         }
     }
 }
