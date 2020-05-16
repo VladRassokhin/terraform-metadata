@@ -101,7 +101,7 @@ function process_provider() {
     sdk="terraform-plugin-sdk-v1"
   fi
   # TODO: Detect and use terraform-plugin-sdk-v2 when needed
-  base_file="$sdk/generate-schema.go"
+  base_file="provider/$sdk/generate-schema.go"
   echo "Using sdk: $sdk"
   echo "Using base file: $base_file"
 
