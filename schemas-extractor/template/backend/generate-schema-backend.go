@@ -171,7 +171,7 @@ func export(v *schema.Schema) SchemaDefinition {
 		if v.Computed && !v.Optional {
 			// Computed-only schemas are always handled as attributes,
 			// because they never appear in configuration.
-			item.ConfigImplicitMode = "Attr"
+			item.ConfigImplicitMode = "ComputedAttr"
 			return item
 		}
 		switch v.Elem.(type) {
@@ -287,15 +287,15 @@ func exportNestedBlock(v *configschema.NestedBlock) SchemaDefinition {
 	item.MaxItems = v.MaxItems
 	switch v.Nesting {
 	case configschema.NestingSingle:
-		item.Type = "Single"
+		item.Type = "NestingSingle"
 	case configschema.NestingGroup:
-		item.Type = "Group"
+		item.Type = "NestingGroup"
 	case configschema.NestingList:
-		item.Type = "List"
+		item.Type = "NestingList"
 	case configschema.NestingSet:
-		item.Type = "Set"
+		item.Type = "NestingSet"
 	case configschema.NestingMap:
-		item.Type = "Map"
+		item.Type = "NestingMap"
 	}
 
 	item.Elem = &SchemaElement{Type: "SchemaInfo", Info: exportBlock(&v.Block)}

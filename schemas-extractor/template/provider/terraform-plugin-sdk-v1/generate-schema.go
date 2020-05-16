@@ -145,7 +145,7 @@ func export(v *schema.Schema) SchemaDefinition {
 		if v.Computed && !v.Optional {
 			// Computed-only schemas are always handled as attributes,
 			// because they never appear in configuration.
-			item.ConfigImplicitMode = "Attr"
+			item.ConfigImplicitMode = "ComputedAttr"
 			return item
 		}
 		switch v.Elem.(type) {

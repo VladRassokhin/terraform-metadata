@@ -80,12 +80,12 @@ func getInterpolationFunctions() map[string]FunctionInfo {
 		}
 
 		info := FunctionInfo{
-			Paremeters:        &args,
+			Parameters:        &args,
 			ReturnType:        exportType(returnType),
 			VariadicParameter: varParameter,
 		}
-		if len(*info.Paremeters) == 0 {
-			info.Paremeters = nil
+		if len(*info.Parameters) == 0 {
+			info.Parameters = nil
 		}
 		result[name] = info
 	}
@@ -233,7 +233,7 @@ type SchemaDefinition struct {
 type SchemaInfo map[string]SchemaDefinition
 
 type FunctionInfo struct {
-	Paremeters        *[]ParameterInfo `json:",omitempty"`
+	Parameters        *[]ParameterInfo `json:",omitempty"`
 	ArgTypes          *[]string        `json:",omitempty"`
 	ReturnType        string
 	VariadicType      string         `json:",omitempty"`
