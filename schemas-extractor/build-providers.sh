@@ -94,15 +94,14 @@ function process_provider() {
   fi
 
   sdk="terraform"
-  base_file="generate-schema-0-11.go"
   if [ -f "go.mod" ] && grep -q 'github.com/hashicorp/terraform-plugin-sdk' "go.mod"; then
-    sdk="terraform-plugin-sdk"
-    base_file="generate-schema.go"
+    sdk="terraform-plugin-sdk-v1"
   fi
   if grep -q 'github.com/hashicorp/terraform-plugin-sdk' -r "$pkg_name"; then
-    sdk="terraform-plugin-sdk"
-    base_file="generate-schema.go"
+    sdk="terraform-plugin-sdk-v1"
   fi
+  # TODO: Detect and use terraform-plugin-sdk-v2 when needed
+  base_file="$sdk/generate-schema.go"
   echo "Using sdk: $sdk"
   echo "Using base file: $base_file"
 

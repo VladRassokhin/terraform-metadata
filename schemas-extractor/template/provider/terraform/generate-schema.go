@@ -1,9 +1,10 @@
 package main
 
+//noinspection GoUnresolvedReference
 import (
-	"github.com/hashicorp/__SDK__/helper/schema"
-	tf "github.com/hashicorp/__SDK__/terraform"
 	prvdr "__REPOSITORY__/__PKG_NAME__"
+	"github.com/hashicorp/terraform/helper/schema"
+	tf "github.com/hashicorp/terraform/terraform"
 
 	"encoding/json"
 	"fmt"
@@ -20,7 +21,7 @@ import (
 func Export(p *schema.Provider) *ResourceProviderSchema {
 	result := new(ResourceProviderSchema)
 	result.SchemaVersion = "2"
-	result.SDKType = "__SDK__"
+	result.SDKType = "terraform"
 
 	result.Name = "__NAME__"
 	result.Type = "provider"
@@ -269,6 +270,7 @@ type ResourceProviderSchema struct {
 
 func main() {
 	var provider tf.ResourceProvider
+	//noinspection GoUnresolvedReference
 	provider = prvdr.Provider(__PROVIDER_ARGS__)
 	Generate(provider.(*schema.Provider), "__NAME__", "__OUT__")
 }
@@ -302,10 +304,12 @@ func getMultiEnvDefaultFuncArgs(df schema.SchemaDefaultFunc) []string {
 }
 
 func getPointerFromLocation(location uintptr) uintptr {
+	//noinspection GoVetUnsafePointer
 	return *(*uintptr)(unsafe.Pointer(location))
 }
 
 func getString(addr uintptr) string {
+	//noinspection GoVetUnsafePointer
 	SH := (*reflect.StringHeader)(unsafe.Pointer(addr))
 
 	var res string
@@ -317,6 +321,7 @@ func getString(addr uintptr) string {
 }
 
 func getSlice(addr uintptr) []string {
+	//noinspection GoVetUnsafePointer
 	SH := (*reflect.SliceHeader)(unsafe.Pointer(addr))
 
 	var res = make([]string, 3)
