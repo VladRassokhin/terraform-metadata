@@ -2,7 +2,7 @@
   ".schema_version": "1",
   "name": "tencentcloud",
   "type": "provider",
-  "version": "v1.32.1",
+  "version": "v1.33.0",
   "provider": {
     "region": {
       "Type": "String",
@@ -1068,15 +1068,46 @@
         "Required": true,
         "Description": "The available zone that the CBS instance locates at."
       },
+      "charge_type": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The charge type of CBS instance. Valid values are `PREPAID` and `POSTPAID_BY_HOUR`, The default is `POSTPAID_BY_HOUR`.",
+        "Default": {
+          "Type": "string",
+          "Value": "POSTPAID_BY_HOUR"
+        }
+      },
       "encrypt": {
         "Type": "Bool",
         "Optional": true,
         "Description": "Indicates whether CBS is encrypted."
       },
+      "force_delete": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Indicate whether to delete CBS instance directly or not. Default is false. If set true, the instance will be deleted instead of staying recycle bin.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
       "period": {
         "Type": "Int",
         "Optional": true,
-        "Description": "The purchased usage period of CBS, and value range [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 24, 36]."
+        "Description": "The purchased usage period of CBS, and value range [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 24, 36].",
+        "Deprecated": "It has been deprecated from version 1.33.0. Set `prepaid_period` instead."
+      },
+      "prepaid_period": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The tenancy (time unit is month) of the prepaid instance, NOTE: it only works when charge_type is set to `PREPAID`. Valid values are 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 24, 36.",
+        "Computed": true
+      },
+      "prepaid_renew_flag": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "When enabled, the CBS instance will be renew automatically when it reach the end of the prepaid tenancy. Valid values are `NOTIFY_AND_AUTO_RENEW`, `NOTIFY_AND_MANUAL_RENEW` and `DISABLE_NOTIFY_AND_MANUAL_RENEW`. NOTE: it only works when charge_type is set to `PREPAID`.",
+        "Computed": true
       },
       "project_id": {
         "Type": "Int",
@@ -1252,6 +1283,15 @@
         "Type": "String",
         "Required": true,
         "Description": "Name of the acceleration domain."
+      },
+      "full_url_cache": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether to enable full-path cache. Default value is `true`.",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
       },
       "https_config": {
         "Type": "List",
@@ -6302,6 +6342,386 @@
         "Computed": true
       }
     },
+    "tencentcloud_monitor_binding_object": {
+      "dimensions": {
+        "Type": "Set",
+        "Required": true,
+        "Description": "A list objects. Each element contains the following attributes:",
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "dimensions_json": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Represents a collection of dimensions of an object instance, json format.eg:'{\"unInstanceId\":\"ins-ot3cq4bi\"}'."
+            },
+            "unique_id": {
+              "Type": "String",
+              "Description": "Object unique id.",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "group_id": {
+        "Type": "Int",
+        "Required": true,
+        "Description": "Policy group id for binding objects."
+      }
+    },
+    "tencentcloud_monitor_binding_receiver": {
+      "group_id": {
+        "Type": "Int",
+        "Required": true,
+        "Description": "Policy group id for binding receivers."
+      },
+      "receivers": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "A list of receivers(will overwrite the configuration of the server or other resources). Each element contains the following attributes:",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "end_time": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "End of alarm period. Meaning with `start_time`.",
+              "Default": {
+                "Type": "int",
+                "Value": "86400"
+              }
+            },
+            "notify_way": {
+              "Type": "List",
+              "Required": true,
+              "Description": "Method of warning notification.Optional `CALL`,`EMAIL`,`SITE`,`SMS`,`WECHAT`.",
+              "MinItems": 1,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "receive_language": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Alert sending language. Optional `en-US`,`zh-CN`.",
+              "Default": {
+                "Type": "string",
+                "Value": "zh-CN"
+              }
+            },
+            "receiver_group_list": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Alarm receive group id list.",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "Int"
+              }
+            },
+            "receiver_type": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Receive type. Optional `group`,`user`."
+            },
+            "receiver_user_list": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Alarm receiver id list.",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "Int"
+              }
+            },
+            "start_time": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "Alarm period start time.Range [0,86399], which removes the date after it is converted to Beijing time as a Unix timestamp, for example 7200 means '10:0:0'.",
+              "Default": {
+                "Type": "int",
+                "Value": "0"
+              }
+            }
+          }
+        }
+      }
+    },
+    "tencentcloud_monitor_policy_group": {
+      "binding_objects": {
+        "Type": "List",
+        "Description": "A list binding objects(list only those in the `provider.region`). Each element contains the following attributes:",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "dimensions_json": {
+              "Type": "String",
+              "Description": "Represents a collection of dimensions of an object instance, json format.",
+              "Computed": true
+            },
+            "is_shielded": {
+              "Type": "Int",
+              "Description": "Whether the object is shielded or not, 0 means unshielded and 1 means shielded.",
+              "Computed": true
+            },
+            "region": {
+              "Type": "String",
+              "Description": "The region where the object is located.",
+              "Computed": true
+            },
+            "unique_id": {
+              "Type": "String",
+              "Description": "Object unique id.",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "conditions": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "A list of threshold rules. Each element contains the following attributes:",
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "alarm_notify_period": {
+              "Type": "Int",
+              "Required": true,
+              "Description": "Alarm sending cycle per second. \u003c0 does not fire, 0 only fires once, and \u003e0 fires every triggerTime second."
+            },
+            "alarm_notify_type": {
+              "Type": "Int",
+              "Required": true,
+              "Description": "Alarm sending convergence type. 0 continuous alarm, 1 index alarm."
+            },
+            "calc_period": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "Data aggregation cycle (unit of second), if the metric has a default value can not be filled, refer to `data.tencentcloud_monitor_policy_conditions(period_keys)`.",
+              "Computed": true
+            },
+            "calc_type": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "Compare type, 1 means more than, 2  means greater than or equal, 3 means less than, 4 means less than or equal to, 5 means equal, 6 means not equal, 7 means days rose, 8 means days fell, 9 means weeks rose, 10  means weeks fell, 11 means period rise, 12 means period fell, refer to `data.tencentcloud_monitor_policy_conditions(calc_type_keys)`.",
+              "Computed": true
+            },
+            "calc_value": {
+              "Type": "Float",
+              "Optional": true,
+              "Description": "Threshold value, refer to `data.tencentcloud_monitor_policy_conditions(calc_value_*)`.",
+              "Computed": true
+            },
+            "continue_period": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "The rule triggers an alert that lasts for several detection cycles, refer to `data.tencentcloud_monitor_policy_conditions(period_num_keys)`.",
+              "Computed": true
+            },
+            "metric_id": {
+              "Type": "Int",
+              "Required": true,
+              "Description": "Id of the metric, refer to `data.tencentcloud_monitor_policy_conditions(metric_id)`."
+            }
+          }
+        }
+      },
+      "dimension_group": {
+        "Type": "List",
+        "Description": "A list of dimensions for this policy group.",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "event_conditions": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "A list of event rules. Each element contains the following attributes:",
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "alarm_notify_period": {
+              "Type": "Int",
+              "Required": true,
+              "Description": "Alarm sending cycle per second.\u003c0 does not fire, 0 only fires once, and \u003e0 fires every triggerTime second."
+            },
+            "alarm_notify_type": {
+              "Type": "Int",
+              "Required": true,
+              "Description": "Alarm sending convergence type. 0 continuous alarm, 1 index alarm."
+            },
+            "event_id": {
+              "Type": "Int",
+              "Required": true,
+              "Description": "The id of this event metric, refer to `data.tencentcloud_monitor_policy_conditions(event_id)."
+            }
+          }
+        }
+      },
+      "group_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Policy group name, length should between 1 and 20."
+      },
+      "is_union_rule": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The and or relation of indicator alarm rule, 0 represents or rule (if any rule is met, the alarm will be raised), 1 represents and rule (if all rules are met, the alarm will be raised).The default is 0.",
+        "Default": {
+          "Type": "int",
+          "Value": "0"
+        }
+      },
+      "last_edit_uin": {
+        "Type": "String",
+        "Description": "Recently edited user uin.",
+        "Computed": true
+      },
+      "policy_view_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Policy view name, eg:`cvm_device`,`BANDWIDTHPACKAGE`, refer to `data.tencentcloud_monitor_policy_conditions(policy_view_name)`."
+      },
+      "project_id": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The project id to which the policy group belongs, default is 0.",
+        "Default": {
+          "Type": "int",
+          "Value": "0"
+        }
+      },
+      "receivers": {
+        "Type": "List",
+        "Description": "A list of receivers. Each element contains the following attributes:",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "end_time": {
+              "Type": "Int",
+              "Description": "End of alarm period. Meaning with `start_time`.",
+              "Computed": true
+            },
+            "need_send_notice": {
+              "Type": "Int",
+              "Description": "Do need a telephone alarm contact prompt.You don't need 0, you need 1.",
+              "Computed": true
+            },
+            "notify_way": {
+              "Type": "List",
+              "Description": "Method of warning notification.Optional \"SMS\", \"SITE\", \"EMAIL\", \"CALL\", \"WECHAT\".",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "person_interval": {
+              "Type": "Int",
+              "Description": "Telephone warning to individual interval (seconds).",
+              "Computed": true
+            },
+            "receive_language": {
+              "Type": "String",
+              "Description": "Alert sending language.",
+              "Computed": true
+            },
+            "receiver_group_list": {
+              "Type": "List",
+              "Description": "Alarm receive group id list.",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "Int"
+              }
+            },
+            "receiver_type": {
+              "Type": "String",
+              "Description": "Receive type, 'group' (receiving group) or 'user' (receiver).",
+              "Computed": true
+            },
+            "receiver_user_list": {
+              "Type": "List",
+              "Description": "Alarm receiver id list.",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "Int"
+              }
+            },
+            "recover_notify": {
+              "Type": "List",
+              "Description": "Restore notification mode. Optional \"SMS\".",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "round_interval": {
+              "Type": "Int",
+              "Description": "Telephone alarm interval per round (seconds).",
+              "Computed": true
+            },
+            "round_number": {
+              "Type": "Int",
+              "Description": "Telephone alarm number.",
+              "Computed": true
+            },
+            "send_for": {
+              "Type": "List",
+              "Description": "Telephone warning time.Option \"OCCUR\",\"RECOVER\".",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "start_time": {
+              "Type": "Int",
+              "Description": "Alarm period start time.Range [0,86400], which removes the date after it is converted to Beijing time as a Unix timestamp, for example 7200 means '10:0:0'.",
+              "Computed": true
+            },
+            "uid_list": {
+              "Type": "List",
+              "Description": "The phone alerts the receiver uid.",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "Int"
+              }
+            }
+          }
+        }
+      },
+      "remark": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Policy group's remark information."
+      },
+      "support_regions": {
+        "Type": "List",
+        "Description": "Support regions this policy group.",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "update_time": {
+        "Type": "String",
+        "Description": "The policy group update time.",
+        "Computed": true
+      }
+    },
     "tencentcloud_mysql_account": {
       "description": {
         "Type": "String",
@@ -9602,6 +10022,11 @@
               "Description": "The zone of CBS.",
               "Computed": true
             },
+            "charge_type": {
+              "Type": "String",
+              "Description": "Pay type of the CBS instance.",
+              "Computed": true
+            },
             "create_time": {
               "Type": "String",
               "Description": "Creation time of CBS.",
@@ -9615,6 +10040,11 @@
             "instance_id": {
               "Type": "String",
               "Description": "ID of the CVM instance that be mounted by this CBS.",
+              "Computed": true
+            },
+            "prepaid_renew_flag": {
+              "Type": "String",
+              "Description": "The way that CBS instance will be renew automatically or not when it reach the end of the prepaid tenancy.",
               "Computed": true
             },
             "project_id": {
@@ -14131,6 +14561,11 @@
               "Description": "The charge type of the instance.",
               "Computed": true
             },
+            "instance_charge_type_prepaid_renew_flag": {
+              "Type": "String",
+              "Description": "The way that CVM instance will be renew automatically or not when it reach the end of the prepaid tenancy.",
+              "Computed": true
+            },
             "instance_id": {
               "Type": "String",
               "Description": "ID of the instances.",
@@ -14686,6 +15121,977 @@
             }
           }
         }
+      },
+      "result_output_file": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Used to store results."
+      }
+    },
+    "tencentcloud_monitor_binding_objects": {
+      "group_id": {
+        "Type": "Int",
+        "Required": true,
+        "Description": "Policy group id for query."
+      },
+      "list": {
+        "Type": "List",
+        "Description": "A list objects. Each element contains the following attributes:",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "dimensions_json": {
+              "Type": "String",
+              "Description": "Represents a collection of dimensions of an object instance, json format.",
+              "Computed": true
+            },
+            "is_shielded": {
+              "Type": "Int",
+              "Description": "Whether the object is shielded or not, 0 means unshielded and 1 means shielded.",
+              "Computed": true
+            },
+            "region": {
+              "Type": "String",
+              "Description": "The region where the object is located.",
+              "Computed": true
+            },
+            "unique_id": {
+              "Type": "String",
+              "Description": "Object unique id.",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "result_output_file": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Used to store results."
+      }
+    },
+    "tencentcloud_monitor_data": {
+      "dimensions": {
+        "Type": "List",
+        "Required": true,
+        "Description": "Dimensional composition of instance objects.",
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "name": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Instance dimension name, eg: `InstanceId` for cvm."
+            },
+            "value": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Instance dimension value, eg: `ins-j0hk02zo` for cvm."
+            }
+          }
+        }
+      },
+      "end_time": {
+        "Type": "String",
+        "Required": true,
+        "Description": "End time for this query, eg:`2018-09-22T20:00:00+08:00`."
+      },
+      "list": {
+        "Type": "List",
+        "Description": "A list data point. Each element contains the following attributes:",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "timestamp": {
+              "Type": "Int",
+              "Description": "Statistical timestamp.",
+              "Computed": true
+            },
+            "value": {
+              "Type": "Float",
+              "Description": "Statistical value.",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "metric_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Metric name, please refer to the documentation of monitor interface of each product."
+      },
+      "namespace": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Namespace of each cloud product in monitor system, refer to `data.tencentcloud_monitor_product_namespace`."
+      },
+      "period": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Statistical period.",
+        "Default": {
+          "Type": "int",
+          "Value": "300"
+        }
+      },
+      "result_output_file": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Used to store results."
+      },
+      "start_time": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Start time for this query, eg:`2018-09-22T19:51:23+08:00`."
+      }
+    },
+    "tencentcloud_monitor_policy_conditions": {
+      "list": {
+        "Type": "List",
+        "Description": "A list policy condition. Each element contains the following attributes:",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "event_metrics": {
+              "Type": "List",
+              "Description": "A list of event condition metrics. Each element contains the following attributes:",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "event_id": {
+                    "Type": "Int",
+                    "Description": "The id of this event metric.",
+                    "Computed": true
+                  },
+                  "event_show_name": {
+                    "Type": "String",
+                    "Description": "The name of this event metric.",
+                    "Computed": true
+                  },
+                  "need_recovered": {
+                    "Type": "Bool",
+                    "Description": "Whether to recover.",
+                    "Computed": true
+                  }
+                }
+              }
+            },
+            "is_support_multi_region": {
+              "Type": "Bool",
+              "Description": "Whether to support multi region.",
+              "Computed": true
+            },
+            "metrics": {
+              "Type": "List",
+              "Description": "A list of event condition metrics. Each element contains the following attributes:",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "calc_type_keys": {
+                    "Type": "List",
+                    "Description": "Calculate type of this metric.",
+                    "Computed": true,
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "Int"
+                    }
+                  },
+                  "calc_type_need": {
+                    "Type": "Bool",
+                    "Description": "Whether `calc_type` required in the configuration.",
+                    "Computed": true
+                  },
+                  "calc_value_default": {
+                    "Type": "String",
+                    "Description": "The default calculate value of this metric.",
+                    "Computed": true
+                  },
+                  "calc_value_fixed": {
+                    "Type": "String",
+                    "Description": "The fixed calculate value of this metric.",
+                    "Computed": true
+                  },
+                  "calc_value_max": {
+                    "Type": "String",
+                    "Description": "The max calculate value of this metric.",
+                    "Computed": true
+                  },
+                  "calc_value_min": {
+                    "Type": "String",
+                    "Description": "The min calculate value of this metric.",
+                    "Computed": true
+                  },
+                  "calc_value_need": {
+                    "Type": "Bool",
+                    "Description": "Whether `calc_value` required in the configuration.",
+                    "Computed": true
+                  },
+                  "continue_time_default": {
+                    "Type": "Int",
+                    "Description": "The default continue time(seconds) config for this metric.",
+                    "Computed": true
+                  },
+                  "continue_time_keys": {
+                    "Type": "List",
+                    "Description": "The continue time(seconds) keys for this metric.",
+                    "Computed": true,
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "Int"
+                    }
+                  },
+                  "continue_time_need": {
+                    "Type": "Bool",
+                    "Description": "Whether `continue_time` required in the configuration.",
+                    "Computed": true
+                  },
+                  "metric_id": {
+                    "Type": "Int",
+                    "Description": "The id of this metric.",
+                    "Computed": true
+                  },
+                  "metric_show_name": {
+                    "Type": "String",
+                    "Description": "The name of this metric.",
+                    "Computed": true
+                  },
+                  "metric_unit": {
+                    "Type": "String",
+                    "Description": "The unit of this metric.",
+                    "Computed": true
+                  },
+                  "period_default": {
+                    "Type": "Int",
+                    "Description": "The default data time(seconds) config for this metric.",
+                    "Computed": true
+                  },
+                  "period_keys": {
+                    "Type": "List",
+                    "Description": "The data time(seconds) keys for this metric.",
+                    "Computed": true,
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "Int"
+                    }
+                  },
+                  "period_need": {
+                    "Type": "Bool",
+                    "Description": "Whether `period` required in the configuration.",
+                    "Computed": true
+                  },
+                  "period_num_default": {
+                    "Type": "Int",
+                    "Description": "The default period number config for this metric.",
+                    "Computed": true
+                  },
+                  "period_num_keys": {
+                    "Type": "List",
+                    "Description": "The period number keys for this metric.",
+                    "Computed": true,
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "Int"
+                    }
+                  },
+                  "period_num_need": {
+                    "Type": "Bool",
+                    "Description": "Whether `period_num` required in the configuration.",
+                    "Computed": true
+                  },
+                  "stat_type_p10": {
+                    "Type": "String",
+                    "Description": "Data aggregation mode, cycle of 10 seconds.",
+                    "Computed": true
+                  },
+                  "stat_type_p1800": {
+                    "Type": "String",
+                    "Description": "Data aggregation mode, cycle of 1800 seconds.",
+                    "Computed": true
+                  },
+                  "stat_type_p300": {
+                    "Type": "String",
+                    "Description": "Data aggregation mode, cycle of 300 seconds.",
+                    "Computed": true
+                  },
+                  "stat_type_p3600": {
+                    "Type": "String",
+                    "Description": "Data aggregation mode, cycle of 3600 seconds.",
+                    "Computed": true
+                  },
+                  "stat_type_p5": {
+                    "Type": "String",
+                    "Description": "Data aggregation mode, cycle of 5 seconds.",
+                    "Computed": true
+                  },
+                  "stat_type_p60": {
+                    "Type": "String",
+                    "Description": "Data aggregation mode, cycle of 60 seconds.",
+                    "Computed": true
+                  },
+                  "stat_type_p600": {
+                    "Type": "String",
+                    "Description": "Data aggregation mode, cycle of 600 seconds.",
+                    "Computed": true
+                  },
+                  "stat_type_p86400": {
+                    "Type": "String",
+                    "Description": "Data aggregation mode, cycle of 86400 seconds.",
+                    "Computed": true
+                  }
+                }
+              }
+            },
+            "name": {
+              "Type": "String",
+              "Description": "Name of this policy name.",
+              "Computed": true
+            },
+            "policy_view_name": {
+              "Type": "String",
+              "Description": "Policy view name, eg:`cvm_device`,`BANDWIDTHPACKAGE`, refer to `data.tencentcloud_monitor_policy_conditions(policy_view_name)`.",
+              "Computed": true
+            },
+            "support_regions": {
+              "Type": "List",
+              "Description": "Support regions of this policy view.",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Name of the policy name, support partial matching, eg:`Cloud Virtual Machine`,`Virtual`,`Cloud Load Banlancer-Private CLB Listener`."
+      },
+      "result_output_file": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Used to store results."
+      }
+    },
+    "tencentcloud_monitor_policy_groups": {
+      "list": {
+        "Type": "List",
+        "Description": "A list policy groups. Each element contains the following attributes:",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "can_set_default": {
+              "Type": "Bool",
+              "Description": "Whether it can be set as the default policy.",
+              "Computed": true
+            },
+            "conditions": {
+              "Type": "List",
+              "Description": "A list of threshold rules. Each element contains the following attributes:",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "alarm_notify_period": {
+                    "Type": "Int",
+                    "Description": "Alarm sending cycle per second.\u003c0 does not fire, 0 only fires once, and \u003e0 fires every triggerTime second.",
+                    "Computed": true
+                  },
+                  "alarm_notify_type": {
+                    "Type": "Int",
+                    "Description": "Alarm sending convergence type. 0 continuous alarm, 1 index alarm.",
+                    "Computed": true
+                  },
+                  "calc_type": {
+                    "Type": "Int",
+                    "Description": "Compare type, 1 means more than, 2  means greater than or equal, 3 means less than, 4 means less than or equal to, 5 means equal, 6 means not equal, 7 means days rose, 8 means days fell, 9 means weeks rose, 10  means weeks fell, 11 means period rise, 12 means period fell.",
+                    "Computed": true
+                  },
+                  "calc_value": {
+                    "Type": "String",
+                    "Description": "Threshold value.",
+                    "Computed": true
+                  },
+                  "continue_time": {
+                    "Type": "Int",
+                    "Description": "How long does the triggering rule last (per second).",
+                    "Computed": true
+                  },
+                  "metric_id": {
+                    "Type": "Int",
+                    "Description": "The id of this metric.",
+                    "Computed": true
+                  },
+                  "metric_show_name": {
+                    "Type": "String",
+                    "Description": "The name of this metric.",
+                    "Computed": true
+                  },
+                  "metric_unit": {
+                    "Type": "String",
+                    "Description": "The unit of this metric.",
+                    "Computed": true
+                  },
+                  "period": {
+                    "Type": "Int",
+                    "Description": "Data aggregation cycle (unit second).",
+                    "Computed": true
+                  },
+                  "rule_id": {
+                    "Type": "Int",
+                    "Description": "Threshold rule id.",
+                    "Computed": true
+                  }
+                }
+              }
+            },
+            "event_conditions": {
+              "Type": "List",
+              "Description": "A list of event rules. Each element contains the following attributes:",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "alarm_notify_period": {
+                    "Type": "Int",
+                    "Description": "Alarm sending cycle per second.\u003c0 does not fire, 0 only fires once, and \u003e0 fires every triggerTime second.",
+                    "Computed": true
+                  },
+                  "alarm_notify_type": {
+                    "Type": "Int",
+                    "Description": "Alarm sending convergence type. 0 continuous alarm, 1 index alarm.",
+                    "Computed": true
+                  },
+                  "event_id": {
+                    "Type": "Int",
+                    "Description": "The id of this event metric.",
+                    "Computed": true
+                  },
+                  "event_show_name": {
+                    "Type": "String",
+                    "Description": "The name of this event metric.",
+                    "Computed": true
+                  },
+                  "rule_id": {
+                    "Type": "Int",
+                    "Description": "Threshold rule id.",
+                    "Computed": true
+                  }
+                }
+              }
+            },
+            "group_id": {
+              "Type": "Int",
+              "Description": "The policy group id.",
+              "Computed": true
+            },
+            "group_name": {
+              "Type": "String",
+              "Description": "The policy group name.",
+              "Computed": true
+            },
+            "insert_time": {
+              "Type": "Int",
+              "Description": "The policy group create timestamp.",
+              "Computed": true
+            },
+            "is_default": {
+              "Type": "Int",
+              "Description": "If is default policy group or not,0 represents the non-default policy, and 1 represents the default policy.",
+              "Computed": true
+            },
+            "is_open": {
+              "Type": "Bool",
+              "Description": "Whether open or not.",
+              "Computed": true
+            },
+            "last_edit_uin": {
+              "Type": "String",
+              "Description": "Recently edited user uin.",
+              "Computed": true
+            },
+            "no_shielded_sum": {
+              "Type": "Int",
+              "Description": "Number of unmasked instances of policy group bindings.",
+              "Computed": true
+            },
+            "parent_group_id": {
+              "Type": "Int",
+              "Description": "Parent policy group id.",
+              "Computed": true
+            },
+            "policy_view_name": {
+              "Type": "String",
+              "Description": "The policy group view name.",
+              "Computed": true
+            },
+            "project_id": {
+              "Type": "Int",
+              "Description": "The project id to which the policy group belongs.",
+              "Computed": true
+            },
+            "receivers": {
+              "Type": "List",
+              "Description": "A list of receivers. Each element contains the following attributes:",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "end_time": {
+                    "Type": "Int",
+                    "Description": "End of alarm period. Meaning with `start_time`.",
+                    "Computed": true
+                  },
+                  "need_send_notice": {
+                    "Type": "Int",
+                    "Description": "Do need a telephone alarm contact prompt.You don't need 0, you need 1.",
+                    "Computed": true
+                  },
+                  "notify_way": {
+                    "Type": "List",
+                    "Description": "Method of warning notification.Optional `CALL`,`EMAIL`,`SITE`,`SMS`,`WECHAT`.",
+                    "Computed": true,
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  },
+                  "person_interval": {
+                    "Type": "Int",
+                    "Description": "Telephone warning to individual interval (seconds).",
+                    "Computed": true
+                  },
+                  "receive_language": {
+                    "Type": "String",
+                    "Description": "Alert sending language.",
+                    "Computed": true
+                  },
+                  "receiver_group_list": {
+                    "Type": "List",
+                    "Description": "Alarm receive group id list.",
+                    "Computed": true,
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "Int"
+                    }
+                  },
+                  "receiver_type": {
+                    "Type": "String",
+                    "Description": "Receive type. Optional 'group' or 'user'.",
+                    "Computed": true
+                  },
+                  "receiver_user_list": {
+                    "Type": "List",
+                    "Description": "Alarm receiver id list.",
+                    "Computed": true,
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "Int"
+                    }
+                  },
+                  "recover_notify": {
+                    "Type": "List",
+                    "Description": "Restore notification mode. Optional \"SMS\".",
+                    "Computed": true,
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  },
+                  "round_interval": {
+                    "Type": "Int",
+                    "Description": "Telephone alarm interval per round (seconds).",
+                    "Computed": true
+                  },
+                  "round_number": {
+                    "Type": "Int",
+                    "Description": "Telephone alarm number.",
+                    "Computed": true
+                  },
+                  "send_for": {
+                    "Type": "List",
+                    "Description": "Telephone warning time.Option \"OCCUR\",\"RECOVER\".",
+                    "Computed": true,
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  },
+                  "start_time": {
+                    "Type": "Int",
+                    "Description": "Alarm period start time.Range [0,86399], which removes the date after it is converted to Beijing time as a Unix timestamp, for example 7200 means '10:0:0'.",
+                    "Computed": true
+                  },
+                  "uid_list": {
+                    "Type": "List",
+                    "Description": "The phone alerts the receiver uid.",
+                    "Computed": true,
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "Int"
+                    }
+                  }
+                }
+              }
+            },
+            "remark": {
+              "Type": "String",
+              "Description": "Policy group remarks.",
+              "Computed": true
+            },
+            "update_time": {
+              "Type": "Int",
+              "Description": "The policy group update timestamp.",
+              "Computed": true
+            },
+            "use_sum": {
+              "Type": "Int",
+              "Description": "Number of instances of policy group bindings.",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Policy group name for query."
+      },
+      "policy_view_names": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "The policy view for query.",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "result_output_file": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Used to store results."
+      }
+    },
+    "tencentcloud_monitor_product_event": {
+      "dimensions": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Dimensional composition of instance objects.",
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "name": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Instance dimension name, eg: `deviceWanIp` for internet ip."
+            },
+            "value": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Instance dimension value, eg: `119.119.119.119` for internet ip."
+            }
+          }
+        }
+      },
+      "end_time": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "End timestamp for this query, eg:`1588232111`. Default start time is `now-3000`.",
+        "Default": {
+          "Type": "int64",
+          "Value": "1589809633"
+        }
+      },
+      "event_name": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Event name filtering, such as `guest_reboot` indicates that the machine restart.",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "instance_id": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Affect objects, such as `ins-19708ino`.",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "is_alarm_config": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Alarm status configuration filter, 1means configured, 0(default) means not configured.",
+        "Default": {
+          "Type": "int",
+          "Value": "0"
+        }
+      },
+      "list": {
+        "Type": "List",
+        "Description": "A list events. Each element contains the following attributes:",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "addition_msg": {
+              "Type": "List",
+              "Description": "A list of addition message. Each element contains the following attributes:",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "key": {
+                    "Type": "String",
+                    "Description": "The key of this addition message.",
+                    "Computed": true
+                  },
+                  "name": {
+                    "Type": "String",
+                    "Description": "The name of this addition message.",
+                    "Computed": true
+                  },
+                  "value": {
+                    "Type": "String",
+                    "Description": "The value of this addition message.",
+                    "Computed": true
+                  }
+                }
+              }
+            },
+            "dimensions": {
+              "Type": "List",
+              "Description": "A list of event dimensions. Each element contains the following attributes:",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "key": {
+                    "Type": "String",
+                    "Description": "The key of this dimension.",
+                    "Computed": true
+                  },
+                  "name": {
+                    "Type": "String",
+                    "Description": "The name of this dimension.",
+                    "Computed": true
+                  },
+                  "value": {
+                    "Type": "String",
+                    "Description": "The value of this dimension.",
+                    "Computed": true
+                  }
+                }
+              }
+            },
+            "event_cname": {
+              "Type": "String",
+              "Description": "Event chinese name.",
+              "Computed": true
+            },
+            "event_ename": {
+              "Type": "String",
+              "Description": "Event english name.",
+              "Computed": true
+            },
+            "event_id": {
+              "Type": "Int",
+              "Description": "Event id.",
+              "Computed": true
+            },
+            "event_name": {
+              "Type": "String",
+              "Description": "Event short name.",
+              "Computed": true
+            },
+            "group_info": {
+              "Type": "List",
+              "Description": "A list of group info. Each element contains the following attributes:",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "group_id": {
+                    "Type": "String",
+                    "Description": "Policy group id.",
+                    "Computed": true
+                  },
+                  "group_name": {
+                    "Type": "String",
+                    "Description": "Policy group name.",
+                    "Computed": true
+                  }
+                }
+              }
+            },
+            "instance_id": {
+              "Type": "String",
+              "Description": "The instance id of this event.",
+              "Computed": true
+            },
+            "instance_name": {
+              "Type": "String",
+              "Description": "The name of this instance.",
+              "Computed": true
+            },
+            "is_alarm_config": {
+              "Type": "Int",
+              "Description": "Whether to configure alarm.",
+              "Computed": true
+            },
+            "product_cname": {
+              "Type": "String",
+              "Description": "Product chinese name.",
+              "Computed": true
+            },
+            "product_ename": {
+              "Type": "String",
+              "Description": "Product english name.",
+              "Computed": true
+            },
+            "product_name": {
+              "Type": "String",
+              "Description": "Product short name.",
+              "Computed": true
+            },
+            "project_id": {
+              "Type": "String",
+              "Description": "Project id of this instance.",
+              "Computed": true
+            },
+            "region": {
+              "Type": "String",
+              "Description": "The region of this instance.",
+              "Computed": true
+            },
+            "start_time": {
+              "Type": "Int",
+              "Description": "The start timestamp of this event.",
+              "Computed": true
+            },
+            "status": {
+              "Type": "String",
+              "Description": "The status of this event.",
+              "Computed": true
+            },
+            "support_alarm": {
+              "Type": "Int",
+              "Description": "Whether to support alarm.",
+              "Computed": true
+            },
+            "type": {
+              "Type": "String",
+              "Description": "The type of this event.",
+              "Computed": true
+            },
+            "update_time": {
+              "Type": "Int",
+              "Description": "The update timestamp of this event.",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "product_name": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Product type filtering, such as `cvm` for cloud server.",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "project_id": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Project ID filter.",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "region_list": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Region filter, such as `gz`.",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "result_output_file": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Used to store results."
+      },
+      "start_time": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Start timestamp for this query, eg:`1588230000`. Default start time is `now-3600`.",
+        "Default": {
+          "Type": "int64",
+          "Value": "1589809033"
+        }
+      },
+      "status": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Event status filter, value range `-`,`alarm`,`recover`, indicating recovered, unrecovered and stateless.",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "type": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Event type filtering, with value range `abnormal`,`status_change`, indicating state change and abnormal events.",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      }
+    },
+    "tencentcloud_monitor_product_namespace": {
+      "list": {
+        "Type": "List",
+        "Description": "A list product namespaces. Each element contains the following attributes:",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "namespace": {
+              "Type": "String",
+              "Description": "Namespace of each cloud product in monitor system.",
+              "Computed": true
+            },
+            "product_chinese_name": {
+              "Type": "String",
+              "Description": "Chinese name of this product.",
+              "Computed": true
+            },
+            "product_name": {
+              "Type": "String",
+              "Description": "English name of this product.",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Name for filter, eg:`Load Banlancer`."
       },
       "result_output_file": {
         "Type": "String",
