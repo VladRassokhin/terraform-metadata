@@ -12,6 +12,8 @@ import (
 	"github.com/zclconf/go-cty/cty/function"
 	"os"
 	"path/filepath"
+	"reflect"
+	"unsafe"
 )
 
 // ExportSchema should be called to export the structure
@@ -28,6 +30,8 @@ func Export() *FunctionsSchema {
 
 	return result
 }
+
+var staticReturnTypeFun = function.StaticReturnType(cty.Bool)
 
 func getInterpolationFunctions() map[string]FunctionInfo {
 	vars := make(map[string]ast.Variable)
@@ -67,14 +71,22 @@ func getInterpolationFunctions() map[string]FunctionInfo {
 			varParameter = exportParameter(variadic)
 		}
 
-		var returnType, err = f.ReturnType(types)
-		if err != nil {
-			if name == "try" {
-				returnType = f.VarParam().Type
-			} else if f.VarParam() != nil {
-				returnType, err = f.ReturnType([]cty.Type{f.VarParam().Type, f.VarParam().Type})
-				if err != nil {
-					panic(fmt.Errorf("Failed to get return type for '%s' :%v", name, err))
+		spec := getFunctionSpec(f)
+		var returnType cty.Type
+		if reflect.ValueOf(spec.Type).Pointer() == reflect.ValueOf(staticReturnTypeFun).Pointer() {
+			// StaticReturnType used as spec.Type
+			returnType, _ = spec.Type([]cty.Value{})
+		} else {
+			var err error
+			returnType, err = f.ReturnType(types)
+			if err != nil {
+				if name == "try" {
+					returnType = f.VarParam().Type
+				} else if f.VarParam() != nil {
+					returnType, err = f.ReturnType([]cty.Type{f.VarParam().Type, f.VarParam().Type})
+					if err != nil {
+						panic(fmt.Errorf("Failed to get return type for '%s': %v", name, err))
+					}
 				}
 			}
 		}
@@ -91,6 +103,22 @@ func getInterpolationFunctions() map[string]FunctionInfo {
 	}
 
 	return result
+}
+
+func getFunctionSpec(f function.Function) *function.Spec {
+	expected := reflect.TypeOf(&function.Spec{})
+	v := reflect.Indirect(reflect.ValueOf(f))
+	tp := v.Type()
+	for i := 0; i < tp.NumField(); i++ {
+		field := tp.Field(i)
+		if field.Type == expected {
+			value := v.Field(i)
+			//noinspection GoVetUnsafePointer
+			spec := (*function.Spec)(unsafe.Pointer(value.Pointer()))
+			return spec
+		}
+	}
+	return nil
 }
 
 func exportParameter(variadic *function.Parameter) *ParameterInfo {
