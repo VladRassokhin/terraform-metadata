@@ -2,7 +2,7 @@
   ".schema_version": "1",
   "name": "google",
   "type": "provider",
-  "version": "v3.21.0",
+  "version": "v3.22.0",
   "provider": {
     "access_context_manager_custom_endpoint": {
       "Type": "String",
@@ -3637,6 +3637,14 @@
               "Required": true
             }
           }
+        }
+      },
+      "deletion_protection": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
         }
       },
       "display_name": {
@@ -11263,6 +11271,12 @@
             }
           }
         }
+      },
+      "port_name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "A named port on a backend instance group representing the port for\ncommunication to the backend VMs in that group. Required when the\nloadBalancingScheme is EXTERNAL, INTERNAL_MANAGED, or INTERNAL_SELF_MANAGED\nand the backends are instance groups. The named port must be defined on each\nbackend instance group. This parameter has no meaning if the backends are NEGs. API sets a\ndefault of \"http\" if not given.\nMust be omitted when the loadBalancingScheme is INTERNAL (Internal TCP/UDP Load Balancing).",
+        "Computed": true
       },
       "project": {
         "Type": "String",
@@ -20450,6 +20464,63 @@
         "Description": "The time zone of this agent from the [time zone database](https://www.iana.org/time-zones), e.g., America/New_York,\nEurope/Paris."
       }
     },
+    "google_dialogflow_entity_type": {
+      "__timeouts__": [
+        "create",
+        "update",
+        "delete"
+      ],
+      "display_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The name of this entity type to be displayed on the console."
+      },
+      "enable_fuzzy_extraction": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enables fuzzy entity extraction during classification."
+      },
+      "entities": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "The collection of entity entries associated with the entity type.",
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "synonyms": {
+              "Type": "List",
+              "Required": true,
+              "Description": "A collection of value synonyms. For example, if the entity type is vegetable, and value is scallions, a synonym\ncould be green onions.\nFor KIND_LIST entity types:\n* This collection must contain exactly one synonym equal to value.",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "value": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The primary value associated with this entity entry. For example, if the entity type is vegetable, the value\ncould be scallions.\nFor KIND_MAP entity types:\n* A reference value to be used in place of synonyms.\nFor KIND_LIST entity types:\n* A string that can contain references to other entity types (with or without aliases)."
+            }
+          }
+        }
+      },
+      "kind": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Indicates the kind of entity type.\n* KIND_MAP: Map entity types allow mapping of a group of synonyms to a reference value.\n* KIND_LIST: List entity types contain a set of entries that do not map to reference values. However, list entity\ntypes can contain references to other entity types (with or without aliases).\n* KIND_REGEXP: Regexp entity types allow to specify regular expressions in entries values. Possible values: [\"KIND_MAP\", \"KIND_LIST\", \"KIND_REGEXP\"]"
+      },
+      "name": {
+        "Type": "String",
+        "Description": "The unique identifier of the entity type. \nFormat: projects/\u003cProject ID\u003e/agent/entityTypes/\u003cEntity type ID\u003e.",
+        "Computed": true
+      },
+      "project": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      }
+    },
     "google_dialogflow_intent": {
       "__timeouts__": [
         "create",
@@ -24179,8 +24250,8 @@
       ],
       "basic_sli": {
         "Type": "List",
-        "Required": true,
-        "Description": "Basic Service-Level Indicator (SLI) on a well-known service type.\nPerformance will be computed on the basis of pre-defined metrics.\n\nSLIs are used to measure and calculate the quality of the Service's\nperformance with respect to a single aspect of service quality.",
+        "Optional": true,
+        "Description": "Basic Service-Level Indicator (SLI) on a well-known service type.\nPerformance will be computed on the basis of pre-defined metrics.\n\nSLIs are used to measure and calculate the quality of the Service's\nperformance with respect to a single aspect of service quality.\n\nExactly one of the following must be set:\n'basic_sli', 'request_based_sli'",
         "MaxItems": 1,
         "IsBlock": true,
         "Elem": {
@@ -24257,6 +24328,84 @@
         "Type": "String",
         "Optional": true,
         "Computed": true
+      },
+      "request_based_sli": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "A request-based SLI defines a SLI for which atomic units of\nservice are counted directly.\n\nA SLI describes a good service.\nIt is used to measure and calculate the quality of the Service's\nperformance with respect to a single aspect of service quality.\nExactly one of the following must be set:\n'basic_sli', 'request_based_sli'",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "distribution_cut": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Used when good_service is defined by a count of values aggregated in a\nDistribution that fall into a good range. The total_service is the\ntotal count of all values aggregated in the Distribution.\nDefines a distribution TimeSeries filter and thresholds used for\nmeasuring good service and total service.\n\nExactly one of 'distribution_cut' or 'good_total_ratio' can be set.",
+              "MaxItems": 1,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "distribution_filter": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "A TimeSeries [monitoring filter](https://cloud.google.com/monitoring/api/v3/filters)\naggregating values to quantify the good service provided.\n\nMust have ValueType = DISTRIBUTION and\nMetricKind = DELTA or MetricKind = CUMULATIVE."
+                  },
+                  "range": {
+                    "Type": "List",
+                    "Required": true,
+                    "Description": "Range of numerical values. The computed good_service\nwill be the count of values x in the Distribution such\nthat range.min \u003c= x \u003c range.max. inclusive of min and\nexclusive of max. Open ranges can be defined by setting\njust one of min or max.",
+                    "MaxItems": 1,
+                    "IsBlock": true,
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "max": {
+                          "Type": "Int",
+                          "Optional": true,
+                          "Description": "max value for the range (inclusive). If not given,\nwill be set to \"infinity\", defining an open range\n\"\u003e= range.min\""
+                        },
+                        "min": {
+                          "Type": "Int",
+                          "Optional": true,
+                          "Description": "Min value for the range (inclusive). If not given,\nwill be set to \"-infinity\", defining an open range\n\"\u003c range.max\""
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "good_total_ratio": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "A means to compute a ratio of 'good_service' to 'total_service'.\nDefines computing this ratio with two TimeSeries [monitoring filters](https://cloud.google.com/monitoring/api/v3/filters)\nMust specify exactly two of good, bad, and total service filters.\nThe relationship good_service + bad_service = total_service\nwill be assumed.\n\nExactly one of 'distribution_cut' or 'good_total_ratio' can be set.",
+              "MaxItems": 1,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "bad_service_filter": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "A TimeSeries [monitoring filter](https://cloud.google.com/monitoring/api/v3/filters)\nquantifying bad service provided, either demanded service that\nwas not provided or demanded service that was of inadequate\nquality.\n\nMust have ValueType = DOUBLE or ValueType = INT64 and\nmust have MetricKind = DELTA or MetricKind = CUMULATIVE.\n\nExactly two of 'good_service_filter','bad_service_filter','total_service_filter'\nmust be set (good + bad = total is assumed)."
+                  },
+                  "good_service_filter": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "A TimeSeries [monitoring filter](https://cloud.google.com/monitoring/api/v3/filters)\nquantifying good service provided.\nMust have ValueType = DOUBLE or ValueType = INT64 and\nmust have MetricKind = DELTA or MetricKind = CUMULATIVE.\n\nExactly two of 'good_service_filter','bad_service_filter','total_service_filter'\nmust be set (good + bad = total is assumed)."
+                  },
+                  "total_service_filter": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "A TimeSeries [monitoring filter](https://cloud.google.com/monitoring/api/v3/filters)\nquantifying total demanded service.\n\nMust have ValueType = DOUBLE or ValueType = INT64 and\nmust have MetricKind = DELTA or MetricKind = CUMULATIVE.\n\nExactly two of 'good_service_filter','bad_service_filter','total_service_filter'\nmust be set (good + bad = total is assumed)."
+                  }
+                }
+              }
+            }
+          }
+        }
       },
       "rolling_period_days": {
         "Type": "Int",
