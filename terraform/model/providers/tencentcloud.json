@@ -2,8 +2,43 @@
   ".schema_version": "1",
   "name": "tencentcloud",
   "type": "provider",
-  "version": "v1.33.0",
+  "version": "v1.33.1",
   "provider": {
+    "assume_role": {
+      "Type": "Set",
+      "Optional": true,
+      "Description": "The `assume_role` block. If provided, terraform will attempt to assume this role using the supplied credentials.",
+      "MaxItems": 1,
+      "IsBlock": true,
+      "Elem": {
+        "Type": "SchemaInfo",
+        "Info": {
+          "policy": {
+            "Type": "String",
+            "Optional": true,
+            "Description": "A more restrictive policy when making the AssumeRole call. Its content must not contains `principal` elements. Notice: more syntax references, please refer to: [policies syntax logic](https://intl.cloud.tencent.com/document/product/598/10603)."
+          },
+          "role_arn": {
+            "Type": "String",
+            "Required": true,
+            "Description": "The ARN of the role to assume. It can be sourced from the `TENCENTCLOUD_ASSUME_ROLE_ARN`.",
+            "DefaultFunc": "ENV(TENCENTCLOUD_ASSUME_ROLE_ARN)"
+          },
+          "session_duration": {
+            "Type": "Int",
+            "Required": true,
+            "Description": "The duration of the session when making the AssumeRole call. Its value ranges from 0 to 43200(seconds), and default is 7200 seconds. It can be sourced from the `TENCENTCLOUD_ASSUME_ROLE_SESSION_DURATION`.",
+            "InputDefault": "7200"
+          },
+          "session_name": {
+            "Type": "String",
+            "Required": true,
+            "Description": "The session name to use when making the AssumeRole call. It can be sourced from the `TENCENTCLOUD_ASSUME_ROLE_SESSION_NAME`.",
+            "DefaultFunc": "ENV(TENCENTCLOUD_ASSUME_ROLE_SESSION_NAME)"
+          }
+        }
+      }
+    },
     "region": {
       "Type": "String",
       "Required": true,
@@ -1237,7 +1272,7 @@
       "instance_type": {
         "Type": "String",
         "Required": true,
-        "Description": "Type of attached instance network, and available values include VPC, DIRECTCONNECT and BMVPC."
+        "Description": "Type of attached instance network, and available values include VPC, DIRECTCONNECT, BMVPC and VPNGW. Note: VPNGW type is only for whitelist customer now."
       },
       "state": {
         "Type": "String",
@@ -1314,13 +1349,23 @@
                 "Info": {
                   "certificate_content": {
                     "Type": "String",
-                    "Optional": true,
+                    "Required": true,
                     "Description": "Client Certificate PEM format, requires Base64 encoding."
                   },
                   "certificate_name": {
                     "Type": "String",
-                    "Required": true,
-                    "Description": "Client certificate name."
+                    "Description": "Client certificate name.",
+                    "Computed": true
+                  },
+                  "deploy_time": {
+                    "Type": "String",
+                    "Description": "Deploy time of client certificate.",
+                    "Computed": true
+                  },
+                  "expire_time": {
+                    "Type": "String",
+                    "Description": "Expire time of client certificate.",
+                    "Computed": true
                   }
                 }
               }
@@ -1369,8 +1414,18 @@
                   },
                   "certificate_name": {
                     "Type": "String",
-                    "Optional": true,
-                    "Description": "Server certificate name."
+                    "Description": "Server certificate name.",
+                    "Computed": true
+                  },
+                  "deploy_time": {
+                    "Type": "String",
+                    "Description": "Deploy time of server certificate.",
+                    "Computed": true
+                  },
+                  "expire_time": {
+                    "Type": "String",
+                    "Description": "Expire time of server certificate.",
+                    "Computed": true
                   },
                   "message": {
                     "Type": "String",
@@ -7385,6 +7440,24 @@
           "Value": "0"
         }
       },
+      "redis_replicas_num": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The number of instance copies. This is not required for standalone and master slave versions.",
+        "Default": {
+          "Type": "int",
+          "Value": "1"
+        }
+      },
+      "redis_shard_num": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The number of instance shard. This is not required for standalone and master slave versions.",
+        "Default": {
+          "Type": "int",
+          "Value": "1"
+        }
+      },
       "security_groups": {
         "Type": "Set",
         "Optional": true,
@@ -7414,10 +7487,12 @@
         "Type": "String",
         "Optional": true,
         "Description": "Instance type. Available values: `cluster_ckv`,`cluster_redis5.0`,`cluster_redis`,`master_slave_ckv`,`master_slave_redis5.0`,`master_slave_redis`,`standalone_redis`, specific region support specific types, need to refer data `tencentcloud_redis_zone_config`.",
-        "Default": {
-          "Type": "string",
-          "Value": "master_slave_redis"
-        }
+        "Deprecated": "It has been deprecated from version 1.33.1. Please use 'type_id' instead."
+      },
+      "type_id": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Instance type. Refer to `data.tencentcloud_redis_zone_config.list.type_id` get available values."
       },
       "vpc_id": {
         "Type": "String",
@@ -8720,7 +8795,8 @@
       },
       "type": {
         "Type": "String",
-        "Description": "Type of gateway instance, valid values are `IPSEC`, `SSL`.",
+        "Optional": true,
+        "Description": "Type of gateway instance, valid values are `IPSEC`, `SSL` and `CCN`. Note: CCN type is only for whitelist customer now.",
         "Computed": true
       },
       "vpc_id": {
@@ -10184,7 +10260,7 @@
                   },
                   "instance_type": {
                     "Type": "String",
-                    "Description": "Type of attached instance network, and available values include VPC, DIRECTCONNECT and BMVPC.",
+                    "Description": "Type of attached instance network, and available values include VPC, DIRECTCONNECT, BMVPC and VPNGW.",
                     "Computed": true
                   },
                   "state": {
@@ -15807,7 +15883,7 @@
         "Description": "End timestamp for this query, eg:`1588232111`. Default start time is `now-3000`.",
         "Default": {
           "Type": "int64",
-          "Value": "1590155234"
+          "Value": "1590241506"
         }
       },
       "event_name": {
@@ -16040,7 +16116,7 @@
         "Description": "Start timestamp for this query, eg:`1588230000`. Default start time is `now-3600`.",
         "Default": {
           "Type": "int64",
-          "Value": "1590154634"
+          "Value": "1590240906"
         }
       },
       "status": {
@@ -16897,6 +16973,16 @@
               "Description": "ID of a redis instance.",
               "Computed": true
             },
+            "redis_replicas_num": {
+              "Type": "Int",
+              "Description": "The number of instance copies.",
+              "Computed": true
+            },
+            "redis_shard_num": {
+              "Type": "Int",
+              "Description": "The number of instance shard.",
+              "Computed": true
+            },
             "status": {
               "Type": "String",
               "Description": "Current status of an instance, maybe: init, processing, online, isolate and todelete.",
@@ -16915,6 +17001,12 @@
             "type": {
               "Type": "String",
               "Description": "Instance type. Available values: master_slave_redis, master_slave_ckv, cluster_ckv, cluster_redis and standalone_redis.",
+              "Computed": true,
+              "Deprecated": "It has been deprecated from version 1.33.1. Please use 'type_id' instead."
+            },
+            "type_id": {
+              "Type": "Int",
+              "Description": "Instance type. Refer to `data.tencentcloud_redis_zone_config.list.type_id` get available values.",
               "Computed": true
             },
             "vpc_id": {
@@ -16978,9 +17070,33 @@
                 "ElementsType": "Int"
               }
             },
+            "redis_replicas_nums": {
+              "Type": "List",
+              "Description": "The support numbers of instance copies.",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "Int"
+              }
+            },
+            "redis_shard_nums": {
+              "Type": "List",
+              "Description": "The support numbers of instance shard.",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "Int"
+              }
+            },
             "type": {
               "Type": "String",
               "Description": "Instance type. Available values: master_slave_redis, master_slave_ckv, cluster_ckv, cluster_redis and standalone_redis.",
+              "Computed": true,
+              "Deprecated": "It has been deprecated from version 1.33.1. Please use 'type_id' instead."
+            },
+            "type_id": {
+              "Type": "Int",
+              "Description": "Instance type. Which redis type supports in this zone.",
               "Computed": true
             },
             "version": {
@@ -17005,6 +17121,11 @@
         "Type": "String",
         "Optional": true,
         "Description": "Used to save results."
+      },
+      "type_id": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Instance type id."
       }
     },
     "tencentcloud_reserved_instance_configs": {
@@ -18900,7 +19021,7 @@
             },
             "type": {
               "Type": "String",
-              "Description": "Type of gateway instance, valid values are `IPSEC`, `SSL`.",
+              "Description": "Type of gateway instance, valid values are `IPSEC`, `SSL` and `CCN`.",
               "Computed": true
             },
             "vpc_id": {
