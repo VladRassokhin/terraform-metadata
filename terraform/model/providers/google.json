@@ -2,7 +2,7 @@
   ".schema_version": "1",
   "name": "google",
   "type": "provider",
-  "version": "v3.23.0",
+  "version": "v3.24.0",
   "provider": {
     "access_context_manager_custom_endpoint": {
       "Type": "String",
@@ -138,6 +138,11 @@
       "Type": "String",
       "Optional": true,
       "DefaultFunc": "MENV(GOOGLE_CREDENTIALS,GOOGLE_CLOUD_KEYFILE_JSON,GCLOUD_KEYFILE_JSON)"
+    },
+    "data_catalog_custom_endpoint": {
+      "Type": "String",
+      "Optional": true,
+      "DefaultFunc": "MENV(GOOGLE_DATA_CATALOG_CUSTOM_ENDPOINT)"
     },
     "dataflow_custom_endpoint": {
       "Type": "String",
@@ -290,6 +295,11 @@
         "Type": "SchemaElements",
         "ElementsType": "String"
       }
+    },
+    "secret_manager_custom_endpoint": {
+      "Type": "String",
+      "Optional": true,
+      "DefaultFunc": "MENV(GOOGLE_SECRET_MANAGER_CUSTOM_ENDPOINT)"
     },
     "security_center_custom_endpoint": {
       "Type": "String",
@@ -1439,6 +1449,115 @@
           "ElementsType": "String"
         }
       },
+      "handlers": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "An ordered list of URL-matching patterns that should be applied to incoming requests.\nThe first matching URL handles the request and other request handlers are not attempted.",
+        "Computed": true,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "auth_fail_action": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Actions to take when the user is not logged in. Possible values: [\"AUTH_FAIL_ACTION_REDIRECT\", \"AUTH_FAIL_ACTION_UNAUTHORIZED\"]"
+            },
+            "login": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Methods to restrict access to a URL based on login status. Possible values: [\"LOGIN_OPTIONAL\", \"LOGIN_ADMIN\", \"LOGIN_REQUIRED\"]"
+            },
+            "redirect_http_response_code": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "30x code to use when performing redirects for the secure field. Possible values: [\"REDIRECT_HTTP_RESPONSE_CODE_301\", \"REDIRECT_HTTP_RESPONSE_CODE_302\", \"REDIRECT_HTTP_RESPONSE_CODE_303\", \"REDIRECT_HTTP_RESPONSE_CODE_307\"]"
+            },
+            "script": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Executes a script to handle the requests that match this URL pattern.\nOnly the auto value is supported for Node.js in the App Engine standard environment, for example \"script:\" \"auto\".",
+              "MaxItems": 1,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "script_path": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "Path to the script from the application root directory."
+                  }
+                }
+              }
+            },
+            "security_level": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Security (HTTPS) enforcement for this URL. Possible values: [\"SECURE_DEFAULT\", \"SECURE_NEVER\", \"SECURE_OPTIONAL\", \"SECURE_ALWAYS\"]"
+            },
+            "static_files": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Files served directly to the user for a given URL, such as images, CSS stylesheets, or JavaScript source files.\nStatic file handlers describe which files in the application directory are static files, and which URLs serve them.",
+              "MaxItems": 1,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "application_readable": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Description": "Whether files should also be uploaded as code data. By default, files declared in static file handlers are\nuploaded as static data and are only served to end users; they cannot be read by the application. If enabled,\nuploads are charged against both your code and static data storage resource quotas."
+                  },
+                  "expiration": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Time a static file served by this handler should be cached by web proxies and browsers.\nA duration in seconds with up to nine fractional digits, terminated by 's'. Example \"3.5s\".\nDefault is '0s'",
+                    "Default": {
+                      "Type": "string",
+                      "Value": "0s"
+                    }
+                  },
+                  "http_headers": {
+                    "Type": "Map",
+                    "Optional": true,
+                    "Description": "HTTP headers to use for all responses from these URLs.\nAn object containing a list of \"key:value\" value pairs.\".",
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  },
+                  "mime_type": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "MIME type used to serve all files served by this handler.\nDefaults to file-specific MIME types, which are derived from each file's filename extension."
+                  },
+                  "path": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Path to the static files matched by the URL pattern, from the application root directory.\nThe path can refer to text matched in groupings in the URL pattern."
+                  },
+                  "require_matching_file": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Description": "Whether this handler should match the request if the file referenced by the handler does not exist."
+                  },
+                  "upload_path_regex": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Regular expression that matches the file paths for all files that should be referenced by this handler."
+                  }
+                }
+              }
+            },
+            "url_regex": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "URL prefix. Uses regular expression syntax, which means regexp special characters must be escaped, but should not contain groupings.\nAll URLs that begin with this prefix are handled by this handler, using the portion of the URL after the prefix as part of the file path."
+            }
+          }
+        }
+      },
       "inbound_services": {
         "Type": "List",
         "Optional": true,
@@ -1532,7 +1651,7 @@
             "instances": {
               "Type": "Int",
               "Required": true,
-              "Description": "Number of instances to assign to the service at the start.\n\n**Note:** When managing the number of instances at runtime through the App Engine Admin API or the (now deprecated) Python 2 \nModules API set_num_instances() you must use 'lifecycle.ignore_changes = [\"manual_scaling\"[0].instances]' to prevent drift detection."
+              "Description": "Number of instances to assign to the service at the start.\n\n**Note:** When managing the number of instances at runtime through the App Engine Admin API or the (now deprecated) Python 2\nModules API set_num_instances() you must use 'lifecycle.ignore_changes = [\"manual_scaling\"[0].instances]' to prevent drift detection."
             }
           }
         }
@@ -1729,7 +1848,7 @@
       "runtime_api_version": {
         "Type": "String",
         "Optional": true,
-        "Description": "The version of the API in the given runtime environment. \nPlease see the app.yaml reference for valid values at https://cloud.google.com/appengine/docs/standard//config/appref",
+        "Description": "The version of the API in the given runtime environment.\nPlease see the app.yaml reference for valid values at https://cloud.google.com/appengine/docs/standard//config/appref",
         "Computed": true
       },
       "runtime_channel": {
@@ -2032,7 +2151,8 @@
       "handlers": {
         "Type": "List",
         "Optional": true,
-        "Description": "An ordered list of URL-matching patterns that should be applied to incoming requests. \nThe first matching URL handles the request and other request handlers are not attempted.",
+        "Description": "An ordered list of URL-matching patterns that should be applied to incoming requests.\nThe first matching URL handles the request and other request handlers are not attempted.",
+        "Computed": true,
         "IsBlock": true,
         "Elem": {
           "Type": "SchemaInfo",
@@ -2055,7 +2175,7 @@
             "script": {
               "Type": "List",
               "Optional": true,
-              "Description": "Executes a script to handle the requests that match this URL pattern. \nOnly the auto value is supported for Node.js in the App Engine standard environment, for example \"script:\" \"auto\".",
+              "Description": "Executes a script to handle the requests that match this URL pattern.\nOnly the auto value is supported for Node.js in the App Engine standard environment, for example \"script:\" \"auto\".",
               "MaxItems": 1,
               "IsBlock": true,
               "Elem": {
@@ -2086,7 +2206,7 @@
                   "application_readable": {
                     "Type": "Bool",
                     "Optional": true,
-                    "Description": "Whether files should also be uploaded as code data. By default, files declared in static file handlers are uploaded as static data and are only served to end users; they cannot be read by the application. If enabled, uploads are charged against both your code and static data storage resource quotas."
+                    "Description": "Whether files should also be uploaded as code data. By default, files declared in static file handlers are uploaded as\nstatic data and are only served to end users; they cannot be read by the application. If enabled, uploads are charged\nagainst both your code and static data storage resource quotas."
                   },
                   "expiration": {
                     "Type": "String",
@@ -2128,7 +2248,7 @@
             "url_regex": {
               "Type": "String",
               "Optional": true,
-              "Description": "URL prefix. Uses regular expression syntax, which means regexp special characters must be escaped, but should not contain groupings. \nAll URLs that begin with this prefix are handled by this handler, using the portion of the URL after the prefix as part of the file path."
+              "Description": "URL prefix. Uses regular expression syntax, which means regexp special characters must be escaped, but should not contain groupings.\nAll URLs that begin with this prefix are handled by this handler, using the portion of the URL after the prefix as part of the file path."
             }
           }
         }
@@ -2207,7 +2327,7 @@
       "runtime_api_version": {
         "Type": "String",
         "Optional": true,
-        "Description": "The version of the API in the given runtime environment. \nPlease see the app.yaml reference for valid values at https://cloud.google.com/appengine/docs/standard//config/appref"
+        "Description": "The version of the API in the given runtime environment.\nPlease see the app.yaml reference for valid values at https://cloud.google.com/appengine/docs/standard//config/appref"
       },
       "service": {
         "Type": "String",
@@ -5748,9 +5868,15 @@
       }
     },
     "google_cloudiot_registry": {
+      "__timeouts__": [
+        "create",
+        "update",
+        "delete"
+      ],
       "credentials": {
         "Type": "List",
         "Optional": true,
+        "Description": "List of public key certificates to authenticate devices.",
         "MaxItems": 10,
         "IsBlock": true,
         "Elem": {
@@ -5759,6 +5885,7 @@
             "public_key_certificate": {
               "Type": "Map",
               "Required": true,
+              "Description": "A public key certificate format and data.",
               "Elem": {
                 "Type": "SchemaElements",
                 "ElementsType": "String"
@@ -5767,15 +5894,10 @@
           }
         }
       },
-      "event_notification_config": {
-        "Type": "Map",
-        "Optional": true,
-        "Computed": true,
-        "Removed": "Please use event_notification_configs instead"
-      },
       "event_notification_configs": {
         "Type": "List",
         "Optional": true,
+        "Description": "List of configurations for event notifications, such as PubSub topics\nto publish device events to.",
         "Computed": true,
         "MaxItems": 10,
         "IsBlock": true,
@@ -5784,11 +5906,13 @@
           "Info": {
             "pubsub_topic_name": {
               "Type": "String",
-              "Required": true
+              "Required": true,
+              "Description": "PubSub topic name to publish device events."
             },
             "subfolder_matches": {
               "Type": "String",
-              "Optional": true
+              "Optional": true,
+              "Description": "If the subfolder name matches this string exactly, this\nconfiguration will be used. The string must not include the\nleading '/' character. If empty, all strings are matched. Empty\nvalue can only be used for the last 'event_notification_configs'\nitem."
             }
           }
         }
@@ -5796,6 +5920,7 @@
       "http_config": {
         "Type": "Map",
         "Optional": true,
+        "Description": "Activate or deactivate HTTP.",
         "Computed": true,
         "Elem": {
           "Type": "SchemaElements",
@@ -5804,11 +5929,17 @@
       },
       "log_level": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Description": "The default logging verbosity for activity from devices in this\nregistry. Specifies which events should be written to logs. For\nexample, if the LogLevel is ERROR, only events that terminate in\nerrors will be logged. LogLevel is inclusive; enabling INFO logging\nwill also enable ERROR logging. Default value: \"NONE\" Possible values: [\"NONE\", \"ERROR\", \"INFO\", \"DEBUG\"]",
+        "Default": {
+          "Type": "string",
+          "Value": "NONE"
+        }
       },
       "mqtt_config": {
         "Type": "Map",
         "Optional": true,
+        "Description": "Activate or deactivate MQTT.",
         "Computed": true,
         "Elem": {
           "Type": "SchemaElements",
@@ -5817,7 +5948,8 @@
       },
       "name": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "A unique name for the resource, required by device registry."
       },
       "project": {
         "Type": "String",
@@ -5827,11 +5959,13 @@
       "region": {
         "Type": "String",
         "Optional": true,
+        "Description": "The region in which the created registry should reside.\nIf it is not provided, the provider region is used.",
         "Computed": true
       },
       "state_notification_config": {
         "Type": "Map",
         "Optional": true,
+        "Description": "A PubSub topic to publish device state updates.",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -18685,6 +18819,306 @@
         "Computed": true
       }
     },
+    "google_data_catalog_entry": {
+      "__timeouts__": [
+        "create",
+        "update",
+        "delete"
+      ],
+      "bigquery_date_sharded_spec": {
+        "Type": "List",
+        "Description": "Specification for a group of BigQuery tables with name pattern [prefix]YYYYMMDD.\nContext: https://cloud.google.com/bigquery/docs/partitioned-tables#partitioning_versus_sharding.",
+        "Computed": true,
+        "MaxItems": 1,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "dataset": {
+              "Type": "String",
+              "Description": "The Data Catalog resource name of the dataset entry the current table belongs to, for example,\nprojects/{project_id}/locations/{location}/entrygroups/{entryGroupId}/entries/{entryId}",
+              "Computed": true
+            },
+            "shard_count": {
+              "Type": "Int",
+              "Description": "Total number of shards.",
+              "Computed": true
+            },
+            "table_prefix": {
+              "Type": "String",
+              "Description": "The table name prefix of the shards. The name of any given shard is [tablePrefix]YYYYMMDD,\nfor example, for shard MyTable20180101, the tablePrefix is MyTable.",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "bigquery_table_spec": {
+        "Type": "List",
+        "Description": "Specification that applies to a BigQuery table. This is only valid on entries of type TABLE.",
+        "Computed": true,
+        "MaxItems": 1,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "table_source_type": {
+              "Type": "String",
+              "Description": "The table source type.",
+              "Computed": true
+            },
+            "table_spec": {
+              "Type": "List",
+              "Description": "Spec of a BigQuery table. This field should only be populated if tableSourceType is BIGQUERY_TABLE.",
+              "Computed": true,
+              "MaxItems": 1,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "grouped_entry": {
+                    "Type": "String",
+                    "Description": "If the table is a dated shard, i.e., with name pattern [prefix]YYYYMMDD, groupedEntry is the\nData Catalog resource name of the date sharded grouped entry, for example,\nprojects/{project_id}/locations/{location}/entrygroups/{entryGroupId}/entries/{entryId}.\nOtherwise, groupedEntry is empty.",
+                    "Computed": true
+                  }
+                }
+              }
+            },
+            "view_spec": {
+              "Type": "List",
+              "Description": "Table view specification. This field should only be populated if tableSourceType is BIGQUERY_VIEW.",
+              "Computed": true,
+              "MaxItems": 1,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "view_query": {
+                    "Type": "String",
+                    "Description": "The query that defines the table view.",
+                    "Computed": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Entry description, which can consist of several sentences or paragraphs that describe entry contents."
+      },
+      "display_name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Display information such as title and description. A short name to identify the entry,\nfor example, \"Analytics Data - Jan 2011\"."
+      },
+      "entry_group": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The name of the entry group this entry is in."
+      },
+      "entry_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The id of the entry to create."
+      },
+      "gcs_fileset_spec": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Specification that applies to a Cloud Storage fileset. This is only valid on entries of type FILESET.",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "file_patterns": {
+              "Type": "List",
+              "Required": true,
+              "Description": "Patterns to identify a set of files in Google Cloud Storage.\nSee [Cloud Storage documentation](https://cloud.google.com/storage/docs/gsutil/addlhelp/WildcardNames)\nfor more information. Note that bucket wildcards are currently not supported. Examples of valid filePatterns:\n\n* gs://bucket_name/dir/*: matches all files within bucket_name/dir directory.\n* gs://bucket_name/dir/**: matches all files in bucket_name/dir spanning all subdirectories.\n* gs://bucket_name/file*: matches files prefixed by file in bucket_name\n* gs://bucket_name/??.txt: matches files with two characters followed by .txt in bucket_name\n* gs://bucket_name/[aeiou].txt: matches files that contain a single vowel character followed by .txt in bucket_name\n* gs://bucket_name/[a-m].txt: matches files that contain a, b, ... or m followed by .txt in bucket_name\n* gs://bucket_name/a/*/b: matches all files in bucket_name that match a/*/b pattern, such as a/c/b, a/d/b\n* gs://another_bucket/a.txt: matches gs://another_bucket/a.txt",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "sample_gcs_file_specs": {
+              "Type": "List",
+              "Description": "Sample files contained in this fileset, not all files contained in this fileset are represented here.",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "file_path": {
+                    "Type": "String",
+                    "Description": "The full file path",
+                    "Computed": true
+                  },
+                  "size_bytes": {
+                    "Type": "Int",
+                    "Description": "The size of the file, in bytes.",
+                    "Computed": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "integrated_system": {
+        "Type": "String",
+        "Description": "This field indicates the entry's source system that Data Catalog integrates with, such as BigQuery or Pub/Sub.",
+        "Computed": true
+      },
+      "linked_resource": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The resource this metadata entry refers to.\nFor Google Cloud Platform resources, linkedResource is the full name of the resource.\nFor example, the linkedResource for a table resource from BigQuery is:\n//bigquery.googleapis.com/projects/projectId/datasets/datasetId/tables/tableId\nOutput only when Entry is of type in the EntryType enum. For entries with userSpecifiedType,\nthis field is optional and defaults to an empty string.",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Description": "The Data Catalog resource name of the entry in URL format.\nExample: projects/{project_id}/locations/{location}/entryGroups/{entryGroupId}/entries/{entryId}.\nNote that this Entry and its child resources may not actually be stored in the location in this name.",
+        "Computed": true
+      },
+      "schema": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Schema of the entry (e.g. BigQuery, GoogleSQL, Avro schema), as a json string. An entry might not have any schema\nattached to it. See\nhttps://cloud.google.com/data-catalog/docs/reference/rest/v1/projects.locations.entryGroups.entries#schema\nfor what fields this schema can contain."
+      },
+      "type": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The type of the entry. Only used for Entries with types in the EntryType enum.\nCurrently, only FILESET enum value is allowed. All other entries created through Data Catalog must use userSpecifiedType. Possible values: [\"FILESET\"]"
+      },
+      "user_specified_system": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "This field indicates the entry's source system that Data Catalog does not integrate with.\nuserSpecifiedSystem strings must begin with a letter or underscore and can only contain letters, numbers,\nand underscores; are case insensitive; must be at least 1 character and at most 64 characters long."
+      },
+      "user_specified_type": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Entry type if it does not fit any of the input-allowed values listed in EntryType enum above.\nWhen creating an entry, users should check the enum values first, if nothing matches the entry\nto be created, then provide a custom value, for example \"my_special_type\".\nuserSpecifiedType strings must begin with a letter or underscore and can only contain letters,\nnumbers, and underscores; are case insensitive; must be at least 1 character and at most 64 characters long."
+      }
+    },
+    "google_data_catalog_entry_group": {
+      "__timeouts__": [
+        "create",
+        "update",
+        "delete"
+      ],
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Entry group description, which can consist of several sentences or paragraphs that describe entry group contents."
+      },
+      "display_name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "A short name to identify the entry group, for example, \"analytics data - jan 2011\"."
+      },
+      "entry_group_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The id of the entry group to create. The id must begin with a letter or underscore,\ncontain only English letters, numbers and underscores, and be at most 64 characters."
+      },
+      "name": {
+        "Type": "String",
+        "Description": "The resource name of the entry group in URL format. Example: projects/{project}/locations/{location}/entryGroups/{entryGroupId}",
+        "Computed": true
+      },
+      "project": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "region": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "EntryGroup location region.",
+        "Computed": true
+      }
+    },
+    "google_data_catalog_entry_group_iam_binding": {
+      "entry_group": {
+        "Type": "String",
+        "Required": true
+      },
+      "etag": {
+        "Type": "String",
+        "Computed": true
+      },
+      "members": {
+        "Type": "Set",
+        "Required": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "project": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "region": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "role": {
+        "Type": "String",
+        "Required": true
+      }
+    },
+    "google_data_catalog_entry_group_iam_member": {
+      "entry_group": {
+        "Type": "String",
+        "Required": true
+      },
+      "etag": {
+        "Type": "String",
+        "Computed": true
+      },
+      "member": {
+        "Type": "String",
+        "Required": true
+      },
+      "project": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "region": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "role": {
+        "Type": "String",
+        "Required": true
+      }
+    },
+    "google_data_catalog_entry_group_iam_policy": {
+      "entry_group": {
+        "Type": "String",
+        "Required": true
+      },
+      "etag": {
+        "Type": "String",
+        "Computed": true
+      },
+      "policy_data": {
+        "Type": "String",
+        "Required": true
+      },
+      "project": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "region": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      }
+    },
     "google_dataflow_job": {
       "additional_experiments": {
         "Type": "Set",
@@ -20757,6 +21191,39 @@
           }
         }
       },
+      "forwarding_config": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "The presence for this field indicates that outbound forwarding is enabled\nfor this zone. The value of this field contains the set of destinations\nto forward to.",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "target_name_servers": {
+              "Type": "Set",
+              "Required": true,
+              "Description": "List of target name servers to forward to. Cloud DNS will\nselect the best available name server if more than\none target is given.",
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "forwarding_path": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Forwarding path for this TargetNameServer. If unset or 'default' Cloud DNS will make forwarding\ndecision based on address ranges, i.e. RFC1918 addresses go to the VPC, Non-RFC1918 addresses go\nto the Internet. When set to 'private', Cloud DNS will always send queries through VPC for this target Possible values: [\"default\", \"private\"]"
+                  },
+                  "ipv4_address": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "IPv4 address of a target name server."
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
       "labels": {
         "Type": "Map",
         "Optional": true,
@@ -20778,6 +21245,35 @@
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
+        }
+      },
+      "peering_config": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "The presence of this field indicates that DNS Peering is enabled for this\nzone. The value of this field contains the network to peer with.",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "target_network": {
+              "Type": "List",
+              "Required": true,
+              "Description": "The network with which to peer.",
+              "MaxItems": 1,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "network_url": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "The fully qualified URL of the VPC network to forward queries to.\nThis should be formatted like\n'https://www.googleapis.com/compute/v1/projects/{project}/global/networks/{network}'"
+                  }
+                }
+              }
+            }
+          }
         }
       },
       "private_visibility_config": {
@@ -20821,6 +21317,86 @@
           "Type": "string",
           "Value": "public"
         }
+      }
+    },
+    "google_dns_policy": {
+      "__timeouts__": [
+        "create",
+        "update",
+        "delete"
+      ],
+      "alternative_name_server_config": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Sets an alternative name server for the associated networks.\nWhen specified, all DNS queries are forwarded to a name server that you choose.\nNames such as .internal are not available when an alternative name server is specified.",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "target_name_servers": {
+              "Type": "Set",
+              "Required": true,
+              "Description": "Sets an alternative name server for the associated networks. When specified,\nall DNS queries are forwarded to a name server that you choose. Names such as .internal\nare not available when an alternative name server is specified.",
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "ipv4_address": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "IPv4 address to forward to."
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "A textual description field. Defaults to 'Managed by Terraform'.",
+        "Default": {
+          "Type": "string",
+          "Value": "Managed by Terraform"
+        }
+      },
+      "enable_inbound_forwarding": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Allows networks bound to this policy to receive DNS queries sent\nby VMs or applications over VPN connections. When enabled, a\nvirtual IP address will be allocated from each of the sub-networks\nthat are bound to this policy."
+      },
+      "enable_logging": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Controls whether logging is enabled for the networks bound to this policy.\nDefaults to no logging if not set."
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "User assigned name for this policy."
+      },
+      "networks": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "List of network names specifying networks to which this policy is applied.",
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "network_url": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The fully qualified URL of the VPC network to bind to.\nThis should be formatted like\n'https://www.googleapis.com/compute/v1/projects/{project}/global/networks/{network}'"
+            }
+          }
+        }
+      },
+      "project": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
       }
     },
     "google_dns_record_set": {
@@ -26276,6 +26852,197 @@
         "Type": "String",
         "Required": true,
         "Description": "The organization whose Cloud Security Command Center the Source\nlives in."
+      }
+    },
+    "google_secret_manager_secret": {
+      "__timeouts__": [
+        "create",
+        "update",
+        "delete"
+      ],
+      "create_time": {
+        "Type": "String",
+        "Description": "The time at which the Secret was created.",
+        "Computed": true
+      },
+      "labels": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "The labels assigned to this Secret.\n\nLabel keys must be between 1 and 63 characters long, have a UTF-8 encoding of maximum 128 bytes,\nand must conform to the following PCRE regular expression: [\\p{Ll}\\p{Lo}][\\p{Ll}\\p{Lo}\\p{N}_-]{0,62}\n\nLabel values must be between 0 and 63 characters long, have a UTF-8 encoding of maximum 128 bytes,\nand must conform to the following PCRE regular expression: [\\p{Ll}\\p{Lo}\\p{N}_-]{0,63}\n\nNo more than 64 labels can be assigned to a given resource.\n\nAn object containing a list of \"key\": value pairs. Example:\n{ \"name\": \"wrench\", \"mass\": \"1.3kg\", \"count\": \"3\" }.",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Description": "The resource name of the Secret. Format:\n'projects/{{project}}/secrets/{{secret_id}}'",
+        "Computed": true
+      },
+      "project": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "replication": {
+        "Type": "List",
+        "Required": true,
+        "Description": "The replication policy of the secret data attached to the Secret. It cannot be changed\nafter the Secret has been created.",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "automatic": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "The Secret will automatically be replicated without any restrictions."
+            },
+            "user_managed": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "The Secret will automatically be replicated without any restrictions.",
+              "MaxItems": 1,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "replicas": {
+                    "Type": "List",
+                    "Required": true,
+                    "Description": "The list of Replicas for this Secret. Cannot be empty.",
+                    "MinItems": 1,
+                    "IsBlock": true,
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "location": {
+                          "Type": "String",
+                          "Required": true,
+                          "Description": "The canonical IDs of the location to replicate data. For example: \"us-east1\"."
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "secret_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "This must be unique within the project."
+      }
+    },
+    "google_secret_manager_secret_iam_binding": {
+      "etag": {
+        "Type": "String",
+        "Computed": true
+      },
+      "members": {
+        "Type": "Set",
+        "Required": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "project": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "role": {
+        "Type": "String",
+        "Required": true
+      },
+      "secret_id": {
+        "Type": "String",
+        "Required": true
+      }
+    },
+    "google_secret_manager_secret_iam_member": {
+      "etag": {
+        "Type": "String",
+        "Computed": true
+      },
+      "member": {
+        "Type": "String",
+        "Required": true
+      },
+      "project": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "role": {
+        "Type": "String",
+        "Required": true
+      },
+      "secret_id": {
+        "Type": "String",
+        "Required": true
+      }
+    },
+    "google_secret_manager_secret_iam_policy": {
+      "etag": {
+        "Type": "String",
+        "Computed": true
+      },
+      "policy_data": {
+        "Type": "String",
+        "Required": true
+      },
+      "project": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "secret_id": {
+        "Type": "String",
+        "Required": true
+      }
+    },
+    "google_secret_manager_secret_version": {
+      "__timeouts__": [
+        "create",
+        "delete"
+      ],
+      "create_time": {
+        "Type": "String",
+        "Description": "The time at which the Secret was created.",
+        "Computed": true
+      },
+      "destroy_time": {
+        "Type": "String",
+        "Description": "The time at which the Secret was destroyed. Only present if state is DESTROYED.",
+        "Computed": true
+      },
+      "enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "The current state of the SecretVersion.",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Description": "The resource name of the SecretVersion. Format:\n'projects/{{project}}/secrets/{{secret_id}}/versions/{{version}}'",
+        "Computed": true
+      },
+      "secret": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Secret Manager secret resource"
+      },
+      "secret_data": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The secret data. Must be no larger than 64KiB."
       }
     },
     "google_service_account": {
@@ -32501,6 +33268,42 @@
             }
           }
         }
+      }
+    },
+    "google_secret_manager_secret_version": {
+      "create_time": {
+        "Type": "String",
+        "Computed": true
+      },
+      "destroy_time": {
+        "Type": "String",
+        "Computed": true
+      },
+      "enabled": {
+        "Type": "Bool",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Computed": true
+      },
+      "project": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "secret": {
+        "Type": "String",
+        "Required": true
+      },
+      "secret_data": {
+        "Type": "String",
+        "Computed": true
+      },
+      "version": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
       }
     },
     "google_service_account": {
