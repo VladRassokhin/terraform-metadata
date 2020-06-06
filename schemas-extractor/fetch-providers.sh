@@ -5,19 +5,21 @@ IFS=$'\n\t'
 
 pushd "$(dirname "$0")" >/dev/null
 
-get_pages() {
+get_repos() {
+  echo "Fetching repositories from organization $1..."
   local idx=1
-  while curl -s "https://api.github.com/orgs/terraform-providers/repos?sort=full_name&per_page=100&page=${idx}" | jq -re '.[].name'; do
-    echo "Fetched page $idx" 1>&2
+  while curl -s "https://api.github.com/orgs/$1/repos?sort=full_name&per_page=100&page=${idx}" | jq -re '.[].name' >>"$2"; do
+    echo "Fetched page $idx"
     idx=$((idx + 1))
   done
-  local idx=1
-  while curl -s "https://api.github.com/orgs/hashicorp/repos?sort=full_name&per_page=100&page=${idx}" | jq -re '.[].name'; do
-    echo "Fetched page $idx" 1>&2
-    idx=$((idx + 1))
-  done
+  echo "Done"
 }
 
-get_pages >providers.list.full
-grep -- '^terraform-provider-' providers.list.full | awk '{print substr($0, 20)}' | sort >providers.list
+rm -f repositories.list.full
+get_repos "terraform-providers" repositories.list.full
+get_repos "hashicorp" repositories.list.full
+echo "Filtering terrform providers repos..."
+grep -- '^terraform-provider-' repositories.list.full | awk '{print substr($0, 20)}' | sort >providers.list
+
+echo "Done"
 popd >/dev/null
