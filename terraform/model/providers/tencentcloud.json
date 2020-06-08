@@ -2,7 +2,7 @@
   ".schema_version": "1",
   "name": "tencentcloud",
   "type": "provider",
-  "version": "v1.35.1",
+  "version": "v1.36.0",
   "provider": {
     "assume_role": {
       "Type": "Set",
@@ -7077,7 +7077,7 @@
       "auto_renew_flag": {
         "Type": "Int",
         "Optional": true,
-        "Description": "Auto renew flag. NOTES: Only supported prepay instance.",
+        "Description": "Auto renew flag. NOTES: Only supported prepaid instance.",
         "Default": {
           "Type": "int",
           "Value": "0"
@@ -7088,6 +7088,19 @@
         "Optional": true,
         "Description": "Indicates which availability zone will be used.",
         "Computed": true
+      },
+      "charge_type": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Pay type of instance, valid values are `PREPAID`, `POSTPAID`. Default is `POSTPAID`.",
+        "ConflictsWith": [
+          "pay_type",
+          "period"
+        ],
+        "Default": {
+          "Type": "string",
+          "Value": "POSTPAID"
+        }
       },
       "engine_version": {
         "Type": "String",
@@ -7102,6 +7115,15 @@
         "Type": "String",
         "Optional": true,
         "Description": "Zone information about first slave instance."
+      },
+      "force_delete": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Indicate whether to delete instance directly or not. Default is false. If set true, the instance will be deleted instead of staying recycle bin. Note: only works for `PREPAID` instance. When the main mysql instance set true, this para of the readonly mysql instance will not take effect.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
       },
       "gtid": {
         "Type": "Int",
@@ -7164,16 +7186,35 @@
       "pay_type": {
         "Type": "Int",
         "Optional": true,
-        "Description": "Pay type of instance, 0: prepay, 1: postpay. NOTES: Only supported prepay instance.",
+        "Description": "Pay type of instance, 0: prepaid, 1: postpaid.",
+        "ConflictsWith": [
+          "charge_type",
+          "prepaid_period"
+        ],
+        "Deprecated": "It has been deprecated from version 1.36.0."
+      },
+      "period": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Period of instance. NOTES: Only supported prepaid instance.",
+        "ConflictsWith": [
+          "charge_type",
+          "prepaid_period"
+        ],
+        "Deprecated": "It has been deprecated from version 1.36.0.",
         "Default": {
           "Type": "int",
           "Value": "1"
         }
       },
-      "period": {
+      "prepaid_period": {
         "Type": "Int",
         "Optional": true,
-        "Description": "Period of instance. NOTES: Only supported prepay instance.",
+        "Description": "Period of instance. NOTES: Only supported prepaid instance.",
+        "ConflictsWith": [
+          "pay_type",
+          "period"
+        ],
         "Default": {
           "Type": "int",
           "Value": "1"
@@ -7380,10 +7421,32 @@
       "auto_renew_flag": {
         "Type": "Int",
         "Optional": true,
-        "Description": "Auto renew flag. NOTES: Only supported prepay instance.",
+        "Description": "Auto renew flag. NOTES: Only supported prepaid instance.",
         "Default": {
           "Type": "int",
           "Value": "0"
+        }
+      },
+      "charge_type": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Pay type of instance, valid values are `PREPAID`, `POSTPAID`. Default is `POSTPAID`.",
+        "ConflictsWith": [
+          "pay_type",
+          "period"
+        ],
+        "Default": {
+          "Type": "string",
+          "Value": "POSTPAID"
+        }
+      },
+      "force_delete": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Indicate whether to delete instance directly or not. Default is false. If set true, the instance will be deleted instead of staying recycle bin. Note: only works for `PREPAID` instance. When the main mysql instance set true, this para of the readonly mysql instance will not take effect.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
         }
       },
       "instance_name": {
@@ -7423,16 +7486,35 @@
       "pay_type": {
         "Type": "Int",
         "Optional": true,
-        "Description": "Pay type of instance, 0: prepay, 1: postpay. NOTES: Only supported prepay instance.",
+        "Description": "Pay type of instance, 0: prepaid, 1: postpaid.",
+        "ConflictsWith": [
+          "charge_type",
+          "prepaid_period"
+        ],
+        "Deprecated": "It has been deprecated from version 1.36.0."
+      },
+      "period": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Period of instance. NOTES: Only supported prepaid instance.",
+        "ConflictsWith": [
+          "charge_type",
+          "prepaid_period"
+        ],
+        "Deprecated": "It has been deprecated from version 1.36.0.",
         "Default": {
           "Type": "int",
           "Value": "1"
         }
       },
-      "period": {
+      "prepaid_period": {
         "Type": "Int",
         "Optional": true,
-        "Description": "Period of instance. NOTES: Only supported prepay instance.",
+        "Description": "Period of instance. NOTES: Only supported prepaid instance.",
+        "ConflictsWith": [
+          "pay_type",
+          "period"
+        ],
         "Default": {
           "Type": "int",
           "Value": "1"
@@ -7578,10 +7660,28 @@
         "Required": true,
         "Description": "The available zone ID of an instance to be created, please refer to tencentcloud_redis_zone_config.list."
       },
+      "charge_type": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The charge type of instance. Valid values are `PREPAID` and `POSTPAID`. Default value is `POSTPAID`. Note: TencentCloud International only supports `POSTPAID`. Caution that update operation on this field will delete old instances and create new with new charge type.",
+        "Default": {
+          "Type": "string",
+          "Value": "POSTPAID"
+        }
+      },
       "create_time": {
         "Type": "String",
         "Description": "The time when the instance was created.",
         "Computed": true
+      },
+      "force_delete": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Indicate whether to delete Redis instance directly or not. Default is false. If set true, the instance will be deleted instead of staying recycle bin. Note: only works for PREPAID instance.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
       },
       "ip": {
         "Type": "String",
@@ -7612,6 +7712,11 @@
           "Type": "int",
           "Value": "6379"
         }
+      },
+      "prepaid_period": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The tenancy (time unit is month) of the prepaid instance, NOTE: it only works when charge_type is set to `PREPAID`. Valid values are 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 24, 36."
       },
       "project_id": {
         "Type": "Int",
@@ -8345,43 +8450,43 @@
     "tencentcloud_tcaplus_cluster": {
       "api_access_id": {
         "Type": "String",
-        "Description": "Access id of the tcaplus cluster.For TcaplusDB SDK connect.",
+        "Description": "Access id of the TcaplusDB cluster.For TcaplusDB SDK connect.",
         "Computed": true
       },
       "api_access_ip": {
         "Type": "String",
-        "Description": "Access ip of the tcaplus cluster.For TcaplusDB SDK connect.",
+        "Description": "Access ip of the TcaplusDB cluster.For TcaplusDB SDK connect.",
         "Computed": true
       },
       "api_access_port": {
         "Type": "Int",
-        "Description": "Access port of the tcaplus cluster.For TcaplusDB SDK connect.",
+        "Description": "Access port of the TcaplusDB cluster.For TcaplusDB SDK connect.",
         "Computed": true
       },
       "cluster_name": {
         "Type": "String",
         "Required": true,
-        "Description": "Name of the tcaplus cluster. length should between 1 and 30."
+        "Description": "Name of the TcaplusDB cluster. Name length should be between 1 and 30."
       },
       "create_time": {
         "Type": "String",
-        "Description": "Create time of the tcaplus cluster.",
+        "Description": "Create time of the TcaplusDB cluster.",
         "Computed": true
       },
       "idl_type": {
         "Type": "String",
         "Required": true,
-        "Description": "Idl type of the tcaplus cluster.Valid values are PROTO,TDR,MIX."
+        "Description": "IDL type of the TcaplusDB cluster. Valid values are PROTO and TDR."
       },
       "network_type": {
         "Type": "String",
-        "Description": "Network type of the tcaplus cluster.",
+        "Description": "Network type of the TcaplusDB cluster.",
         "Computed": true
       },
       "old_password_expire_last": {
         "Type": "Int",
         "Optional": true,
-        "Description": "Old password expected expiration seconds after change password,must \u003e= 300.",
+        "Description": "Expiration time of old password after password update, unit: second.",
         "Default": {
           "Type": "int",
           "Value": "3600"
@@ -8389,204 +8494,204 @@
       },
       "old_password_expire_time": {
         "Type": "String",
-        "Description": "This field will display the old password expiration time,if password_status is `unmodifiable` means the old password has not yet expired, otherwise `-`.",
+        "Description": "Expiration time of the old password. If `password_status` is `unmodifiable`, it means the old password has not yet expired.",
         "Computed": true
       },
       "password": {
         "Type": "String",
         "Required": true,
-        "Description": "Password of the tcaplus cluster. length should between 12 and 16,a-z and 0-9 and A-Z must contain."
+        "Description": "Password of the TcaplusDB cluster. Password length should be between 12 and 16. The password must be a *mix* of uppercase letters (A-Z), lowercase *letters* (a-z) and *numbers* (0-9)."
       },
       "password_status": {
         "Type": "String",
-        "Description": "Password status of the tcaplus cluster.`unmodifiable` means:can not change password now,`modifiable` means:can change password now.",
+        "Description": "Password status of the TcaplusDB cluster. Valid values: `unmodifiable`, which means the password can not be changed in this moment; `modifiable`, which means the password can be changed in this moment.",
         "Computed": true
       },
       "subnet_id": {
         "Type": "String",
         "Required": true,
-        "Description": "Subnet id of the tcaplus cluster."
+        "Description": "Subnet id of the TcaplusDB cluster."
       },
       "vpc_id": {
         "Type": "String",
         "Required": true,
-        "Description": "VPC id of the tcaplus cluster."
-      }
-    },
-    "tencentcloud_tcaplus_group": {
-      "cluster_id": {
-        "Type": "String",
-        "Required": true,
-        "Description": "Cluster of the tcaplus group belongs."
-      },
-      "create_time": {
-        "Type": "String",
-        "Description": "Create time of the tcaplus group.",
-        "Computed": true
-      },
-      "group_name": {
-        "Type": "String",
-        "Required": true,
-        "Description": "Name of the tcaplus group. length should between 1 and 30."
-      },
-      "table_count": {
-        "Type": "Int",
-        "Description": "Number of tables.",
-        "Computed": true
-      },
-      "total_size": {
-        "Type": "Int",
-        "Description": "The total storage(MB).",
-        "Computed": true
+        "Description": "VPC id of the TcaplusDB cluster."
       }
     },
     "tencentcloud_tcaplus_idl": {
       "cluster_id": {
         "Type": "String",
         "Required": true,
-        "Description": "Cluster id of the idl belongs.."
+        "Description": "Id of the TcaplusDB cluster to which the table group belongs."
       },
       "file_content": {
         "Type": "String",
         "Required": true,
-        "Description": "Idl file content."
+        "Description": "IDL file content of the TcaplusDB table."
       },
       "file_ext_type": {
         "Type": "String",
         "Required": true,
-        "Description": "File ext type of this idl file. if `file_type` is PROTO  `file_ext_type` must be 'proto',if `file_type` is TDR  `file_ext_type` must be 'xml',if `file_type` is MIX  `file_ext_type` must be 'xml' or 'proto'."
+        "Description": "File ext type of the IDL file. If `file_type` is `PROTO`, `file_ext_type` must be 'proto'; If `file_type` is `TDR`, `file_ext_type` must be 'xml'."
       },
       "file_name": {
         "Type": "String",
         "Required": true,
-        "Description": "Name of this idl file."
+        "Description": "Name of the IDL file."
       },
       "file_type": {
         "Type": "String",
         "Required": true,
-        "Description": "Type of this idl file, Valid values are PROTO,TDR,MIX."
-      },
-      "group_id": {
-        "Type": "String",
-        "Required": true,
-        "Description": "Group of this idl belongs."
+        "Description": "Type of the IDL file. Valid values are PROTO and TDR."
       },
       "table_infos": {
         "Type": "List",
-        "Description": "Table infos in this idl.",
+        "Description": "Table info of the IDL.",
         "Computed": true,
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
             "error": {
               "Type": "String",
-              "Description": "Show if this table  error.",
+              "Description": "Error messages for creating IDL file.",
               "Computed": true
             },
             "index_key_set": {
               "Type": "String",
-              "Description": "Index key set of this table.",
+              "Description": "Index key set of the TcaplusDB table.",
               "Computed": true
             },
             "key_fields": {
               "Type": "String",
-              "Description": "Key fields of this table.",
+              "Description": "Primary key fields of the TcaplusDB table.",
               "Computed": true
             },
             "sum_key_field_size": {
               "Type": "Int",
-              "Description": "Key fields size of this table.",
+              "Description": "Total size of primary key field of the TcaplusDB table.",
               "Computed": true
             },
             "sum_value_field_size": {
               "Type": "Int",
-              "Description": "Value fields size of this table.",
+              "Description": "Total size of non-primary key fields of the TcaplusDB table.",
               "Computed": true
             },
             "table_name": {
               "Type": "String",
-              "Description": "Name of this table.",
+              "Description": "Name of the TcaplusDB table.",
               "Computed": true
             },
             "value_fields": {
               "Type": "String",
-              "Description": "Value fields of this table.",
+              "Description": "Non-primary key fields of the TcaplusDB table.",
               "Computed": true
             }
           }
         }
+      },
+      "tablegroup_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Id of the table group to which the IDL file belongs."
       }
     },
     "tencentcloud_tcaplus_table": {
       "cluster_id": {
         "Type": "String",
         "Required": true,
-        "Description": "Cluster of this table belongs."
+        "Description": "ID of the TcaplusDB cluster to which the table belongs."
       },
       "create_time": {
         "Type": "String",
-        "Description": "Create time of the tcaplus table.",
+        "Description": "Create time of the TcaplusDB table.",
         "Computed": true
       },
       "description": {
         "Type": "String",
         "Optional": true,
-        "Description": "Description of this table."
+        "Description": "Description of the TcaplusDB table."
       },
       "error": {
         "Type": "String",
-        "Description": "Show if this table  create error.",
+        "Description": "Error messages for creating TcaplusDB table.",
         "Computed": true
-      },
-      "group_id": {
-        "Type": "String",
-        "Required": true,
-        "Description": "Group of this table belongs."
       },
       "idl_id": {
         "Type": "String",
         "Required": true,
-        "Description": "Idl file for this table."
+        "Description": "ID of the IDL File."
       },
-      "reserved_read_qps": {
+      "reserved_read_cu": {
         "Type": "Int",
         "Required": true,
-        "Description": "Table reserved read QPS."
+        "Description": "Reserved read capacity units of the TcaplusDB table."
       },
       "reserved_volume": {
         "Type": "Int",
         "Required": true,
-        "Description": "Table reserved capacity(GB)."
+        "Description": "Reserved storage capacity of the TcaplusDB table (unit: GB)."
       },
-      "reserved_write_qps": {
+      "reserved_write_cu": {
         "Type": "Int",
         "Required": true,
-        "Description": "Table reserved write QPS."
+        "Description": "Reserved write capacity units of the TcaplusDB table."
       },
       "status": {
         "Type": "String",
-        "Description": "Status of this table.",
+        "Description": "Status of the TcaplusDB table.",
         "Computed": true
       },
       "table_idl_type": {
         "Type": "String",
         "Required": true,
-        "Description": "Type of this table idl, Valid values are PROTO,TDR."
+        "Description": "IDL type of the TcaplusDB table. Valid values are PROTO and TDR."
       },
       "table_name": {
         "Type": "String",
         "Required": true,
-        "Description": "Name of this table."
+        "Description": "Name of the TcaplusDB table."
       },
       "table_size": {
         "Type": "Int",
-        "Description": "Size of this table.",
+        "Description": "Size of the TcaplusDB table.",
         "Computed": true
       },
       "table_type": {
         "Type": "String",
         "Required": true,
-        "Description": "Type of this table, Valid values are GENERIC,LIST."
+        "Description": "Type of the TcaplusDB table. Valid values are GENERIC and LIST."
+      },
+      "tablegroup_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "ID of the table group to which the table belongs."
+      }
+    },
+    "tencentcloud_tcaplus_tablegroup": {
+      "cluster_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Id of the TcaplusDB cluster to which the table group belongs."
+      },
+      "create_time": {
+        "Type": "String",
+        "Description": "Create time of the TcaplusDB table group.",
+        "Computed": true
+      },
+      "table_count": {
+        "Type": "Int",
+        "Description": "Number of tables.",
+        "Computed": true
+      },
+      "tablegroup_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the TcaplusDB table group. Name length should be between 1 and 30."
+      },
+      "total_size": {
+        "Type": "Int",
+        "Description": "Total storage size (MB).",
+        "Computed": true
       }
     },
     "tencentcloud_vpc": {
@@ -9432,6 +9537,48 @@
         }
       }
     },
+    "tencentcloud_availability_regions": {
+      "include_unavailable": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "A bool variable indicates that the query will include `UNAVAILABLE` regions."
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "When specified, only the region with the exactly name match will be returned."
+      },
+      "regions": {
+        "Type": "List",
+        "Description": "A list of regions will be exported and its every element contains the following attributes:",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "description": {
+              "Type": "String",
+              "Description": "The description of the region, like `Guangzhou Region`.",
+              "Computed": true
+            },
+            "name": {
+              "Type": "String",
+              "Description": "The name of the region, like `ap-guangzhou`.",
+              "Computed": true
+            },
+            "state": {
+              "Type": "String",
+              "Description": "The state of the region, indicate availability using `AVAILABLE` and `UNAVAILABLE` values.",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "result_output_file": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Used to save results."
+      }
+    },
     "tencentcloud_availability_zones": {
       "include_unavailable": {
         "Type": "Bool",
@@ -9441,7 +9588,7 @@
       "name": {
         "Type": "String",
         "Optional": true,
-        "Description": "When specified, only the zone with the exactly name match will return."
+        "Description": "When specified, only the zone with the exactly name match will be returned."
       },
       "result_output_file": {
         "Type": "String",
@@ -9457,22 +9604,22 @@
           "Info": {
             "description": {
               "Type": "String",
-              "Description": "The description for the zone, unfortunately only Chinese characters at this stage.",
+              "Description": "The description of the zone, like `Guangzhou Zone 3`.",
               "Computed": true
             },
             "id": {
               "Type": "String",
-              "Description": "An internal id for the zone, like `200003`, usually not so useful for end user.",
+              "Description": "An internal id for the zone, like `200003`, usually not so useful.",
               "Computed": true
             },
             "name": {
               "Type": "String",
-              "Description": "The english name for the zone, like `ap-guangzhou-3`.",
+              "Description": "The name of the zone, like `ap-guangzhou-3`.",
               "Computed": true
             },
             "state": {
               "Type": "String",
-              "Description": "The state for the zone, indicate availability using `AVAILABLE` and `UNAVAILABLE` values.",
+              "Description": "The state of the zone, indicate availability using `AVAILABLE` and `UNAVAILABLE` values.",
               "Computed": true
             }
           }
@@ -16230,7 +16377,7 @@
         "Description": "End timestamp for this query, eg:`1588232111`. Default start time is `now-3000`.",
         "Default": {
           "Type": "int64",
-          "Value": "1591537626"
+          "Value": "1591624084"
         }
       },
       "event_name": {
@@ -16463,7 +16610,7 @@
         "Description": "Start timestamp for this query, eg:`1588230000`. Default start time is `now-3600`.",
         "Default": {
           "Type": "int64",
-          "Value": "1591537026"
+          "Value": "1591623484"
         }
       },
       "status": {
@@ -16594,6 +16741,11 @@
       }
     },
     "tencentcloud_mysql_instance": {
+      "charge_type": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Pay type of instance, valid values are `PREPAID` and `POSTPAID`."
+      },
       "engine_version": {
         "Type": "String",
         "Optional": true,
@@ -16614,6 +16766,11 @@
             "auto_renew_flag": {
               "Type": "Int",
               "Description": "Auto renew flag. NOTES: Only supported prepay instance.",
+              "Computed": true
+            },
+            "charge_type": {
+              "Type": "String",
+              "Description": "Pay type of instance.",
               "Computed": true
             },
             "cpu_core_count": {
@@ -16707,7 +16864,7 @@
             },
             "pay_type": {
               "Type": "Int",
-              "Description": "Pay type of instance, 0: prepay, 1: postpay. NOTES: Only prepay is supported.",
+              "Description": "Pay type of instance, 0: prepaid, 1: postpaid.",
               "Computed": true
             },
             "project_id": {
@@ -16793,7 +16950,8 @@
       "pay_type": {
         "Type": "Int",
         "Optional": true,
-        "Description": "Pay type of instance, 0: prepay, 1: postpay. NOTES: Only prepay is supported."
+        "Description": "Pay type of instance, 0: prepay, 1: postpay.",
+        "Deprecated": "It has been deprecated from version 1.36.0."
       },
       "result_output_file": {
         "Type": "String",
@@ -17285,6 +17443,11 @@
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
+            "charge_type": {
+              "Type": "String",
+              "Description": "The charge type of instance. Valid values are `POSTPAID` and `PREPAID`. Default value is `POSTPAID`.",
+              "Computed": true
+            },
             "create_time": {
               "Type": "String",
               "Description": "The time when the instance is created.",
@@ -18364,83 +18527,83 @@
       "cluster_id": {
         "Type": "String",
         "Optional": true,
-        "Description": "Id of the tcaplus cluster to be query."
+        "Description": "Id of the TcaplusDB cluster to be query."
       },
       "cluster_name": {
         "Type": "String",
         "Optional": true,
-        "Description": "Name of the tcaplus cluster to be query."
+        "Description": "Name of the TcaplusDB cluster to be query."
       },
       "list": {
         "Type": "List",
-        "Description": "A list of tcaplus cluster. Each element contains the following attributes.",
+        "Description": "A list of TcaplusDB cluster. Each element contains the following attributes.",
         "Computed": true,
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
             "api_access_id": {
               "Type": "String",
-              "Description": "Access id of the tcaplus cluster.For TcaplusDB SDK connect.",
+              "Description": "Access id of the TcaplusDB cluster.For TcaplusDB SDK connect.",
               "Computed": true
             },
             "api_access_ip": {
               "Type": "String",
-              "Description": "Access ip of the tcaplus cluster.For TcaplusDB SDK connect.",
+              "Description": "Access ip of the TcaplusDB cluster.For TcaplusDB SDK connect.",
               "Computed": true
             },
             "api_access_port": {
               "Type": "Int",
-              "Description": "Access port of the tcaplus cluster.For TcaplusDB SDK connect.",
+              "Description": "Access port of the TcaplusDB cluster.For TcaplusDB SDK connect.",
               "Computed": true
             },
             "cluster_id": {
               "Type": "String",
-              "Description": "Id of the tcaplus cluster.",
+              "Description": "Id of the TcaplusDB cluster.",
               "Computed": true
             },
             "cluster_name": {
               "Type": "String",
-              "Description": "Name of the tcaplus cluster.",
+              "Description": "Name of the TcaplusDB cluster.",
               "Computed": true
             },
             "create_time": {
               "Type": "String",
-              "Description": "Create time of the tcaplus cluster.",
+              "Description": "Create time of the TcaplusDB cluster.",
               "Computed": true
             },
             "idl_type": {
               "Type": "String",
-              "Description": "Idl type of the tcaplus cluster.",
+              "Description": "IDL type of the TcaplusDB cluster.",
               "Computed": true
             },
             "network_type": {
               "Type": "String",
-              "Description": "Network type of the tcaplus cluster.",
+              "Description": "Network type of the TcaplusDB cluster.",
               "Computed": true
             },
             "old_password_expire_time": {
               "Type": "String",
-              "Description": "This field will display the old password expiration time,if password_status is `unmodifiable` means the old password has not yet expired, otherwise `-`.",
+              "Description": "Expiration time of the old password. If `password_status` is `unmodifiable`, it means the old password has not yet expired.",
               "Computed": true
             },
             "password": {
               "Type": "String",
-              "Description": "Password of the tcaplus cluster.",
+              "Description": "Access password of the TcaplusDB cluster.",
               "Computed": true
             },
             "password_status": {
               "Type": "String",
-              "Description": "Password status of the tcaplus cluster.`unmodifiable` means:can not change password now,`modifiable` means:can change password now.",
+              "Description": "Password status of the TcaplusDB cluster. Valid values: `unmodifiable`, which means the password can not be changed in this moment; `modifiable`, which means the password can be changed in this moment.",
               "Computed": true
             },
             "subnet_id": {
               "Type": "String",
-              "Description": "Subnet id of the tcaplus cluster.",
+              "Description": "Subnet id of the TcaplusDB cluster.",
               "Computed": true
             },
             "vpc_id": {
               "Type": "String",
-              "Description": "VPC id of the tcaplus cluster.",
+              "Description": "VPC id of the TcaplusDB cluster.",
               "Computed": true
             }
           }
@@ -18449,45 +18612,52 @@
       "result_output_file": {
         "Type": "String",
         "Optional": true,
-        "Description": "Used to save results."
+        "Description": "File for saving results."
       }
     },
-    "tencentcloud_tcaplus_groups": {
+    "tencentcloud_tcaplus_idls": {
       "cluster_id": {
         "Type": "String",
         "Required": true,
-        "Description": "Id of the tcaplus cluster to be query."
-      },
-      "group_id": {
-        "Type": "String",
-        "Optional": true,
-        "Description": "Group id to be query."
-      },
-      "group_name": {
-        "Type": "String",
-        "Optional": true,
-        "Description": "Group name to be query."
+        "Description": "Id of the TcaplusDB cluster to be query."
       },
       "list": {
         "Type": "List",
-        "Description": "A list of tcaplus table groups. Each element contains the following attributes.",
+        "Description": "A list of TcaplusDB table IDL. Each element contains the following attributes.",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "idl_id": {
+              "Type": "String",
+              "Description": "Id of the IDL.",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "result_output_file": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "File for saving results."
+      }
+    },
+    "tencentcloud_tcaplus_tablegroups": {
+      "cluster_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Id of the TcaplusDB cluster to be query."
+      },
+      "list": {
+        "Type": "List",
+        "Description": "A list of table group. Each element contains the following attributes.",
         "Computed": true,
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
             "create_time": {
               "Type": "String",
-              "Description": "Create time of the tcaplus group.",
-              "Computed": true
-            },
-            "group_id": {
-              "Type": "String",
-              "Description": "Id of the tcaplus group.",
-              "Computed": true
-            },
-            "group_name": {
-              "Type": "String",
-              "Description": "Name of the tcaplus group.",
+              "Description": "Create time of the table group..",
               "Computed": true
             },
             "table_count": {
@@ -18495,9 +18665,19 @@
               "Description": "Number of tables.",
               "Computed": true
             },
+            "tablegroup_id": {
+              "Type": "String",
+              "Description": "Id of the table group.",
+              "Computed": true
+            },
+            "tablegroup_name": {
+              "Type": "String",
+              "Description": "Name of the table group.",
+              "Computed": true
+            },
             "total_size": {
               "Type": "Int",
-              "Description": "The total storage(MB).",
+              "Description": "Total storage size (MB).",
               "Computed": true
             }
           }
@@ -18506,122 +18686,100 @@
       "result_output_file": {
         "Type": "String",
         "Optional": true,
-        "Description": "Used to save results."
-      }
-    },
-    "tencentcloud_tcaplus_idls": {
-      "cluster_id": {
-        "Type": "String",
-        "Required": true,
-        "Description": "Id of the tcaplus cluster to be query."
+        "Description": "File for saving results."
       },
-      "list": {
-        "Type": "List",
-        "Description": "A list of tcaplus idls. Each element contains the following attributes.",
-        "Computed": true,
-        "Elem": {
-          "Type": "SchemaInfo",
-          "Info": {
-            "idl_id": {
-              "Type": "String",
-              "Description": "Id of this idl.",
-              "Computed": true
-            }
-          }
-        }
-      },
-      "result_output_file": {
+      "tablegroup_id": {
         "Type": "String",
         "Optional": true,
-        "Description": "Used to save results."
+        "Description": "Id of the table group to be query."
+      },
+      "tablegroup_name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Name of the table group to be query."
       }
     },
     "tencentcloud_tcaplus_tables": {
       "cluster_id": {
         "Type": "String",
         "Required": true,
-        "Description": "Id of the tcaplus cluster to be query."
-      },
-      "group_id": {
-        "Type": "String",
-        "Optional": true,
-        "Description": "Group id to be query."
+        "Description": "Id of the TcaplusDB cluster to be query."
       },
       "list": {
         "Type": "List",
-        "Description": "A list of tcaplus groups. Each element contains the following attributes.",
+        "Description": "A list of TcaplusDB tables. Each element contains the following attributes.",
         "Computed": true,
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
             "create_time": {
               "Type": "String",
-              "Description": "Create time of the tcaplus table.",
+              "Description": "Create time of the TcaplusDB table.",
               "Computed": true
             },
             "description": {
               "Type": "String",
-              "Description": "Description of this table.",
+              "Description": "Description of the TcaplusDB table.",
               "Computed": true
             },
             "error": {
               "Type": "String",
-              "Description": "Show if this table  create error.",
-              "Computed": true
-            },
-            "group_id": {
-              "Type": "String",
-              "Description": "Group of this table belongs.",
+              "Description": "Error message for creating TcaplusDB table.",
               "Computed": true
             },
             "idl_id": {
               "Type": "String",
-              "Description": "Idl file id for this table.",
+              "Description": "IDL file id of the TcaplusDB table.",
               "Computed": true
             },
-            "reserved_read_qps": {
+            "reserved_read_cu": {
               "Type": "Int",
-              "Description": "Table reserved read QPS.",
+              "Description": "Reserved read capacity units of the TcaplusDB table.",
               "Computed": true
             },
             "reserved_volume": {
               "Type": "Int",
-              "Description": "Table reserved capacity(GB).",
+              "Description": "Reserved storage capacity of the TcaplusDB table (unit:GB).",
               "Computed": true
             },
-            "reserved_write_qps": {
+            "reserved_write_cu": {
               "Type": "Int",
-              "Description": "Table reserved write QPS.",
+              "Description": "Reserved write capacity units of the TcaplusDB table.",
               "Computed": true
             },
             "status": {
               "Type": "String",
-              "Description": "Status of this table.",
+              "Description": "Status of the TcaplusDB table.",
               "Computed": true
             },
             "table_id": {
               "Type": "String",
-              "Description": "Id of this table.",
+              "Description": "Id of the TcaplusDB table.",
               "Computed": true
             },
             "table_idl_type": {
               "Type": "String",
-              "Description": "Type of this table idl.",
+              "Description": "IDL type of  the TcaplusDB table.",
               "Computed": true
             },
             "table_name": {
               "Type": "String",
-              "Description": "Name of this table.",
+              "Description": "Name of  the TcaplusDB table.",
               "Computed": true
             },
             "table_size": {
               "Type": "Int",
-              "Description": "Size of this table.",
+              "Description": "Size of the TcaplusDB table.",
               "Computed": true
             },
             "table_type": {
               "Type": "String",
-              "Description": "Type of this table.",
+              "Description": "Type of the TcaplusDB table.",
+              "Computed": true
+            },
+            "tablegroup_id": {
+              "Type": "String",
+              "Description": "Table group id of the TcaplusDB table.",
               "Computed": true
             }
           }
@@ -18630,7 +18788,7 @@
       "result_output_file": {
         "Type": "String",
         "Optional": true,
-        "Description": "Used to save results."
+        "Description": "File for saving results."
       },
       "table_id": {
         "Type": "String",
@@ -18641,6 +18799,11 @@
         "Type": "String",
         "Optional": true,
         "Description": "Table name to be query."
+      },
+      "tablegroup_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Id of the table group to be query."
       }
     },
     "tencentcloud_vpc": {
