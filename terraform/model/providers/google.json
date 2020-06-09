@@ -2,7 +2,7 @@
   ".schema_version": "1",
   "name": "google",
   "type": "provider",
-  "version": "v3.24.0",
+  "version": "v3.25.0",
   "provider": {
     "access_context_manager_custom_endpoint": {
       "Type": "String",
@@ -1559,7 +1559,7 @@
         }
       },
       "inbound_services": {
-        "Type": "List",
+        "Type": "Set",
         "Optional": true,
         "Description": "Before an application can receive email or XMPP messages, the application must be configured to enable the service.",
         "Elem": {
@@ -2251,6 +2251,15 @@
               "Description": "URL prefix. Uses regular expression syntax, which means regexp special characters must be escaped, but should not contain groupings.\nAll URLs that begin with this prefix are handled by this handler, using the portion of the URL after the prefix as part of the file path."
             }
           }
+        }
+      },
+      "inbound_services": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Before an application can receive email or XMPP messages, the application must be configured to enable the service.",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
         }
       },
       "instance_class": {
@@ -3490,6 +3499,25 @@
                 }
               }
             },
+            "hive_partitioning_options": {
+              "Type": "List",
+              "Optional": true,
+              "MaxItems": 1,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "mode": {
+                    "Type": "String",
+                    "Optional": true
+                  },
+                  "source_uri_prefix": {
+                    "Type": "String",
+                    "Optional": true
+                  }
+                }
+              }
+            },
             "ignore_unknown_values": {
               "Type": "Bool",
               "Optional": true
@@ -3549,6 +3577,44 @@
         "Type": "String",
         "Optional": true,
         "Computed": true
+      },
+      "range_partitioning": {
+        "Type": "List",
+        "Optional": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "field": {
+              "Type": "String",
+              "Required": true
+            },
+            "range": {
+              "Type": "List",
+              "Required": true,
+              "MaxItems": 1,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "end": {
+                    "Type": "Int",
+                    "Required": true
+                  },
+                  "interval": {
+                    "Type": "Int",
+                    "Required": true
+                  },
+                  "start": {
+                    "Type": "Int",
+                    "Required": true
+                  }
+                }
+              }
+            }
+          }
+        }
       },
       "schema": {
         "Type": "String",
@@ -3884,33 +3950,39 @@
       "column_family": {
         "Type": "Set",
         "Optional": true,
+        "Description": "A group of columns within a table which share a common configuration. This can be specified multiple times.",
         "IsBlock": true,
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
             "family": {
               "Type": "String",
-              "Required": true
+              "Required": true,
+              "Description": "The name of the column family."
             }
           }
         }
       },
       "instance_name": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "The name of the Bigtable instance."
       },
       "name": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "The name of the table."
       },
       "project": {
         "Type": "String",
         "Optional": true,
+        "Description": "The ID of the project in which the resource belongs. If it is not provided, the provider project is used.",
         "Computed": true
       },
       "split_keys": {
         "Type": "List",
         "Optional": true,
+        "Description": "A list of predefined keys to split the table on. !\u003e Warning: Modifying the split_keys of an existing table will cause Terraform to delete/recreate the entire google_bigtable_table resource.",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -17250,6 +17322,26 @@
           }
         }
       },
+      "create_time": {
+        "Type": "String",
+        "Description": "The time this note was created.",
+        "Computed": true
+      },
+      "expiration_time": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Time of expiration for this note. Leave empty if note does not expire."
+      },
+      "kind": {
+        "Type": "String",
+        "Description": "The type of analysis this note describes",
+        "Computed": true
+      },
+      "long_description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "A detailed description of the note"
+      },
       "name": {
         "Type": "String",
         "Required": true,
@@ -17258,6 +17350,131 @@
       "project": {
         "Type": "String",
         "Optional": true,
+        "Computed": true
+      },
+      "related_note_names": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Names of other notes related to this note.",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "related_url": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "URLs associated with this note and related metadata.",
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "label": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Label to describe usage of the URL"
+            },
+            "url": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Specific URL associated with the resource."
+            }
+          }
+        }
+      },
+      "short_description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "A one sentence description of the note."
+      },
+      "update_time": {
+        "Type": "String",
+        "Description": "The time this note was last updated.",
+        "Computed": true
+      }
+    },
+    "google_container_analysis_occurrence": {
+      "__timeouts__": [
+        "create",
+        "update",
+        "delete"
+      ],
+      "attestation": {
+        "Type": "List",
+        "Required": true,
+        "Description": "Occurrence that represents a single \"attestation\". The authenticity\nof an attestation can be verified using the attached signature.\nIf the verifier trusts the public key of the signer, then verifying\nthe signature is sufficient to establish trust. In this circumstance,\nthe authority to which this attestation is attached is primarily\nuseful for lookup (how to find this attestation if you already\nknow the authority and artifact to be verified) and intent (for\nwhich authority this attestation was intended to sign.",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "serialized_payload": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The serialized payload that is verified by one or\nmore signatures. A base64-encoded string."
+            },
+            "signatures": {
+              "Type": "Set",
+              "Required": true,
+              "Description": "One or more signatures over serializedPayload.\nVerifier implementations should consider this attestation\nmessage verified if at least one signature verifies\nserializedPayload. See Signature in common.proto for more\ndetails on signature structure and verification.",
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "public_key_id": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "The identifier for the public key that verifies this\nsignature. MUST be an RFC3986 conformant\nURI. * When possible, the key id should be an\nimmutable reference, such as a cryptographic digest.\nExamples of valid values:\n\n* OpenPGP V4 public key fingerprint. See https://www.iana.org/assignments/uri-schemes/prov/openpgp4fpr\n  for more details on this scheme.\n    * 'openpgp4fpr:74FAF3B861BDA0870C7B6DEF607E48D2A663AEEA'\n* RFC6920 digest-named SubjectPublicKeyInfo (digest of the DER serialization):\n    * \"ni:///sha-256;cD9o9Cq6LG3jD0iKXqEi_vdjJGecm_iXkbqVoScViaU\""
+                  },
+                  "signature": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "The content of the signature, an opaque bytestring.\nThe payload that this signature verifies MUST be\nunambiguously provided with the Signature during\nverification. A wrapper message might provide the\npayload explicitly. Alternatively, a message might\nhave a canonical serialization that can always be\nunambiguously computed to derive the payload."
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "create_time": {
+        "Type": "String",
+        "Description": "The time when the repository was created.",
+        "Computed": true
+      },
+      "kind": {
+        "Type": "String",
+        "Description": "The note kind which explicitly denotes which of the occurrence\ndetails are specified. This field can be used as a filter in list\nrequests.",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Description": "The name of the occurrence.",
+        "Computed": true
+      },
+      "note_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The analysis note associated with this occurrence, in the form of\nprojects/[PROJECT]/notes/[NOTE_ID]. This field can be used as a\nfilter in list requests."
+      },
+      "project": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "remediation": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "A description of actions that can be taken to remedy the note."
+      },
+      "resource_uri": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Required. Immutable. A URI that represents the resource for which\nthe occurrence applies. For example,\nhttps://gcr.io/project/image@sha256:123abc for a Docker image."
+      },
+      "update_time": {
+        "Type": "String",
+        "Description": "The time when the repository was last updated.",
         "Computed": true
       }
     },
@@ -18003,6 +18220,7 @@
             "autoscaling": {
               "Type": "List",
               "Optional": true,
+              "Description": "Configuration required by cluster autoscaler to adjust the size of the node pool to the current cluster usage.",
               "MaxItems": 1,
               "IsBlock": true,
               "Elem": {
@@ -18010,11 +18228,13 @@
                 "Info": {
                   "max_node_count": {
                     "Type": "Int",
-                    "Required": true
+                    "Required": true,
+                    "Description": "Maximum number of nodes in the NodePool. Must be \u003e= min_node_count."
                   },
                   "min_node_count": {
                     "Type": "Int",
-                    "Required": true
+                    "Required": true,
+                    "Description": "Minimum number of nodes in the NodePool. Must be \u003e=0 and \u003c= max_node_count."
                   }
                 }
               }
@@ -18022,10 +18242,12 @@
             "initial_node_count": {
               "Type": "Int",
               "Optional": true,
+              "Description": "The initial number of nodes for the pool. In regional or multi-zonal clusters, this is the number of nodes per zone. Changing this will force recreation of the resource.",
               "Computed": true
             },
             "instance_group_urls": {
               "Type": "List",
+              "Description": "The resource URLs of the managed instance groups associated with this node pool.",
               "Computed": true,
               "Elem": {
                 "Type": "SchemaElements",
@@ -18035,6 +18257,7 @@
             "management": {
               "Type": "List",
               "Optional": true,
+              "Description": "Node management configuration, wherein auto-repair and auto-upgrade is configured.",
               "Computed": true,
               "MaxItems": 1,
               "IsBlock": true,
@@ -18044,6 +18267,7 @@
                   "auto_repair": {
                     "Type": "Bool",
                     "Optional": true,
+                    "Description": "Whether the nodes will be automatically repaired.",
                     "Default": {
                       "Type": "bool",
                       "Value": "false"
@@ -18052,6 +18276,7 @@
                   "auto_upgrade": {
                     "Type": "Bool",
                     "Optional": true,
+                    "Description": "Whether the nodes will be automatically upgraded.",
                     "Default": {
                       "Type": "bool",
                       "Value": "false"
@@ -18063,16 +18288,19 @@
             "max_pods_per_node": {
               "Type": "Int",
               "Optional": true,
+              "Description": "The maximum number of pods per node in this node pool. Note that this does not work on node pools which are \"route-based\" - that is, node pools belonging to clusters that do not have IP Aliasing enabled.",
               "Computed": true
             },
             "name": {
               "Type": "String",
               "Optional": true,
+              "Description": "The name of the node pool. If left blank, Terraform will auto-generate a unique name.",
               "Computed": true
             },
             "name_prefix": {
               "Type": "String",
               "Optional": true,
+              "Description": "Creates a unique name for the node pool beginning with the specified prefix. Conflicts with name.",
               "Computed": true
             },
             "node_config": {
@@ -18269,11 +18497,13 @@
             "node_count": {
               "Type": "Int",
               "Optional": true,
+              "Description": "The number of nodes per instance group. This field can be used to update the number of nodes per instance group but should not be used alongside autoscaling.",
               "Computed": true
             },
             "node_locations": {
               "Type": "Set",
               "Optional": true,
+              "Description": "The list of zones in which the node pool's nodes should be located. Nodes must be in the region of their regional cluster or in the same region as their cluster's zone for zonal clusters. If unspecified, the cluster-level node_locations will be used.",
               "Computed": true,
               "Elem": {
                 "Type": "SchemaElements",
@@ -18283,6 +18513,7 @@
             "upgrade_settings": {
               "Type": "List",
               "Optional": true,
+              "Description": "Specify node upgrade settings to change how many nodes GKE attempts to upgrade at once. The number of nodes upgraded simultaneously is the sum of max_surge and max_unavailable. The maximum number of nodes upgraded simultaneously is limited to 20.",
               "Computed": true,
               "MaxItems": 1,
               "IsBlock": true,
@@ -18291,11 +18522,13 @@
                 "Info": {
                   "max_surge": {
                     "Type": "Int",
-                    "Required": true
+                    "Required": true,
+                    "Description": "The number of additional nodes that can be added to the node pool during an upgrade. Increasing max_surge raises the number of nodes that can be upgraded simultaneously. Can be set to 0 or greater."
                   },
                   "max_unavailable": {
                     "Type": "Int",
-                    "Required": true
+                    "Required": true,
+                    "Description": "The number of nodes that can be simultaneously unavailable during an upgrade. Increasing max_unavailable raises the number of nodes that can be upgraded in parallel. Can be set to 0 or greater."
                   }
                 }
               }
@@ -18303,6 +18536,7 @@
             "version": {
               "Type": "String",
               "Optional": true,
+              "Description": "The Kubernetes version for the nodes in this pool. Note that if this field and auto_upgrade are both specified, they will fight each other for what the node version should be, so setting both is highly discouraged. While a fuzzy version can be specified, it's recommended that you specify explicit versions as Terraform will see spurious diffs when fuzzy versions are used. See the google_container_engine_versions data source's version_prefix field to approximate fuzzy versions in a Terraform-compatible way.",
               "Computed": true
             }
           }
@@ -18459,6 +18693,21 @@
           }
         }
       },
+      "workload_identity_config": {
+        "Type": "List",
+        "Optional": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "identity_namespace": {
+              "Type": "String",
+              "Required": true
+            }
+          }
+        }
+      },
       "zone": {
         "Type": "String",
         "Optional": true,
@@ -18475,6 +18724,7 @@
       "autoscaling": {
         "Type": "List",
         "Optional": true,
+        "Description": "Configuration required by cluster autoscaler to adjust the size of the node pool to the current cluster usage.",
         "MaxItems": 1,
         "IsBlock": true,
         "Elem": {
@@ -18482,26 +18732,31 @@
           "Info": {
             "max_node_count": {
               "Type": "Int",
-              "Required": true
+              "Required": true,
+              "Description": "Maximum number of nodes in the NodePool. Must be \u003e= min_node_count."
             },
             "min_node_count": {
               "Type": "Int",
-              "Required": true
+              "Required": true,
+              "Description": "Minimum number of nodes in the NodePool. Must be \u003e=0 and \u003c= max_node_count."
             }
           }
         }
       },
       "cluster": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "The cluster to create the node pool for. Cluster must be present in location provided for zonal clusters."
       },
       "initial_node_count": {
         "Type": "Int",
         "Optional": true,
+        "Description": "The initial number of nodes for the pool. In regional or multi-zonal clusters, this is the number of nodes per zone. Changing this will force recreation of the resource.",
         "Computed": true
       },
       "instance_group_urls": {
         "Type": "List",
+        "Description": "The resource URLs of the managed instance groups associated with this node pool.",
         "Computed": true,
         "Elem": {
           "Type": "SchemaElements",
@@ -18511,11 +18766,13 @@
       "location": {
         "Type": "String",
         "Optional": true,
+        "Description": "The location (region or zone) of the cluster.",
         "Computed": true
       },
       "management": {
         "Type": "List",
         "Optional": true,
+        "Description": "Node management configuration, wherein auto-repair and auto-upgrade is configured.",
         "Computed": true,
         "MaxItems": 1,
         "IsBlock": true,
@@ -18525,6 +18782,7 @@
             "auto_repair": {
               "Type": "Bool",
               "Optional": true,
+              "Description": "Whether the nodes will be automatically repaired.",
               "Default": {
                 "Type": "bool",
                 "Value": "false"
@@ -18533,6 +18791,7 @@
             "auto_upgrade": {
               "Type": "Bool",
               "Optional": true,
+              "Description": "Whether the nodes will be automatically upgraded.",
               "Default": {
                 "Type": "bool",
                 "Value": "false"
@@ -18544,16 +18803,19 @@
       "max_pods_per_node": {
         "Type": "Int",
         "Optional": true,
+        "Description": "The maximum number of pods per node in this node pool. Note that this does not work on node pools which are \"route-based\" - that is, node pools belonging to clusters that do not have IP Aliasing enabled.",
         "Computed": true
       },
       "name": {
         "Type": "String",
         "Optional": true,
+        "Description": "The name of the node pool. If left blank, Terraform will auto-generate a unique name.",
         "Computed": true
       },
       "name_prefix": {
         "Type": "String",
         "Optional": true,
+        "Description": "Creates a unique name for the node pool beginning with the specified prefix. Conflicts with name.",
         "Computed": true
       },
       "node_config": {
@@ -18750,11 +19012,13 @@
       "node_count": {
         "Type": "Int",
         "Optional": true,
+        "Description": "The number of nodes per instance group. This field can be used to update the number of nodes per instance group but should not be used alongside autoscaling.",
         "Computed": true
       },
       "node_locations": {
         "Type": "Set",
         "Optional": true,
+        "Description": "The list of zones in which the node pool's nodes should be located. Nodes must be in the region of their regional cluster or in the same region as their cluster's zone for zonal clusters. If unspecified, the cluster-level node_locations will be used.",
         "Computed": true,
         "Elem": {
           "Type": "SchemaElements",
@@ -18764,17 +19028,20 @@
       "project": {
         "Type": "String",
         "Optional": true,
+        "Description": "The ID of the project in which to create the node pool. If blank, the provider-configured project will be used.",
         "Computed": true
       },
       "region": {
         "Type": "String",
         "Optional": true,
+        "Description": "The region of the cluster",
         "Computed": true,
         "Removed": "use location instead"
       },
       "upgrade_settings": {
         "Type": "List",
         "Optional": true,
+        "Description": "Specify node upgrade settings to change how many nodes GKE attempts to upgrade at once. The number of nodes upgraded simultaneously is the sum of max_surge and max_unavailable. The maximum number of nodes upgraded simultaneously is limited to 20.",
         "Computed": true,
         "MaxItems": 1,
         "IsBlock": true,
@@ -18783,11 +19050,13 @@
           "Info": {
             "max_surge": {
               "Type": "Int",
-              "Required": true
+              "Required": true,
+              "Description": "The number of additional nodes that can be added to the node pool during an upgrade. Increasing max_surge raises the number of nodes that can be upgraded simultaneously. Can be set to 0 or greater."
             },
             "max_unavailable": {
               "Type": "Int",
-              "Required": true
+              "Required": true,
+              "Description": "The number of nodes that can be simultaneously unavailable during an upgrade. Increasing max_unavailable raises the number of nodes that can be upgraded in parallel. Can be set to 0 or greater."
             }
           }
         }
@@ -18795,11 +19064,13 @@
       "version": {
         "Type": "String",
         "Optional": true,
+        "Description": "The Kubernetes version for the nodes in this pool. Note that if this field and auto_upgrade are both specified, they will fight each other for what the node version should be, so setting both is highly discouraged. While a fuzzy version can be specified, it's recommended that you specify explicit versions as Terraform will see spurious diffs when fuzzy versions are used. See the google_container_engine_versions data source's version_prefix field to approximate fuzzy versions in a Terraform-compatible way.",
         "Computed": true
       },
       "zone": {
         "Type": "String",
         "Optional": true,
+        "Description": "The zone of the cluster",
         "Computed": true,
         "Removed": "use location instead"
       }
@@ -19117,6 +19388,124 @@
         "Type": "String",
         "Optional": true,
         "Computed": true
+      }
+    },
+    "google_data_catalog_tag_template": {
+      "__timeouts__": [
+        "create",
+        "update",
+        "delete"
+      ],
+      "display_name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The display name for this template."
+      },
+      "fields": {
+        "Type": "Set",
+        "Required": true,
+        "Description": "Set of tag template field IDs and the settings for the field. This set is an exhaustive list of the allowed fields. This set must contain at least one field and at most 500 fields.",
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "display_name": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The display name for this field."
+            },
+            "field_id": {
+              "Type": "String",
+              "Required": true
+            },
+            "is_required": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Whether this is a required field. Defaults to false."
+            },
+            "name": {
+              "Type": "String",
+              "Description": "The resource name of the tag template field in URL format. Example: projects/{project_id}/locations/{location}/tagTemplates/{tagTemplateId}/fields/{field}",
+              "Computed": true
+            },
+            "order": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "The order of this field with respect to other fields in this tag template.\nA higher value indicates a more important field. The value can be negative.\nMultiple fields can have the same order, and field orders within a tag do not have to be sequential."
+            },
+            "type": {
+              "Type": "List",
+              "Required": true,
+              "Description": "The type of value this tag field can contain.",
+              "MaxItems": 1,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "enum_type": {
+                    "Type": "List",
+                    "Optional": true,
+                    "Description": "Represents an enum type.\n Exactly one of 'primitive_type' or 'enum_type' must be set",
+                    "MaxItems": 1,
+                    "IsBlock": true,
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "allowed_values": {
+                          "Type": "Set",
+                          "Required": true,
+                          "Description": "The set of allowed values for this enum. The display names of the\nvalues must be case-insensitively unique within this set. Currently,\nenum values can only be added to the list of allowed values. Deletion\nand renaming of enum values are not supported.\nCan have up to 500 allowed values.",
+                          "IsBlock": true,
+                          "Elem": {
+                            "Type": "SchemaInfo",
+                            "Info": {
+                              "display_name": {
+                                "Type": "String",
+                                "Required": true,
+                                "Description": "The display name of the enum value."
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "primitive_type": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Represents primitive types - string, bool etc.\n Exactly one of 'primitive_type' or 'enum_type' must be set Possible values: [\"DOUBLE\", \"STRING\", \"BOOL\", \"TIMESTAMP\"]"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "force_delete": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "This confirms the deletion of any possible tags using this template. Must be set to true in order to delete the tag template."
+      },
+      "name": {
+        "Type": "String",
+        "Description": "The resource name of the tag template in URL format. Example: projects/{project_id}/locations/{location}/tagTemplates/{tagTemplateId}",
+        "Computed": true
+      },
+      "project": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "region": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Template location region.",
+        "Computed": true
+      },
+      "tag_template_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The id of the tag template to create."
       }
     },
     "google_dataflow_job": {
@@ -31822,16 +32211,19 @@
           "Info": {
             "autoscaling": {
               "Type": "List",
+              "Description": "Configuration required by cluster autoscaler to adjust the size of the node pool to the current cluster usage.",
               "Computed": true,
               "Elem": {
                 "Type": "SchemaInfo",
                 "Info": {
                   "max_node_count": {
                     "Type": "Int",
+                    "Description": "Maximum number of nodes in the NodePool. Must be \u003e= min_node_count.",
                     "Computed": true
                   },
                   "min_node_count": {
                     "Type": "Int",
+                    "Description": "Minimum number of nodes in the NodePool. Must be \u003e=0 and \u003c= max_node_count.",
                     "Computed": true
                   }
                 }
@@ -31839,10 +32231,12 @@
             },
             "initial_node_count": {
               "Type": "Int",
+              "Description": "The initial number of nodes for the pool. In regional or multi-zonal clusters, this is the number of nodes per zone. Changing this will force recreation of the resource.",
               "Computed": true
             },
             "instance_group_urls": {
               "Type": "List",
+              "Description": "The resource URLs of the managed instance groups associated with this node pool.",
               "Computed": true,
               "Elem": {
                 "Type": "SchemaElements",
@@ -31851,16 +32245,19 @@
             },
             "management": {
               "Type": "List",
+              "Description": "Node management configuration, wherein auto-repair and auto-upgrade is configured.",
               "Computed": true,
               "Elem": {
                 "Type": "SchemaInfo",
                 "Info": {
                   "auto_repair": {
                     "Type": "Bool",
+                    "Description": "Whether the nodes will be automatically repaired.",
                     "Computed": true
                   },
                   "auto_upgrade": {
                     "Type": "Bool",
+                    "Description": "Whether the nodes will be automatically upgraded.",
                     "Computed": true
                   }
                 }
@@ -31868,14 +32265,17 @@
             },
             "max_pods_per_node": {
               "Type": "Int",
+              "Description": "The maximum number of pods per node in this node pool. Note that this does not work on node pools which are \"route-based\" - that is, node pools belonging to clusters that do not have IP Aliasing enabled.",
               "Computed": true
             },
             "name": {
               "Type": "String",
+              "Description": "The name of the node pool. If left blank, Terraform will auto-generate a unique name.",
               "Computed": true
             },
             "name_prefix": {
               "Type": "String",
+              "Description": "Creates a unique name for the node pool beginning with the specified prefix. Conflicts with name.",
               "Computed": true
             },
             "node_config": {
@@ -32034,10 +32434,12 @@
             },
             "node_count": {
               "Type": "Int",
+              "Description": "The number of nodes per instance group. This field can be used to update the number of nodes per instance group but should not be used alongside autoscaling.",
               "Computed": true
             },
             "node_locations": {
               "Type": "Set",
+              "Description": "The list of zones in which the node pool's nodes should be located. Nodes must be in the region of their regional cluster or in the same region as their cluster's zone for zonal clusters. If unspecified, the cluster-level node_locations will be used.",
               "Computed": true,
               "Elem": {
                 "Type": "SchemaElements",
@@ -32046,16 +32448,19 @@
             },
             "upgrade_settings": {
               "Type": "List",
+              "Description": "Specify node upgrade settings to change how many nodes GKE attempts to upgrade at once. The number of nodes upgraded simultaneously is the sum of max_surge and max_unavailable. The maximum number of nodes upgraded simultaneously is limited to 20.",
               "Computed": true,
               "Elem": {
                 "Type": "SchemaInfo",
                 "Info": {
                   "max_surge": {
                     "Type": "Int",
+                    "Description": "The number of additional nodes that can be added to the node pool during an upgrade. Increasing max_surge raises the number of nodes that can be upgraded simultaneously. Can be set to 0 or greater.",
                     "Computed": true
                   },
                   "max_unavailable": {
                     "Type": "Int",
+                    "Description": "The number of nodes that can be simultaneously unavailable during an upgrade. Increasing max_unavailable raises the number of nodes that can be upgraded in parallel. Can be set to 0 or greater.",
                     "Computed": true
                   }
                 }
@@ -32063,6 +32468,7 @@
             },
             "version": {
               "Type": "String",
+              "Description": "The Kubernetes version for the nodes in this pool. Note that if this field and auto_upgrade are both specified, they will fight each other for what the node version should be, so setting both is highly discouraged. While a fuzzy version can be specified, it's recommended that you specify explicit versions as Terraform will see spurious diffs when fuzzy versions are used. See the google_container_engine_versions data source's version_prefix field to approximate fuzzy versions in a Terraform-compatible way.",
               "Computed": true
             }
           }
@@ -32188,6 +32594,19 @@
           "Info": {
             "enabled": {
               "Type": "Bool",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "workload_identity_config": {
+        "Type": "List",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "identity_namespace": {
+              "Type": "String",
               "Computed": true
             }
           }
