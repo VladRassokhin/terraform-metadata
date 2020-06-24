@@ -2,7 +2,7 @@
   ".schema_version": "1",
   "name": "google",
   "type": "provider",
-  "version": "v3.26.0",
+  "version": "v3.27.0",
   "provider": {
     "access_context_manager_custom_endpoint": {
       "Type": "String",
@@ -383,6 +383,9 @@
         "Optional": true,
         "Description": "A set of predefined conditions for the access level and a combining function.",
         "MaxItems": 1,
+        "ConflictsWith": [
+          "custom"
+        ],
         "IsBlock": true,
         "Elem": {
           "Type": "SchemaInfo",
@@ -511,6 +514,53 @@
                       "Type": "SchemaElements",
                       "ElementsType": "String"
                     }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "custom": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Custom access level conditions are set using the Cloud Common Expression Language to represent the necessary conditions for the level to apply to a request. \nSee CEL spec at: https://github.com/google/cel-spec.",
+        "MaxItems": 1,
+        "ConflictsWith": [
+          "basic"
+        ],
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "expr": {
+              "Type": "List",
+              "Required": true,
+              "Description": "Represents a textual expression in the Common Expression Language (CEL) syntax. CEL is a C-like expression language.\nThis page details the objects and attributes that are used to the build the CEL expressions for \ncustom access levels - https://cloud.google.com/access-context-manager/docs/custom-access-level-spec.",
+              "MaxItems": 1,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "description": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Description of the expression"
+                  },
+                  "expression": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "Textual representation of an expression in Common Expression Language syntax."
+                  },
+                  "location": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "String indicating the location of the expression for error reporting, e.g. a file name and a position in the file"
+                  },
+                  "title": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Title for the expression, i.e. a short string describing its purpose."
                   }
                 }
               }
@@ -4996,6 +5046,12 @@
                     "Description": "ServingState holds a value describing the state the resources\nare in for this Revision.\nIt is expected\nthat the system will manipulate this based on routability and load.",
                     "Computed": true,
                     "Deprecated": "Not supported by Cloud Run fully managed"
+                  },
+                  "timeout_seconds": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Description": "TimeoutSeconds holds the max duration the instance is allowed for responding to a request.",
+                    "Computed": true
                   }
                 }
               }
@@ -5738,6 +5794,11 @@
               "Optional": true,
               "Description": "Directory, relative to the source root, in which to run the build.\n\nThis must be a relative path. If a step's dir is specified and\nis an absolute path, this value is ignored for that step's\nexecution."
             },
+            "invert_regex": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Only trigger a build if the revision regex does NOT match the revision regex."
+            },
             "project_id": {
               "Type": "String",
               "Optional": true,
@@ -5772,6 +5833,7 @@
       "available_memory_mb": {
         "Type": "Int",
         "Optional": true,
+        "Description": "Memory (in MB), available to the function. Default value is 256MB. Allowed values are: 128MB, 256MB, 512MB, 1024MB, and 2048MB.",
         "Default": {
           "Type": "int",
           "Value": "256"
@@ -5779,19 +5841,23 @@
       },
       "description": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Description": "Description of the function."
       },
       "entry_point": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Description": "Name of the function that will be executed when the Google Cloud Function is triggered."
       },
       "environment_variables": {
         "Type": "Map",
-        "Optional": true
+        "Optional": true,
+        "Description": "A set of key/value environment variable pairs to assign to the function."
       },
       "event_trigger": {
         "Type": "List",
         "Optional": true,
+        "Description": "A source that fires events in response to a condition in another service. Cannot be used with trigger_http.",
         "Computed": true,
         "MaxItems": 1,
         "ConflictsWith": [
@@ -5803,11 +5869,13 @@
           "Info": {
             "event_type": {
               "Type": "String",
-              "Required": true
+              "Required": true,
+              "Description": "The type of event to observe. For example: \"google.storage.object.finalize\". See the documentation on calling Cloud Functions for a full reference of accepted triggers."
             },
             "failure_policy": {
               "Type": "List",
               "Optional": true,
+              "Description": "Specifies policy for failed executions",
               "Computed": true,
               "MaxItems": 1,
               "IsBlock": true,
@@ -5816,14 +5884,16 @@
                 "Info": {
                   "retry": {
                     "Type": "Bool",
-                    "Required": true
+                    "Required": true,
+                    "Description": "Whether the function should be retried on failure. Defaults to false."
                   }
                 }
               }
             },
             "resource": {
               "Type": "String",
-              "Required": true
+              "Required": true,
+              "Description": "The name or partial URI of the resource from which to observe events. For example, \"myBucket\" or \"projects/my-project/topics/my-topic\""
             }
           }
         }
@@ -5831,11 +5901,13 @@
       "https_trigger_url": {
         "Type": "String",
         "Optional": true,
+        "Description": "URL which triggers function execution. Returned only if trigger_http is used.",
         "Computed": true
       },
       "ingress_settings": {
         "Type": "String",
         "Optional": true,
+        "Description": "String value that controls what traffic can reach the function. Allowed values are ALLOW_ALL and ALLOW_INTERNAL_ONLY. Changes to this field will recreate the cloud function.",
         "Default": {
           "Type": "string",
           "Value": "ALLOW_ALL"
@@ -5843,11 +5915,13 @@
       },
       "labels": {
         "Type": "Map",
-        "Optional": true
+        "Optional": true,
+        "Description": "A set of key/value label pairs to assign to the function. Label keys must follow the requirements at https://cloud.google.com/resource-manager/docs/creating-managing-labels#requirements."
       },
       "max_instances": {
         "Type": "Int",
         "Optional": true,
+        "Description": "The limit on the maximum number of function instances that may coexist at a given time.",
         "Default": {
           "Type": "int",
           "Value": "0"
@@ -5855,38 +5929,46 @@
       },
       "name": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "A user-defined name of the function. Function names must be unique globally."
       },
       "project": {
         "Type": "String",
         "Optional": true,
+        "Description": "Project of the function. If it is not provided, the provider project is used.",
         "Computed": true
       },
       "region": {
         "Type": "String",
         "Optional": true,
+        "Description": "Region of function. Currently can be only \"us-central1\". If it is not provided, the provider region is used.",
         "Computed": true
       },
       "runtime": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "The runtime in which the function is going to run. Eg. \"nodejs8\", \"nodejs10\", \"python37\", \"go111\"."
       },
       "service_account_email": {
         "Type": "String",
         "Optional": true,
+        "Description": " If provided, the self-provided service account to run the function with.",
         "Computed": true
       },
       "source_archive_bucket": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Description": "The GCS bucket containing the zip archive which contains the function."
       },
       "source_archive_object": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Description": "The source archive object (file) in archive bucket."
       },
       "source_repository": {
         "Type": "List",
         "Optional": true,
+        "Description": "Represents parameters related to source repository where a function is hosted. Cannot be set alongside source_archive_bucket or source_archive_object.",
         "MaxItems": 1,
         "ConflictsWith": [
           "source_archive_bucket",
@@ -5898,11 +5980,13 @@
           "Info": {
             "deployed_url": {
               "Type": "String",
+              "Description": "The URL pointing to the hosted repository where the function was defined at the time of deployment.",
               "Computed": true
             },
             "url": {
               "Type": "String",
-              "Required": true
+              "Required": true,
+              "Description": "The URL pointing to the hosted repository where the function is defined."
             }
           }
         }
@@ -5910,6 +5994,7 @@
       "timeout": {
         "Type": "Int",
         "Optional": true,
+        "Description": "Timeout (in seconds) for the function. Default value is 60 seconds. Cannot be more than 540 seconds.",
         "Default": {
           "Type": "int",
           "Value": "60"
@@ -5917,15 +6002,18 @@
       },
       "trigger_http": {
         "Type": "Bool",
-        "Optional": true
+        "Optional": true,
+        "Description": "Boolean variable. Any HTTP request (of a supported type) to the endpoint will trigger function execution. Supported HTTP request types are: POST, PUT, GET, DELETE, and OPTIONS. Endpoint is returned as https_trigger_url. Cannot be used with trigger_bucket and trigger_topic."
       },
       "vpc_connector": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Description": "The VPC Network Connector that this cloud function can connect to. It can be either the fully-qualified URI, or the short name of the network connector resource. The format of this field is projects/*/locations/*/connectors/*."
       },
       "vpc_connector_egress_settings": {
         "Type": "String",
         "Optional": true,
+        "Description": "The egress settings for the connector, controlling what traffic is diverted through it. Allowed values are ALL_TRAFFIC and PRIVATE_RANGES_ONLY. Defaults to PRIVATE_RANGES_ONLY. If unset, this field preserves the previously set value.",
         "Computed": true
       }
     },
@@ -6127,6 +6215,7 @@
       "config": {
         "Type": "List",
         "Optional": true,
+        "Description": "Configuration parameters for this environment.",
         "Computed": true,
         "MaxItems": 1,
         "IsBlock": true,
@@ -6135,19 +6224,23 @@
           "Info": {
             "airflow_uri": {
               "Type": "String",
+              "Description": "The URI of the Apache Airflow Web UI hosted within this environment.",
               "Computed": true
             },
             "dag_gcs_prefix": {
               "Type": "String",
+              "Description": "The Cloud Storage prefix of the DAGs for this environment. Although Cloud Storage objects reside in a flat namespace, a hierarchical file tree can be simulated using '/'-delimited object name prefixes. DAG objects for this environment reside in a simulated directory with this prefix.",
               "Computed": true
             },
             "gke_cluster": {
               "Type": "String",
+              "Description": "The Kubernetes Engine cluster used to run this environment.",
               "Computed": true
             },
             "node_config": {
               "Type": "List",
               "Optional": true,
+              "Description": "The configuration used for the Kubernetes Engine cluster.",
               "Computed": true,
               "MaxItems": 1,
               "IsBlock": true,
@@ -6157,11 +6250,13 @@
                   "disk_size_gb": {
                     "Type": "Int",
                     "Optional": true,
+                    "Description": "The disk size in GB used for node VMs. Minimum size is 20GB. If unspecified, defaults to 100GB. Cannot be updated.",
                     "Computed": true
                   },
                   "ip_allocation_policy": {
                     "Type": "List",
                     "Optional": true,
+                    "Description": "Configuration for controlling how IPs are allocated in the GKE cluster. Cannot be updated.",
                     "Computed": true,
                     "MaxItems": 1,
                     "Elem": {
@@ -6170,6 +6265,7 @@
                         "cluster_ipv4_cidr_block": {
                           "Type": "String",
                           "Optional": true,
+                          "Description": "The IP address range used to allocate IP addresses to pods in the cluster. Set to blank to have GKE choose a range with the default size. Set to /netmask (e.g. /14) to have GKE choose a range with a specific netmask. Set to a CIDR notation (e.g. 10.96.0.0/14) from the RFC-1918 private networks (e.g. 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16) to pick a specific range to use. Specify either cluster_secondary_range_name or cluster_ipv4_cidr_block but not both.",
                           "ConflictsWith": [
                             "config.0.node_config.0.ip_allocation_policy.0.cluster_secondary_range_name"
                           ]
@@ -6177,6 +6273,7 @@
                         "cluster_secondary_range_name": {
                           "Type": "String",
                           "Optional": true,
+                          "Description": "The name of the cluster's secondary range used to allocate IP addresses to pods. Specify either cluster_secondary_range_name or cluster_ipv4_cidr_block but not both. This field is applicable only when use_ip_aliases is true.",
                           "ConflictsWith": [
                             "config.0.node_config.0.ip_allocation_policy.0.cluster_ipv4_cidr_block"
                           ]
@@ -6184,6 +6281,7 @@
                         "services_ipv4_cidr_block": {
                           "Type": "String",
                           "Optional": true,
+                          "Description": "The IP address range used to allocate IP addresses in this cluster. Set to blank to have GKE choose a range with the default size. Set to /netmask (e.g. /14) to have GKE choose a range with a specific netmask. Set to a CIDR notation (e.g. 10.96.0.0/14) from the RFC-1918 private networks (e.g. 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16) to pick a specific range to use. Specify either services_secondary_range_name or services_ipv4_cidr_block but not both.",
                           "ConflictsWith": [
                             "config.0.node_config.0.ip_allocation_policy.0.services_secondary_range_name"
                           ]
@@ -6191,13 +6289,15 @@
                         "services_secondary_range_name": {
                           "Type": "String",
                           "Optional": true,
+                          "Description": "The name of the services' secondary range used to allocate IP addresses to the cluster. Specify either services_secondary_range_name or services_ipv4_cidr_block but not both. This field is applicable only when use_ip_aliases is true.",
                           "ConflictsWith": [
                             "config.0.node_config.0.ip_allocation_policy.0.services_ipv4_cidr_block"
                           ]
                         },
                         "use_ip_aliases": {
                           "Type": "Bool",
-                          "Required": true
+                          "Required": true,
+                          "Description": "Whether or not to enable Alias IPs in the GKE cluster. If true, a VPC-native cluster is created. Defaults to true if the ip_allocation_block is present in config."
                         }
                       }
                     }
@@ -6205,16 +6305,19 @@
                   "machine_type": {
                     "Type": "String",
                     "Optional": true,
+                    "Description": "The Compute Engine machine type used for cluster instances, specified as a name or relative resource name. For example: \"projects/{project}/zones/{zone}/machineTypes/{machineType}\". Must belong to the enclosing environment's project and region/zone.",
                     "Computed": true
                   },
                   "network": {
                     "Type": "String",
                     "Optional": true,
+                    "Description": "The Compute Engine machine type used for cluster instances, specified as a name or relative resource name. For example: \"projects/{project}/zones/{zone}/machineTypes/{machineType}\". Must belong to the enclosing environment's project and region/zone. The network must belong to the environment's project. If unspecified, the \"default\" network ID in the environment's project is used. If a Custom Subnet Network is provided, subnetwork must also be provided.",
                     "Computed": true
                   },
                   "oauth_scopes": {
                     "Type": "Set",
                     "Optional": true,
+                    "Description": "The set of Google API scopes to be made available on all node VMs. Cannot be updated. If empty, defaults to [\"https://www.googleapis.com/auth/cloud-platform\"].",
                     "Computed": true,
                     "Elem": {
                       "Type": "SchemaElements",
@@ -6224,15 +6327,18 @@
                   "service_account": {
                     "Type": "String",
                     "Optional": true,
+                    "Description": "The Google Cloud Platform Service Account to be used by the node VMs. If a service account is not specified, the \"default\" Compute Engine service account is used. Cannot be updated. If given, note that the service account must have roles/composer.worker for any GCP resources created under the Cloud Composer Environment.",
                     "Computed": true
                   },
                   "subnetwork": {
                     "Type": "String",
-                    "Optional": true
+                    "Optional": true,
+                    "Description": "The Compute Engine subnetwork to be used for machine communications, , specified as a self-link, relative resource name (e.g. \"projects/{project}/regions/{region}/subnetworks/{subnetwork}\"), or by name. If subnetwork is provided, network must also be provided and the subnetwork must belong to the enclosing environment's project and region."
                   },
                   "tags": {
                     "Type": "Set",
                     "Optional": true,
+                    "Description": "The list of instance tags applied to all node VMs. Tags are used to identify valid sources or targets for network firewalls. Each tag within the list must comply with RFC1035. Cannot be updated.",
                     "Elem": {
                       "Type": "SchemaElements",
                       "ElementsType": "String"
@@ -6240,7 +6346,8 @@
                   },
                   "zone": {
                     "Type": "String",
-                    "Required": true
+                    "Required": true,
+                    "Description": "The Compute Engine zone in which to deploy the VMs running the Apache Airflow software, specified as the zone name or relative resource name (e.g. \"projects/{project}/zones/{zone}\"). Must belong to the enclosing environment's project and region."
                   }
                 }
               }
@@ -6248,11 +6355,13 @@
             "node_count": {
               "Type": "Int",
               "Optional": true,
+              "Description": "The number of nodes in the Kubernetes Engine cluster that will be used to run this environment.",
               "Computed": true
             },
             "private_environment_config": {
               "Type": "List",
               "Optional": true,
+              "Description": "The configuration used for the Private IP Cloud Composer environment.",
               "Computed": true,
               "MaxItems": 1,
               "IsBlock": true,
@@ -6262,11 +6371,13 @@
                   "cloud_sql_ipv4_cidr_block": {
                     "Type": "String",
                     "Optional": true,
+                    "Description": "The CIDR block from which IP range in tenant project will be reserved for Cloud SQL. Needs to be disjoint from web_server_ipv4_cidr_block.",
                     "Computed": true
                   },
                   "enable_private_endpoint": {
                     "Type": "Bool",
                     "Optional": true,
+                    "Description": "If true, access to the public endpoint of the GKE cluster is denied.",
                     "Default": {
                       "Type": "bool",
                       "Value": "true"
@@ -6275,6 +6386,7 @@
                   "master_ipv4_cidr_block": {
                     "Type": "String",
                     "Optional": true,
+                    "Description": "The IP range in CIDR notation to use for the hosted master network. This range is used for assigning internal IP addresses to the cluster master or set of masters and to the internal load balancer virtual IP. This range must not overlap with any other ranges in use within the cluster's network. If left blank, the default value of '172.16.0.0/28' is used.",
                     "Default": {
                       "Type": "string",
                       "Value": "172.16.0.0/28"
@@ -6283,6 +6395,7 @@
                   "web_server_ipv4_cidr_block": {
                     "Type": "String",
                     "Optional": true,
+                    "Description": "The CIDR block from which IP range for web server will be reserved. Needs to be disjoint from master_ipv4_cidr_block and cloud_sql_ipv4_cidr_block.",
                     "Computed": true
                   }
                 }
@@ -6291,6 +6404,7 @@
             "software_config": {
               "Type": "List",
               "Optional": true,
+              "Description": "The configuration settings for software inside the environment.",
               "Computed": true,
               "MaxItems": 1,
               "IsBlock": true,
@@ -6300,6 +6414,7 @@
                   "airflow_config_overrides": {
                     "Type": "Map",
                     "Optional": true,
+                    "Description": "Apache Airflow configuration properties to override. Property keys contain the section and property names, separated by a hyphen, for example \"core-dags_are_paused_at_creation\". Section names must not contain hyphens (\"-\"), opening square brackets (\"[\"), or closing square brackets (\"]\"). The property name must not be empty and cannot contain \"=\" or \";\". Section and property names cannot contain characters: \".\" Apache Airflow configuration property names must be written in snake_case. Property values can contain any character, and can be written in any lower/upper case format. Certain Apache Airflow configuration property values are blacklisted, and cannot be overridden.",
                     "Elem": {
                       "Type": "SchemaElements",
                       "ElementsType": "String"
@@ -6308,6 +6423,7 @@
                   "env_variables": {
                     "Type": "Map",
                     "Optional": true,
+                    "Description": "Additional environment variables to provide to the Apache Airflow scheduler, worker, and webserver processes. Environment variable names must match the regular expression [a-zA-Z_][a-zA-Z0-9_]*. They cannot specify Apache Airflow software configuration overrides (they cannot match the regular expression AIRFLOW__[A-Z0-9_]+__[A-Z0-9_]+), and they cannot match any of the following reserved names: AIRFLOW_HOME C_FORCE_ROOT CONTAINER_NAME DAGS_FOLDER GCP_PROJECT GCS_BUCKET GKE_CLUSTER_NAME SQL_DATABASE SQL_INSTANCE SQL_PASSWORD SQL_PROJECT SQL_REGION SQL_USER.",
                     "Elem": {
                       "Type": "SchemaElements",
                       "ElementsType": "String"
@@ -6316,11 +6432,13 @@
                   "image_version": {
                     "Type": "String",
                     "Optional": true,
+                    "Description": "The version of the software running in the environment. This encapsulates both the version of Cloud Composer functionality and the version of Apache Airflow. It must match the regular expression composer-[0-9]+\\.[0-9]+(\\.[0-9]+)?-airflow-[0-9]+\\.[0-9]+(\\.[0-9]+.*)?. The Cloud Composer portion of the version is a semantic version. The portion of the image version following 'airflow-' is an official Apache Airflow repository release name. See documentation for allowed release names.",
                     "Computed": true
                   },
                   "pypi_packages": {
                     "Type": "Map",
                     "Optional": true,
+                    "Description": "Custom Python Package Index (PyPI) packages to be installed in the environment. Keys refer to the lowercase package name (e.g. \"numpy\"). Values are the lowercase extras and version specifier (e.g. \"==1.12.0\", \"[devel,gcp_api]\", \"[devel]\u003e=1.8.2, \u003c1.9.2\"). To specify a package without pinning it to a version specifier, use the empty string as the value.",
                     "Elem": {
                       "Type": "SchemaElements",
                       "ElementsType": "String"
@@ -6329,6 +6447,7 @@
                   "python_version": {
                     "Type": "String",
                     "Optional": true,
+                    "Description": "The major version of Python used to run the Apache Airflow scheduler, worker, and webserver processes. Can be set to '2' or '3'. If not specified, the default is '2'. Cannot be updated.",
                     "Computed": true
                   }
                 }
@@ -6340,6 +6459,7 @@
       "labels": {
         "Type": "Map",
         "Optional": true,
+        "Description": "User-defined labels for this environment. The labels map can contain no more than 64 entries. Entries of the labels map are UTF8 strings that comply with the following restrictions: Label keys must be between 1 and 63 characters long and must conform to the following regular expression: [a-z]([-a-z0-9]*[a-z0-9])?. Label values must be between 0 and 63 characters long and must conform to the regular expression ([a-z]([-a-z0-9]*[a-z0-9])?)?. No more than 64 labels can be associated with a given environment. Both keys and values must be \u003c= 128 bytes in size.",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -6347,16 +6467,19 @@
       },
       "name": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "Name of the environment."
       },
       "project": {
         "Type": "String",
         "Optional": true,
+        "Description": "The ID of the project in which the resource belongs. If it is not provided, the provider project is used.",
         "Computed": true
       },
       "region": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Description": "The location or Compute Engine region for the environment."
       }
     },
     "google_compute_address": {
@@ -9674,11 +9797,13 @@
       ],
       "description": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Description": "An optional textual description of the instance group."
       },
       "instances": {
         "Type": "Set",
         "Optional": true,
+        "Description": "List of instances in the group. They should be given as self_link URLs. When adding instances they must all be in the same network and zone as the instance group.",
         "Computed": true,
         "Elem": {
           "Type": "SchemaElements",
@@ -9687,22 +9812,26 @@
       },
       "name": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "The name of the instance group. Must be 1-63 characters long and comply with RFC1035. Supported characters include lowercase letters, numbers, and hyphens."
       },
       "named_port": {
         "Type": "List",
         "Optional": true,
+        "Description": "The named port configuration.",
         "IsBlock": true,
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
             "name": {
               "Type": "String",
-              "Required": true
+              "Required": true,
+              "Description": "The name which the port will be mapped to."
             },
             "port": {
               "Type": "Int",
-              "Required": true
+              "Required": true,
+              "Description": "The port number to map the name to."
             }
           }
         }
@@ -9710,24 +9839,29 @@
       "network": {
         "Type": "String",
         "Optional": true,
+        "Description": "The URL of the network the instance group is in. If this is different from the network where the instances are in, the creation fails. Defaults to the network where the instances are in (if neither network nor instances is specified, this field will be blank).",
         "Computed": true
       },
       "project": {
         "Type": "String",
         "Optional": true,
+        "Description": "The ID of the project in which the resource belongs. If it is not provided, the provider project is used.",
         "Computed": true
       },
       "self_link": {
         "Type": "String",
+        "Description": "The URI of the created resource.",
         "Computed": true
       },
       "size": {
         "Type": "Int",
+        "Description": "The number of instances in the group.",
         "Computed": true
       },
       "zone": {
         "Type": "String",
         "Optional": true,
+        "Description": "The zone that this instance group should be created in.",
         "Computed": true
       }
     },
@@ -10056,6 +10190,7 @@
       "can_ip_forward": {
         "Type": "Bool",
         "Optional": true,
+        "Description": "Whether to allow sending and receiving of packets with non-matching source or destination IPs. This defaults to false.",
         "Default": {
           "Type": "bool",
           "Value": "false"
@@ -10063,11 +10198,13 @@
       },
       "description": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Description": "A brief description of this resource."
       },
       "disk": {
         "Type": "List",
         "Required": true,
+        "Description": "Disks to attach to instances created from this template. This can be specified multiple times for multiple disks.",
         "IsBlock": true,
         "Elem": {
           "Type": "SchemaInfo",
@@ -10075,6 +10212,7 @@
             "auto_delete": {
               "Type": "Bool",
               "Optional": true,
+              "Description": "Whether or not the disk should be auto-deleted. This defaults to true.",
               "Default": {
                 "Type": "bool",
                 "Value": "true"
@@ -10083,16 +10221,19 @@
             "boot": {
               "Type": "Bool",
               "Optional": true,
+              "Description": "Indicates that this is a boot disk.",
               "Computed": true
             },
             "device_name": {
               "Type": "String",
               "Optional": true,
+              "Description": "A unique device name that is reflected into the /dev/ tree of a Linux operating system running within the instance. If not specified, the server chooses a default device name to apply to this disk.",
               "Computed": true
             },
             "disk_encryption_key": {
               "Type": "List",
               "Optional": true,
+              "Description": "Encrypts or decrypts a disk using a customer-supplied encryption key.",
               "MaxItems": 1,
               "IsBlock": true,
               "Elem": {
@@ -10100,32 +10241,38 @@
                 "Info": {
                   "kms_key_self_link": {
                     "Type": "String",
-                    "Required": true
+                    "Required": true,
+                    "Description": "The self link of the encryption key that is stored in Google Cloud KMS."
                   }
                 }
               }
             },
             "disk_name": {
               "Type": "String",
-              "Optional": true
+              "Optional": true,
+              "Description": "Name of the disk. When not provided, this defaults to the name of the instance."
             },
             "disk_size_gb": {
               "Type": "Int",
-              "Optional": true
+              "Optional": true,
+              "Description": "The size of the image in gigabytes. If not specified, it will inherit the size of its base image. For SCRATCH disks, the size must be exactly 375GB."
             },
             "disk_type": {
               "Type": "String",
               "Optional": true,
+              "Description": "The GCE disk type. Can be either \"pd-ssd\", \"local-ssd\", or \"pd-standard\".",
               "Computed": true
             },
             "interface": {
               "Type": "String",
               "Optional": true,
+              "Description": "Specifies the disk interface to use for attaching this disk.",
               "Computed": true
             },
             "labels": {
               "Type": "Map",
               "Optional": true,
+              "Description": "A set of key/value label pairs to assign to disks,",
               "Elem": {
                 "Type": "SchemaElements",
                 "ElementsType": "String"
@@ -10134,20 +10281,24 @@
             "mode": {
               "Type": "String",
               "Optional": true,
+              "Description": "The mode in which to attach this disk, either READ_WRITE or READ_ONLY. If you are attaching or creating a boot disk, this must read-write mode.",
               "Computed": true
             },
             "source": {
               "Type": "String",
-              "Optional": true
+              "Optional": true,
+              "Description": "The name (not self_link) of the disk (such as those managed by google_compute_disk) to attach. ~\u003e Note: Either source or source_image is required when creating a new instance except for when creating a local SSD."
             },
             "source_image": {
               "Type": "String",
               "Optional": true,
+              "Description": "The image from which to initialize this disk. This can be one of: the image's self_link, projects/{project}/global/images/{image}, projects/{project}/global/images/family/{family}, global/images/{image}, global/images/family/{family}, family/{family}, {project}/{family}, {project}/{image}, {family}, or {image}. ~\u003e Note: Either source or source_image is required when creating a new instance except for when creating a local SSD.",
               "Computed": true
             },
             "type": {
               "Type": "String",
               "Optional": true,
+              "Description": "The type of GCE disk, can be either \"SCRATCH\" or \"PERSISTENT\".",
               "Computed": true
             }
           }
@@ -10155,33 +10306,39 @@
       },
       "enable_display": {
         "Type": "Bool",
-        "Optional": true
+        "Optional": true,
+        "Description": "Enable Virtual Displays on this instance. Note: allow_stopping_for_update must be set to true in order to update this field."
       },
       "guest_accelerator": {
         "Type": "List",
         "Optional": true,
+        "Description": "List of the type and count of accelerator cards attached to the instance.",
         "IsBlock": true,
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
             "count": {
               "Type": "Int",
-              "Required": true
+              "Required": true,
+              "Description": "The number of the guest accelerator cards exposed to this instance."
             },
             "type": {
               "Type": "String",
-              "Required": true
+              "Required": true,
+              "Description": "The accelerator type resource to expose to this instance. E.g. nvidia-tesla-k80."
             }
           }
         }
       },
       "instance_description": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Description": "A description of the instance."
       },
       "labels": {
         "Type": "Map",
         "Optional": true,
+        "Description": "A set of key/value label pairs to assign to instances created from this template,",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -10189,27 +10346,33 @@
       },
       "machine_type": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "The machine type to create. To create a machine with a custom type (such as extended memory), format the value like custom-VCPUS-MEM_IN_MB like custom-6-20480 for 6 vCPU and 20GB of RAM."
       },
       "metadata": {
         "Type": "Map",
-        "Optional": true
+        "Optional": true,
+        "Description": "Metadata key/value pairs to make available from within instances created from this template."
       },
       "metadata_fingerprint": {
         "Type": "String",
+        "Description": "The unique fingerprint of the metadata.",
         "Computed": true
       },
       "metadata_startup_script": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Description": "An alternative to using the startup-script metadata key, mostly to match the compute_instance resource. This replaces the startup-script metadata key on the created instance and thus the two mechanisms are not allowed to be used simultaneously."
       },
       "min_cpu_platform": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Description": "Specifies a minimum CPU platform. Applicable values are the friendly names of CPU platforms, such as Intel Haswell or Intel Skylake."
       },
       "name": {
         "Type": "String",
         "Optional": true,
+        "Description": "The name of the instance template. If you leave this blank, Terraform will auto-generate a unique name.",
         "Computed": true,
         "ConflictsWith": [
           "name_prefix"
@@ -10218,11 +10381,13 @@
       "name_prefix": {
         "Type": "String",
         "Optional": true,
+        "Description": "Creates a unique name beginning with the specified prefix. Conflicts with name.",
         "Computed": true
       },
       "network_interface": {
         "Type": "List",
         "Optional": true,
+        "Description": "Networks to attach to instances created from this template. This can be specified multiple times for multiple networks.",
         "IsBlock": true,
         "Elem": {
           "Type": "SchemaInfo",
@@ -10230,6 +10395,7 @@
             "access_config": {
               "Type": "List",
               "Optional": true,
+              "Description": "Access configurations, i.e. IPs via which this instance can be accessed via the Internet. Omit to ensure that the instance is not accessible from the Internet (this means that ssh provisioners will not work unless you are running Terraform can send traffic to the instance's network (e.g. via tunnel or because it is running on another cloud instance on that network). This block can be repeated multiple times.",
               "IsBlock": true,
               "Elem": {
                 "Type": "SchemaInfo",
@@ -10237,15 +10403,18 @@
                   "nat_ip": {
                     "Type": "String",
                     "Optional": true,
+                    "Description": "The IP address that will be 1:1 mapped to the instance's network ip. If not given, one will be generated.",
                     "Computed": true
                   },
                   "network_tier": {
                     "Type": "String",
                     "Optional": true,
+                    "Description": "The networking tier used for configuring this instance template. This field can take the following values: PREMIUM or STANDARD. If this field is not specified, it is assumed to be PREMIUM.",
                     "Computed": true
                   },
                   "public_ptr_domain_name": {
                     "Type": "String",
+                    "Description": "The DNS domain name for the public PTR record.The DNS domain name for the public PTR record.",
                     "Computed": true
                   }
                 }
@@ -10254,42 +10423,50 @@
             "alias_ip_range": {
               "Type": "List",
               "Optional": true,
+              "Description": "An array of alias IP ranges for this network interface. Can only be specified for network interfaces on subnet-mode networks.",
               "IsBlock": true,
               "Elem": {
                 "Type": "SchemaInfo",
                 "Info": {
                   "ip_cidr_range": {
                     "Type": "String",
-                    "Required": true
+                    "Required": true,
+                    "Description": "The IP CIDR range represented by this alias IP range. This IP CIDR range must belong to the specified subnetwork and cannot contain IP addresses reserved by system or used by other network interfaces. At the time of writing only a netmask (e.g. /24) may be supplied, with a CIDR format resulting in an API error."
                   },
                   "subnetwork_range_name": {
                     "Type": "String",
-                    "Optional": true
+                    "Optional": true,
+                    "Description": "The subnetwork secondary range name specifying the secondary range from which to allocate the IP CIDR range for this alias IP range. If left unspecified, the primary range of the subnetwork will be used."
                   }
                 }
               }
             },
             "name": {
               "Type": "String",
+              "Description": "The name of the network_interface.",
               "Computed": true
             },
             "network": {
               "Type": "String",
               "Optional": true,
+              "Description": "The name or self_link of the network to attach this interface to. Use network attribute for Legacy or Auto subnetted networks and subnetwork for custom subnetted networks.",
               "Computed": true
             },
             "network_ip": {
               "Type": "String",
-              "Optional": true
+              "Optional": true,
+              "Description": "The private IP address to assign to the instance. If empty, the address will be automatically assigned."
             },
             "subnetwork": {
               "Type": "String",
               "Optional": true,
+              "Description": "The name of the subnetwork to attach this interface to. The subnetwork must exist in the same region this instance will be created in. Either network or subnetwork must be provided.",
               "Computed": true
             },
             "subnetwork_project": {
               "Type": "String",
               "Optional": true,
+              "Description": "The ID of the project in which the subnetwork belongs. If it is not provided, the provider project is used.",
               "Computed": true
             }
           }
@@ -10298,16 +10475,19 @@
       "project": {
         "Type": "String",
         "Optional": true,
+        "Description": "The ID of the project in which the resource belongs. If it is not provided, the provider project is used.",
         "Computed": true
       },
       "region": {
         "Type": "String",
         "Optional": true,
+        "Description": "An instance template is a global resource that is not bound to a zone or a region. However, you can still specify some regional resources in an instance template, which restricts the template to the region where that resource resides. For example, a custom subnetwork resource is tied to a specific region. Defaults to the region of the Provider if no value is given.",
         "Computed": true
       },
       "scheduling": {
         "Type": "List",
         "Optional": true,
+        "Description": "The scheduling strategy to use.",
         "Computed": true,
         "MaxItems": 1,
         "IsBlock": true,
@@ -10317,6 +10497,7 @@
             "automatic_restart": {
               "Type": "Bool",
               "Optional": true,
+              "Description": "Specifies whether the instance should be automatically restarted if it is terminated by Compute Engine (not terminated by a user). This defaults to true.",
               "Default": {
                 "Type": "bool",
                 "Value": "true"
@@ -10325,6 +10506,7 @@
             "node_affinities": {
               "Type": "Set",
               "Optional": true,
+              "Description": "Specifies node affinities or anti-affinities to determine which sole-tenant nodes your instances and managed instance groups will use as host systems.",
               "IsBlock": true,
               "Elem": {
                 "Type": "SchemaInfo",
@@ -10351,11 +10533,13 @@
             "on_host_maintenance": {
               "Type": "String",
               "Optional": true,
+              "Description": "Defines the maintenance behavior for this instance.",
               "Computed": true
             },
             "preemptible": {
               "Type": "Bool",
               "Optional": true,
+              "Description": "Allows instance to be preempted. This defaults to false.",
               "Default": {
                 "Type": "bool",
                 "Value": "false"
@@ -10366,11 +10550,13 @@
       },
       "self_link": {
         "Type": "String",
+        "Description": "The URI of the created resource.",
         "Computed": true
       },
       "service_account": {
         "Type": "List",
         "Optional": true,
+        "Description": "Service account to attach to the instance.",
         "MaxItems": 1,
         "IsBlock": true,
         "Elem": {
@@ -10379,11 +10565,13 @@
             "email": {
               "Type": "String",
               "Optional": true,
+              "Description": "The service account e-mail address. If not given, the default Google Compute Engine service account is used.",
               "Computed": true
             },
             "scopes": {
               "Type": "Set",
               "Required": true,
+              "Description": "A list of service scopes. Both OAuth2 URLs and gcloud short names are supported. To allow full access to all Cloud APIs, use the cloud-platform scope.",
               "Elem": {
                 "Type": "SchemaElements",
                 "ElementsType": "String"
@@ -10395,6 +10583,7 @@
       "shielded_instance_config": {
         "Type": "List",
         "Optional": true,
+        "Description": "Enable Shielded VM on this instance. Shielded VM provides verifiable integrity to prevent against malware and rootkits. Defaults to disabled. Note: shielded_instance_config can only be used with boot images with shielded vm support.",
         "Computed": true,
         "MaxItems": 1,
         "IsBlock": true,
@@ -10404,6 +10593,7 @@
             "enable_integrity_monitoring": {
               "Type": "Bool",
               "Optional": true,
+              "Description": "Compare the most recent boot measurements to the integrity policy baseline and return a pair of pass/fail results depending on whether they match or not. Defaults to true.",
               "Default": {
                 "Type": "bool",
                 "Value": "true"
@@ -10412,6 +10602,7 @@
             "enable_secure_boot": {
               "Type": "Bool",
               "Optional": true,
+              "Description": "Verify the digital signature of all boot components, and halt the boot process if signature verification fails. Defaults to false.",
               "Default": {
                 "Type": "bool",
                 "Value": "false"
@@ -10420,6 +10611,7 @@
             "enable_vtpm": {
               "Type": "Bool",
               "Optional": true,
+              "Description": "Use a virtualized trusted platform module, which is a specialized computer chip you can use to encrypt objects like keys and certificates. Defaults to true.",
               "Default": {
                 "Type": "bool",
                 "Value": "true"
@@ -10431,6 +10623,7 @@
       "tags": {
         "Type": "Set",
         "Optional": true,
+        "Description": "Tags to attach to the instance.",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -10438,6 +10631,7 @@
       },
       "tags_fingerprint": {
         "Type": "String",
+        "Description": "The unique fingerprint of the tags.",
         "Computed": true
       }
     },
@@ -10751,6 +10945,14 @@
           "Value": "false"
         }
       },
+      "export_subnet_routes_with_public_ip": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
       "import_custom_routes": {
         "Type": "Bool",
         "Optional": true,
@@ -10758,6 +10960,10 @@
           "Type": "bool",
           "Value": "false"
         }
+      },
+      "import_subnet_routes_with_public_ip": {
+        "Type": "Bool",
+        "Optional": true
       },
       "name": {
         "Type": "String",
@@ -10964,6 +11170,7 @@
       "metadata": {
         "Type": "Map",
         "Required": true,
+        "Description": "A series of key value pairs.",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -10972,6 +11179,7 @@
       "project": {
         "Type": "String",
         "Optional": true,
+        "Description": "The ID of the project in which the resource belongs. If it is not provided, the provider project is used.",
         "Computed": true
       }
     },
@@ -29255,11 +29463,13 @@
       ],
       "connection_name": {
         "Type": "String",
+        "Description": "The connection name of the instance to be used in connection strings. For example, when connecting with Cloud SQL Proxy.",
         "Computed": true
       },
       "database_version": {
         "Type": "String",
         "Optional": true,
+        "Description": "The MySQL, PostgreSQL or SQL Server (beta) version to use. Supported values include MYSQL_5_6, MYSQL_5_7, POSTGRES_9_6,POSTGRES_11, SQLSERVER_2017_STANDARD, SQLSERVER_2017_ENTERPRISE, SQLSERVER_2017_EXPRESS, SQLSERVER_2017_WEB. Database Version Policies includes an up-to-date reference of supported versions.",
         "Default": {
           "Type": "string",
           "Value": "MYSQL_5_6"
@@ -29267,6 +29477,7 @@
       },
       "first_ip_address": {
         "Type": "String",
+        "Description": "The first IPv4 address of any type assigned. This is to support accessing the first address in the list in a terraform output when the resource is configured with a count.",
         "Computed": true
       },
       "ip_address": {
@@ -29293,34 +29504,41 @@
       "master_instance_name": {
         "Type": "String",
         "Optional": true,
+        "Description": "The name of the instance that will act as the master in the replication setup. Note, this requires the master to have binary_log_enabled set, as well as existing backups.",
         "Computed": true
       },
       "name": {
         "Type": "String",
         "Optional": true,
+        "Description": "The name of the instance. If the name is left blank, Terraform will randomly generate one when the instance is first created. This is done because after a name is used, it cannot be reused for up to one week.",
         "Computed": true
       },
       "private_ip_address": {
         "Type": "String",
+        "Description": "IPv4 address assigned. This is a workaround for an issue fixed in Terraform 0.12 but also provides a convenient way to access an IP of a specific type without performing filtering in a Terraform config.",
         "Computed": true
       },
       "project": {
         "Type": "String",
         "Optional": true,
+        "Description": "The ID of the project in which the resource belongs. If it is not provided, the provider project is used.",
         "Computed": true
       },
       "public_ip_address": {
         "Type": "String",
+        "Description": "IPv4 address assigned. This is a workaround for an issue fixed in Terraform 0.12 but also provides a convenient way to access an IP of a specific type without performing filtering in a Terraform config.",
         "Computed": true
       },
       "region": {
         "Type": "String",
         "Optional": true,
+        "Description": "The region the instance will sit in. Note, Cloud SQL is not available in all regions - choose from one of the options listed here. A valid region must be provided to use this resource. If a region is not provided in the resource definition, the provider region will be used instead, but this will be an apply-time error for instances if the provider region is not supported with Cloud SQL. If you choose not to provide the region argument for this resource, make sure you understand this.",
         "Computed": true
       },
       "replica_configuration": {
         "Type": "List",
         "Optional": true,
+        "Description": "The configuration for replication.",
         "Computed": true,
         "MaxItems": 1,
         "IsBlock": true,
@@ -29329,53 +29547,70 @@
           "Info": {
             "ca_certificate": {
               "Type": "String",
-              "Optional": true
+              "Optional": true,
+              "Description": "PEM representation of the trusted CA's x509 certificate."
             },
             "client_certificate": {
               "Type": "String",
-              "Optional": true
+              "Optional": true,
+              "Description": "PEM representation of the slave's x509 certificate."
             },
             "client_key": {
               "Type": "String",
-              "Optional": true
+              "Optional": true,
+              "Description": "PEM representation of the slave's private key. The corresponding public key in encoded in the client_certificate."
             },
             "connect_retry_interval": {
               "Type": "Int",
-              "Optional": true
+              "Optional": true,
+              "Description": "The number of seconds between connect retries."
             },
             "dump_file_path": {
               "Type": "String",
-              "Optional": true
+              "Optional": true,
+              "Description": "Path to a SQL file in GCS from which slave instances are created. Format is gs://bucket/filename."
             },
             "failover_target": {
               "Type": "Bool",
-              "Optional": true
+              "Optional": true,
+              "Description": "Specifies if the replica is the failover target. If the field is set to true the replica will be designated as a failover replica. If the master instance fails, the replica instance will be promoted as the new master instance."
             },
             "master_heartbeat_period": {
               "Type": "Int",
-              "Optional": true
+              "Optional": true,
+              "Description": "Time in ms between replication heartbeats."
             },
             "password": {
               "Type": "String",
-              "Optional": true
+              "Optional": true,
+              "Description": "Password for the replication connection."
             },
             "ssl_cipher": {
               "Type": "String",
-              "Optional": true
+              "Optional": true,
+              "Description": "Permissible ciphers for use in SSL encryption."
             },
             "username": {
               "Type": "String",
-              "Optional": true
+              "Optional": true,
+              "Description": "Username for replication connection."
             },
             "verify_server_certificate": {
               "Type": "Bool",
-              "Optional": true
+              "Optional": true,
+              "Description": "True if the master's common name value is checked during the SSL handshake."
             }
           }
         }
       },
+      "root_password": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Initial root password. Required for MS SQL Server, ignored by MySQL and PostgreSQL."
+      },
       "self_link": {
         "Type": "String",
+        "Description": "The URI of the created resource.",
         "Computed": true
       },
       "server_ca_cert": {
@@ -29387,22 +29622,27 @@
           "Info": {
             "cert": {
               "Type": "String",
+              "Description": "The CA Certificate used to connect to the SQL Instance via SSL.",
               "Computed": true
             },
             "common_name": {
               "Type": "String",
+              "Description": "The CN valid for the CA Cert.",
               "Computed": true
             },
             "create_time": {
               "Type": "String",
+              "Description": "Creation time of the CA Cert.",
               "Computed": true
             },
             "expiration_time": {
               "Type": "String",
+              "Description": "Expiration time of the CA Cert.",
               "Computed": true
             },
             "sha1_fingerprint": {
               "Type": "String",
+              "Description": "SHA Fingerprint of the CA Cert.",
               "Computed": true
             }
           }
@@ -29410,11 +29650,13 @@
       },
       "service_account_email_address": {
         "Type": "String",
+        "Description": "The service account email address assigned to the instance.",
         "Computed": true
       },
       "settings": {
         "Type": "List",
         "Required": true,
+        "Description": "The settings to use for the database. The configuration is detailed below.",
         "MaxItems": 1,
         "IsBlock": true,
         "Elem": {
@@ -29423,11 +29665,13 @@
             "activation_policy": {
               "Type": "String",
               "Optional": true,
+              "Description": "This specifies when the instance should be active. Can be either ALWAYS, NEVER or ON_DEMAND.",
               "Computed": true
             },
             "authorized_gae_applications": {
               "Type": "List",
               "Optional": true,
+              "Description": "This property is only applicable to First Generation instances. First Generation instances are now deprecated, see https://cloud.google.com/sql/docs/mysql/deprecation-notice for information on how to upgrade to Second Generation instances. A list of Google App Engine (GAE) project names that are allowed to access this instance.",
               "Deprecated": "This property is only applicable to First Generation instances, and First Generation instances are now deprecated.",
               "Elem": {
                 "Type": "SchemaElements",
@@ -29437,6 +29681,7 @@
             "availability_type": {
               "Type": "String",
               "Optional": true,
+              "Description": "The availability type of the Cloud SQL instance, high availability\n(REGIONAL) or single zone (ZONAL). For MySQL instances, ensure that\nsettings.backup_configuration.enabled and\nsettings.backup_configuration.binary_log_enabled are both set to true.",
               "Computed": true
             },
             "backup_configuration": {
@@ -29450,19 +29695,23 @@
                 "Info": {
                   "binary_log_enabled": {
                     "Type": "Bool",
-                    "Optional": true
+                    "Optional": true,
+                    "Description": "True if binary logging is enabled. If settings.backup_configuration.enabled is false, this must be as well. Cannot be used with Postgres."
                   },
                   "enabled": {
                     "Type": "Bool",
-                    "Optional": true
+                    "Optional": true,
+                    "Description": "True if backup configuration is enabled."
                   },
                   "location": {
                     "Type": "String",
-                    "Optional": true
+                    "Optional": true,
+                    "Description": "Location of the backup configuration."
                   },
                   "start_time": {
                     "Type": "String",
                     "Optional": true,
+                    "Description": "HH:MM format time indicating when backup configuration starts.",
                     "Computed": true
                   }
                 }
@@ -29471,6 +29720,7 @@
             "crash_safe_replication": {
               "Type": "Bool",
               "Optional": true,
+              "Description": "This property is only applicable to First Generation instances. First Generation instances are now deprecated, see here for information on how to upgrade to Second Generation instances. Specific to read instances, indicates when crash-safe replication flags are enabled.",
               "Computed": true,
               "Deprecated": "This property is only applicable to First Generation instances, and First Generation instances are now deprecated."
             },
@@ -29483,11 +29733,13 @@
                 "Info": {
                   "name": {
                     "Type": "String",
-                    "Required": true
+                    "Required": true,
+                    "Description": "Name of the flag."
                   },
                   "value": {
                     "Type": "String",
-                    "Required": true
+                    "Required": true,
+                    "Description": "Value of the flag."
                   }
                 }
               }
@@ -29495,6 +29747,7 @@
             "disk_autoresize": {
               "Type": "Bool",
               "Optional": true,
+              "Description": "Configuration to increase storage size automatically.  Note that future terraform apply calls will attempt to resize the disk to the value specified in disk_size - if this is set, do not set disk_size.",
               "Default": {
                 "Type": "bool",
                 "Value": "true"
@@ -29503,11 +29756,13 @@
             "disk_size": {
               "Type": "Int",
               "Optional": true,
+              "Description": "The size of data disk, in GB. Size of a running instance cannot be reduced but can be increased.",
               "Computed": true
             },
             "disk_type": {
               "Type": "String",
               "Optional": true,
+              "Description": "The type of data disk: PD_SSD or PD_HDD.",
               "Computed": true
             },
             "ip_configuration": {
@@ -29544,6 +29799,7 @@
                   "ipv4_enabled": {
                     "Type": "Bool",
                     "Optional": true,
+                    "Description": "Whether this Cloud SQL instance should be assigned a public IPV4 address. Either ipv4_enabled must be enabled or a private_network must be configured.",
                     "Default": {
                       "Type": "bool",
                       "Value": "true"
@@ -29551,7 +29807,8 @@
                   },
                   "private_network": {
                     "Type": "String",
-                    "Optional": true
+                    "Optional": true,
+                    "Description": "The VPC network from which the Cloud SQL instance is accessible for private IP. For example, projects/myProject/global/networks/default. Specifying a network enables private IP. Either ipv4_enabled must be enabled or a private_network must be configured. This setting can be updated, but it cannot be removed after it is set."
                   },
                   "require_ssl": {
                     "Type": "Bool",
@@ -29571,11 +29828,13 @@
                 "Info": {
                   "follow_gae_application": {
                     "Type": "String",
-                    "Optional": true
+                    "Optional": true,
+                    "Description": "A GAE application whose zone to remain in. Must be in the same region as this instance."
                   },
                   "zone": {
                     "Type": "String",
-                    "Optional": true
+                    "Optional": true,
+                    "Description": "The preferred compute engine zone."
                   }
                 }
               }
@@ -29583,6 +29842,7 @@
             "maintenance_window": {
               "Type": "List",
               "Optional": true,
+              "Description": "Declares a one-hour maintenance window when an Instance can automatically restart to apply updates. The maintenance window is specified in UTC time.",
               "MaxItems": 1,
               "IsBlock": true,
               "Elem": {
@@ -29590,15 +29850,18 @@
                 "Info": {
                   "day": {
                     "Type": "Int",
-                    "Optional": true
+                    "Optional": true,
+                    "Description": "Day of week (1-7), starting on Monday"
                   },
                   "hour": {
                     "Type": "Int",
-                    "Optional": true
+                    "Optional": true,
+                    "Description": "Hour of day (0-23), ignored if day not set"
                   },
                   "update_track": {
                     "Type": "String",
-                    "Optional": true
+                    "Optional": true,
+                    "Description": "Receive updates earlier (canary) or later (stable)"
                   }
                 }
               }
@@ -29606,6 +29869,7 @@
             "pricing_plan": {
               "Type": "String",
               "Optional": true,
+              "Description": "Pricing plan for this instance, can only be PER_USE.",
               "Default": {
                 "Type": "string",
                 "Value": "PER_USE"
@@ -29614,6 +29878,7 @@
             "replication_type": {
               "Type": "String",
               "Optional": true,
+              "Description": "This property is only applicable to First Generation instances. First Generation instances are now deprecated, see here for information on how to upgrade to Second Generation instances. Replication type for this instance, can be one of ASYNCHRONOUS or SYNCHRONOUS.",
               "Deprecated": "This property is only applicable to First Generation instances, and First Generation instances are now deprecated.",
               "Default": {
                 "Type": "string",
@@ -29622,11 +29887,13 @@
             },
             "tier": {
               "Type": "String",
-              "Required": true
+              "Required": true,
+              "Description": "The machine type to use. See tiers for more details and supported versions. Postgres supports only shared-core machine types such as db-f1-micro, and custom machine types such as db-custom-2-13312. See the Custom Machine Type Documentation to learn about specifying custom machine types."
             },
             "user_labels": {
               "Type": "Map",
               "Optional": true,
+              "Description": "A set of key/value user label pairs to assign to the instance.",
               "Elem": {
                 "Type": "SchemaElements",
                 "ElementsType": "String"
@@ -29634,6 +29901,7 @@
             },
             "version": {
               "Type": "Int",
+              "Description": "Used to make sure changes to the settings block are atomic.",
               "Computed": true
             }
           }
@@ -29760,22 +30028,26 @@
       "bucket_policy_only": {
         "Type": "Bool",
         "Optional": true,
+        "Description": "Enables Bucket Policy Only access to a bucket.",
         "Computed": true
       },
       "cors": {
         "Type": "List",
         "Optional": true,
+        "Description": "The bucket's Cross-Origin Resource Sharing (CORS) configuration.",
         "IsBlock": true,
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
             "max_age_seconds": {
               "Type": "Int",
-              "Optional": true
+              "Optional": true,
+              "Description": "The value, in seconds, to return in the Access-Control-Max-Age header used in preflight responses."
             },
             "method": {
               "Type": "List",
               "Optional": true,
+              "Description": "The list of HTTP methods on which to include CORS response headers, (GET, OPTIONS, POST, etc) Note: \"*\" is permitted in the list of methods, and means \"any method\".",
               "Elem": {
                 "Type": "SchemaElements",
                 "ElementsType": "String"
@@ -29784,6 +30056,7 @@
             "origin": {
               "Type": "List",
               "Optional": true,
+              "Description": "The list of Origins eligible to receive CORS response headers. Note: \"*\" is permitted in the list of origins, and means \"any Origin\".",
               "Elem": {
                 "Type": "SchemaElements",
                 "ElementsType": "String"
@@ -29792,6 +30065,7 @@
             "response_header": {
               "Type": "List",
               "Optional": true,
+              "Description": "The list of HTTP headers other than the simple response headers to give permission for the user-agent to share across domains.",
               "Elem": {
                 "Type": "SchemaElements",
                 "ElementsType": "String"
@@ -29807,6 +30081,7 @@
       "encryption": {
         "Type": "List",
         "Optional": true,
+        "Description": "The bucket's encryption configuration.",
         "MaxItems": 1,
         "IsBlock": true,
         "Elem": {
@@ -29814,7 +30089,8 @@
           "Info": {
             "default_kms_key_name": {
               "Type": "String",
-              "Required": true
+              "Required": true,
+              "Description": "A Cloud KMS key that will be used to encrypt objects inserted into this bucket, if no encryption method is specified. You must pay attention to whether the crypto key is available in the location that this bucket is created in. See the docs for more details."
             }
           }
         }
@@ -29822,6 +30098,7 @@
       "force_destroy": {
         "Type": "Bool",
         "Optional": true,
+        "Description": "When deleting a bucket, this boolean option will delete all contained objects. If you try to delete a bucket that contains objects, Terraform will fail that run.",
         "Default": {
           "Type": "bool",
           "Value": "false"
@@ -29830,6 +30107,7 @@
       "labels": {
         "Type": "Map",
         "Optional": true,
+        "Description": "A set of key/value label pairs to assign to the bucket.",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -29838,6 +30116,7 @@
       "lifecycle_rule": {
         "Type": "List",
         "Optional": true,
+        "Description": "The bucket's Lifecycle Rules configuration.",
         "MaxItems": 100,
         "IsBlock": true,
         "Elem": {
@@ -29846,6 +30125,7 @@
             "action": {
               "Type": "Set",
               "Required": true,
+              "Description": "The Lifecycle Rule's action configuration. A single block of this type is supported.",
               "MaxItems": 1,
               "MinItems": 1,
               "IsBlock": true,
@@ -29854,11 +30134,13 @@
                 "Info": {
                   "storage_class": {
                     "Type": "String",
-                    "Optional": true
+                    "Optional": true,
+                    "Description": "The target Storage Class of objects affected by this Lifecycle Rule. Supported values include: MULTI_REGIONAL, REGIONAL, NEARLINE, COLDLINE."
                   },
                   "type": {
                     "Type": "String",
-                    "Required": true
+                    "Required": true,
+                    "Description": "The type of the action of this Lifecycle Rule. Supported values include: Delete and SetStorageClass."
                   }
                 }
               }
@@ -29866,6 +30148,7 @@
             "condition": {
               "Type": "Set",
               "Required": true,
+              "Description": "The Lifecycle Rule's condition configuration.",
               "MaxItems": 1,
               "MinItems": 1,
               "IsBlock": true,
@@ -29874,11 +30157,13 @@
                 "Info": {
                   "age": {
                     "Type": "Int",
-                    "Optional": true
+                    "Optional": true,
+                    "Description": "Minimum age of an object in days to satisfy this condition."
                   },
                   "created_before": {
                     "Type": "String",
-                    "Optional": true
+                    "Optional": true,
+                    "Description": "Creation date of an object in RFC 3339 (e.g. 2017-06-13) to satisfy this condition."
                   },
                   "is_live": {
                     "Type": "Bool",
@@ -29889,6 +30174,7 @@
                   "matches_storage_class": {
                     "Type": "List",
                     "Optional": true,
+                    "Description": "Storage Class of objects to satisfy this condition. Supported values include: MULTI_REGIONAL, REGIONAL, NEARLINE, COLDLINE, STANDARD, DURABLE_REDUCED_AVAILABILITY.",
                     "MinItems": 1,
                     "Elem": {
                       "Type": "SchemaElements",
@@ -29897,11 +30183,13 @@
                   },
                   "num_newer_versions": {
                     "Type": "Int",
-                    "Optional": true
+                    "Optional": true,
+                    "Description": "Relevant only for versioned objects. The number of newer versions of an object to satisfy this condition."
                   },
                   "with_state": {
                     "Type": "String",
                     "Optional": true,
+                    "Description": "Match to live and/or archived objects. Unversioned buckets have only live objects. Supported values include: \"LIVE\", \"ARCHIVED\", \"ANY\".",
                     "Computed": true
                   }
                 }
@@ -29913,6 +30201,7 @@
       "location": {
         "Type": "String",
         "Optional": true,
+        "Description": "The GCS location",
         "Default": {
           "Type": "string",
           "Value": "US"
@@ -29921,6 +30210,7 @@
       "logging": {
         "Type": "List",
         "Optional": true,
+        "Description": "The bucket's Access \u0026 Storage Logs configuration.",
         "MaxItems": 1,
         "IsBlock": true,
         "Elem": {
@@ -29928,11 +30218,13 @@
           "Info": {
             "log_bucket": {
               "Type": "String",
-              "Required": true
+              "Required": true,
+              "Description": "The bucket that will receive log objects."
             },
             "log_object_prefix": {
               "Type": "String",
               "Optional": true,
+              "Description": "The object prefix for log objects. If it's not provided, by default GCS sets this to this bucket's name.",
               "Computed": true
             }
           }
@@ -29940,20 +30232,24 @@
       },
       "name": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "The name of the bucket."
       },
       "project": {
         "Type": "String",
         "Optional": true,
+        "Description": "The ID of the project in which the resource belongs. If it is not provided, the provider project is used.",
         "Computed": true
       },
       "requester_pays": {
         "Type": "Bool",
-        "Optional": true
+        "Optional": true,
+        "Description": "Enables Requester Pays on a storage bucket."
       },
       "retention_policy": {
         "Type": "List",
         "Optional": true,
+        "Description": "Configuration of the bucket's data retention policy for how long objects in the bucket should be retained.",
         "MaxItems": 1,
         "IsBlock": true,
         "Elem": {
@@ -29962,6 +30258,7 @@
             "is_locked": {
               "Type": "Bool",
               "Optional": true,
+              "Description": "If set to true, the bucket will be locked and permanently restrict edits to the bucket's retention policy.  Caution: Locking a bucket is an irreversible action.",
               "Default": {
                 "Type": "bool",
                 "Value": "false"
@@ -29969,18 +30266,21 @@
             },
             "retention_period": {
               "Type": "Int",
-              "Required": true
+              "Required": true,
+              "Description": "The period of time, in seconds, that objects in the bucket must be retained and cannot be deleted, overwritten, or archived. The value must be less than 3,155,760,000 seconds."
             }
           }
         }
       },
       "self_link": {
         "Type": "String",
+        "Description": "The URI of the created resource.",
         "Computed": true
       },
       "storage_class": {
         "Type": "String",
         "Optional": true,
+        "Description": "The Storage Class of the new bucket. Supported values include: STANDARD, MULTI_REGIONAL, REGIONAL, NEARLINE, COLDLINE.",
         "Default": {
           "Type": "string",
           "Value": "STANDARD"
@@ -29988,11 +30288,13 @@
       },
       "url": {
         "Type": "String",
+        "Description": "The base URL of the bucket, in the format gs://\u003cbucket-name\u003e.",
         "Computed": true
       },
       "versioning": {
         "Type": "List",
         "Optional": true,
+        "Description": "The bucket's Versioning configuration.",
         "MaxItems": 1,
         "IsBlock": true,
         "Elem": {
@@ -30000,7 +30302,8 @@
           "Info": {
             "enabled": {
               "Type": "Bool",
-              "Required": true
+              "Required": true,
+              "Description": "While set to true, versioning is fully enabled for this bucket."
             }
           }
         }
@@ -30008,6 +30311,7 @@
       "website": {
         "Type": "List",
         "Optional": true,
+        "Description": "Configuration if the bucket acts as a website.",
         "MaxItems": 1,
         "IsBlock": true,
         "Elem": {
@@ -30015,11 +30319,13 @@
           "Info": {
             "main_page_suffix": {
               "Type": "String",
-              "Optional": true
+              "Optional": true,
+              "Description": "Behaves as the bucket's directory index where missing objects are treated as potential directories."
             },
             "not_found_page": {
               "Type": "String",
-              "Optional": true
+              "Optional": true,
+              "Description": "The custom object to return when a requested resource is not found."
             }
           }
         }
@@ -31009,38 +31315,46 @@
     "google_cloudfunctions_function": {
       "available_memory_mb": {
         "Type": "Int",
+        "Description": "Memory (in MB), available to the function. Default value is 256MB. Allowed values are: 128MB, 256MB, 512MB, 1024MB, and 2048MB.",
         "Computed": true
       },
       "description": {
         "Type": "String",
+        "Description": "Description of the function.",
         "Computed": true
       },
       "entry_point": {
         "Type": "String",
+        "Description": "Name of the function that will be executed when the Google Cloud Function is triggered.",
         "Computed": true
       },
       "environment_variables": {
         "Type": "Map",
+        "Description": "A set of key/value environment variable pairs to assign to the function.",
         "Computed": true
       },
       "event_trigger": {
         "Type": "List",
+        "Description": "A source that fires events in response to a condition in another service. Cannot be used with trigger_http.",
         "Computed": true,
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
             "event_type": {
               "Type": "String",
+              "Description": "The type of event to observe. For example: \"google.storage.object.finalize\". See the documentation on calling Cloud Functions for a full reference of accepted triggers.",
               "Computed": true
             },
             "failure_policy": {
               "Type": "List",
+              "Description": "Specifies policy for failed executions",
               "Computed": true,
               "Elem": {
                 "Type": "SchemaInfo",
                 "Info": {
                   "retry": {
                     "Type": "Bool",
+                    "Description": "Whether the function should be retried on failure. Defaults to false.",
                     "Computed": true
                   }
                 }
@@ -31048,6 +31362,7 @@
             },
             "resource": {
               "Type": "String",
+              "Description": "The name or partial URI of the resource from which to observe events. For example, \"myBucket\" or \"projects/my-project/topics/my-topic\"",
               "Computed": true
             }
           }
@@ -31055,60 +31370,74 @@
       },
       "https_trigger_url": {
         "Type": "String",
+        "Description": "URL which triggers function execution. Returned only if trigger_http is used.",
         "Computed": true
       },
       "ingress_settings": {
         "Type": "String",
+        "Description": "String value that controls what traffic can reach the function. Allowed values are ALLOW_ALL and ALLOW_INTERNAL_ONLY. Changes to this field will recreate the cloud function.",
         "Computed": true
       },
       "labels": {
         "Type": "Map",
+        "Description": "A set of key/value label pairs to assign to the function. Label keys must follow the requirements at https://cloud.google.com/resource-manager/docs/creating-managing-labels#requirements.",
         "Computed": true
       },
       "max_instances": {
         "Type": "Int",
+        "Description": "The limit on the maximum number of function instances that may coexist at a given time.",
         "Computed": true
       },
       "name": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "A user-defined name of the function. Function names must be unique globally."
       },
       "project": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Description": "Project of the function. If it is not provided, the provider project is used."
       },
       "region": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Description": "Region of function. Currently can be only \"us-central1\". If it is not provided, the provider region is used."
       },
       "runtime": {
         "Type": "String",
+        "Description": "The runtime in which the function is going to run. Eg. \"nodejs8\", \"nodejs10\", \"python37\", \"go111\".",
         "Computed": true
       },
       "service_account_email": {
         "Type": "String",
+        "Description": " If provided, the self-provided service account to run the function with.",
         "Computed": true
       },
       "source_archive_bucket": {
         "Type": "String",
+        "Description": "The GCS bucket containing the zip archive which contains the function.",
         "Computed": true
       },
       "source_archive_object": {
         "Type": "String",
+        "Description": "The source archive object (file) in archive bucket.",
         "Computed": true
       },
       "source_repository": {
         "Type": "List",
+        "Description": "Represents parameters related to source repository where a function is hosted. Cannot be set alongside source_archive_bucket or source_archive_object.",
         "Computed": true,
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
             "deployed_url": {
               "Type": "String",
+              "Description": "The URL pointing to the hosted repository where the function was defined at the time of deployment.",
               "Computed": true
             },
             "url": {
               "Type": "String",
+              "Description": "The URL pointing to the hosted repository where the function is defined.",
               "Computed": true
             }
           }
@@ -31116,18 +31445,22 @@
       },
       "timeout": {
         "Type": "Int",
+        "Description": "Timeout (in seconds) for the function. Default value is 60 seconds. Cannot be more than 540 seconds.",
         "Computed": true
       },
       "trigger_http": {
         "Type": "Bool",
+        "Description": "Boolean variable. Any HTTP request (of a supported type) to the endpoint will trigger function execution. Supported HTTP request types are: POST, PUT, GET, DELETE, and OPTIONS. Endpoint is returned as https_trigger_url. Cannot be used with trigger_bucket and trigger_topic.",
         "Computed": true
       },
       "vpc_connector": {
         "Type": "String",
+        "Description": "The VPC Network Connector that this cloud function can connect to. It can be either the fully-qualified URI, or the short name of the network connector resource. The format of this field is projects/*/locations/*/connectors/*.",
         "Computed": true
       },
       "vpc_connector_egress_settings": {
         "Type": "String",
+        "Description": "The egress settings for the connector, controlling what traffic is diverted through it. Allowed values are ALL_TRAFFIC and PRIVATE_RANGES_ONLY. Defaults to PRIVATE_RANGES_ONLY. If unset, this field preserves the previously set value.",
         "Computed": true
       }
     },
