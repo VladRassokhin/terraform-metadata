@@ -2,7 +2,7 @@
   ".schema_version": "1",
   "name": "opennebula",
   "type": "provider",
-  "version": "v0.1.1",
+  "version": "v0.2.0",
   "provider": {
     "endpoint": {
       "Type": "String",
@@ -24,6 +24,23 @@
     }
   },
   "resources": {
+    "opennebula_acl": {
+      "resource": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Resource component of the new rule. ACL String Syntax is expected."
+      },
+      "rights": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Rights component of the new rule. ACL String Syntax is expected."
+      },
+      "user": {
+        "Type": "String",
+        "Required": true,
+        "Description": "User component of the new rule. ACL String Syntax is expected."
+      }
+    },
     "opennebula_group": {
       "admins": {
         "Type": "List",
@@ -337,11 +354,30 @@
           "clone_from_image"
         ]
       },
+      "tags": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "Add custom tags to the resource",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
       "target": {
         "Type": "String",
         "Optional": true,
         "Description": "Device target, example: vda",
         "Computed": true
+      },
+      "timeout": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Timeout (in minutes) within resource should be available. Default: 10 minutes",
+        "Default": {
+          "Type": "int",
+          "Value": "10"
+        }
       },
       "type": {
         "Type": "String",
@@ -409,7 +445,7 @@
         "Computed": true
       },
       "rule": {
-        "Type": "Set",
+        "Type": "List",
         "Required": true,
         "Description": "List of rules to be in the Security Group",
         "MinItems": 1,
@@ -460,6 +496,16 @@
           }
         }
       },
+      "tags": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "Add custom tags to the resource",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
       "uid": {
         "Type": "Int",
         "Description": "ID of the user that will own the Security Group",
@@ -472,6 +518,48 @@
       }
     },
     "opennebula_template": {
+      "context": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "Context variables"
+      },
+      "cpu": {
+        "Type": "Float",
+        "Optional": true,
+        "Description": "Amount of CPU quota assigned to the virtual machine",
+        "Computed": true
+      },
+      "disk": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Definition of disks assigned to the Virtual Machine",
+        "Computed": true,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "driver": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "image_id": {
+              "Type": "Int",
+              "Required": true
+            },
+            "size": {
+              "Type": "Int",
+              "Optional": true,
+              "Computed": true
+            },
+            "target": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            }
+          }
+        }
+      },
       "gid": {
         "Type": "Int",
         "Description": "ID of the group that will own the template",
@@ -482,15 +570,129 @@
         "Description": "Name of the group that will own the template",
         "Computed": true
       },
+      "graphics": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Definition of graphics adapter assigned to the Virtual Machine",
+        "Computed": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "keymap": {
+              "Type": "String",
+              "Optional": true,
+              "Default": {
+                "Type": "string",
+                "Value": "en-us"
+              }
+            },
+            "listen": {
+              "Type": "String",
+              "Required": true
+            },
+            "port": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "type": {
+              "Type": "String",
+              "Required": true
+            }
+          }
+        }
+      },
       "group": {
         "Type": "String",
         "Optional": true,
         "Description": "Name of the Group that onws the Template, If empty, it uses caller group"
       },
+      "memory": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Amount of memory (RAM) in MB assigned to the virtual machine",
+        "Computed": true
+      },
       "name": {
         "Type": "String",
         "Required": true,
         "Description": "Name of the template"
+      },
+      "nic": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Definition of network adapter(s) assigned to the Virtual Machine",
+        "Computed": true,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "ip": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "mac": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "model": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "network": {
+              "Type": "String",
+              "Computed": true
+            },
+            "network_id": {
+              "Type": "Int",
+              "Required": true
+            },
+            "nic_id": {
+              "Type": "Int",
+              "Computed": true
+            },
+            "physical_device": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "security_groups": {
+              "Type": "List",
+              "Optional": true,
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "Int"
+              }
+            }
+          }
+        }
+      },
+      "os": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Definition of OS boot and type for the Virtual Machine",
+        "Computed": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "arch": {
+              "Type": "String",
+              "Required": true
+            },
+            "boot": {
+              "Type": "String",
+              "Required": true
+            }
+          }
+        }
       },
       "permissions": {
         "Type": "String",
@@ -503,10 +705,22 @@
         "Description": "Registration time",
         "Computed": true
       },
+      "tags": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "Add custom tags to the resource",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
       "template": {
         "Type": "String",
-        "Required": true,
-        "Description": "Description of the template, in OpenNebula's XML or String format"
+        "Optional": true,
+        "Description": "Description of the template, in OpenNebula's XML or String format",
+        "Computed": true,
+        "Deprecated": "use other schema sections instead."
       },
       "uid": {
         "Type": "Int",
@@ -517,6 +731,33 @@
         "Type": "String",
         "Description": "Name of the user that will own the template",
         "Computed": true
+      },
+      "vcpu": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Number of virtual CPUs assigned to the virtual machine",
+        "Computed": true
+      },
+      "vmgroup": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Virtual Machine Group to associate with during VM creation only. If it changes, a New VM is created",
+        "Computed": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "role": {
+              "Type": "String",
+              "Required": true
+            },
+            "vmgroup_id": {
+              "Type": "Int",
+              "Required": true
+            }
+          }
+        }
       }
     },
     "opennebula_virtual_data_center": {
@@ -600,8 +841,7 @@
       "context": {
         "Type": "Map",
         "Optional": true,
-        "Description": "Context variables",
-        "Computed": true
+        "Description": "Context variables"
       },
       "cpu": {
         "Type": "Float",
@@ -651,7 +891,7 @@
         "Computed": true
       },
       "graphics": {
-        "Type": "Set",
+        "Type": "List",
         "Optional": true,
         "Description": "Definition of graphics adapter assigned to the Virtual Machine",
         "Computed": true,
@@ -771,7 +1011,7 @@
         }
       },
       "os": {
-        "Type": "Set",
+        "Type": "List",
         "Optional": true,
         "Description": "Definition of OS boot and type for the Virtual Machine",
         "Computed": true,
@@ -811,10 +1051,29 @@
         "Description": "Current state of the VM",
         "Computed": true
       },
+      "tags": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "Add custom tags to the resource",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
       "template_id": {
         "Type": "Int",
         "Optional": true,
         "Description": "Id of the VM template to use"
+      },
+      "timeout": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Timeout (in minutes) within resource should be available. Default: 3 minutes",
+        "Default": {
+          "Type": "int",
+          "Value": "3"
+        }
       },
       "uid": {
         "Type": "Int",
@@ -831,11 +1090,133 @@
         "Optional": true,
         "Description": "Number of virtual CPUs assigned to the virtual machine",
         "Computed": true
+      },
+      "vmgroup": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Virtual Machine Group to associate with during VM creation only. If it changes, a New VM is created",
+        "Computed": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "role": {
+              "Type": "String",
+              "Required": true
+            },
+            "vmgroup_id": {
+              "Type": "Int",
+              "Required": true
+            }
+          }
+        }
+      }
+    },
+    "opennebula_virtual_machine_group": {
+      "gid": {
+        "Type": "Int",
+        "Description": "ID of the group that will own the template vm group",
+        "Computed": true
+      },
+      "gname": {
+        "Type": "String",
+        "Description": "Name of the group that will own the template vm group",
+        "Computed": true
+      },
+      "group": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Name of the Group that onws the Template VM Group, If empty, it uses caller group"
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the template"
+      },
+      "permissions": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Permissions for the template vm group (in Unix format, owner-group-other, use-manage-admin)",
+        "Computed": true
+      },
+      "role": {
+        "Type": "List",
+        "Required": true,
+        "Description": "Roles of the VM Group",
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "host_affined": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Host(s) where the VM should run",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "Int"
+              }
+            },
+            "host_anti_affined": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Host(s) where the VM should not run",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "Int"
+              }
+            },
+            "id": {
+              "Type": "Int",
+              "Computed": true
+            },
+            "name": {
+              "Type": "String",
+              "Required": true
+            },
+            "policy": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "vms": {
+              "Type": "List",
+              "Description": "VMs using VM Group",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "Int"
+              }
+            }
+          }
+        }
+      },
+      "tags": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "Add custom tags to the resource",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "uid": {
+        "Type": "Int",
+        "Description": "ID of the user that will own the template vm group",
+        "Computed": true
+      },
+      "uname": {
+        "Type": "String",
+        "Description": "Name of the user that will own the template vm group",
+        "Computed": true
       }
     },
     "opennebula_virtual_network": {
       "ar": {
-        "Type": "Set",
+        "Type": "List",
         "Optional": true,
         "Description": "List of Address Ranges to be part of the Virtual Network",
         "MinItems": 1,
@@ -1105,6 +1486,16 @@
           "ElementsType": "Int"
         }
       },
+      "tags": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "Add custom tags to the resource",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
       "type": {
         "Type": "String",
         "Optional": true,
@@ -1292,6 +1683,16 @@
         "Type": "String",
         "Required": true,
         "Description": "Name of the Image"
+      },
+      "tags": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "Add custom tags to the resource",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       }
     },
     "opennebula_security_group": {
@@ -1299,18 +1700,223 @@
         "Type": "String",
         "Required": true,
         "Description": "Name of the Security Group"
+      },
+      "tags": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "Add custom tags to the resource",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       }
     },
     "opennebula_template": {
+      "context": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "Context variables"
+      },
+      "cpu": {
+        "Type": "Float",
+        "Optional": true,
+        "Description": "Amount of CPU quota assigned to the virtual machine",
+        "Computed": true
+      },
+      "disk": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Definition of disks assigned to the Virtual Machine",
+        "Computed": true,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "driver": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "image_id": {
+              "Type": "Int",
+              "Required": true
+            },
+            "size": {
+              "Type": "Int",
+              "Optional": true,
+              "Computed": true
+            },
+            "target": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            }
+          }
+        }
+      },
+      "graphics": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Definition of graphics adapter assigned to the Virtual Machine",
+        "Computed": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "keymap": {
+              "Type": "String",
+              "Optional": true,
+              "Default": {
+                "Type": "string",
+                "Value": "en-us"
+              }
+            },
+            "listen": {
+              "Type": "String",
+              "Required": true
+            },
+            "port": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "type": {
+              "Type": "String",
+              "Required": true
+            }
+          }
+        }
+      },
+      "memory": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Amount of memory (RAM) in MB assigned to the virtual machine",
+        "Computed": true
+      },
       "name": {
         "Type": "String",
         "Required": true,
         "Description": "Name of the Template"
       },
+      "nic": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Definition of network adapter(s) assigned to the Virtual Machine",
+        "Computed": true,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "ip": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "mac": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "model": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "network": {
+              "Type": "String",
+              "Computed": true
+            },
+            "network_id": {
+              "Type": "Int",
+              "Required": true
+            },
+            "nic_id": {
+              "Type": "Int",
+              "Computed": true
+            },
+            "physical_device": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "security_groups": {
+              "Type": "List",
+              "Optional": true,
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "Int"
+              }
+            }
+          }
+        }
+      },
+      "os": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Definition of OS boot and type for the Virtual Machine",
+        "Computed": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "arch": {
+              "Type": "String",
+              "Required": true
+            },
+            "boot": {
+              "Type": "String",
+              "Required": true
+            }
+          }
+        }
+      },
+      "tags": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "Add custom tags to the resource",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
       "template": {
         "Type": "String",
-        "Description": "template content",
+        "Optional": true,
+        "Description": "Description of the template, in OpenNebula's XML or String format",
+        "Computed": true,
+        "Deprecated": "use other schema sections instead."
+      },
+      "vcpu": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Number of virtual CPUs assigned to the virtual machine",
         "Computed": true
+      },
+      "vmgroup": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Virtual Machine Group to associate with during VM creation only. If it changes, a New VM is created",
+        "Computed": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "role": {
+              "Type": "String",
+              "Required": true
+            },
+            "vmgroup_id": {
+              "Type": "Int",
+              "Required": true
+            }
+          }
+        }
       }
     },
     "opennebula_virtual_data_center": {
@@ -1318,6 +1924,23 @@
         "Type": "String",
         "Required": true,
         "Description": "Name of the VDC"
+      }
+    },
+    "opennebula_virtual_machine_group": {
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the Virtual Machine Group"
+      },
+      "tags": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "Add custom tags to the resource",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       }
     },
     "opennebula_virtual_network": {
@@ -1335,6 +1958,16 @@
         "Type": "String",
         "Required": true,
         "Description": "Name of the Virtual Network"
+      },
+      "tags": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "Add custom tags to the resource",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       }
     }
   }
