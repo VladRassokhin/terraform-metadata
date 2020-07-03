@@ -2,7 +2,7 @@
   ".schema_version": "1",
   "name": "nutanix",
   "type": "provider",
-  "version": "v1.0.2",
+  "version": "v1.1.0",
   "provider": {
     "endpoint": {
       "Type": "String",
@@ -36,6 +36,12 @@
       "Type": "String",
       "Optional": true,
       "DefaultFunc": "ENV(NUTANIX_PROXY_URL)"
+    },
+    "session_auth": {
+      "Type": "Bool",
+      "Optional": true,
+      "Description": "Use session authentification instead of basic auth for each request",
+      "DefaultFunc": "ENV(NUTANIX_SESSION_AUTH)"
     },
     "username": {
       "Type": "String",
@@ -909,6 +915,7 @@
         "Type": "List",
         "Optional": true,
         "Computed": true,
+        "MaxItems": 1,
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -1000,6 +1007,55 @@
               "Optional": true,
               "Computed": true
             },
+            "storage_config": {
+              "Type": "List",
+              "Optional": true,
+              "Computed": true,
+              "MaxItems": 1,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "flash_mode": {
+                    "Type": "String",
+                    "Optional": true
+                  },
+                  "storage_container_reference": {
+                    "Type": "List",
+                    "Optional": true,
+                    "Computed": true,
+                    "IsBlock": true,
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "kind": {
+                          "Type": "String",
+                          "Optional": true,
+                          "Default": {
+                            "Type": "string",
+                            "Value": "storage_container"
+                          }
+                        },
+                        "name": {
+                          "Type": "String",
+                          "Computed": true
+                        },
+                        "url": {
+                          "Type": "String",
+                          "Optional": true,
+                          "Computed": true
+                        },
+                        "uuid": {
+                          "Type": "String",
+                          "Optional": true,
+                          "Computed": true
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
             "uuid": {
               "Type": "String",
               "Optional": true,
@@ -1079,7 +1135,11 @@
       "guest_customization_cloud_init_custom_key_values": {
         "Type": "Map",
         "Optional": true,
-        "Computed": true
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       },
       "guest_customization_cloud_init_meta_data": {
         "Type": "String",
@@ -1405,6 +1465,14 @@
         "Type": "String",
         "Computed": true
       },
+      "use_hot_add": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
       "vga_console_enabled": {
         "Type": "Bool",
         "Optional": true,
@@ -1537,7 +1605,11 @@
       },
       "cluster_id": {
         "Type": "String",
-        "Required": true
+        "Optional": true,
+        "Computed": true,
+        "ConflictsWith": [
+          "name"
+        ]
       },
       "domain_server_credentials": {
         "Type": "Map",
@@ -1688,7 +1760,11 @@
       },
       "name": {
         "Type": "String",
-        "Computed": true
+        "Optional": true,
+        "Computed": true,
+        "ConflictsWith": [
+          "cluster_id"
+        ]
       },
       "name_server_ip_list": {
         "Type": "List",
@@ -2242,6 +2318,569 @@
         }
       }
     },
+    "nutanix_host": {
+      "api_version": {
+        "Type": "String",
+        "Computed": true
+      },
+      "block": {
+        "Type": "Map",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "categories": {
+        "Type": "Set",
+        "Optional": true,
+        "Computed": true,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "name": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "value": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            }
+          }
+        }
+      },
+      "cluster_reference": {
+        "Type": "Map",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "controller_vm": {
+        "Type": "Map",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "cpu_capacity_hz": {
+        "Type": "Int",
+        "Computed": true
+      },
+      "cpu_model": {
+        "Type": "String",
+        "Computed": true
+      },
+      "failover_cluster": {
+        "Type": "Map",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "gpu_driver_version": {
+        "Type": "String",
+        "Computed": true
+      },
+      "gpu_list": {
+        "Type": "List",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "assignable": {
+              "Type": "Bool",
+              "Computed": true
+            },
+            "consumer_reference": {
+              "Type": "Map",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "device_id": {
+              "Type": "Int",
+              "Computed": true
+            },
+            "fraction": {
+              "Type": "Int",
+              "Computed": true
+            },
+            "frame_buffer_size_mib": {
+              "Type": "Int",
+              "Computed": true
+            },
+            "guest_driver_version": {
+              "Type": "String",
+              "Computed": true
+            },
+            "index": {
+              "Type": "Int",
+              "Computed": true
+            },
+            "license_list": {
+              "Type": "List",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "max_resolution": {
+              "Type": "String",
+              "Computed": true
+            },
+            "mode": {
+              "Type": "String",
+              "Computed": true
+            },
+            "name": {
+              "Type": "String",
+              "Computed": true
+            },
+            "num_vgpus_allocated": {
+              "Type": "Int",
+              "Computed": true
+            },
+            "num_virtual_display_heads": {
+              "Type": "Int",
+              "Computed": true
+            },
+            "numa_node": {
+              "Type": "Int",
+              "Computed": true
+            },
+            "pci_address": {
+              "Type": "String",
+              "Computed": true
+            },
+            "status": {
+              "Type": "String",
+              "Computed": true
+            },
+            "uuid": {
+              "Type": "String",
+              "Computed": true
+            },
+            "vendor": {
+              "Type": "String",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "host_disks_reference_list": {
+        "Type": "List",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "kind": {
+              "Type": "String",
+              "Computed": true
+            },
+            "name": {
+              "Type": "String",
+              "Computed": true
+            },
+            "uuid": {
+              "Type": "String",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "host_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "host_nics_id_list": {
+        "Type": "List",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "host_type": {
+        "Type": "String",
+        "Computed": true
+      },
+      "hypervisor": {
+        "Type": "Map",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "ipmi": {
+        "Type": "Map",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "memory_capacity_mib": {
+        "Type": "Int",
+        "Computed": true
+      },
+      "metadata": {
+        "Type": "Map",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "monitoring_state": {
+        "Type": "String",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Computed": true
+      },
+      "num_cpu_cores": {
+        "Type": "Int",
+        "Computed": true
+      },
+      "num_cpu_sockets": {
+        "Type": "Int",
+        "Computed": true
+      },
+      "owner_reference": {
+        "Type": "Map",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "project_reference": {
+        "Type": "Map",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "rackable_unit_reference": {
+        "Type": "Map",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "serial_number": {
+        "Type": "String",
+        "Computed": true
+      },
+      "windows_domain": {
+        "Type": "Map",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      }
+    },
+    "nutanix_hosts": {
+      "api_version": {
+        "Type": "String",
+        "Computed": true
+      },
+      "entities": {
+        "Type": "List",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "api_version": {
+              "Type": "String",
+              "Computed": true
+            },
+            "block": {
+              "Type": "Map",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "categories": {
+              "Type": "Set",
+              "Optional": true,
+              "Computed": true,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "name": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "value": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  }
+                }
+              }
+            },
+            "cluster_reference": {
+              "Type": "Map",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "controller_vm": {
+              "Type": "Map",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "cpu_capacity_hz": {
+              "Type": "Int",
+              "Computed": true
+            },
+            "cpu_model": {
+              "Type": "String",
+              "Computed": true
+            },
+            "failover_cluster": {
+              "Type": "Map",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "gpu_driver_version": {
+              "Type": "String",
+              "Computed": true
+            },
+            "gpu_list": {
+              "Type": "List",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "assignable": {
+                    "Type": "Bool",
+                    "Computed": true
+                  },
+                  "consumer_reference": {
+                    "Type": "Map",
+                    "Computed": true,
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  },
+                  "device_id": {
+                    "Type": "Int",
+                    "Computed": true
+                  },
+                  "fraction": {
+                    "Type": "Int",
+                    "Computed": true
+                  },
+                  "frame_buffer_size_mib": {
+                    "Type": "Int",
+                    "Computed": true
+                  },
+                  "guest_driver_version": {
+                    "Type": "String",
+                    "Computed": true
+                  },
+                  "index": {
+                    "Type": "Int",
+                    "Computed": true
+                  },
+                  "license_list": {
+                    "Type": "List",
+                    "Computed": true,
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  },
+                  "max_resolution": {
+                    "Type": "String",
+                    "Computed": true
+                  },
+                  "mode": {
+                    "Type": "String",
+                    "Computed": true
+                  },
+                  "name": {
+                    "Type": "String",
+                    "Computed": true
+                  },
+                  "num_vgpus_allocated": {
+                    "Type": "Int",
+                    "Computed": true
+                  },
+                  "num_virtual_display_heads": {
+                    "Type": "Int",
+                    "Computed": true
+                  },
+                  "numa_node": {
+                    "Type": "Int",
+                    "Computed": true
+                  },
+                  "pci_address": {
+                    "Type": "String",
+                    "Computed": true
+                  },
+                  "status": {
+                    "Type": "String",
+                    "Computed": true
+                  },
+                  "uuid": {
+                    "Type": "String",
+                    "Computed": true
+                  },
+                  "vendor": {
+                    "Type": "String",
+                    "Computed": true
+                  }
+                }
+              }
+            },
+            "host_disks_reference_list": {
+              "Type": "List",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "kind": {
+                    "Type": "String",
+                    "Computed": true
+                  },
+                  "name": {
+                    "Type": "String",
+                    "Computed": true
+                  },
+                  "uuid": {
+                    "Type": "String",
+                    "Computed": true
+                  }
+                }
+              }
+            },
+            "host_nics_id_list": {
+              "Type": "List",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "host_type": {
+              "Type": "String",
+              "Computed": true
+            },
+            "hypervisor": {
+              "Type": "Map",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "ipmi": {
+              "Type": "Map",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "memory_capacity_mib": {
+              "Type": "Int",
+              "Computed": true
+            },
+            "metadata": {
+              "Type": "Map",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "monitoring_state": {
+              "Type": "String",
+              "Computed": true
+            },
+            "name": {
+              "Type": "String",
+              "Computed": true
+            },
+            "num_cpu_cores": {
+              "Type": "Int",
+              "Computed": true
+            },
+            "num_cpu_sockets": {
+              "Type": "Int",
+              "Computed": true
+            },
+            "owner_reference": {
+              "Type": "Map",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "project_reference": {
+              "Type": "Map",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "rackable_unit_reference": {
+              "Type": "Map",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "serial_number": {
+              "Type": "String",
+              "Computed": true
+            },
+            "windows_domain": {
+              "Type": "Map",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      }
+    },
     "nutanix_image": {
       "api_version": {
         "Type": "String",
@@ -2475,11 +3114,11 @@
                 "Type": "SchemaInfo",
                 "Info": {
                   "end_port": {
-                    "Type": "String",
+                    "Type": "Int",
                     "Computed": true
                   },
                   "start_port": {
-                    "Type": "String",
+                    "Type": "Int",
                     "Computed": true
                   }
                 }
@@ -2496,7 +3135,7 @@
                     "Computed": true
                   },
                   "start_port": {
-                    "Type": "String",
+                    "Type": "Int",
                     "Computed": true
                   }
                 }
@@ -2600,7 +3239,7 @@
                     "Computed": true
                   },
                   "start_port": {
-                    "Type": "String",
+                    "Type": "Int",
                     "Computed": true
                   }
                 }
@@ -2617,7 +3256,7 @@
                     "Computed": true
                   },
                   "start_port": {
-                    "Type": "String",
+                    "Type": "Int",
                     "Computed": true
                   }
                 }
@@ -2889,11 +3528,11 @@
                 "Type": "SchemaInfo",
                 "Info": {
                   "end_port": {
-                    "Type": "String",
+                    "Type": "Int",
                     "Computed": true
                   },
                   "start_port": {
-                    "Type": "String",
+                    "Type": "Int",
                     "Computed": true
                   }
                 }
@@ -2910,7 +3549,7 @@
                     "Computed": true
                   },
                   "start_port": {
-                    "Type": "String",
+                    "Type": "Int",
                     "Computed": true
                   }
                 }
@@ -3010,11 +3649,11 @@
                 "Type": "SchemaInfo",
                 "Info": {
                   "end_port": {
-                    "Type": "String",
+                    "Type": "Int",
                     "Computed": true
                   },
                   "start_port": {
-                    "Type": "String",
+                    "Type": "Int",
                     "Computed": true
                   }
                 }
@@ -3031,7 +3670,7 @@
                     "Computed": true
                   },
                   "start_port": {
-                    "Type": "String",
+                    "Type": "Int",
                     "Computed": true
                   }
                 }
@@ -3272,6 +3911,252 @@
         "Computed": true
       }
     },
+    "nutanix_subnets": {
+      "api_version": {
+        "Type": "String",
+        "Computed": true
+      },
+      "entities": {
+        "Type": "List",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "api_version": {
+              "Type": "String",
+              "Computed": true
+            },
+            "availability_zone_reference": {
+              "Type": "Map",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "categories": {
+              "Type": "Set",
+              "Optional": true,
+              "Computed": true,
+              "IsBlock": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "name": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "value": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  }
+                }
+              }
+            },
+            "cluster_name": {
+              "Type": "String",
+              "Computed": true
+            },
+            "cluster_reference": {
+              "Type": "Map",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "cluster_uuid": {
+              "Type": "String",
+              "Computed": true
+            },
+            "default_gateway_ip": {
+              "Type": "String",
+              "Computed": true
+            },
+            "description": {
+              "Type": "String",
+              "Computed": true
+            },
+            "dhcp_domain_name_server_list": {
+              "Type": "List",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "dhcp_domain_search_list": {
+              "Type": "List",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "dhcp_options": {
+              "Type": "Map",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "dhcp_server_address": {
+              "Type": "Map",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "dhcp_server_address_port": {
+              "Type": "Int",
+              "Computed": true
+            },
+            "ip_config_pool_list_ranges": {
+              "Type": "List",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "message_list": {
+              "Type": "List",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "details": {
+                    "Type": "Map",
+                    "Computed": true
+                  },
+                  "message": {
+                    "Type": "String",
+                    "Computed": true
+                  },
+                  "reason": {
+                    "Type": "String",
+                    "Computed": true
+                  }
+                }
+              }
+            },
+            "metadata": {
+              "Type": "Map",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "name": {
+              "Type": "String",
+              "Computed": true
+            },
+            "network_function_chain_reference": {
+              "Type": "Map",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "owner_reference": {
+              "Type": "Map",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "prefix_length": {
+              "Type": "Int",
+              "Computed": true
+            },
+            "project_reference": {
+              "Type": "Map",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "state": {
+              "Type": "String",
+              "Computed": true
+            },
+            "subnet_id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "subnet_ip": {
+              "Type": "String",
+              "Computed": true
+            },
+            "subnet_name": {
+              "Type": "String",
+              "Computed": true
+            },
+            "subnet_type": {
+              "Type": "String",
+              "Computed": true
+            },
+            "vlan_id": {
+              "Type": "Int",
+              "Computed": true
+            },
+            "vswitch_name": {
+              "Type": "String",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "metadata": {
+        "Type": "Set",
+        "Optional": true,
+        "Computed": true,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "filter": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "kind": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "length": {
+              "Type": "Int",
+              "Optional": true,
+              "Computed": true
+            },
+            "offset": {
+              "Type": "Int",
+              "Optional": true,
+              "Computed": true
+            },
+            "sort_attribute": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "sort_order": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            }
+          }
+        }
+      }
+    },
     "nutanix_virtual_machine": {
       "api_version": {
         "Type": "String",
@@ -3382,6 +4267,45 @@
             "disk_size_mib": {
               "Type": "Int",
               "Computed": true
+            },
+            "storage_config": {
+              "Type": "List",
+              "Computed": true,
+              "MaxItems": 1,
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "flash_mode": {
+                    "Type": "String",
+                    "Computed": true
+                  },
+                  "storage_container_reference": {
+                    "Type": "List",
+                    "Computed": true,
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "kind": {
+                          "Type": "String",
+                          "Computed": true
+                        },
+                        "name": {
+                          "Type": "String",
+                          "Computed": true
+                        },
+                        "url": {
+                          "Type": "String",
+                          "Computed": true
+                        },
+                        "uuid": {
+                          "Type": "String",
+                          "Computed": true
+                        }
+                      }
+                    }
+                  }
+                }
+              }
             },
             "uuid": {
               "Type": "String",
