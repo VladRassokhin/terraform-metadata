@@ -2,7 +2,7 @@
   ".schema_version": "1",
   "name": "nomad",
   "type": "provider",
-  "version": "v1.4.7",
+  "version": "v1.4.8",
   "provider": {
     "address": {
       "Type": "String",
@@ -386,6 +386,136 @@
         "Required": true,
         "Description": "Specifies the scope for this policy. Only 'submit-job' is currently supported."
       }
+    },
+    "nomad_volume": {
+      "access_mode": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Defines whether a volume should be available concurrently.",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "attachment_mode": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The storage API that will be used by the volume.",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "context": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "An optional key-value map of strings passed directly to the CSI plugin to validate the volume.",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "controller_required": {
+        "Type": "Bool",
+        "Computed": true
+      },
+      "controllers_expected": {
+        "Type": "Int",
+        "Computed": true
+      },
+      "controllers_healthy": {
+        "Type": "Int",
+        "Computed": true
+      },
+      "deregister_on_destroy": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "If true, the volume will be deregistered on destroy.",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "external_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The ID of the physical volume from the storage provider."
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The display name of the volume."
+      },
+      "namespace": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The namespace in which to create the volume.",
+        "Default": {
+          "Type": "string",
+          "Value": "default"
+        }
+      },
+      "nodes_expected": {
+        "Type": "Int",
+        "Computed": true
+      },
+      "nodes_healthy": {
+        "Type": "Int",
+        "Computed": true
+      },
+      "parameters": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "An optional key-value map of strings passed directly to the CSI plugin to configure the volume.",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "plugin_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The ID of the CSI plugin that manages this volume."
+      },
+      "plugin_provider": {
+        "Type": "String",
+        "Computed": true
+      },
+      "plugin_provider_version": {
+        "Type": "String",
+        "Computed": true
+      },
+      "schedulable": {
+        "Type": "Bool",
+        "Computed": true
+      },
+      "secrets": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "An optional key-value map of strings used as credentials for publishing and unpublishing volumes.",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "type": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The type of the volume. Currently, only 'csi' is supported.",
+        "Default": {
+          "Type": "string",
+          "Value": "csi"
+        },
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "volume_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The unique ID of the volume, how jobs will refer to the volume."
+      }
     }
   },
   "data-sources": {
@@ -724,6 +854,105 @@
         }
       }
     },
+    "nomad_plugin": {
+      "controller_required": {
+        "Type": "Bool",
+        "Computed": true
+      },
+      "controllers_expected": {
+        "Type": "Int",
+        "Computed": true
+      },
+      "controllers_healthy": {
+        "Type": "Int",
+        "Computed": true
+      },
+      "nodes": {
+        "Type": "List",
+        "Description": "Available nodes for this plugin",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "healthy": {
+              "Type": "Bool",
+              "Computed": true
+            },
+            "healthy_description": {
+              "Type": "String",
+              "Computed": true
+            },
+            "name": {
+              "Type": "String",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "nodes_expected": {
+        "Type": "Int",
+        "Computed": true
+      },
+      "nodes_healthy": {
+        "Type": "Int",
+        "Computed": true
+      },
+      "plugin_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Plugin ID"
+      },
+      "plugin_provider": {
+        "Type": "String",
+        "Computed": true
+      },
+      "plugin_provider_version": {
+        "Type": "String",
+        "Computed": true
+      },
+      "wait_for_healthy": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Wait for to be backed by a specified number of controllers",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "wait_for_registration": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Wait for the plugin to be registered in Noamd",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      }
+    },
+    "nomad_plugins": {
+      "plugins": {
+        "Type": "List",
+        "Description": "Registered plugins",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "Map"
+        }
+      },
+      "type": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Volume Type (currently only 'csi')",
+        "Default": {
+          "Type": "string",
+          "Value": "csi"
+        },
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      }
+    },
     "nomad_regions": {
       "regions": {
         "Type": "List",
@@ -731,6 +960,57 @@
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
+        }
+      }
+    },
+    "nomad_volumes": {
+      "namespace": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Volume namespace filter",
+        "Default": {
+          "Type": "string",
+          "Value": "default"
+        }
+      },
+      "node_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Volume node filter",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "plugin_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Plugin ID filter",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "type": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Volume Type (currently only 'csi')",
+        "Default": {
+          "Type": "string",
+          "Value": "csi"
+        },
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "volumes": {
+        "Type": "List",
+        "Description": "Volumes",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "Map"
         }
       }
     }
