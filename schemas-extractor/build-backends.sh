@@ -110,10 +110,10 @@ function process_backend() {
   echo "Generating schema for $name"
   if [[ "${GENERATE_PARALLEL:-}" == "1" ]]; then
     (
-      generate_one "$name" "$CUR"
+      generate_one "$name" GO111MODULE=off
     ) &
   else
-    generate_one "$name" "$CUR"
+    generate_one "$name" GO111MODULE=off
   fi
 
   # Revert to previous state

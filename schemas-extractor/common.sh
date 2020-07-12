@@ -73,7 +73,7 @@ function generate_one() {
   mkdir -p "$logs"
   log_file="$logs/$1.log"
   set +e
-  GO111MODULE=off go run generate-schema/generate-schema.go 2>&1 | tee "$log_file"
+  eval ${2:-} go run generate-schema/generate-schema.go 2>&1 | tee "$log_file"
   ec=$?
   if [[ $ec -eq 0 ]]; then
     rm "$log_file"

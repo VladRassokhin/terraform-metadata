@@ -33,6 +33,7 @@ function process_provider() {
   pkg_name="$(jq_get "$name" 'pkg_name')"
   provider_args="$(jq_get "$name" 'provider_args')"
   use_master="$(jq_get "$name" 'use_master')"
+  go_envs="$(jq_get "$name" 'go_envs')"
   location="$GOPATH/src/$repository"
 
   if [[ ! -d "$location" ]]; then
@@ -100,6 +101,9 @@ function process_provider() {
   if grep -q 'github.com/hashicorp/terraform-plugin-sdk' -r "$pkg_name"; then
     sdk="terraform-plugin-sdk-v1"
   fi
+  if [ "$sdk" == "terraform-plugin-sdk-v1" ] && [ ! -d "vendor" ]; then
+    go_envs="GO111MODULE=on"
+  fi
   # TODO: Detect and use terraform-plugin-sdk-v2 when needed
   base_file="provider/$sdk/generate-schema.go"
   echo "Using sdk: $sdk"
@@ -132,10 +136,10 @@ EOF
   echo "Generating schema for $name"
   if [[ "${GENERATE_PARALLEL:-}" == "1" ]]; then
     (
-      generate_one "$name" "$CUR"
+      generate_one "$name" "$go_envs"
     ) &
   else
-    generate_one "$name" "$CUR"
+    generate_one "$name" "$go_envs"
   fi
 
   # Revert to previous state
