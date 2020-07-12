@@ -38,18 +38,18 @@ func getInterpolationFunctions() map[string]FunctionInfo {
 	cfg := getLangEvalConfig(vars)
 	result := make(map[string]FunctionInfo)
 	// TF 0.11
-	for name, function := range cfg.GlobalScope.FuncMap {
-		args := make([]string, len(function.ArgTypes))
-		for i, at := range function.ArgTypes {
+	for name, fun := range cfg.GlobalScope.FuncMap {
+		args := make([]string, len(fun.ArgTypes))
+		for i, at := range fun.ArgTypes {
 			args[i] = shortenType(at.String())
 		}
 		vt := ""
-		if function.Variadic {
-			vt = shortenType(function.VariadicType.String())
+		if fun.Variadic {
+			vt = shortenType(fun.VariadicType.String())
 		}
 		result[name] = FunctionInfo{
 			ArgTypes:     &args,
-			ReturnType:   shortenType(function.ReturnType.String()),
+			ReturnType:   shortenType(fun.ReturnType.String()),
 			VariadicType: vt,
 		}
 	}
@@ -85,7 +85,7 @@ func getInterpolationFunctions() map[string]FunctionInfo {
 				} else if f.VarParam() != nil {
 					returnType, err = f.ReturnType([]cty.Type{f.VarParam().Type, f.VarParam().Type})
 					if err != nil {
-						panic(fmt.Errorf("Failed to get return type for '%s': %v", name, err))
+						panic(fmt.Errorf("failed to get return type for '%s': %v", name, err))
 					}
 				}
 			}
@@ -173,6 +173,21 @@ func exportType(t cty.Type) string {
 			return "Map(" + exportType(*et) + ")"
 		}
 	}
+	if t.IsObjectType() {
+		attributeTypes := t.AttributeTypes()
+		ret := "Object({"
+		first := true
+		for name, et := range attributeTypes {
+			if first {
+				first = true
+			} else {
+				ret += ","
+			}
+			ret += " " + name + "=" + exportType(et)
+		}
+		ret += "})"
+		return ret
+	}
 	if t == cty.DynamicPseudoType {
 		return "Any"
 	}
@@ -198,7 +213,7 @@ func Generate(name string, outputPath string) {
 }
 
 func DoGenerate(outputFilePath string) error {
-	provisionerJson, err := json.MarshalIndent(Export(), "", "  ")
+	functionsJson, err := json.MarshalIndent(Export(), "", "  ")
 
 	if err != nil {
 		return err
@@ -212,7 +227,7 @@ func DoGenerate(outputFilePath string) error {
 	//noinspection GoUnhandledErrorResult
 	defer file.Close()
 
-	_, err = file.Write(provisionerJson)
+	_, err = file.Write(functionsJson)
 	if err != nil {
 		return err
 	}
