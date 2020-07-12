@@ -3,13 +3,19 @@
   ".sdk_type": "terraform-plugin-sdk-v1",
   "name": "vcd",
   "type": "provider",
-  "version": "v2.8.0",
+  "version": "v2.9.0",
   "provider": {
     "allow_unverified_ssl": {
       "Type": "Bool",
       "Optional": true,
       "Description": "If set, VCDClient will permit unverifiable SSL certificates.",
       "DefaultFunc": "ENV(VCD_ALLOW_UNVERIFIED_SSL)"
+    },
+    "auth_type": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "'integrated', 'saml_adfs', and 'token' are the only supported now. 'integrated' is default.",
+      "DefaultFunc": "ENV(VCD_AUTH_TYPE)"
     },
     "import_separator": {
       "Type": "String",
@@ -43,9 +49,15 @@
     },
     "password": {
       "Type": "String",
-      "Required": true,
+      "Optional": true,
       "Description": "The user password for VCD API operations.",
       "DefaultFunc": "ENV(VCD_PASSWORD)"
+    },
+    "saml_adfs_rpt_id": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "Allows to specify custom Relaying Party Trust Identifier for auth_type=saml_adfs",
+      "DefaultFunc": "ENV(VCD_SAML_ADFS_RPT_ID)"
     },
     "sysorg": {
       "Type": "String",
@@ -67,7 +79,7 @@
     },
     "user": {
       "Type": "String",
-      "Required": true,
+      "Optional": true,
       "Description": "The user name for VCD API operations.",
       "DefaultFunc": "ENV(VCD_USER)"
     },
@@ -80,6 +92,11 @@
   },
   "resources": {
     "vcd_catalog": {
+      "created": {
+        "Type": "String",
+        "Description": "Time stamp of when the catalog was created",
+        "Computed": true
+      },
       "delete_force": {
         "Type": "Bool",
         "Required": true,
@@ -109,6 +126,11 @@
         "Type": "String",
         "Required": true,
         "Description": "catalog name where upload the OVA file"
+      },
+      "created": {
+        "Type": "String",
+        "Description": "Time stamp of when the item was created",
+        "Computed": true
       },
       "description": {
         "Type": "String",
@@ -464,7 +486,11 @@
       "fips_mode_enabled": {
         "Type": "Bool",
         "Optional": true,
-        "Description": "Enable FIPS mode. Only for vCD 9.1+. FIPS mode turns on the cipher suites that comply with FIPS. (False by default)"
+        "Description": "Enable FIPS mode. FIPS mode turns on the cipher suites that comply with FIPS. (False by default)",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
       },
       "fw_default_rule_action": {
         "Type": "String",
@@ -2408,6 +2434,33 @@
         }
       }
     },
+    "vcd_org_group": {
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Description"
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Group name"
+      },
+      "org": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of organization to use, optional if defined at provider level. Useful when connected as sysadmin working across different organizations"
+      },
+      "provider_type": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Identity provider type - 'SAML' or 'INTEGRATED' for LDAP"
+      },
+      "role": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Existing role name to assign"
+      }
+    },
     "vcd_org_user": {
       "deployed_vm_quota": {
         "Type": "Int",
@@ -2570,10 +2623,6 @@
                     "Description": "Capacity limit relative to the value specified for Allocation. It must not be less than that value. If it is greater than that value, it implies over provisioning. A value of 0 specifies unlimited units. Value in MB or MHz. Used with AllocationVApp (Pay as you go).",
                     "Computed": true
                   },
-                  "overhead": {
-                    "Type": "Int",
-                    "Computed": true
-                  },
                   "reserved": {
                     "Type": "Int",
                     "Computed": true
@@ -2605,10 +2654,6 @@
                     "Type": "Int",
                     "Optional": true,
                     "Description": "Capacity limit relative to the value specified for Allocation. It must not be less than that value. If it is greater than that value, it implies over provisioning. A value of 0 specifies unlimited units. Value in MB or MHz. Used with AllocationVApp (Pay as you go).",
-                    "Computed": true
-                  },
-                  "overhead": {
-                    "Type": "Int",
                     "Computed": true
                   },
                   "reserved": {
@@ -2931,6 +2976,246 @@
         "Description": "The name of VDC to use, optional if defined at provider level"
       }
     },
+    "vcd_vapp_firewall_rules": {
+      "default_action": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Specifies what to do should none of the rules match. Either `allow` or `drop`"
+      },
+      "enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enable or disable firewall service. Default is `true`",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "log_default_action": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Flag to enable logging for default action. Default value is false.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "network_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "vApp network identifier"
+      },
+      "org": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of organization to use, optional if defined at provider level. Useful when connected as sysadmin working across different organizations"
+      },
+      "rule": {
+        "Type": "List",
+        "Optional": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "destination_ip": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Destination IP address to which the rule applies. A value of `Any` matches any IP address."
+            },
+            "destination_port": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Destination port to which this rule applies."
+            },
+            "destination_vm_id": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Destination VM identifier"
+            },
+            "destination_vm_ip_type": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The value can be one of: `assigned` - assigned internal IP will be automatically chosen. `NAT`: NATed external IP will be automatically chosen."
+            },
+            "destination_vm_nic_id": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "Destination VM NIC ID to which this rule applies."
+            },
+            "enable_logging": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "'true' value will enable rule logging. Default is false",
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
+              }
+            },
+            "enabled": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "'true' value will enable firewall rule",
+              "Default": {
+                "Type": "bool",
+                "Value": "true"
+              }
+            },
+            "name": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Rule name"
+            },
+            "policy": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "One of: `drop` (drop packets that match the rule), `allow` (allow packets that match the rule to pass through the firewall)"
+            },
+            "protocol": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Specify the protocols to which the rule should be applied. One of: `any`, `icmp`, `tcp`, `udp`, `tcp\u0026udp`",
+              "Default": {
+                "Type": "string",
+                "Value": "any"
+              }
+            },
+            "source_ip": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Source IP address to which the rule applies. A value of `Any` matches any IP address."
+            },
+            "source_port": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Source port to which this rule applies."
+            },
+            "source_vm_id": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Source VM identifier"
+            },
+            "source_vm_ip_type": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The value can be one of: `assigned` - assigned internal IP will be automatically chosen. `NAT`: NATed external IP will be automatically chosen."
+            },
+            "source_vm_nic_id": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "Source VM NIC ID to which this rule applies."
+            }
+          }
+        }
+      },
+      "vapp_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "vApp identifier"
+      },
+      "vdc": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of VDC to use, optional if defined at provider level"
+      }
+    },
+    "vcd_vapp_nat_rules": {
+      "enable_ip_masquerade": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "When enabled translates a virtual machine's private, internal IP address to a public IP address for outbound traffic.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enable or disable NAT service. Default is `true`.",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "nat_type": {
+        "Type": "String",
+        "Required": true,
+        "Description": "One of: `ipTranslation` (use IP translation), `portForwarding` (use port forwarding)."
+      },
+      "network_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "vApp network identifier"
+      },
+      "org": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of organization to use, optional if defined at provider level. Useful when connected as sysadmin working across different organizations"
+      },
+      "rule": {
+        "Type": "List",
+        "Optional": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "external_ip": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "External IP address to forward to or External IP address to map to VM",
+              "Computed": true
+            },
+            "external_port": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "External port to forward."
+            },
+            "forward_to_port": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "Internal port to forward."
+            },
+            "id": {
+              "Type": "String",
+              "Description": "ID of the rule. Can be used to track syslog messages.",
+              "Computed": true
+            },
+            "mapping_mode": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Mapping mode. One of: `automatic`, `manual`"
+            },
+            "protocol": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Protocol to forward. One of: `TCP` (forward TCP packets), `UDP` (forward UDP packets), `TCP_UDP` (forward TCP and UDP packets)."
+            },
+            "vm_id": {
+              "Type": "String",
+              "Required": true,
+              "Description": "VM to which this rule applies."
+            },
+            "vm_nic_id": {
+              "Type": "Int",
+              "Required": true,
+              "Description": "VM NIC ID to which this rule applies."
+            }
+          }
+        }
+      },
+      "vapp_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "vApp identifier"
+      },
+      "vdc": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of VDC to use, optional if defined at provider level"
+      }
+    },
     "vcd_vapp_network": {
       "description": {
         "Type": "String",
@@ -2998,9 +3283,9 @@
       },
       "firewall_enabled": {
         "Type": "Bool",
-        "Optional": true,
-        "Description": "firewall service enabled or disabled",
-        "Computed": true
+        "Description": "firewall service enabled or disabled. Default is true",
+        "Computed": true,
+        "Removed": "Was incorrectly added and would collide with the depending resource. Now moved to vcd_vapp_firewall_rules.enabled"
       },
       "gateway": {
         "Type": "String",
@@ -3019,9 +3304,9 @@
       },
       "nat_enabled": {
         "Type": "Bool",
-        "Optional": true,
-        "Description": "NAT service enabled or disabled",
-        "Computed": true
+        "Description": "NAT service enabled or disabled. Default is true",
+        "Computed": true,
+        "Removed": "Was incorrectly added and would collide with the depending resource. Now moved to vcd_vapp_nat_rules.enabled"
       },
       "netmask": {
         "Type": "String",
@@ -3083,12 +3368,6 @@
       }
     },
     "vcd_vapp_org_network": {
-      "firewall_enabled": {
-        "Type": "Bool",
-        "Optional": true,
-        "Description": "firewall service enabled or disabled.",
-        "Computed": true
-      },
       "is_fenced": {
         "Type": "Bool",
         "Optional": true,
@@ -3097,12 +3376,6 @@
           "Type": "bool",
           "Value": "false"
         }
-      },
-      "nat_enabled": {
-        "Type": "Bool",
-        "Optional": true,
-        "Description": "NAT service enabled or disabled.",
-        "Computed": true
       },
       "org": {
         "Type": "String",
@@ -3134,6 +3407,63 @@
         "Description": "The name of VDC to use, optional if defined at provider level"
       }
     },
+    "vcd_vapp_static_routing": {
+      "enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enable or disable static Routing. Default is `true`.",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "network_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "vApp network identifier"
+      },
+      "org": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of organization to use, optional if defined at provider level. Useful when connected as sysadmin working across different organizations"
+      },
+      "rule": {
+        "Type": "List",
+        "Optional": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "name": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Name for the static route."
+            },
+            "network_cidr": {
+              "Type": "String",
+              "Required": true,
+              "Description": "network specification in CIDR."
+            },
+            "next_hop_ip": {
+              "Type": "String",
+              "Required": true,
+              "Description": "IP Address of Next Hop router/gateway."
+            }
+          }
+        }
+      },
+      "vapp_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "vApp identifier"
+      },
+      "vdc": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of VDC to use, optional if defined at provider level"
+      }
+    },
     "vcd_vapp_vm": {
       "accept_all_eulas": {
         "Type": "Bool",
@@ -3144,10 +3474,15 @@
           "Value": "true"
         }
       },
+      "boot_image": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Media name to add as boot image."
+      },
       "catalog_name": {
         "Type": "String",
-        "Required": true,
-        "Description": "The catalog name in which to find the given vApp Template"
+        "Optional": true,
+        "Description": "The catalog name in which to find the given vApp Template or media for boot_image"
       },
       "computer_name": {
         "Type": "String",
@@ -3286,6 +3621,7 @@
       },
       "description": {
         "Type": "String",
+        "Optional": true,
         "Description": "The VM description",
         "Computed": true
       },
@@ -3333,6 +3669,12 @@
         "Type": "Map",
         "Optional": true,
         "Description": "Key/value settings for guest properties"
+      },
+      "hardware_version": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Virtual Hardware Version (e.g.`vmx-14`, `vmx-13`, `vmx-12`, etc.)",
+        "Computed": true
       },
       "href": {
         "Type": "String",
@@ -3520,6 +3862,12 @@
         "Optional": true,
         "Description": "The name of organization to use, optional if defined at provider level. Useful when connected as sysadmin working across different organizations"
       },
+      "os_type": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Operating System type. Possible values can be found in documentation.",
+        "Computed": true
+      },
       "override_template_disk": {
         "Type": "Set",
         "Optional": true,
@@ -3579,7 +3927,7 @@
       },
       "template_name": {
         "Type": "String",
-        "Required": true,
+        "Optional": true,
         "Description": "The name of the vApp Template to use"
       },
       "vapp_name": {
@@ -3599,6 +3947,62 @@
         "Type": "String",
         "Optional": true,
         "Description": "The name of VDC to use, optional if defined at provider level"
+      },
+      "vm_name_in_template": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of the VM in vApp Template to use. In cases when vApp template has more than one VM"
+      }
+    },
+    "vcd_vm_affinity_rule": {
+      "enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "True if this affinity rule is enabled",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "VM affinity rule name"
+      },
+      "org": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of organization to use, optional if defined at provider level. Useful when connected as sysadmin working across different organizations"
+      },
+      "polarity": {
+        "Type": "String",
+        "Required": true,
+        "Description": "One of 'Affinity', 'Anti-Affinity'"
+      },
+      "required": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "True if this affinity rule is required. When a rule is mandatory, a host failover will not power on the VM if doing so would violate the rule",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "vdc": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of VDC to use, optional if defined at provider level"
+      },
+      "virtual_machine_ids": {
+        "Type": "Set",
+        "Required": true,
+        "Description": "Set of VM IDs assigned to this rule",
+        "MinItems": 2,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       }
     },
     "vcd_vm_internal_disk": {
@@ -3672,15 +4076,95 @@
   },
   "data-sources": {
     "vcd_catalog": {
+      "created": {
+        "Type": "String",
+        "Description": "Time stamp of when the catalog was created",
+        "Computed": true
+      },
       "description": {
         "Type": "String",
         "Optional": true,
         "Computed": true
       },
+      "filter": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Criteria for retrieving a catalog by various attributes",
+        "MaxItems": 1,
+        "MinItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "date": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Search by date comparison ({\u003e|\u003e=|\u003c|\u003c=|==} yyyy-mm-dd[ hh[:mm[:ss]]])"
+            },
+            "earliest": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Retrieves the oldest item"
+            },
+            "latest": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Retrieves the newest item"
+            },
+            "metadata": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "metadata filter",
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "is_system": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Description": "True if is a metadata@SYSTEM key"
+                  },
+                  "key": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "Metadata key (field name)"
+                  },
+                  "type": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Type of metadata value (needed only if \"use_api_search\" is true)",
+                    "Default": {
+                      "Type": "string",
+                      "Value": "STRING"
+                    }
+                  },
+                  "use_api_search": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Description": "If true, will search the vCD using native metadata query (without regular expressions)"
+                  },
+                  "value": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "Metadata value (can be a regular expression if \"use_api_search\" is false)"
+                  }
+                }
+              }
+            },
+            "name_regex": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Search by name with a regular expression"
+            }
+          }
+        }
+      },
       "name": {
         "Type": "String",
-        "Required": true,
-        "Description": "Name of the catalog"
+        "Optional": true,
+        "Description": "Name of the catalog. (Optional if 'filter' is used)"
       },
       "org": {
         "Type": "String",
@@ -3694,9 +4178,89 @@
         "Required": true,
         "Description": "catalog containing the item"
       },
+      "created": {
+        "Type": "String",
+        "Description": "Time stamp of when the item was created",
+        "Computed": true
+      },
       "description": {
         "Type": "String",
         "Computed": true
+      },
+      "filter": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Criteria for retrieving a catalog item by various attributes",
+        "MaxItems": 1,
+        "MinItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "date": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Search by date comparison ({\u003e|\u003e=|\u003c|\u003c=|==} yyyy-mm-dd[ hh[:mm[:ss]]])"
+            },
+            "earliest": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Retrieves the oldest item"
+            },
+            "latest": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Retrieves the newest item"
+            },
+            "metadata": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "metadata filter",
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "is_system": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Description": "True if is a metadata@SYSTEM key"
+                  },
+                  "key": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "Metadata key (field name)"
+                  },
+                  "type": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Type of metadata value (needed only if \"use_api_search\" is true)",
+                    "Default": {
+                      "Type": "string",
+                      "Value": "STRING"
+                    }
+                  },
+                  "use_api_search": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Description": "If true, will search the vCD using native metadata query (without regular expressions)"
+                  },
+                  "value": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "Metadata value (can be a regular expression if \"use_api_search\" is false)"
+                  }
+                }
+              }
+            },
+            "name_regex": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Search by name with a regular expression"
+            }
+          }
+        }
       },
       "metadata": {
         "Type": "Map",
@@ -3705,7 +4269,8 @@
       },
       "name": {
         "Type": "String",
-        "Required": true
+        "Optional": true,
+        "Description": "Name of the item. It is optional when a filter is provided"
       },
       "org": {
         "Type": "String",
@@ -3728,6 +4293,81 @@
         "Type": "String",
         "Computed": true
       },
+      "filter": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Criteria for retrieving a catalog media by various attributes",
+        "MaxItems": 1,
+        "MinItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "date": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Search by date comparison ({\u003e|\u003e=|\u003c|\u003c=|==} yyyy-mm-dd[ hh[:mm[:ss]]])"
+            },
+            "earliest": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Retrieves the oldest item"
+            },
+            "latest": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Retrieves the newest item"
+            },
+            "metadata": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "metadata filter",
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "is_system": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Description": "True if is a metadata@SYSTEM key"
+                  },
+                  "key": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "Metadata key (field name)"
+                  },
+                  "type": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Type of metadata value (needed only if \"use_api_search\" is true)",
+                    "Default": {
+                      "Type": "string",
+                      "Value": "STRING"
+                    }
+                  },
+                  "use_api_search": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Description": "If true, will search the vCD using native metadata query (without regular expressions)"
+                  },
+                  "value": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "Metadata value (can be a regular expression if \"use_api_search\" is false)"
+                  }
+                }
+              }
+            },
+            "name_regex": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Search by name with a regular expression"
+            }
+          }
+        }
+      },
       "is_iso": {
         "Type": "Bool",
         "Description": "True if this media file is ISO",
@@ -3745,8 +4385,8 @@
       },
       "name": {
         "Type": "String",
-        "Required": true,
-        "Description": "media name"
+        "Optional": true,
+        "Description": "media name (Optional when 'filter' is used)"
       },
       "org": {
         "Type": "String",
@@ -3909,6 +4549,25 @@
           "ElementsType": "String"
         }
       },
+      "filter": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Criteria for retrieving an edge gateway by various attributes",
+        "MaxItems": 1,
+        "MinItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "name_regex": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Search by name with a regular expression"
+            }
+          }
+        }
+      },
       "fips_mode_enabled": {
         "Type": "Bool",
         "Description": "Enable FIPS mode. FIPS mode turns on the cipher suites that comply with FIPS. (False by default)",
@@ -3956,7 +4615,8 @@
       },
       "name": {
         "Type": "String",
-        "Required": true
+        "Optional": true,
+        "Description": "name of the edge gateway. (Optional when 'filter' is used)"
       },
       "org": {
         "Type": "String",
@@ -4517,6 +5177,71 @@
         "Description": "Net mask of the external network",
         "Computed": true
       },
+      "filter": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Criteria for retrieving a network by various attributes",
+        "MaxItems": 1,
+        "MinItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "ip": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Search by IP. The value can be a regular expression"
+            },
+            "metadata": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "metadata filter",
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "is_system": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Description": "True if is a metadata@SYSTEM key"
+                  },
+                  "key": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "Metadata key (field name)"
+                  },
+                  "type": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Type of metadata value (needed only if \"use_api_search\" is true)",
+                    "Default": {
+                      "Type": "string",
+                      "Value": "STRING"
+                    }
+                  },
+                  "use_api_search": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Description": "If true, will search the vCD using native metadata query (without regular expressions)"
+                  },
+                  "value": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "Metadata value (can be a regular expression if \"use_api_search\" is false)"
+                  }
+                }
+              }
+            },
+            "name_regex": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Search by name with a regular expression"
+            }
+          }
+        }
+      },
       "href": {
         "Type": "String",
         "Description": "Network Hypertext Reference",
@@ -4524,8 +5249,8 @@
       },
       "name": {
         "Type": "String",
-        "Required": true,
-        "Description": "A unique name for this network"
+        "Optional": true,
+        "Description": "A unique name for this network (optional if 'filter' is used)"
       },
       "org": {
         "Type": "String",
@@ -4596,6 +5321,71 @@
         "Description": "A FQDN for the virtual machines on this network",
         "Computed": true
       },
+      "filter": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Criteria for retrieving a network by various attributes",
+        "MaxItems": 1,
+        "MinItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "ip": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Search by IP. The value can be a regular expression"
+            },
+            "metadata": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "metadata filter",
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "is_system": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Description": "True if is a metadata@SYSTEM key"
+                  },
+                  "key": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "Metadata key (field name)"
+                  },
+                  "type": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Type of metadata value (needed only if \"use_api_search\" is true)",
+                    "Default": {
+                      "Type": "string",
+                      "Value": "STRING"
+                    }
+                  },
+                  "use_api_search": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Description": "If true, will search the vCD using native metadata query (without regular expressions)"
+                  },
+                  "value": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "Metadata value (can be a regular expression if \"use_api_search\" is false)"
+                  }
+                }
+              }
+            },
+            "name_regex": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Search by name with a regular expression"
+            }
+          }
+        }
+      },
       "gateway": {
         "Type": "String",
         "Description": "The gateway for this network",
@@ -4608,8 +5398,8 @@
       },
       "name": {
         "Type": "String",
-        "Required": true,
-        "Description": "A unique name for this network"
+        "Optional": true,
+        "Description": "A unique name for this network (optional if 'filter' is used)"
       },
       "netmask": {
         "Type": "String",
@@ -4712,6 +5502,71 @@
         "Description": "The name of the edge gateway",
         "Computed": true
       },
+      "filter": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Criteria for retrieving a network by various attributes",
+        "MaxItems": 1,
+        "MinItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "ip": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Search by IP. The value can be a regular expression"
+            },
+            "metadata": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "metadata filter",
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "is_system": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Description": "True if is a metadata@SYSTEM key"
+                  },
+                  "key": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "Metadata key (field name)"
+                  },
+                  "type": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Type of metadata value (needed only if \"use_api_search\" is true)",
+                    "Default": {
+                      "Type": "string",
+                      "Value": "STRING"
+                    }
+                  },
+                  "use_api_search": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Description": "If true, will search the vCD using native metadata query (without regular expressions)"
+                  },
+                  "value": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "Metadata value (can be a regular expression if \"use_api_search\" is false)"
+                  }
+                }
+              }
+            },
+            "name_regex": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Search by name with a regular expression"
+            }
+          }
+        }
+      },
       "gateway": {
         "Type": "String",
         "Description": "The gateway of this network",
@@ -4729,8 +5584,8 @@
       },
       "name": {
         "Type": "String",
-        "Required": true,
-        "Description": "A unique name for the network"
+        "Optional": true,
+        "Description": "A unique name for this network (optional if 'filter' is used)"
       },
       "netmask": {
         "Type": "String",
@@ -5380,10 +6235,6 @@
                     "Description": "Capacity limit relative to the value specified for Allocation. It must not be less than that value. If it is greater than that value, it implies over provisioning. A value of 0 specifies unlimited units. Value in MB or MHz. Used with AllocationVApp (Pay as you go).",
                     "Computed": true
                   },
-                  "overhead": {
-                    "Type": "Int",
-                    "Computed": true
-                  },
                   "reserved": {
                     "Type": "Int",
                     "Computed": true
@@ -5413,10 +6264,6 @@
                   "limit": {
                     "Type": "Int",
                     "Description": "Capacity limit relative to the value specified for Allocation. It must not be less than that value. If it is greater than that value, it implies over provisioning. A value of 0 specifies unlimited units. Value in MB or MHz. Used with AllocationVApp (Pay as you go).",
-                    "Computed": true
-                  },
-                  "overhead": {
-                    "Type": "Int",
                     "Computed": true
                   },
                   "reserved": {
@@ -5655,11 +6502,6 @@
         "Description": "DNS suffix",
         "Computed": true
       },
-      "firewall_enabled": {
-        "Type": "Bool",
-        "Description": "firewall service enabled or disabled. Default is true",
-        "Computed": true
-      },
       "gateway": {
         "Type": "String",
         "Description": "Gateway of the network",
@@ -5674,11 +6516,6 @@
         "Type": "String",
         "Required": true,
         "Description": "vApp network name"
-      },
-      "nat_enabled": {
-        "Type": "Bool",
-        "Description": "NAT service enabled or disabled. Default is true",
-        "Computed": true
       },
       "netmask": {
         "Type": "String",
@@ -5732,19 +6569,9 @@
       }
     },
     "vcd_vapp_org_network": {
-      "firewall_enabled": {
-        "Type": "Bool",
-        "Description": "firewall service enabled or disabled. Default is true",
-        "Computed": true
-      },
       "is_fenced": {
         "Type": "Bool",
         "Description": "Fencing allows identical virtual machines in different vApp networks connect to organization VDC networks that are accessed in this vApp",
-        "Computed": true
-      },
-      "nat_enabled": {
-        "Type": "Bool",
-        "Description": "NAT service enabled or disabled. Default is true",
         "Computed": true
       },
       "org": {
@@ -6066,6 +6893,53 @@
         "Type": "String",
         "Optional": true,
         "Description": "The name of VDC to use, optional if defined at provider level"
+      }
+    },
+    "vcd_vm_affinity_rule": {
+      "enabled": {
+        "Type": "Bool",
+        "Description": "True if this affinity rule is enabled",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "VM affinity rule name. Used to retrieve a rule only when the name is unique"
+      },
+      "org": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of organization to use, optional if defined at provider level. Useful when connected as sysadmin working across different organizations"
+      },
+      "polarity": {
+        "Type": "String",
+        "Description": "One of 'Affinity', 'Anti-Affinity'",
+        "Computed": true
+      },
+      "required": {
+        "Type": "Bool",
+        "Description": "True if this affinity rule is required. When a rule is mandatory, a host failover will not power on the VM if doing so would violate the rule",
+        "Computed": true
+      },
+      "rule_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "VM affinity rule ID. It's the preferred way of identifying a rule"
+      },
+      "vdc": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of VDC to use, optional if defined at provider level"
+      },
+      "virtual_machine_ids": {
+        "Type": "Set",
+        "Description": "Set of VM IDs assigned to this rule",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       }
     }
   }

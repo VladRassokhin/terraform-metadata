@@ -3,7 +3,7 @@
   ".sdk_type": "terraform-plugin-sdk-v1",
   "name": "huaweicloud",
   "type": "provider",
-  "version": "v1.14.0",
+  "version": "v1.16.0",
   "provider": {
     "access_key": {
       "Type": "String",
@@ -40,12 +40,6 @@
       "Description": "A client certificate to authenticate with.",
       "DefaultFunc": "ENV(OS_CERT)"
     },
-    "cloud": {
-      "Type": "String",
-      "Optional": true,
-      "Description": "An entry in a `clouds.yaml` file to use.",
-      "DefaultFunc": "ENV(OS_CLOUD)"
-    },
     "delegated_project": {
       "Type": "String",
       "Optional": true,
@@ -63,11 +57,6 @@
       "Optional": true,
       "Description": "The name of the Domain to scope to (Identity v3).",
       "DefaultFunc": "MENV(OS_USER_DOMAIN_NAME,OS_PROJECT_DOMAIN_NAME,OS_DOMAIN_NAME,OS_DEFAULT_DOMAIN)"
-    },
-    "endpoint_type": {
-      "Type": "String",
-      "Optional": true,
-      "DefaultFunc": "ENV(OS_ENDPOINT_TYPE)"
     },
     "insecure": {
       "Type": "Bool",
@@ -89,20 +78,15 @@
     },
     "region": {
       "Type": "String",
-      "Optional": true,
+      "Required": true,
       "Description": "The HuaweiCloud region to connect to.",
+      "InputDefault": "cn-north-1",
       "DefaultFunc": "ENV(OS_REGION_NAME)"
     },
     "secret_key": {
       "Type": "String",
       "Optional": true,
       "DefaultFunc": "ENV(OS_SECRET_KEY)"
-    },
-    "swauth": {
-      "Type": "Bool",
-      "Optional": true,
-      "Description": "Use Swift's authentication system instead of Keystone. Only used for\ninteraction with Swift.",
-      "DefaultFunc": "ENV(OS_SWAUTH)"
     },
     "tenant_id": {
       "Type": "String",
@@ -121,12 +105,6 @@
       "Optional": true,
       "Description": "Authentication token to use as an alternative to username/password.",
       "DefaultFunc": "ENV(OS_AUTH_TOKEN)"
-    },
-    "use_octavia": {
-      "Type": "Bool",
-      "Optional": true,
-      "Description": "If set to `true`, API requests will go the Load Balancer\nservice (Octavia) instead of the Networking service (Neutron).",
-      "DefaultFunc": "ENV(OS_USE_OCTAVIA)"
     },
     "user_id": {
       "Type": "String",
@@ -579,6 +557,10 @@
           "Value": "300"
         }
       },
+      "current_instance_number": {
+        "Type": "Int",
+        "Computed": true
+      },
       "delete_instances": {
         "Type": "String",
         "Optional": true,
@@ -627,8 +609,8 @@
       },
       "instances": {
         "Type": "List",
-        "Optional": true,
         "Description": "The instances id list in the as group.",
+        "Computed": true,
         "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
@@ -737,6 +719,10 @@
           }
         }
       },
+      "status": {
+        "Type": "String",
+        "Computed": true
+      },
       "tags": {
         "Type": "Map",
         "Optional": true
@@ -830,7 +816,7 @@
               "Optional": true,
               "Default": {
                 "Type": "string",
-                "Value": "2020-05-16T15:32Z"
+                "Value": "2020-07-12T18:04Z"
               }
             }
           }
@@ -1075,8 +1061,7 @@
       ],
       "annotations": {
         "Type": "Map",
-        "Optional": true,
-        "Computed": true
+        "Optional": true
       },
       "availability_zone": {
         "Type": "String",
@@ -1423,6 +1408,66 @@
         "Required": true
       },
       "vpc_id": {
+        "Type": "String",
+        "Required": true
+      }
+    },
+    "huaweicloud_cdn_domain_v1": {
+      "__timeouts__": [
+        "create",
+        "delete"
+      ],
+      "cname": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "domain_status": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "enterprise_project_id": {
+        "Type": "String",
+        "Optional": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true
+      },
+      "service_area": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "sources": {
+        "Type": "List",
+        "Required": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "active": {
+              "Type": "Int",
+              "Optional": true,
+              "Default": {
+                "Type": "int",
+                "Value": "1"
+              }
+            },
+            "origin": {
+              "Type": "String",
+              "Required": true
+            },
+            "origin_type": {
+              "Type": "String",
+              "Required": true
+            }
+          }
+        }
+      },
+      "type": {
         "Type": "String",
         "Required": true
       }
@@ -3035,9 +3080,52 @@
         "Type": "String",
         "Required": true
       },
+      "nodes": {
+        "Type": "List",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "name": {
+              "Type": "String",
+              "Computed": true
+            },
+            "private_ip": {
+              "Type": "String",
+              "Computed": true
+            },
+            "public_ip": {
+              "Type": "String",
+              "Computed": true
+            },
+            "role": {
+              "Type": "String",
+              "Computed": true
+            },
+            "status": {
+              "Type": "String",
+              "Computed": true
+            },
+            "type": {
+              "Type": "String",
+              "Computed": true
+            }
+          }
+        }
+      },
       "password": {
         "Type": "String",
         "Required": true
+      },
+      "port": {
+        "Type": "Int",
+        "Computed": true
       },
       "region": {
         "Type": "String",
@@ -3047,6 +3135,14 @@
       "security_group_id": {
         "Type": "String",
         "Required": true
+      },
+      "ssl": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
       },
       "status": {
         "Type": "String",
@@ -3689,6 +3785,10 @@
         "Type": "Bool",
         "Optional": true,
         "Computed": true
+      },
+      "auto_renew": {
+        "Type": "String",
+        "Optional": true
       },
       "availability_zone": {
         "Type": "String",
@@ -4400,6 +4500,508 @@
       "value_specs": {
         "Type": "Map",
         "Optional": true
+      }
+    },
+    "huaweicloud_gaussdb_mysql_instance": {
+      "__timeouts__": [
+        "create",
+        "delete"
+      ],
+      "backup_strategy": {
+        "Type": "List",
+        "Optional": true,
+        "Computed": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "keep_days": {
+              "Type": "Int",
+              "Optional": true
+            },
+            "start_time": {
+              "Type": "String",
+              "Required": true
+            }
+          }
+        }
+      },
+      "datastore": {
+        "Type": "List",
+        "Optional": true,
+        "Computed": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "engine": {
+              "Type": "String",
+              "Required": true
+            },
+            "version": {
+              "Type": "String",
+              "Required": true
+            }
+          }
+        }
+      },
+      "db_user_name": {
+        "Type": "String",
+        "Computed": true
+      },
+      "enterprise_project_id": {
+        "Type": "String",
+        "Optional": true
+      },
+      "flavor": {
+        "Type": "String",
+        "Required": true
+      },
+      "mode": {
+        "Type": "String",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true
+      },
+      "nodes": {
+        "Type": "List",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "name": {
+              "Type": "String",
+              "Computed": true
+            },
+            "private_read_ip": {
+              "Type": "String",
+              "Computed": true
+            },
+            "status": {
+              "Type": "String",
+              "Computed": true
+            },
+            "type": {
+              "Type": "String",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "password": {
+        "Type": "String",
+        "Required": true
+      },
+      "port": {
+        "Type": "Int",
+        "Computed": true
+      },
+      "private_write_ip": {
+        "Type": "String",
+        "Computed": true
+      },
+      "read_replicas": {
+        "Type": "Int",
+        "Optional": true,
+        "Default": {
+          "Type": "int",
+          "Value": "1"
+        }
+      },
+      "region": {
+        "Type": "String",
+        "Computed": true
+      },
+      "security_group_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "status": {
+        "Type": "String",
+        "Computed": true
+      },
+      "subnet_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "time_zone": {
+        "Type": "String",
+        "Optional": true,
+        "Default": {
+          "Type": "string",
+          "Value": "UTC+08:00"
+        }
+      },
+      "vpc_id": {
+        "Type": "String",
+        "Required": true
+      }
+    },
+    "huaweicloud_gaussdb_opengauss_instance": {
+      "__timeouts__": [
+        "create",
+        "delete"
+      ],
+      "availability_zone": {
+        "Type": "String",
+        "Required": true
+      },
+      "backup_strategy": {
+        "Type": "List",
+        "Optional": true,
+        "Computed": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "keep_days": {
+              "Type": "Int",
+              "Optional": true
+            },
+            "start_time": {
+              "Type": "String",
+              "Required": true
+            }
+          }
+        }
+      },
+      "configuration_id": {
+        "Type": "String",
+        "Optional": true
+      },
+      "coordinator_num": {
+        "Type": "Int",
+        "Optional": true
+      },
+      "datastore": {
+        "Type": "List",
+        "Optional": true,
+        "Computed": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "engine": {
+              "Type": "String",
+              "Required": true
+            },
+            "version": {
+              "Type": "String",
+              "Required": true
+            }
+          }
+        }
+      },
+      "db_user_name": {
+        "Type": "String",
+        "Computed": true
+      },
+      "disk_encryption_id": {
+        "Type": "String",
+        "Optional": true
+      },
+      "dsspool_id": {
+        "Type": "String",
+        "Optional": true
+      },
+      "enterprise_project_id": {
+        "Type": "String",
+        "Optional": true
+      },
+      "flavor": {
+        "Type": "String",
+        "Required": true
+      },
+      "ha": {
+        "Type": "List",
+        "Optional": true,
+        "Computed": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "consistency": {
+              "Type": "String",
+              "Optional": true
+            },
+            "mode": {
+              "Type": "String",
+              "Required": true
+            },
+            "replication_mode": {
+              "Type": "String",
+              "Required": true
+            }
+          }
+        }
+      },
+      "maintenance_window": {
+        "Type": "String",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true
+      },
+      "nodes": {
+        "Type": "List",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "availability_zone": {
+              "Type": "String",
+              "Computed": true
+            },
+            "id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "name": {
+              "Type": "String",
+              "Computed": true
+            },
+            "role": {
+              "Type": "String",
+              "Computed": true
+            },
+            "status": {
+              "Type": "String",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "password": {
+        "Type": "String",
+        "Required": true
+      },
+      "port": {
+        "Type": "String",
+        "Optional": true
+      },
+      "private_ips": {
+        "Type": "String",
+        "Computed": true
+      },
+      "public_ips": {
+        "Type": "String",
+        "Computed": true
+      },
+      "region": {
+        "Type": "String",
+        "Computed": true
+      },
+      "security_group_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "sharding_num": {
+        "Type": "Int",
+        "Optional": true
+      },
+      "status": {
+        "Type": "String",
+        "Computed": true
+      },
+      "subnet_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "switch_strategy": {
+        "Type": "String",
+        "Computed": true
+      },
+      "time_zone": {
+        "Type": "String",
+        "Optional": true,
+        "Default": {
+          "Type": "string",
+          "Value": "UTC+08:00"
+        }
+      },
+      "type": {
+        "Type": "String",
+        "Computed": true
+      },
+      "volume": {
+        "Type": "List",
+        "Required": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "size": {
+              "Type": "Int",
+              "Required": true
+            },
+            "type": {
+              "Type": "String",
+              "Required": true
+            }
+          }
+        }
+      },
+      "vpc_id": {
+        "Type": "String",
+        "Required": true
+      }
+    },
+    "huaweicloud_geminidb_instance": {
+      "__timeouts__": [
+        "create",
+        "delete"
+      ],
+      "availability_zone": {
+        "Type": "String",
+        "Required": true
+      },
+      "backup_strategy": {
+        "Type": "List",
+        "Optional": true,
+        "Computed": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "keep_days": {
+              "Type": "Int",
+              "Optional": true
+            },
+            "start_time": {
+              "Type": "String",
+              "Required": true
+            }
+          }
+        }
+      },
+      "datastore": {
+        "Type": "List",
+        "Optional": true,
+        "Computed": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "engine": {
+              "Type": "String",
+              "Required": true
+            },
+            "storage_engine": {
+              "Type": "String",
+              "Required": true
+            },
+            "version": {
+              "Type": "String",
+              "Required": true
+            }
+          }
+        }
+      },
+      "db_user_name": {
+        "Type": "String",
+        "Computed": true
+      },
+      "flavor": {
+        "Type": "String",
+        "Required": true
+      },
+      "mode": {
+        "Type": "String",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true
+      },
+      "nodes": {
+        "Type": "List",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "name": {
+              "Type": "String",
+              "Computed": true
+            },
+            "private_ip": {
+              "Type": "String",
+              "Computed": true
+            },
+            "status": {
+              "Type": "String",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "password": {
+        "Type": "String",
+        "Required": true
+      },
+      "port": {
+        "Type": "Int",
+        "Computed": true
+      },
+      "region": {
+        "Type": "String",
+        "Computed": true
+      },
+      "security_group_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "status": {
+        "Type": "String",
+        "Computed": true
+      },
+      "subnet_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "tags": {
+        "Type": "Map",
+        "Optional": true
+      },
+      "volume_size": {
+        "Type": "Int",
+        "Required": true
+      },
+      "vpc_id": {
+        "Type": "String",
+        "Required": true
       }
     },
     "huaweicloud_ges_graph_v1": {
@@ -6956,6 +7558,7 @@
       "website": {
         "Type": "List",
         "Optional": true,
+        "MaxItems": 1,
         "IsBlock": true,
         "ConfigImplicitMode": "Block",
         "Elem": {
@@ -7815,6 +8418,7 @@
       "website": {
         "Type": "List",
         "Optional": true,
+        "MaxItems": 1,
         "IsBlock": true,
         "ConfigImplicitMode": "Block",
         "Elem": {
@@ -8509,6 +9113,10 @@
         "Type": "String",
         "Computed": true
       },
+      "tags": {
+        "Type": "Map",
+        "Optional": true
+      },
       "vpc_id": {
         "Type": "String",
         "Required": true
@@ -8532,6 +9140,25 @@
         "Optional": true,
         "Computed": true
       },
+      "routes": {
+        "Type": "List",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "destination": {
+              "Type": "String",
+              "Computed": true
+            },
+            "nexthop": {
+              "Type": "String",
+              "Computed": true
+            }
+          }
+        }
+      },
       "shared": {
         "Type": "Bool",
         "Computed": true
@@ -8539,6 +9166,10 @@
       "status": {
         "Type": "String",
         "Computed": true
+      },
+      "tags": {
+        "Type": "Map",
+        "Optional": true
       }
     },
     "huaweicloud_vpnaas_endpoint_group_v2": {
@@ -9703,30 +10334,51 @@
     "huaweicloud_dds_flavors_v3": {
       "engine_name": {
         "Type": "String",
-        "Optional": true,
-        "Computed": true
+        "Required": true
       },
-      "ram": {
+      "flavors": {
+        "Type": "List",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "memory": {
+              "Type": "String",
+              "Computed": true
+            },
+            "spec_code": {
+              "Type": "String",
+              "Computed": true
+            },
+            "type": {
+              "Type": "String",
+              "Computed": true
+            },
+            "vcpus": {
+              "Type": "String",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "memory": {
         "Type": "String",
-        "Computed": true
+        "Optional": true
       },
       "region": {
         "Type": "String",
         "Optional": true,
         "Computed": true
       },
-      "spec_code": {
-        "Type": "String",
-        "Optional": true,
-        "Computed": true
-      },
       "type": {
         "Type": "String",
-        "Computed": true
+        "Optional": true
       },
       "vcpus": {
         "Type": "String",
-        "Computed": true
+        "Optional": true
       }
     },
     "huaweicloud_dis_partition_v2": {
@@ -9847,6 +10499,55 @@
         "Type": "String",
         "Optional": true,
         "Computed": true
+      }
+    },
+    "huaweicloud_gaussdb_mysql_flavors": {
+      "engine": {
+        "Type": "String",
+        "Optional": true,
+        "Default": {
+          "Type": "string",
+          "Value": "gaussdb-mysql"
+        }
+      },
+      "flavors": {
+        "Type": "List",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "memory": {
+              "Type": "String",
+              "Computed": true
+            },
+            "mode": {
+              "Type": "String",
+              "Computed": true
+            },
+            "name": {
+              "Type": "String",
+              "Computed": true
+            },
+            "vcpus": {
+              "Type": "String",
+              "Computed": true
+            },
+            "version": {
+              "Type": "String",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "version": {
+        "Type": "String",
+        "Optional": true,
+        "Default": {
+          "Type": "string",
+          "Value": "8.0"
+        }
       }
     },
     "huaweicloud_iam_role_v3": {

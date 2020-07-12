@@ -3,77 +3,82 @@
   ".sdk_type": "terraform-plugin-sdk-v1",
   "name": "newrelic",
   "type": "provider",
-  "version": "v1.18.0",
+  "version": "v2.1.0",
   "provider": {
+    "account_id": {
+      "Type": "Int",
+      "Required": true,
+      "DefaultFunc": "ENV(NEW_RELIC_ACCOUNT_ID)"
+    },
+    "admin_api_key": {
+      "Type": "String",
+      "Optional": true,
+      "DefaultFunc": "ENV(NEW_RELIC_ADMIN_API_KEY)"
+    },
     "api_key": {
       "Type": "String",
       "Optional": true,
-      "DefaultFunc": "ENV(NEWRELIC_API_KEY)"
+      "DefaultFunc": "ENV(NEW_RELIC_API_KEY)"
     },
     "api_url": {
       "Type": "String",
       "Optional": true,
-      "DefaultFunc": "ENV(NEWRELIC_API_URL)"
+      "DefaultFunc": "ENV(NEW_RELIC_API_URL)",
+      "Deprecated": "New Relic internal use only. API URLs are now configured based on the configured region."
     },
     "cacert_file": {
       "Type": "String",
       "Optional": true,
-      "DefaultFunc": "ENV(NEWRELIC_API_CACERT)"
-    },
-    "infra_api_url": {
-      "Type": "String",
-      "Optional": true,
-      "DefaultFunc": "ENV(NEWRELIC_INFRA_API_URL)"
+      "DefaultFunc": "ENV(NEW_RELIC_API_CACERT)"
     },
     "infrastructure_api_url": {
       "Type": "String",
       "Optional": true,
-      "DefaultFunc": "ENV(NEWRELIC_INFRASTRUCTURE_API_URL)"
+      "DefaultFunc": "ENV(NEW_RELIC_INFRASTRUCTURE_API_URL)",
+      "Deprecated": "New Relic internal use only. API URLs are now configured based on the configured region."
     },
     "insecure_skip_verify": {
       "Type": "Bool",
       "Optional": true,
-      "DefaultFunc": "ENV(NEWRELIC_API_SKIP_VERIFY)"
-    },
-    "insights_account_id": {
-      "Type": "String",
-      "Optional": true,
-      "DefaultFunc": "ENV(NEWRELIC_INSIGHTS_ACCOUNT_ID)"
+      "DefaultFunc": "ENV(NEW_RELIC_API_SKIP_VERIFY)"
     },
     "insights_insert_key": {
       "Type": "String",
       "Optional": true,
-      "DefaultFunc": "ENV(NEWRELIC_INSIGHTS_INSERT_KEY)"
+      "DefaultFunc": "ENV(NEW_RELIC_INSIGHTS_INSERT_KEY)"
     },
     "insights_insert_url": {
       "Type": "String",
       "Optional": true,
-      "DefaultFunc": "ENV(NEWRELIC_INSIGHTS_INSERT_URL)"
+      "DefaultFunc": "ENV(NEW_RELIC_INSIGHTS_INSERT_URL)"
     },
     "insights_query_key": {
       "Type": "String",
       "Optional": true,
-      "DefaultFunc": "ENV(NEWRELIC_INSIGHTS_QUERY_KEY)"
+      "DefaultFunc": "ENV(NEW_RELIC_INSIGHTS_QUERY_KEY)"
     },
     "insights_query_url": {
       "Type": "String",
       "Optional": true,
-      "DefaultFunc": "ENV(NEWRELIC_INSIGHTS_QUERY_URL)"
+      "DefaultFunc": "ENV(NEW_RELIC_INSIGHTS_QUERY_URL)"
     },
     "nerdgraph_api_url": {
       "Type": "String",
       "Optional": true,
-      "DefaultFunc": "ENV(NEWRELIC_NERDGRAPH_API_URL)"
+      "DefaultFunc": "ENV(NEW_RELIC_NERDGRAPH_API_URL)",
+      "Deprecated": "New Relic internal use only. API URLs are now configured based on the configured region."
     },
-    "personal_api_key": {
+    "region": {
       "Type": "String",
-      "Optional": true,
-      "DefaultFunc": "ENV(NEWRELIC_PERSONAL_API_KEY)"
+      "Required": true,
+      "Description": "The data center for which your New Relic account is configured. Only one region per provider block is permitted.",
+      "DefaultFunc": "ENV(NEW_RELIC_REGION)"
     },
     "synthetics_api_url": {
       "Type": "String",
       "Optional": true,
-      "DefaultFunc": "ENV(NEWRELIC_SYNTHETICS_API_URL)"
+      "DefaultFunc": "ENV(NEW_RELIC_SYNTHETICS_API_URL)",
+      "Deprecated": "New Relic internal use only. API URLs are now configured based on the configured region."
     }
   },
   "resources": {
@@ -83,9 +88,6 @@
         "Optional": true,
         "Description": "The configuration block for the alert channel.",
         "MaxItems": 1,
-        "ConflictsWith": [
-          "configuration"
-        ],
         "IsBlock": true,
         "ConfigImplicitMode": "Block",
         "Elem": {
@@ -221,15 +223,6 @@
           }
         }
       },
-      "configuration": {
-        "Type": "Map",
-        "Optional": true,
-        "Description": "(Optional) A nested block that describes an alert channel configuration. Only one config block is permitted per alert channel definition.",
-        "ConflictsWith": [
-          "config"
-        ],
-        "Deprecated": "use `config` block instead"
-      },
       "name": {
         "Type": "String",
         "Required": true,
@@ -238,7 +231,7 @@
       "type": {
         "Type": "String",
         "Required": true,
-        "Description": "(Required) The type of channel. One of: (email, opsgenie, pagerduty, slack, user, victorops, webhook)."
+        "Description": "(Required) The type of channel. One of: (user, victorops, webhook, email, opsgenie, pagerduty, slack)."
       }
     },
     "newrelic_alert_condition": {
@@ -340,7 +333,7 @@
       "type": {
         "Type": "String",
         "Required": true,
-        "Description": "The type of condition. One of: (browser_metric, mobile_metric, servers_metric, apm_app_metric, apm_jvm_metric, apm_kt_metric)."
+        "Description": "The type of condition. One of: (apm_app_metric, apm_jvm_metric, apm_kt_metric, browser_metric, mobile_metric, servers_metric)."
       },
       "user_defined_metric": {
         "Type": "String",
@@ -359,6 +352,12 @@
       }
     },
     "newrelic_alert_policy": {
+      "account_id": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The New Relic account ID to operate on.",
+        "DefaultFunc": "UNKNOWN"
+      },
       "channel_ids": {
         "Type": "List",
         "Optional": true,
@@ -368,12 +367,6 @@
           "Type": "SchemaElements",
           "ElementsType": "Int"
         }
-      },
-      "created_at": {
-        "Type": "String",
-        "Description": "The time the policy was created.",
-        "Computed": true,
-        "Deprecated": "Unavailable attribute in NerdGraph."
       },
       "incident_preference": {
         "Type": "String",
@@ -388,32 +381,14 @@
         "Type": "String",
         "Required": true,
         "Description": "The name of the policy."
-      },
-      "updated_at": {
-        "Type": "String",
-        "Description": "The time the policy was last updated.",
-        "Computed": true,
-        "Deprecated": "Unavailable attribute in NerdGraph."
       }
     },
     "newrelic_alert_policy_channel": {
-      "channel_id": {
-        "Type": "Int",
-        "Optional": true,
-        "Description": "Deprecated. The ID of the channel. Please use the channel_ids argument instead.",
-        "ConflictsWith": [
-          "channel_ids"
-        ],
-        "Deprecated": "use `channel_ids` argument instead"
-      },
       "channel_ids": {
         "Type": "List",
-        "Optional": true,
+        "Required": true,
         "Description": "Array of channel IDs to apply to the specified policy. We recommended sorting channel IDs in ascending order to avoid drift your Terraform state.",
         "MinItems": 1,
-        "ConflictsWith": [
-          "channel_id"
-        ],
         "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
@@ -424,50 +399,6 @@
         "Type": "Int",
         "Required": true,
         "Description": "The ID of the policy."
-      }
-    },
-    "newrelic_application_label": {
-      "category": {
-        "Type": "String",
-        "Required": true,
-        "Description": "A string representing the label key/category."
-      },
-      "links": {
-        "Type": "List",
-        "Required": true,
-        "Description": "The resources to which label should be assigned to. At least one of the inner attributes must be set.",
-        "IsBlock": true,
-        "ConfigImplicitMode": "Block",
-        "Elem": {
-          "Type": "SchemaInfo",
-          "Info": {
-            "applications": {
-              "Type": "Set",
-              "Optional": true,
-              "Description": "An array of application IDs.",
-              "ConfigImplicitMode": "Attr",
-              "Elem": {
-                "Type": "SchemaElements",
-                "ElementsType": "Int"
-              }
-            },
-            "servers": {
-              "Type": "Set",
-              "Optional": true,
-              "Description": "An array of server IDs.",
-              "ConfigImplicitMode": "Attr",
-              "Elem": {
-                "Type": "SchemaElements",
-                "ElementsType": "Int"
-              }
-            }
-          }
-        }
-      },
-      "name": {
-        "Type": "String",
-        "Required": true,
-        "Description": "A string that will be assigned to the label."
       }
     },
     "newrelic_application_settings": {
@@ -764,6 +695,77 @@
         }
       }
     },
+    "newrelic_entity_tags": {
+      "__timeouts__": [
+        "create"
+      ],
+      "guid": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The guid of the entity to tag."
+      },
+      "tag": {
+        "Type": "Set",
+        "Required": true,
+        "Description": "A set of key-value pairs to represent a tag. For example: Team:TeamName",
+        "MinItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "key": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The tag key."
+            },
+            "values": {
+              "Type": "Set",
+              "Required": true,
+              "Description": "The tag values.",
+              "MinItems": 1,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      }
+    },
+    "newrelic_events_to_metrics_rule": {
+      "account_id": {
+        "Type": "Int",
+        "Required": true,
+        "Description": "Account with the event and where the metrics will be put."
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Provides additional information about the rule."
+      },
+      "enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "True means this rule is enabled. False means the rule is currently not creating metrics."
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The name of the rule. This must be unique within an account."
+      },
+      "nrql": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Explains how to create metrics from events."
+      },
+      "rule_id": {
+        "Type": "String",
+        "Description": "The id, uniquely identifying the rule.",
+        "Computed": true
+      }
+    },
     "newrelic_infra_alert_condition": {
       "comparison": {
         "Type": "String",
@@ -951,10 +953,94 @@
       }
     },
     "newrelic_nrql_alert_condition": {
+      "account_id": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The New Relic account ID for managing your NRQL alert conditions.",
+        "DefaultFunc": "UNKNOWN"
+      },
+      "baseline_direction": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The baseline direction of a baseline NRQL alert condition. Valid values are: 'LOWER_ONLY', 'UPPER_AND_LOWER', 'UPPER_ONLY' (case insensitive).",
+        "ConflictsWith": [
+          "value_function"
+        ]
+      },
+      "critical": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "A condition term with priority set to critical.",
+        "MaxItems": 1,
+        "MinItems": 1,
+        "ConflictsWith": [
+          "term.0"
+        ],
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "duration": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "In minutes, must be in the range of 1 to 120 (inclusive).",
+              "ConflictsWith": [
+                "term.0.threshold_duration"
+              ],
+              "Deprecated": "use `threshold_duration` attribute instead"
+            },
+            "operator": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "One of (above, below, equal). Defaults to 'equal'.",
+              "Default": {
+                "Type": "string",
+                "Value": "equal"
+              }
+            },
+            "threshold": {
+              "Type": "Float",
+              "Required": true,
+              "Description": "Must be 0 or greater. For baseline conditions must be in range [1, 1000]."
+            },
+            "threshold_duration": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "The duration of time, in seconds, that the threshold must violate for in order to create a violation. Value must be a multiple of 60 and within 120-3600 seconds for baseline conditions and 120-7200 seconds for static conditions.",
+              "ConflictsWith": [
+                "term.0.duration"
+              ]
+            },
+            "threshold_occurrences": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The criteria for how many data points must be in violation for the specified threshold duration. Valid values are: 'ALL' or 'AT_LEAST_ONCE' (case insensitive).",
+              "ConflictsWith": [
+                "term.0.time_function"
+              ]
+            },
+            "time_function": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Valid values are: 'all' or 'any'",
+              "ConflictsWith": [
+                "term.0.threshold_occurrences"
+              ],
+              "Deprecated": "use `threshold_occurrences` attribute instead"
+            }
+          }
+        }
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The description of the NRQL alert condition."
+      },
       "enabled": {
         "Type": "Bool",
         "Optional": true,
-        "Description": "Whether to enable the alert condition.",
+        "Description": "Whether or not to enable the alert condition.",
         "Default": {
           "Type": "bool",
           "Value": "true"
@@ -968,7 +1054,11 @@
       "ignore_overlap": {
         "Type": "Bool",
         "Optional": true,
-        "Description": "Whether to look for a convergence of groups when using outlier detection."
+        "Description": "Whether to look for a convergence of groups when using outlier detection.",
+        "ConflictsWith": [
+          "open_violation_on_group_overlap"
+        ],
+        "Deprecated": "use `open_violation_on_group_overlap` attribute instead, but use the inverse of your boolean - e.g. if ignore_overlap = false, use open_violation_on_group_overlap = true"
       },
       "name": {
         "Type": "String",
@@ -986,16 +1076,37 @@
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
+            "evaluation_offset": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "NRQL queries are evaluated in one-minute time windows. The start time depends on the value you provide in the NRQL condition's `evaluation_offset`.",
+              "ConflictsWith": [
+                "nrql.0.since_value"
+              ]
+            },
             "query": {
               "Type": "String",
               "Required": true
             },
             "since_value": {
               "Type": "String",
-              "Required": true
+              "Optional": true,
+              "Description": "NRQL queries are evaluated in one-minute time windows. The start time depends on the value you provide in the NRQL condition's `since_value`.",
+              "ConflictsWith": [
+                "nrql.0.evaluation_offset"
+              ],
+              "Deprecated": "use `evaluation_offset` attribute instead"
             }
           }
         }
+      },
+      "open_violation_on_group_overlap": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether overlapping groups should produce a violation.",
+        "ConflictsWith": [
+          "ignore_overlap"
+        ]
       },
       "policy_id": {
         "Type": "Int",
@@ -1009,9 +1120,15 @@
       },
       "term": {
         "Type": "Set",
-        "Required": true,
-        "Description": "A list of terms for this condition. ",
+        "Optional": true,
+        "Description": "A set of terms for this condition. Max 2 terms allowed - at least one 1 critical term and 1 optional warning term.",
+        "MaxItems": 2,
         "MinItems": 1,
+        "ConflictsWith": [
+          "critical",
+          "warning"
+        ],
+        "Deprecated": "use `critical` and `warning` attributes instead",
         "IsBlock": true,
         "ConfigImplicitMode": "Block",
         "Elem": {
@@ -1019,13 +1136,17 @@
           "Info": {
             "duration": {
               "Type": "Int",
-              "Required": true,
-              "Description": "In minutes, must be in the range of 1 to 120, inclusive."
+              "Optional": true,
+              "Description": "In minutes, must be in the range of 1 to 120 (inclusive).",
+              "ConflictsWith": [
+                "term.0.threshold_duration"
+              ],
+              "Deprecated": "use `threshold_duration` attribute instead"
             },
             "operator": {
               "Type": "String",
               "Optional": true,
-              "Description": "One of (above, below, equal). Defaults to equal.",
+              "Description": "One of (above, below, equal). Defaults to 'equal'.",
               "Default": {
                 "Type": "string",
                 "Value": "equal"
@@ -1034,7 +1155,7 @@
             "priority": {
               "Type": "String",
               "Optional": true,
-              "Description": "One of (critical, warning). Defaults to critical.",
+              "Description": "One of (critical, warning). Defaults to 'critical'. At least one condition term must have priority set to 'critical'.",
               "Default": {
                 "Type": "string",
                 "Value": "critical"
@@ -1043,12 +1164,32 @@
             "threshold": {
               "Type": "Float",
               "Required": true,
-              "Description": "Must be 0 or greater."
+              "Description": "Must be 0 or greater. For baseline conditions must be in range [1, 1000]."
+            },
+            "threshold_duration": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "The duration of time, in seconds, that the threshold must violate for in order to create a violation. Value must be a multiple of 60 and within 120-3600 seconds for baseline conditions and 120-7200 seconds for static conditions.",
+              "ConflictsWith": [
+                "term.0.duration"
+              ]
+            },
+            "threshold_occurrences": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The criteria for how many data points must be in violation for the specified threshold duration. Valid values are: 'ALL' or 'AT_LEAST_ONCE' (case insensitive).",
+              "ConflictsWith": [
+                "term.0.time_function"
+              ]
             },
             "time_function": {
               "Type": "String",
-              "Required": true,
-              "Description": "One of (all, any)."
+              "Optional": true,
+              "Description": "Valid values are: 'all' or 'any'",
+              "ConflictsWith": [
+                "term.0.threshold_occurrences"
+              ],
+              "Deprecated": "use `threshold_occurrences` attribute instead"
             }
           }
         }
@@ -1056,6 +1197,7 @@
       "type": {
         "Type": "String",
         "Optional": true,
+        "Description": "The type of NRQL alert condition to create. Valid values are: 'static', 'outlier', 'baseline'.",
         "Default": {
           "Type": "string",
           "Value": "static"
@@ -1064,16 +1206,89 @@
       "value_function": {
         "Type": "String",
         "Optional": true,
-        "Description": "Possible values are single_value, sum.",
-        "Default": {
-          "Type": "string",
-          "Value": "single_value"
-        }
+        "Description": "Valid values are: 'single_value' or 'sum'"
+      },
+      "violation_time_limit": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Sets a time limit, in hours, that will automatically force-close a long-lasting violation after the time limit you select. Possible values are 'ONE_HOUR', 'TWO_HOURS', 'FOUR_HOURS', 'EIGHT_HOURS', 'TWELVE_HOURS', 'TWENTY_FOUR_HOURS' (case insensitive).",
+        "ConflictsWith": [
+          "violation_time_limit_seconds"
+        ]
       },
       "violation_time_limit_seconds": {
         "Type": "Int",
         "Optional": true,
-        "Description": "Sets a time limit, in seconds, that will automatically force-close a long-lasting violation after the time limit you select. Possible values are 3600, 7200, 14400, 28800, 43200, and 86400."
+        "Description": "Sets a time limit, in seconds, that will automatically force-close a long-lasting violation after the time limit you select. Possible values are 3600, 7200, 14400, 28800, 43200, and 86400.",
+        "ConflictsWith": [
+          "violation_time_limit"
+        ],
+        "Deprecated": "use `violation_time_limit` attribute instead"
+      },
+      "warning": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "A condition term with priority set to warning.",
+        "MaxItems": 1,
+        "MinItems": 1,
+        "ConflictsWith": [
+          "term.0"
+        ],
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "duration": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "In minutes, must be in the range of 1 to 120 (inclusive).",
+              "ConflictsWith": [
+                "term.0.threshold_duration"
+              ],
+              "Deprecated": "use `threshold_duration` attribute instead"
+            },
+            "operator": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "One of (above, below, equal). Defaults to 'equal'.",
+              "Default": {
+                "Type": "string",
+                "Value": "equal"
+              }
+            },
+            "threshold": {
+              "Type": "Float",
+              "Required": true,
+              "Description": "Must be 0 or greater. For baseline conditions must be in range [1, 1000]."
+            },
+            "threshold_duration": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "The duration of time, in seconds, that the threshold must violate for in order to create a violation. Value must be a multiple of 60 and within 120-3600 seconds for baseline conditions and 120-7200 seconds for static conditions.",
+              "ConflictsWith": [
+                "term.0.duration"
+              ]
+            },
+            "threshold_occurrences": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The criteria for how many data points must be in violation for the specified threshold duration. Valid values are: 'ALL' or 'AT_LEAST_ONCE' (case insensitive).",
+              "ConflictsWith": [
+                "term.0.time_function"
+              ]
+            },
+            "time_function": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Valid values are: 'all' or 'any'",
+              "ConflictsWith": [
+                "term.0.threshold_occurrences"
+              ],
+              "Deprecated": "use `threshold_occurrences` attribute instead"
+            }
+          }
+        }
       }
     },
     "newrelic_plugins_alert_condition": {
@@ -1539,11 +1754,17 @@
       },
       "type": {
         "Type": "String",
-        "Description": "The type of channel. One of: (user, victorops, webhook, email, opsgenie, pagerduty, slack).",
+        "Description": "The type of channel. One of: (victorops, webhook, email, opsgenie, pagerduty, slack, user).",
         "Computed": true
       }
     },
     "newrelic_alert_policy": {
+      "account_id": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The New Relic account ID to operate on.",
+        "DefaultFunc": "UNKNOWN"
+      },
       "created_at": {
         "Type": "String",
         "Description": "The time the policy was created.",
@@ -1590,6 +1811,63 @@
         "Type": "String",
         "Required": true,
         "Description": "The name of the application in New Relic."
+      }
+    },
+    "newrelic_entity": {
+      "account_id": {
+        "Type": "Int",
+        "Description": "The New Relic account ID associated with this entity.",
+        "Computed": true
+      },
+      "application_id": {
+        "Type": "Int",
+        "Description": "The domain-specific ID of the entity (only returned for APM and Browser applications)",
+        "Computed": true
+      },
+      "domain": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The entity's domain. Valid values are APM, BROWSER, INFRA, MOBILE, and SYNTH.",
+        "Computed": true
+      },
+      "guid": {
+        "Type": "String",
+        "Description": "A unique entity identifier.",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The name of the entity in New Relic One.  The first entity matching this name for the given search parameters will be returned."
+      },
+      "tag": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "A tag applied to the entity.",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "key": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The tag key."
+            },
+            "value": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The tag value."
+            }
+          }
+        }
+      },
+      "type": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The entity's type. Valid values are APPLICATION, DASHBOARD, HOST, MONITOR, and WORRKLOAD.",
+        "Computed": true
       }
     },
     "newrelic_key_transaction": {

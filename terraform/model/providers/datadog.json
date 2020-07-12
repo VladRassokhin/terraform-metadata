@@ -3,22 +3,30 @@
   ".sdk_type": "terraform-plugin-sdk-v1",
   "name": "datadog",
   "type": "provider",
-  "version": "v2.7.0",
+  "version": "v2.11.0",
   "provider": {
     "api_key": {
       "Type": "String",
-      "Required": true,
-      "DefaultFunc": "ENV(DATADOG_API_KEY)"
+      "Optional": true,
+      "DefaultFunc": "MENV(DATADOG_API_KEY,DD_API_KEY)"
     },
     "api_url": {
       "Type": "String",
       "Optional": true,
-      "DefaultFunc": "ENV(DATADOG_HOST)"
+      "DefaultFunc": "MENV(DATADOG_HOST,DD_HOST)"
     },
     "app_key": {
       "Type": "String",
-      "Required": true,
-      "DefaultFunc": "ENV(DATADOG_APP_KEY)"
+      "Optional": true,
+      "DefaultFunc": "MENV(DATADOG_APP_KEY,DD_APP_KEY)"
+    },
+    "validate": {
+      "Type": "Bool",
+      "Optional": true,
+      "Default": {
+        "Type": "bool",
+        "Value": "true"
+      }
     }
   },
   "resources": {
@@ -122,6 +130,12 @@
         "Type": "String",
         "Required": true,
         "Description": "The title of the dashboard."
+      },
+      "url": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The URL of the dashboard.",
+        "Computed": true
       },
       "widget": {
         "Type": "List",
@@ -510,6 +524,10 @@
               "Elem": {
                 "Type": "SchemaInfo",
                 "Info": {
+                  "legend_size": {
+                    "Type": "String",
+                    "Optional": true
+                  },
                   "request": {
                     "Type": "List",
                     "Optional": true,
@@ -692,6 +710,10 @@
                       }
                     }
                   },
+                  "show_legend": {
+                    "Type": "Bool",
+                    "Optional": true
+                  },
                   "time": {
                     "Type": "Map",
                     "Optional": true,
@@ -733,6 +755,10 @@
                     "Type": "String",
                     "Required": true
                   },
+                  "tags_execution": {
+                    "Type": "String",
+                    "Optional": true
+                  },
                   "time": {
                     "Type": "Map",
                     "Optional": true,
@@ -769,6 +795,10 @@
                   "query": {
                     "Type": "String",
                     "Required": true
+                  },
+                  "tags_execution": {
+                    "Type": "String",
+                    "Optional": true
                   },
                   "time": {
                     "Type": "Map",
@@ -1229,6 +1259,10 @@
                           "Elem": {
                             "Type": "SchemaInfo",
                             "Info": {
+                              "legend_size": {
+                                "Type": "String",
+                                "Optional": true
+                              },
                               "request": {
                                 "Type": "List",
                                 "Optional": true,
@@ -1411,6 +1445,10 @@
                                   }
                                 }
                               },
+                              "show_legend": {
+                                "Type": "Bool",
+                                "Optional": true
+                              },
                               "time": {
                                 "Type": "Map",
                                 "Optional": true,
@@ -1452,6 +1490,10 @@
                                 "Type": "String",
                                 "Required": true
                               },
+                              "tags_execution": {
+                                "Type": "String",
+                                "Optional": true
+                              },
                               "time": {
                                 "Type": "Map",
                                 "Optional": true,
@@ -1488,6 +1530,10 @@
                               "query": {
                                 "Type": "String",
                                 "Required": true
+                              },
+                              "tags_execution": {
+                                "Type": "String",
+                                "Optional": true
                               },
                               "time": {
                                 "Type": "Map",
@@ -1551,6 +1597,29 @@
                           "Elem": {
                             "Type": "SchemaInfo",
                             "Info": {
+                              "event": {
+                                "Type": "List",
+                                "Optional": true,
+                                "IsBlock": true,
+                                "ConfigImplicitMode": "Block",
+                                "Elem": {
+                                  "Type": "SchemaInfo",
+                                  "Info": {
+                                    "q": {
+                                      "Type": "String",
+                                      "Required": true
+                                    },
+                                    "tags_execution": {
+                                      "Type": "String",
+                                      "Optional": true
+                                    }
+                                  }
+                                }
+                              },
+                              "legend_size": {
+                                "Type": "String",
+                                "Optional": true
+                              },
                               "request": {
                                 "Type": "List",
                                 "Optional": true,
@@ -1732,6 +1801,10 @@
                                     }
                                   }
                                 }
+                              },
+                              "show_legend": {
+                                "Type": "Bool",
+                                "Optional": true
                               },
                               "time": {
                                 "Type": "Map",
@@ -2286,13 +2359,56 @@
                                   "ElementsType": "String"
                                 }
                               },
+                              "indexes": {
+                                "Type": "List",
+                                "Optional": true,
+                                "ConfigImplicitMode": "Attr",
+                                "Elem": {
+                                  "Type": "SchemaElements",
+                                  "ElementsType": "String"
+                                }
+                              },
                               "logset": {
                                 "Type": "String",
-                                "Required": true
+                                "Optional": true,
+                                "Deprecated": "This parameter has been deprecated. Use 'indexes' instead"
+                              },
+                              "message_display": {
+                                "Type": "String",
+                                "Optional": true,
+                                "Description": "One of: ['inline', 'expanded-md', 'expanded-lg']"
                               },
                               "query": {
                                 "Type": "String",
                                 "Optional": true
+                              },
+                              "show_date_column": {
+                                "Type": "Bool",
+                                "Optional": true
+                              },
+                              "show_message_column": {
+                                "Type": "Bool",
+                                "Optional": true
+                              },
+                              "sort": {
+                                "Type": "List",
+                                "Optional": true,
+                                "MaxItems": 1,
+                                "IsBlock": true,
+                                "ConfigImplicitMode": "Block",
+                                "Elem": {
+                                  "Type": "SchemaInfo",
+                                  "Info": {
+                                    "column": {
+                                      "Type": "String",
+                                      "Required": true
+                                    },
+                                    "order": {
+                                      "Type": "String",
+                                      "Required": true
+                                    }
+                                  }
+                                }
                               },
                               "time": {
                                 "Type": "Map",
@@ -2334,7 +2450,11 @@
                               "count": {
                                 "Type": "Int",
                                 "Optional": true,
-                                "Deprecated": "This parameter may be removed from the dashboard API in the future"
+                                "Deprecated": "This parameter has been deprecated",
+                                "Default": {
+                                  "Type": "int",
+                                  "Value": "50"
+                                }
                               },
                               "display_format": {
                                 "Type": "String",
@@ -2359,7 +2479,7 @@
                               "start": {
                                 "Type": "Int",
                                 "Optional": true,
-                                "Deprecated": "This parameter may be removed from the dashboard API in the future"
+                                "Deprecated": "This parameter has been deprecated"
                               },
                               "summary_type": {
                                 "Type": "String",
@@ -3451,6 +3571,44 @@
                             }
                           }
                         },
+                        "servicemap_definition": {
+                          "Type": "List",
+                          "Optional": true,
+                          "Description": "The definition for a Service Map widget",
+                          "MaxItems": 1,
+                          "IsBlock": true,
+                          "ConfigImplicitMode": "Block",
+                          "Elem": {
+                            "Type": "SchemaInfo",
+                            "Info": {
+                              "filters": {
+                                "Type": "List",
+                                "Required": true,
+                                "ConfigImplicitMode": "Attr",
+                                "Elem": {
+                                  "Type": "SchemaElements",
+                                  "ElementsType": "String"
+                                }
+                              },
+                              "service": {
+                                "Type": "String",
+                                "Required": true
+                              },
+                              "title": {
+                                "Type": "String",
+                                "Optional": true
+                              },
+                              "title_align": {
+                                "Type": "String",
+                                "Optional": true
+                              },
+                              "title_size": {
+                                "Type": "String",
+                                "Optional": true
+                              }
+                            }
+                          }
+                        },
                         "timeseries_definition": {
                           "Type": "List",
                           "Optional": true,
@@ -3472,6 +3630,10 @@
                                     "q": {
                                       "Type": "String",
                                       "Required": true
+                                    },
+                                    "tags_execution": {
+                                      "Type": "String",
+                                      "Optional": true
                                     }
                                   }
                                 }
@@ -3652,6 +3814,65 @@
                                         }
                                       }
                                     },
+                                    "network_query": {
+                                      "Type": "List",
+                                      "Optional": true,
+                                      "MaxItems": 1,
+                                      "IsBlock": true,
+                                      "ConfigImplicitMode": "Block",
+                                      "Elem": {
+                                        "Type": "SchemaInfo",
+                                        "Info": {
+                                          "compute": {
+                                            "Type": "Map",
+                                            "Required": true,
+                                            "Elem": {
+                                              "Type": "SchemaElements",
+                                              "ElementsType": "String"
+                                            }
+                                          },
+                                          "group_by": {
+                                            "Type": "List",
+                                            "Optional": true,
+                                            "IsBlock": true,
+                                            "ConfigImplicitMode": "Block",
+                                            "Elem": {
+                                              "Type": "SchemaInfo",
+                                              "Info": {
+                                                "facet": {
+                                                  "Type": "String",
+                                                  "Optional": true
+                                                },
+                                                "limit": {
+                                                  "Type": "Int",
+                                                  "Optional": true
+                                                },
+                                                "sort": {
+                                                  "Type": "Map",
+                                                  "Optional": true,
+                                                  "Elem": {
+                                                    "Type": "SchemaElements",
+                                                    "ElementsType": "String"
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          },
+                                          "index": {
+                                            "Type": "String",
+                                            "Required": true
+                                          },
+                                          "search": {
+                                            "Type": "Map",
+                                            "Optional": true,
+                                            "Elem": {
+                                              "Type": "SchemaElements",
+                                              "ElementsType": "String"
+                                            }
+                                          }
+                                        }
+                                      }
+                                    },
                                     "process_query": {
                                       "Type": "List",
                                       "Optional": true,
@@ -3688,6 +3909,65 @@
                                     "q": {
                                       "Type": "String",
                                       "Optional": true
+                                    },
+                                    "rum_query": {
+                                      "Type": "List",
+                                      "Optional": true,
+                                      "MaxItems": 1,
+                                      "IsBlock": true,
+                                      "ConfigImplicitMode": "Block",
+                                      "Elem": {
+                                        "Type": "SchemaInfo",
+                                        "Info": {
+                                          "compute": {
+                                            "Type": "Map",
+                                            "Required": true,
+                                            "Elem": {
+                                              "Type": "SchemaElements",
+                                              "ElementsType": "String"
+                                            }
+                                          },
+                                          "group_by": {
+                                            "Type": "List",
+                                            "Optional": true,
+                                            "IsBlock": true,
+                                            "ConfigImplicitMode": "Block",
+                                            "Elem": {
+                                              "Type": "SchemaInfo",
+                                              "Info": {
+                                                "facet": {
+                                                  "Type": "String",
+                                                  "Optional": true
+                                                },
+                                                "limit": {
+                                                  "Type": "Int",
+                                                  "Optional": true
+                                                },
+                                                "sort": {
+                                                  "Type": "Map",
+                                                  "Optional": true,
+                                                  "Elem": {
+                                                    "Type": "SchemaElements",
+                                                    "ElementsType": "String"
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          },
+                                          "index": {
+                                            "Type": "String",
+                                            "Required": true
+                                          },
+                                          "search": {
+                                            "Type": "Map",
+                                            "Optional": true,
+                                            "Elem": {
+                                              "Type": "SchemaElements",
+                                              "ElementsType": "String"
+                                            }
+                                          }
+                                        }
+                                      }
                                     },
                                     "style": {
                                       "Type": "List",
@@ -4126,6 +4406,29 @@
               "Elem": {
                 "Type": "SchemaInfo",
                 "Info": {
+                  "event": {
+                    "Type": "List",
+                    "Optional": true,
+                    "IsBlock": true,
+                    "ConfigImplicitMode": "Block",
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "q": {
+                          "Type": "String",
+                          "Required": true
+                        },
+                        "tags_execution": {
+                          "Type": "String",
+                          "Optional": true
+                        }
+                      }
+                    }
+                  },
+                  "legend_size": {
+                    "Type": "String",
+                    "Optional": true
+                  },
                   "request": {
                     "Type": "List",
                     "Optional": true,
@@ -4307,6 +4610,10 @@
                         }
                       }
                     }
+                  },
+                  "show_legend": {
+                    "Type": "Bool",
+                    "Optional": true
                   },
                   "time": {
                     "Type": "Map",
@@ -4861,13 +5168,56 @@
                       "ElementsType": "String"
                     }
                   },
+                  "indexes": {
+                    "Type": "List",
+                    "Optional": true,
+                    "ConfigImplicitMode": "Attr",
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  },
                   "logset": {
                     "Type": "String",
-                    "Required": true
+                    "Optional": true,
+                    "Deprecated": "This parameter has been deprecated. Use 'indexes' instead"
+                  },
+                  "message_display": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "One of: ['inline', 'expanded-md', 'expanded-lg']"
                   },
                   "query": {
                     "Type": "String",
                     "Optional": true
+                  },
+                  "show_date_column": {
+                    "Type": "Bool",
+                    "Optional": true
+                  },
+                  "show_message_column": {
+                    "Type": "Bool",
+                    "Optional": true
+                  },
+                  "sort": {
+                    "Type": "List",
+                    "Optional": true,
+                    "MaxItems": 1,
+                    "IsBlock": true,
+                    "ConfigImplicitMode": "Block",
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "column": {
+                          "Type": "String",
+                          "Required": true
+                        },
+                        "order": {
+                          "Type": "String",
+                          "Required": true
+                        }
+                      }
+                    }
                   },
                   "time": {
                     "Type": "Map",
@@ -4909,7 +5259,11 @@
                   "count": {
                     "Type": "Int",
                     "Optional": true,
-                    "Deprecated": "This parameter may be removed from the dashboard API in the future"
+                    "Deprecated": "This parameter has been deprecated",
+                    "Default": {
+                      "Type": "int",
+                      "Value": "50"
+                    }
                   },
                   "display_format": {
                     "Type": "String",
@@ -4934,7 +5288,7 @@
                   "start": {
                     "Type": "Int",
                     "Optional": true,
-                    "Deprecated": "This parameter may be removed from the dashboard API in the future"
+                    "Deprecated": "This parameter has been deprecated"
                   },
                   "summary_type": {
                     "Type": "String",
@@ -6026,6 +6380,44 @@
                 }
               }
             },
+            "servicemap_definition": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "The definition for a Service Map widget",
+              "MaxItems": 1,
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "filters": {
+                    "Type": "List",
+                    "Required": true,
+                    "ConfigImplicitMode": "Attr",
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  },
+                  "service": {
+                    "Type": "String",
+                    "Required": true
+                  },
+                  "title": {
+                    "Type": "String",
+                    "Optional": true
+                  },
+                  "title_align": {
+                    "Type": "String",
+                    "Optional": true
+                  },
+                  "title_size": {
+                    "Type": "String",
+                    "Optional": true
+                  }
+                }
+              }
+            },
             "timeseries_definition": {
               "Type": "List",
               "Optional": true,
@@ -6047,6 +6439,10 @@
                         "q": {
                           "Type": "String",
                           "Required": true
+                        },
+                        "tags_execution": {
+                          "Type": "String",
+                          "Optional": true
                         }
                       }
                     }
@@ -6227,6 +6623,65 @@
                             }
                           }
                         },
+                        "network_query": {
+                          "Type": "List",
+                          "Optional": true,
+                          "MaxItems": 1,
+                          "IsBlock": true,
+                          "ConfigImplicitMode": "Block",
+                          "Elem": {
+                            "Type": "SchemaInfo",
+                            "Info": {
+                              "compute": {
+                                "Type": "Map",
+                                "Required": true,
+                                "Elem": {
+                                  "Type": "SchemaElements",
+                                  "ElementsType": "String"
+                                }
+                              },
+                              "group_by": {
+                                "Type": "List",
+                                "Optional": true,
+                                "IsBlock": true,
+                                "ConfigImplicitMode": "Block",
+                                "Elem": {
+                                  "Type": "SchemaInfo",
+                                  "Info": {
+                                    "facet": {
+                                      "Type": "String",
+                                      "Optional": true
+                                    },
+                                    "limit": {
+                                      "Type": "Int",
+                                      "Optional": true
+                                    },
+                                    "sort": {
+                                      "Type": "Map",
+                                      "Optional": true,
+                                      "Elem": {
+                                        "Type": "SchemaElements",
+                                        "ElementsType": "String"
+                                      }
+                                    }
+                                  }
+                                }
+                              },
+                              "index": {
+                                "Type": "String",
+                                "Required": true
+                              },
+                              "search": {
+                                "Type": "Map",
+                                "Optional": true,
+                                "Elem": {
+                                  "Type": "SchemaElements",
+                                  "ElementsType": "String"
+                                }
+                              }
+                            }
+                          }
+                        },
                         "process_query": {
                           "Type": "List",
                           "Optional": true,
@@ -6263,6 +6718,65 @@
                         "q": {
                           "Type": "String",
                           "Optional": true
+                        },
+                        "rum_query": {
+                          "Type": "List",
+                          "Optional": true,
+                          "MaxItems": 1,
+                          "IsBlock": true,
+                          "ConfigImplicitMode": "Block",
+                          "Elem": {
+                            "Type": "SchemaInfo",
+                            "Info": {
+                              "compute": {
+                                "Type": "Map",
+                                "Required": true,
+                                "Elem": {
+                                  "Type": "SchemaElements",
+                                  "ElementsType": "String"
+                                }
+                              },
+                              "group_by": {
+                                "Type": "List",
+                                "Optional": true,
+                                "IsBlock": true,
+                                "ConfigImplicitMode": "Block",
+                                "Elem": {
+                                  "Type": "SchemaInfo",
+                                  "Info": {
+                                    "facet": {
+                                      "Type": "String",
+                                      "Optional": true
+                                    },
+                                    "limit": {
+                                      "Type": "Int",
+                                      "Optional": true
+                                    },
+                                    "sort": {
+                                      "Type": "Map",
+                                      "Optional": true,
+                                      "Elem": {
+                                        "Type": "SchemaElements",
+                                        "ElementsType": "String"
+                                      }
+                                    }
+                                  }
+                                }
+                              },
+                              "index": {
+                                "Type": "String",
+                                "Required": true
+                              },
+                              "search": {
+                                "Type": "Map",
+                                "Optional": true,
+                                "Elem": {
+                                  "Type": "SchemaElements",
+                                  "ElementsType": "String"
+                                }
+                              }
+                            }
+                          }
                         },
                         "style": {
                           "Type": "List",
@@ -6856,6 +7370,15 @@
           "Value": "Bool"
         }
       },
+      "excluded_regions": {
+        "Type": "List",
+        "Optional": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
       "external_id": {
         "Type": "String",
         "Computed": true
@@ -6879,6 +7402,49 @@
         }
       },
       "role_name": {
+        "Type": "String",
+        "Required": true
+      }
+    },
+    "datadog_integration_aws_lambda_arn": {
+      "account_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "lambda_arn": {
+        "Type": "String",
+        "Required": true
+      }
+    },
+    "datadog_integration_aws_log_collection": {
+      "account_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "services": {
+        "Type": "List",
+        "Required": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      }
+    },
+    "datadog_integration_azure": {
+      "client_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "client_secret": {
+        "Type": "String",
+        "Required": true
+      },
+      "host_filters": {
+        "Type": "String",
+        "Optional": true
+      },
+      "tenant_name": {
         "Type": "String",
         "Required": true
       }
@@ -6964,6 +7530,40 @@
       "service_name": {
         "Type": "String",
         "Required": true
+      }
+    },
+    "datadog_logs_archive": {
+      "azure": {
+        "Type": "Map",
+        "Optional": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "gcs": {
+        "Type": "Map",
+        "Optional": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Required": true
+      },
+      "query": {
+        "Type": "String",
+        "Required": true
+      },
+      "s3": {
+        "Type": "Map",
+        "Optional": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       }
     },
     "datadog_logs_custom_pipeline": {
@@ -7242,6 +7842,47 @@
                     }
                   },
                   "source": {
+                    "Type": "String",
+                    "Required": true
+                  }
+                }
+              }
+            },
+            "lookup_processor": {
+              "Type": "List",
+              "Optional": true,
+              "MaxItems": 1,
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "default_lookup": {
+                    "Type": "String",
+                    "Optional": true
+                  },
+                  "is_enabled": {
+                    "Type": "Bool",
+                    "Optional": true
+                  },
+                  "lookup_table": {
+                    "Type": "List",
+                    "Required": true,
+                    "ConfigImplicitMode": "Attr",
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  },
+                  "name": {
+                    "Type": "String",
+                    "Optional": true
+                  },
+                  "source": {
+                    "Type": "String",
+                    "Required": true
+                  },
+                  "target": {
                     "Type": "String",
                     "Required": true
                   }
@@ -7561,6 +8202,47 @@
                                 }
                               },
                               "source": {
+                                "Type": "String",
+                                "Required": true
+                              }
+                            }
+                          }
+                        },
+                        "lookup_processor": {
+                          "Type": "List",
+                          "Optional": true,
+                          "MaxItems": 1,
+                          "IsBlock": true,
+                          "ConfigImplicitMode": "Block",
+                          "Elem": {
+                            "Type": "SchemaInfo",
+                            "Info": {
+                              "default_lookup": {
+                                "Type": "String",
+                                "Optional": true
+                              },
+                              "is_enabled": {
+                                "Type": "Bool",
+                                "Optional": true
+                              },
+                              "lookup_table": {
+                                "Type": "List",
+                                "Required": true,
+                                "ConfigImplicitMode": "Attr",
+                                "Elem": {
+                                  "Type": "SchemaElements",
+                                  "ElementsType": "String"
+                                }
+                              },
+                              "name": {
+                                "Type": "String",
+                                "Optional": true
+                              },
+                              "source": {
+                                "Type": "String",
+                                "Required": true
+                              },
+                              "target": {
                                 "Type": "String",
                                 "Required": true
                               }
@@ -8130,6 +8812,10 @@
         "Type": "Int",
         "Optional": true,
         "Computed": true
+      },
+      "force_delete": {
+        "Type": "Bool",
+        "Optional": true
       },
       "include_tags": {
         "Type": "Bool",
