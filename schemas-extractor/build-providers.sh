@@ -34,6 +34,7 @@ function process_provider() {
   provider_args="$(jq_get "$name" 'provider_args')"
   use_master="$(jq_get "$name" 'use_master')"
   go_envs="$(jq_get "$name" 'go_envs')"
+  go_args=""
   location="$GOPATH/src/$repository"
 
   if [[ ! -d "$location" ]]; then
@@ -95,7 +96,14 @@ function process_provider() {
   fi
 
   sdk="terraform"
-  if [ -f "go.mod" ] && grep -q 'github.com/hashicorp/terraform-plugin-sdk/v2' "go.mod"; then
+  if [ -f "go.mod" ] && [ -d 'tfplugin5' ]; then
+    sdk="terraform-tfplugin5"
+    go_envs="GO111MODULE=on"
+    go_args="-mod=mod"
+    GO111MODULE=on go get github.com/hashicorp/hcl/v2/ext/customdecode
+    GO111MODULE=on go get github.com/hashicorp/hcl/v2
+    GO111MODULE=on go get github.com/zclconf/go-cty/cty/json
+  elif [ -f "go.mod" ] && grep -q 'github.com/hashicorp/terraform-plugin-sdk/v2' "go.mod"; then
     sdk="terraform-plugin-sdk-v2"
   elif grep -q 'github.com/hashicorp/terraform-plugin-sdk/v2' -r "$pkg_name"; then
     sdk="terraform-plugin-sdk-v2"
@@ -141,10 +149,10 @@ EOF
   echo "Generating schema for $name"
   if [[ "${GENERATE_PARALLEL:-}" == "1" ]]; then
     (
-      generate_one "$name" "$go_envs"
+      generate_one "$name" "$go_envs" "$go_args"
     ) &
   else
-    generate_one "$name" "$go_envs"
+    generate_one "$name" "$go_envs" "$go_args"
   fi
 
   # Revert to previous state
