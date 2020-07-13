@@ -95,21 +95,26 @@ function process_provider() {
   fi
 
   sdk="terraform"
-  if [ -f "go.mod" ] && grep -q 'github.com/hashicorp/terraform-plugin-sdk' "go.mod"; then
+  if [ -f "go.mod" ] && grep -q 'github.com/hashicorp/terraform-plugin-sdk/v2' "go.mod"; then
+    sdk="terraform-plugin-sdk-v2"
+  elif grep -q 'github.com/hashicorp/terraform-plugin-sdk/v2' -r "$pkg_name"; then
+    sdk="terraform-plugin-sdk-v2"
+  elif [ -f "go.mod" ] && grep -q 'github.com/hashicorp/terraform-plugin-sdk v1' "go.mod"; then
+    sdk="terraform-plugin-sdk-v1"
+  elif grep -q 'github.com/hashicorp/terraform-plugin-sdk' -r "$pkg_name"; then
     sdk="terraform-plugin-sdk-v1"
   fi
-  if grep -q 'github.com/hashicorp/terraform-plugin-sdk' -r "$pkg_name"; then
-    sdk="terraform-plugin-sdk-v1"
-  fi
-  if [ "$sdk" == "terraform-plugin-sdk-v1" ] && [ ! -d "vendor" ]; then
+
+  if [ "$sdk" != "terraform" ] && [ ! -d "vendor" ] && [ -f "go.mod" ]; then
     go_envs="GO111MODULE=on"
   fi
   # TODO: Detect and use terraform-plugin-sdk-v2 when needed
   base_file="provider/$sdk/generate-schema.go"
   echo "Using sdk: $sdk"
   echo "Using base file: $base_file"
+  echo "Using go_envs: $go_envs"
 
-  cat >>'go.mod' <<'EOF'
+  [ -f 'go.mod' ] && cat >>'go.mod' <<'EOF'
 replace github.com/go-critic/go-critic v0.0.0-20181204210945-1df300866540 => github.com/go-critic/go-critic v0.3.5-0.20190526074819-1df300866540
 replace github.com/golangci/errcheck v0.0.0-20181003203344-ef45e06d44b6 => github.com/golangci/errcheck v0.0.0-20181223084120-ef45e06d44b6
 replace github.com/golangci/go-tools v0.0.0-20180109140146-af6baa5dc196 => github.com/golangci/go-tools v0.0.0-20190318060251-af6baa5dc196
