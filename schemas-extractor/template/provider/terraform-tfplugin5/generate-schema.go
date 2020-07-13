@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 )
 
 // ExportSchema should be called to export the structure
@@ -78,15 +79,20 @@ func exportType(t cty.Type) string {
 	}
 	if t.IsObjectType() {
 		attributeTypes := t.AttributeTypes()
+		names := make([]string, 0)
+		for k, _ := range attributeTypes {
+			names = append(names, k)
+		}
+		sort.Strings(names)
 		ret := "Object({"
 		first := true
-		for name, et := range attributeTypes {
+		for _, name := range names {
 			if first {
 				first = true
 			} else {
 				ret += ","
 			}
-			ret += " " + name + "=" + exportType(et)
+			ret += " " + name + "=" + exportType(attributeTypes[name])
 		}
 		ret += "})"
 		return ret
