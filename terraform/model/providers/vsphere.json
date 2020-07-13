@@ -3,7 +3,7 @@
   ".sdk_type": "terraform-plugin-sdk-v1",
   "name": "vsphere",
   "type": "provider",
-  "version": "v1.18.1",
+  "version": "v1.21.0",
   "provider": {
     "allow_unverified_ssl": {
       "Type": "Bool",
@@ -457,11 +457,22 @@
           "Value": "3600"
         }
       },
+      "host_managed": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Must be set if cluster enrollment is managed from host resource.",
+        "ConflictsWith": [
+          "host_system_ids"
+        ]
+      },
       "host_system_ids": {
         "Type": "Set",
         "Optional": true,
         "Description": "The managed object IDs of the hosts to put in the cluster.",
         "MaxItems": 64,
+        "ConflictsWith": [
+          "host_managed"
+        ],
         "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
@@ -2263,7 +2274,18 @@
       "cluster": {
         "Type": "String",
         "Optional": true,
-        "Description": "ID of the vSphere cluster the host will belong to."
+        "Description": "ID of the vSphere cluster the host will belong to.",
+        "ConflictsWith": [
+          "cluster_managed"
+        ]
+      },
+      "cluster_managed": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Must be set if host is a member of a managed compute_cluster resource.",
+        "ConflictsWith": [
+          "cluster"
+        ]
       },
       "connected": {
         "Type": "Bool",
@@ -3745,6 +3767,15 @@
                 "Value": "false"
               }
             },
+            "controller_type": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The type of controller the disk should be connected to. Must be 'scsi', 'sata', or 'ide'.",
+              "Default": {
+                "Type": "string",
+                "Value": "scsi"
+              }
+            },
             "datastore_id": {
               "Type": "String",
               "Optional": true,
@@ -3997,6 +4028,15 @@
           "Value": "hvAuto"
         }
       },
+      "ide_controller_count": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The number of IDE controllers that Terraform manages on this virtual machine. This directly affects the amount of disks you can add to the virtual machine and the maximum disk unit number. Note that lowering this value does not remove controllers.",
+        "Default": {
+          "Type": "int",
+          "Value": "2"
+        }
+      },
       "ignored_guest_ips": {
         "Type": "List",
         "Optional": true,
@@ -4195,17 +4235,26 @@
       "ovf_deploy": {
         "Type": "List",
         "Optional": true,
-        "Description": "A specification for deploying a virtual machine from OVF template.",
+        "Description": "A specification for deploying a virtual machine from ovf/ova template.",
         "MaxItems": 1,
         "IsBlock": true,
         "ConfigImplicitMode": "Block",
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
+            "allow_unverified_ssl_cert": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Allow unverified ssl certificates while deploying ovf/ova from url.",
+              "Default": {
+                "Type": "bool",
+                "Value": "true"
+              }
+            },
             "disk_provisioning": {
               "Type": "String",
               "Optional": true,
-              "Description": "An optional disk provisioning. If set, all the disks in the deployed OVF will have the same specified disk type (e.g., thin provisioned)."
+              "Description": "An optional disk provisioning. If set, all the disks in the deployed ovf will have the same specified disk type (e.g., thin provisioned)."
             },
             "ip_allocation_policy": {
               "Type": "String",
@@ -4220,7 +4269,7 @@
             "local_ovf_path": {
               "Type": "String",
               "Optional": true,
-              "Description": "The absolute path to the ovf file in the local system. Make sure the other necessary files likethe .vmdk files are also in the same directory as the given ovf file."
+              "Description": "The absolute path to the ovf/ova file in the local system."
             },
             "ovf_network_map": {
               "Type": "Map",
@@ -4235,9 +4284,19 @@
             "remote_ovf_url": {
               "Type": "String",
               "Optional": true,
-              "Description": "URL to the remote ovf file to be deployed."
+              "Description": "URL to the remote ovf/ova file to be deployed."
             }
           }
+        }
+      },
+      "pci_device_id": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "A list of PCI passthrough devices",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
         }
       },
       "poweron_timeout": {
@@ -4298,6 +4357,15 @@
         "Default": {
           "Type": "bool",
           "Value": "true"
+        }
+      },
+      "sata_controller_count": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The number of SATA controllers that Terraform manages on this virtual machine. This directly affects the amount of disks you can add to the virtual machine and the maximum disk unit number. Note that lowering this value does not remove controllers.",
+        "Default": {
+          "Type": "int",
+          "Value": "0"
         }
       },
       "scsi_bus_sharing": {
@@ -4469,6 +4537,55 @@
       "virtual_machine_uuid": {
         "Type": "String",
         "Required": true
+      }
+    },
+    "vsphere_vm_storage_policy": {
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Description of the storage policy."
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the storage policy."
+      },
+      "tag_rules": {
+        "Type": "List",
+        "Required": true,
+        "Description": "Tag rules to filter datastores to be used for placement of VMs.",
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "include_datastores_with_tags": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Whether to include or exclude datastores tagged with the provided tags",
+              "Default": {
+                "Type": "bool",
+                "Value": "true"
+              }
+            },
+            "tag_category": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The tag category to select the tags from."
+            },
+            "tags": {
+              "Type": "List",
+              "Required": true,
+              "Description": "The tags to use for creating a tag-based vm placement rule.",
+              "MinItems": 1,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
       }
     },
     "vsphere_vmfs_datastore": {
@@ -4780,6 +4897,28 @@
         }
       }
     },
+    "vsphere_dynamic": {
+      "filter": {
+        "Type": "Set",
+        "Required": true,
+        "Description": "List of tag IDs to match target.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "name_regex": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "A regular expression used to match against managed object names."
+      },
+      "type": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The type of managed object to return."
+      }
+    },
     "vsphere_folder": {
       "path": {
         "Type": "String",
@@ -4802,6 +4941,33 @@
         "Type": "String",
         "Description": "The managed object ID of the host's root resource pool.",
         "Computed": true
+      }
+    },
+    "vsphere_host_pci_device": {
+      "class_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The hexadecimal value of the PCI device's class ID."
+      },
+      "host_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The Managed Object ID of the host system."
+      },
+      "name": {
+        "Type": "String",
+        "Description": "The name of the PCI device.",
+        "Computed": true
+      },
+      "name_regex": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "A regular expression used to match the PCI device name."
+      },
+      "vendor_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The hexadecimal value of the PCI device's vendor ID."
       }
     },
     "vsphere_network": {
@@ -4956,6 +5122,15 @@
           "ElementsType": "String"
         }
       },
+      "ide_controller_scan_count": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The number of IDE controllers to scan for disk sizes and controller types on.",
+        "Default": {
+          "Type": "int",
+          "Value": "2"
+        }
+      },
       "name": {
         "Type": "String",
         "Required": true,
@@ -4969,6 +5144,15 @@
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
+        }
+      },
+      "sata_controller_scan_count": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The number of SATA controllers to scan for disk sizes and controller types on.",
+        "Default": {
+          "Type": "int",
+          "Value": "0"
         }
       },
       "scsi_bus_sharing": {
