@@ -15,7 +15,7 @@ schemas: providers.json
 providers.list:
 	@sh -c "'$(CURDIR)/fetch-providers.sh'"
 
-providers.json: providers.list
+providers.json: providers.list providers.base.json
 	@sh -c "'$(CURDIR)/check-providers.sh'"
 	cp providers.base.json providers.json
 
