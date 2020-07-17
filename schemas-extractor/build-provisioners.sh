@@ -32,7 +32,7 @@ function process_provisioner() {
   repository="$(jq_get "$name" 'repository')"
   pkg_name="$(jq_get "$name" 'pkg_name')"
   provisioner_args="$(jq_get "$name" 'provisioner_args')"
-  use_master="$(jq_get "$name" 'use_master')"
+  use_oligarch="$(jq_get "$name" 'use_oligarch')"
   location="$GOPATH/src/$repository"
 
   if [[ ! -d "$location" ]]; then
@@ -56,9 +56,9 @@ function process_provisioner() {
 
   echo "Preparing $name"
 
-  if [[ "$use_master" == "true" ]]; then
-    echo "Using master"
-    latest="master"
+  if [[ "$use_oligarch" == "true" ]]; then
+    echo "Using oligarch"
+    latest="oligarch"
   else
     # All tags:
     echo "Repository newest tags:"
