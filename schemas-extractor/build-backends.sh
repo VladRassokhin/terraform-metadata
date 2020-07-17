@@ -30,7 +30,7 @@ function process_backend() {
     return 0
   fi
   repository="$(jq_get "$name" 'repository')"
-  use_master="$(jq_get "$name" 'use_master')"
+  use_oligarch="$(jq_get "$name" 'use_oligarch')"
   location="$GOPATH/src/$repository"
 
   if [[ ! -d "$location" ]]; then
@@ -54,9 +54,9 @@ function process_backend() {
 
   echo "Preparing $name"
 
-  if [[ "$use_master" == "true" ]]; then
-    echo "Using master"
-    latest="master"
+  if [[ "$use_oligarch" == "true" ]]; then
+    echo "Using oligarch"
+    latest="oligarch"
   else
     # All tags:
     echo "Repository newest tags:"

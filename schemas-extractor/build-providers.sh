@@ -32,7 +32,7 @@ function process_provider() {
   repository="$(jq_get "$name" 'repository')"
   pkg_name="$(jq_get "$name" 'pkg_name')"
   provider_args="$(jq_get "$name" 'provider_args')"
-  use_master="$(jq_get "$name" 'use_master')"
+  use_oligarch="$(jq_get "$name" 'use_oligarch')"
   go_envs="$(jq_get "$name" 'go_envs')"
   go_args=""
   location="$GOPATH/src/$repository"
@@ -58,9 +58,9 @@ function process_provider() {
 
   echo "Preparing $name"
 
-  if [[ "$use_master" == "true" ]]; then
-    echo "Using master"
-    latest="master"
+  if [[ "$use_oligarch" == "true" ]]; then
+    echo "Using oligarch"
+    latest="oligarch"
   else
     # All tags:
     echo "Repository newest tags:"
