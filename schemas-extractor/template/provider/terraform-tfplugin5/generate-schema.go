@@ -94,6 +94,9 @@ func exportType(t cty.Type) string {
 			}
 			ret += " " + name + "=" + exportType(attributeTypes[name])
 		}
+		if len(names) > 0 {
+			ret += " "
+		}
 		ret += "})"
 		return ret
 	}
