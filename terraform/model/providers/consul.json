@@ -2,7 +2,7 @@
   ".schema_version": "1",
   "name": "consul",
   "type": "provider",
-  "version": "v2.8.0",
+  "version": "v2.9.0",
   "provider": {
     "address": {
       "Type": "String",
@@ -65,17 +65,43 @@
     "consul_acl_auth_method": {
       "config": {
         "Type": "Map",
-        "Required": true,
+        "Optional": true,
         "Description": "The raw configuration for this ACL auth method.",
+        "ConflictsWith": [
+          "config_json"
+        ],
+        "Deprecated": "The config attribute is deprecated, please use config_json instead.",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
         }
       },
+      "config_json": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The raw configuration for this ACL auth method.",
+        "ConflictsWith": [
+          "config"
+        ]
+      },
       "description": {
         "Type": "String",
         "Optional": true,
         "Description": "A free form human readable description of the auth method."
+      },
+      "display_name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "An optional name to use instead of the name attribute when displaying information about this auth method."
+      },
+      "max_token_ttl": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The maximum life of any token created by this auth method.",
+        "Default": {
+          "Type": "string",
+          "Value": "0s"
+        }
       },
       "name": {
         "Type": "String",
@@ -85,6 +111,29 @@
       "namespace": {
         "Type": "String",
         "Optional": true
+      },
+      "namespace_rule": {
+        "Type": "List",
+        "Optional": true,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "bind_namespace": {
+              "Type": "String",
+              "Required": true
+            },
+            "selector": {
+              "Type": "String",
+              "Optional": true
+            }
+          }
+        }
+      },
+      "token_locality": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The kind of token that this auth method produces. This can be either 'local' or 'global'."
       },
       "type": {
         "Type": "String",
@@ -394,6 +443,20 @@
       "token": {
         "Type": "String",
         "Optional": true
+      }
+    },
+    "consul_certificate_authority": {
+      "config": {
+        "Type": "Map",
+        "Required": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "connect_provider": {
+        "Type": "String",
+        "Required": true
       }
     },
     "consul_config_entry": {
@@ -959,6 +1022,10 @@
         "Optional": true,
         "Computed": true
       },
+      "enable_tag_override": {
+        "Type": "Bool",
+        "Optional": true
+      },
       "external": {
         "Type": "Bool",
         "Optional": true,
@@ -1007,15 +1074,29 @@
     "consul_acl_auth_method": {
       "config": {
         "Type": "Map",
-        "Optional": true,
+        "Computed": true,
+        "Deprecated": "The config attribute is deprecated, please use config_json instead.",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
         }
       },
+      "config_json": {
+        "Type": "String",
+        "Description": "The raw configuration for this ACL auth method.",
+        "Computed": true
+      },
       "description": {
         "Type": "String",
-        "Optional": true
+        "Computed": true
+      },
+      "display_name": {
+        "Type": "String",
+        "Computed": true
+      },
+      "max_token_ttl": {
+        "Type": "String",
+        "Computed": true
       },
       "name": {
         "Type": "String",
@@ -1025,9 +1106,30 @@
         "Type": "String",
         "Optional": true
       },
+      "namespace_rule": {
+        "Type": "List",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "bind_namespace": {
+              "Type": "String",
+              "Computed": true
+            },
+            "selector": {
+              "Type": "String",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "token_locality": {
+        "Type": "String",
+        "Computed": true
+      },
       "type": {
         "Type": "String",
-        "Optional": true
+        "Computed": true
       }
     },
     "consul_acl_policy": {
@@ -1735,6 +1837,10 @@
         "Type": "String",
         "Optional": true
       },
+      "filter": {
+        "Type": "String",
+        "Optional": true
+      },
       "name": {
         "Type": "String",
         "Required": true
@@ -2266,6 +2372,10 @@
         "Type": "String",
         "Optional": true
       },
+      "filter": {
+        "Type": "String",
+        "Optional": true
+      },
       "name": {
         "Type": "String",
         "Required": true
@@ -2419,6 +2529,10 @@
         "Type": "String",
         "Optional": true
       },
+      "filter": {
+        "Type": "String",
+        "Optional": true
+      },
       "name": {
         "Type": "String",
         "Required": true
@@ -2501,7 +2615,6 @@
             "node": {
               "Type": "List",
               "Computed": true,
-              "MaxItems": 1,
               "Elem": {
                 "Type": "SchemaInfo",
                 "Info": {
@@ -2543,7 +2656,6 @@
             "service": {
               "Type": "List",
               "Computed": true,
-              "MaxItems": 1,
               "Elem": {
                 "Type": "SchemaInfo",
                 "Info": {
