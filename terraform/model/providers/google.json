@@ -2,7 +2,7 @@
   ".schema_version": "1",
   "name": "google",
   "type": "provider",
-  "version": "v3.32.0",
+  "version": "v3.33.0",
   "provider": {
     "access_context_manager_custom_endpoint": {
       "Type": "String",
@@ -16,6 +16,11 @@
       "ConflictsWith": [
         "credentials"
       ]
+    },
+    "active_directory_custom_endpoint": {
+      "Type": "String",
+      "Optional": true,
+      "DefaultFunc": "MENV(GOOGLE_ACTIVE_DIRECTORY_CUSTOM_ENDPOINT)"
     },
     "app_engine_custom_endpoint": {
       "Type": "String",
@@ -826,6 +831,74 @@
         "Type": "String",
         "Required": true,
         "Description": "A GCP resource that is inside of the service perimeter.\nCurrently only projects are allowed.\nFormat: projects/{project_number}"
+      }
+    },
+    "google_active_directory_domain": {
+      "__timeouts__": [
+        "create",
+        "update",
+        "delete"
+      ],
+      "admin": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of delegated administrator account used to perform Active Directory operations. \nIf not specified, setupadmin will be used.",
+        "Default": {
+          "Type": "string",
+          "Value": "setupadmin"
+        }
+      },
+      "authorized_networks": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "The full names of the Google Compute Engine networks the domain instance is connected to. The domain is only available on networks listed in authorizedNetworks.\nIf CIDR subnets overlap between networks, domain creation will fail.",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "domain_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The fully qualified domain name. e.g. mydomain.myorganization.com, with the restrictions, \nhttps://cloud.google.com/managed-microsoft-ad/reference/rest/v1/projects.locations.global.domains."
+      },
+      "fqdn": {
+        "Type": "String",
+        "Description": "The fully-qualified domain name of the exposed domain used by clients to connect to the service. \nSimilar to what would be chosen for an Active Directory set up on an internal network.",
+        "Computed": true
+      },
+      "labels": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "Resource labels that can contain user-provided metadata",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "locations": {
+        "Type": "List",
+        "Required": true,
+        "Description": "Locations where domain needs to be provisioned. [regions][compute/docs/regions-zones/] \ne.g. us-west1 or us-east4 Service supports up to 4 locations at once. Each location will use a /26 block.",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Description": "The unique name of the domain using the format: 'projects/{project}/locations/global/domains/{domainName}'.",
+        "Computed": true
+      },
+      "project": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "reserved_ip_range": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The CIDR range of internal addresses that are reserved for this domain. Reserved networks must be /24 or larger. \nRanges must be unique and non-overlapping with existing subnets in authorizedNetworks"
       }
     },
     "google_app_engine_application": {
@@ -5521,6 +5594,33 @@
                           "Required": true,
                           "Description": "Docker image name. This is most often a reference to a container located\nin the container registry, such as gcr.io/cloudrun/hello\nMore info: https://kubernetes.io/docs/concepts/containers/images"
                         },
+                        "ports": {
+                          "Type": "List",
+                          "Optional": true,
+                          "Description": "List of open ports in the container.\nMore Info: \nhttps://cloud.google.com/run/docs/reference/rest/v1/RevisionSpec#ContainerPort",
+                          "Computed": true,
+                          "IsBlock": true,
+                          "Elem": {
+                            "Type": "SchemaInfo",
+                            "Info": {
+                              "container_port": {
+                                "Type": "Int",
+                                "Required": true,
+                                "Description": "Port number."
+                              },
+                              "name": {
+                                "Type": "String",
+                                "Optional": true,
+                                "Description": "Name of the port."
+                              },
+                              "protocol": {
+                                "Type": "String",
+                                "Optional": true,
+                                "Description": "Protocol used on port. Defaults to TCP."
+                              }
+                            }
+                          }
+                        },
                         "resources": {
                           "Type": "List",
                           "Optional": true,
@@ -8590,7 +8690,26 @@
       "enable_logging": {
         "Type": "Bool",
         "Optional": true,
-        "Description": "This field denotes whether to enable logging for a particular\nfirewall rule. If logging is enabled, logs will be exported to\nStackdriver."
+        "Description": "This field denotes whether to enable logging for a particular firewall rule. If logging is enabled, logs will be exported to Stackdriver.",
+        "Computed": true,
+        "Deprecated": "Deprecated in favor of log_config"
+      },
+      "log_config": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "This field denotes the logging options for a particular firewall rule.\nIf defined, logging is enabled, and logs will be exported to Cloud Logging.",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "metadata": {
+              "Type": "String",
+              "Required": true,
+              "Description": "This field denotes whether to include or exclude metadata for firewall logs. Possible values: [\"EXCLUDE_ALL_METADATA\", \"INCLUDE_ALL_METADATA\"]"
+            }
+          }
+        }
       },
       "name": {
         "Type": "String",
@@ -13922,7 +14041,7 @@
             "redirect_response_code": {
               "Type": "String",
               "Optional": true,
-              "Description": "The HTTP Status code to use for this RedirectAction. Supported values are:\n- MOVED_PERMANENTLY_DEFAULT, which is the default value and corresponds to 301.\n- FOUND, which corresponds to 302.\n- SEE_OTHER which corresponds to 303.\n- TEMPORARY_REDIRECT, which corresponds to 307. In this case, the request method\nwill be retained.\n- PERMANENT_REDIRECT, which corresponds to 308. In this case,\nthe request method will be retained. Possible values: [\"FOUND\", \"MOVED_PERMANENTLY_DEFAULT\", \"PERMANENT_REDIRECT\", \"SEE_OTHER\", \"TEMPORARY_REDIRECT\"]"
+              "Description": "The HTTP Status code to use for this RedirectAction. Supported values are:\n\n* MOVED_PERMANENTLY_DEFAULT, which is the default value and corresponds to 301.\n\n* FOUND, which corresponds to 302.\n\n* SEE_OTHER which corresponds to 303.\n\n* TEMPORARY_REDIRECT, which corresponds to 307. In this case, the request method\nwill be retained.\n\n* PERMANENT_REDIRECT, which corresponds to 308. In this case,\nthe request method will be retained. Possible values: [\"FOUND\", \"MOVED_PERMANENTLY_DEFAULT\", \"PERMANENT_REDIRECT\", \"SEE_OTHER\", \"TEMPORARY_REDIRECT\"]"
             },
             "strip_query": {
               "Type": "Bool",
@@ -14031,7 +14150,7 @@
                   "redirect_response_code": {
                     "Type": "String",
                     "Optional": true,
-                    "Description": "The HTTP Status code to use for this RedirectAction. Supported values are:\n- MOVED_PERMANENTLY_DEFAULT, which is the default value and corresponds to 301.\n- FOUND, which corresponds to 302.\n- SEE_OTHER which corresponds to 303.\n- TEMPORARY_REDIRECT, which corresponds to 307. In this case, the request method\nwill be retained.\n- PERMANENT_REDIRECT, which corresponds to 308. In this case,\nthe request method will be retained. Possible values: [\"FOUND\", \"MOVED_PERMANENTLY_DEFAULT\", \"PERMANENT_REDIRECT\", \"SEE_OTHER\", \"TEMPORARY_REDIRECT\"]"
+                    "Description": "The HTTP Status code to use for this RedirectAction. Supported values are:\n\n* MOVED_PERMANENTLY_DEFAULT, which is the default value and corresponds to 301.\n\n* FOUND, which corresponds to 302.\n\n* SEE_OTHER which corresponds to 303.\n\n* TEMPORARY_REDIRECT, which corresponds to 307. In this case, the request method\nwill be retained.\n\n* PERMANENT_REDIRECT, which corresponds to 308. In this case,\nthe request method will be retained. Possible values: [\"FOUND\", \"MOVED_PERMANENTLY_DEFAULT\", \"PERMANENT_REDIRECT\", \"SEE_OTHER\", \"TEMPORARY_REDIRECT\"]"
                   },
                   "strip_query": {
                     "Type": "Bool",
@@ -14482,7 +14601,7 @@
                         "redirect_response_code": {
                           "Type": "String",
                           "Optional": true,
-                          "Description": "The HTTP Status code to use for this RedirectAction. Supported values are:\n- MOVED_PERMANENTLY_DEFAULT, which is the default value and corresponds to 301.\n- FOUND, which corresponds to 302.\n- SEE_OTHER which corresponds to 303.\n- TEMPORARY_REDIRECT, which corresponds to 307. In this case, the request method\nwill be retained.\n- PERMANENT_REDIRECT, which corresponds to 308. In this case,\nthe request method will be retained. Possible values: [\"FOUND\", \"MOVED_PERMANENTLY_DEFAULT\", \"PERMANENT_REDIRECT\", \"SEE_OTHER\", \"TEMPORARY_REDIRECT\"]"
+                          "Description": "The HTTP Status code to use for this RedirectAction. Supported values are:\n\n* MOVED_PERMANENTLY_DEFAULT, which is the default value and corresponds to 301.\n\n* FOUND, which corresponds to 302.\n\n* SEE_OTHER which corresponds to 303.\n\n* TEMPORARY_REDIRECT, which corresponds to 307. In this case, the request method\nwill be retained.\n\n* PERMANENT_REDIRECT, which corresponds to 308. In this case,\nthe request method will be retained. Possible values: [\"FOUND\", \"MOVED_PERMANENTLY_DEFAULT\", \"PERMANENT_REDIRECT\", \"SEE_OTHER\", \"TEMPORARY_REDIRECT\"]"
                         },
                         "strip_query": {
                           "Type": "Bool",
@@ -15185,7 +15304,7 @@
                         "redirect_response_code": {
                           "Type": "String",
                           "Optional": true,
-                          "Description": "The HTTP Status code to use for this RedirectAction. Supported values are:\n- MOVED_PERMANENTLY_DEFAULT, which is the default value and corresponds to 301.\n- FOUND, which corresponds to 302.\n- SEE_OTHER which corresponds to 303.\n- TEMPORARY_REDIRECT, which corresponds to 307. In this case, the request method\nwill be retained.\n- PERMANENT_REDIRECT, which corresponds to 308. In this case,\nthe request method will be retained. Possible values: [\"FOUND\", \"MOVED_PERMANENTLY_DEFAULT\", \"PERMANENT_REDIRECT\", \"SEE_OTHER\", \"TEMPORARY_REDIRECT\"]"
+                          "Description": "The HTTP Status code to use for this RedirectAction. Supported values are:\n\n* MOVED_PERMANENTLY_DEFAULT, which is the default value and corresponds to 301.\n\n* FOUND, which corresponds to 302.\n\n* SEE_OTHER which corresponds to 303.\n\n* TEMPORARY_REDIRECT, which corresponds to 307. In this case, the request method\nwill be retained.\n\n* PERMANENT_REDIRECT, which corresponds to 308. In this case,\nthe request method will be retained. Possible values: [\"FOUND\", \"MOVED_PERMANENTLY_DEFAULT\", \"PERMANENT_REDIRECT\", \"SEE_OTHER\", \"TEMPORARY_REDIRECT\"]"
                         },
                         "strip_query": {
                           "Type": "Bool",
@@ -17556,7 +17675,7 @@
             "redirect_response_code": {
               "Type": "String",
               "Optional": true,
-              "Description": "The HTTP Status code to use for this RedirectAction. Supported values are:\n- MOVED_PERMANENTLY_DEFAULT, which is the default value and corresponds to 301.\n- FOUND, which corresponds to 302.\n- SEE_OTHER which corresponds to 303.\n- TEMPORARY_REDIRECT, which corresponds to 307. In this case, the request method\nwill be retained.\n- PERMANENT_REDIRECT, which corresponds to 308. In this case,\nthe request method will be retained. Possible values: [\"FOUND\", \"MOVED_PERMANENTLY_DEFAULT\", \"PERMANENT_REDIRECT\", \"SEE_OTHER\", \"TEMPORARY_REDIRECT\"]"
+              "Description": "The HTTP Status code to use for this RedirectAction. Supported values are:\n\n* MOVED_PERMANENTLY_DEFAULT, which is the default value and corresponds to 301.\n\n* FOUND, which corresponds to 302.\n\n* SEE_OTHER which corresponds to 303.\n\n* TEMPORARY_REDIRECT, which corresponds to 307. In this case, the request method\nwill be retained.\n\n* PERMANENT_REDIRECT, which corresponds to 308. In this case,\nthe request method will be retained. Possible values: [\"FOUND\", \"MOVED_PERMANENTLY_DEFAULT\", \"PERMANENT_REDIRECT\", \"SEE_OTHER\", \"TEMPORARY_REDIRECT\"]"
             },
             "strip_query": {
               "Type": "Bool",
@@ -18143,7 +18262,7 @@
                   "redirect_response_code": {
                     "Type": "String",
                     "Optional": true,
-                    "Description": "The HTTP Status code to use for this RedirectAction. Supported values are:\n- MOVED_PERMANENTLY_DEFAULT, which is the default value and corresponds to 301.\n- FOUND, which corresponds to 302.\n- SEE_OTHER which corresponds to 303.\n- TEMPORARY_REDIRECT, which corresponds to 307. In this case, the request method\nwill be retained.\n- PERMANENT_REDIRECT, which corresponds to 308. In this case,\nthe request method will be retained. Possible values: [\"FOUND\", \"MOVED_PERMANENTLY_DEFAULT\", \"PERMANENT_REDIRECT\", \"SEE_OTHER\", \"TEMPORARY_REDIRECT\"]"
+                    "Description": "The HTTP Status code to use for this RedirectAction. Supported values are:\n\n* MOVED_PERMANENTLY_DEFAULT, which is the default value and corresponds to 301.\n\n* FOUND, which corresponds to 302.\n\n* SEE_OTHER which corresponds to 303.\n\n* TEMPORARY_REDIRECT, which corresponds to 307. In this case, the request method\nwill be retained.\n\n* PERMANENT_REDIRECT, which corresponds to 308. In this case,\nthe request method will be retained. Possible values: [\"FOUND\", \"MOVED_PERMANENTLY_DEFAULT\", \"PERMANENT_REDIRECT\", \"SEE_OTHER\", \"TEMPORARY_REDIRECT\"]"
                   },
                   "strip_query": {
                     "Type": "Bool",
@@ -18676,7 +18795,7 @@
                         "redirect_response_code": {
                           "Type": "String",
                           "Optional": true,
-                          "Description": "The HTTP Status code to use for this RedirectAction. Supported values are:\n- MOVED_PERMANENTLY_DEFAULT, which is the default value and corresponds to 301.\n- FOUND, which corresponds to 302.\n- SEE_OTHER which corresponds to 303.\n- TEMPORARY_REDIRECT, which corresponds to 307. In this case, the request method\nwill be retained.\n- PERMANENT_REDIRECT, which corresponds to 308. In this case,\nthe request method will be retained. Possible values: [\"FOUND\", \"MOVED_PERMANENTLY_DEFAULT\", \"PERMANENT_REDIRECT\", \"SEE_OTHER\", \"TEMPORARY_REDIRECT\"]"
+                          "Description": "The HTTP Status code to use for this RedirectAction. Supported values are:\n\n* MOVED_PERMANENTLY_DEFAULT, which is the default value and corresponds to 301.\n\n* FOUND, which corresponds to 302.\n\n* SEE_OTHER which corresponds to 303.\n\n* TEMPORARY_REDIRECT, which corresponds to 307. In this case, the request method\nwill be retained.\n\n* PERMANENT_REDIRECT, which corresponds to 308. In this case,\nthe request method will be retained. Possible values: [\"FOUND\", \"MOVED_PERMANENTLY_DEFAULT\", \"PERMANENT_REDIRECT\", \"SEE_OTHER\", \"TEMPORARY_REDIRECT\"]"
                         },
                         "strip_query": {
                           "Type": "Bool",
@@ -19379,7 +19498,7 @@
                         "redirect_response_code": {
                           "Type": "String",
                           "Optional": true,
-                          "Description": "The HTTP Status code to use for this RedirectAction. Supported values are:   -\nMOVED_PERMANENTLY_DEFAULT, which is the default value and corresponds to 301.  -\nFOUND, which corresponds to 302.  - SEE_OTHER which corresponds to 303.  -\nTEMPORARY_REDIRECT, which corresponds to 307. In this case, the request method\nwill be retained.  - PERMANENT_REDIRECT, which corresponds to 308. In this case,\nthe request method will be retained. Possible values: [\"FOUND\", \"MOVED_PERMANENTLY_DEFAULT\", \"PERMANENT_REDIRECT\", \"SEE_OTHER\", \"TEMPORARY_REDIRECT\"]"
+                          "Description": "The HTTP Status code to use for this RedirectAction. Supported values are:\n\n* MOVED_PERMANENTLY_DEFAULT, which is the default value and corresponds to 301.\n\n* FOUND, which corresponds to 302.\n\n* SEE_OTHER which corresponds to 303.\n\n* TEMPORARY_REDIRECT, which corresponds to 307. In this case, the request method will be retained.\n\n* PERMANENT_REDIRECT, which corresponds to 308. In this case, the request method will be retained. Possible values: [\"FOUND\", \"MOVED_PERMANENTLY_DEFAULT\", \"PERMANENT_REDIRECT\", \"SEE_OTHER\", \"TEMPORARY_REDIRECT\"]"
                         },
                         "strip_query": {
                           "Type": "Bool",
