@@ -2,33 +2,18 @@
   ".schema_version": "1",
   "name": "github",
   "type": "provider",
-  "version": "v2.9.2",
+  "version": "v3.0.0",
   "provider": {
-    "anonymous": {
-      "Type": "Bool",
-      "Optional": true,
-      "Description": "Authenticate without a token.  When `anonymous`is true, the provider will not be able to access resourcesthat require authentication.",
-      "Deprecated": "For versions later than 3.0.0, absence of a token enables this mode"
-    },
     "base_url": {
       "Type": "String",
       "Optional": true,
       "Description": "The GitHub Base API URL",
       "DefaultFunc": "ENV(GITHUB_BASE_URL)"
     },
-    "individual": {
-      "Type": "Bool",
-      "Optional": true,
-      "Deprecated": "For versions later than 3.0.0, absence of an organization enables this mode",
-      "Default": {
-        "Type": "bool",
-        "Value": "false"
-      }
-    },
     "insecure": {
       "Type": "Bool",
       "Optional": true,
-      "Description": "Whether server should be accessed without verifying the TLS certificate.",
+      "Description": "Enable `insecure` mode for testing purposes",
       "Default": {
         "Type": "bool",
         "Value": "false"
@@ -37,13 +22,19 @@
     "organization": {
       "Type": "String",
       "Optional": true,
-      "Description": "The GitHub organization name to manage. If `individual` is false, `organization` is required.",
-      "DefaultFunc": "ENV(GITHUB_ORGANIZATION)"
+      "Description": "The GitHub organization name to manage. Use this field instead of `owner` when managing organization accounts.",
+      "DefaultFunc": "UNKNOWN"
+    },
+    "owner": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "The GitHub owner name to manage. Use this field instead of `organization` when managing individual accounts.",
+      "DefaultFunc": "UNKNOWN"
     },
     "token": {
       "Type": "String",
       "Optional": true,
-      "Description": "The OAuth token used to connect to GitHub. If `anonymous` is false, `token` is required.",
+      "Description": "The OAuth token used to connect to GitHub. `anonymous` mode is enabled if `token` is not configured.",
       "DefaultFunc": "ENV(GITHUB_TOKEN)"
     }
   },
@@ -523,7 +514,12 @@
       },
       "private": {
         "Type": "Bool",
-        "Optional": true
+        "Optional": true,
+        "Computed": true,
+        "ConflictsWith": [
+          "visibility"
+        ],
+        "Deprecated": "use visibility instead"
       },
       "ssh_clone_url": {
         "Type": "String",
@@ -559,6 +555,11 @@
           "Type": "SchemaElements",
           "ElementsType": "String"
         }
+      },
+      "visibility": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
       }
     },
     "github_repository_collaborator": {
@@ -1062,6 +1063,10 @@
         "Type": "String",
         "Computed": true
       },
+      "organization": {
+        "Type": "String",
+        "Optional": true
+      },
       "role": {
         "Type": "String",
         "Computed": true
@@ -1069,6 +1074,28 @@
       "username": {
         "Type": "String",
         "Required": true
+      }
+    },
+    "github_organization": {
+      "description": {
+        "Type": "String",
+        "Computed": true
+      },
+      "login": {
+        "Type": "String",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true
+      },
+      "node_id": {
+        "Type": "String",
+        "Computed": true
+      },
+      "plan": {
+        "Type": "String",
+        "Computed": true
       }
     },
     "github_organization_team_sync_groups": {
@@ -1292,6 +1319,10 @@
           "Type": "SchemaElements",
           "ElementsType": "String"
         }
+      },
+      "visibility": {
+        "Type": "String",
+        "Computed": true
       }
     },
     "github_team": {
