@@ -3,7 +3,7 @@
   ".sdk_type": "terraform-plugin-sdk-v1",
   "name": "launchdarkly",
   "type": "provider",
-  "version": "v1.3.2",
+  "version": "v1.5.1",
   "provider": {
     "access_token": {
       "Type": "String",
@@ -25,6 +25,110 @@
     }
   },
   "resources": {
+    "launchdarkly_access_token": {
+      "custom_roles": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "A set of custom role keys to use as access limits for the access token",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "default_api_version": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The default API version for this token. Defaults to the latest API version.",
+        "Computed": true
+      },
+      "expire": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Replace the computed token secret with a new value. The expired secret will no longer be able to authorize usage of the LaunchDarkly API. Should be an expiration time for the current token secret, expressed as a Unix epoch time in milliseconds. Setting this to a negative value will expire the existing token immediately. To reset the token value again, change 'expire' to a new value. Setting this field at resource creation time WILL NOT set an expiration time for the token."
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The human-readable name of the access token"
+      },
+      "policy_statements": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "A list of policy statements defining the permissions for the token. May be used in place of a built-in or custom role.",
+        "MinItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "actions": {
+              "Type": "List",
+              "Optional": true,
+              "MinItems": 1,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "effect": {
+              "Type": "String",
+              "Required": true
+            },
+            "not_actions": {
+              "Type": "List",
+              "Optional": true,
+              "MinItems": 1,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "not_resources": {
+              "Type": "List",
+              "Optional": true,
+              "MinItems": 1,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "resources": {
+              "Type": "List",
+              "Optional": true,
+              "MinItems": 1,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
+      "role": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of a built-in role for the token"
+      },
+      "service_token": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether the token will be a service token https://docs.launchdarkly.com/home/account-security/api-access-tokens#service-tokens",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "token": {
+        "Type": "String",
+        "Description": "The secret key used to authorize usage of the LaunchDarkly API",
+        "Computed": true
+      }
+    },
     "launchdarkly_custom_role": {
       "description": {
         "Type": "String",
@@ -187,15 +291,21 @@
       },
       "confirm_changes": {
         "Type": "Bool",
-        "Optional": true
+        "Optional": true,
+        "Description": "Whether or not to require confirmation for a flag and segment changes in this environment",
+        "Computed": true
       },
       "default_track_events": {
         "Type": "Bool",
-        "Optional": true
+        "Optional": true,
+        "Description": "Whether or not to send data export events for every flag created in the environment",
+        "Computed": true
       },
       "default_ttl": {
         "Type": "Int",
-        "Optional": true
+        "Optional": true,
+        "Description": "The TTL for the environment. This must be between 0 and 60 minutes. The TTL setting only applies to environments using the PHP SDK.",
+        "Computed": true
       },
       "key": {
         "Type": "String",
@@ -215,11 +325,15 @@
       },
       "require_comments": {
         "Type": "Bool",
-        "Optional": true
+        "Optional": true,
+        "Description": "Whether or not to require comments for a flag and segment changes in this environment",
+        "Computed": true
       },
       "secure_mode": {
         "Type": "Bool",
-        "Optional": true
+        "Optional": true,
+        "Description": "Secure mode ensures a user of the client-side SDK cannot impersonate another user",
+        "Computed": true
       },
       "tags": {
         "Type": "Set",
@@ -359,6 +473,7 @@
       "flag_fallthrough": {
         "Type": "List",
         "Optional": true,
+        "Computed": true,
         "MaxItems": 1,
         "IsBlock": true,
         "ConfigImplicitMode": "Block",
@@ -391,11 +506,13 @@
       },
       "off_variation": {
         "Type": "Int",
-        "Optional": true
+        "Optional": true,
+        "Computed": true
       },
       "prerequisites": {
         "Type": "List",
         "Optional": true,
+        "Computed": true,
         "IsBlock": true,
         "ConfigImplicitMode": "Block",
         "Elem": {
@@ -420,6 +537,7 @@
       "rules": {
         "Type": "List",
         "Optional": true,
+        "Computed": true,
         "IsBlock": true,
         "ConfigImplicitMode": "Block",
         "Elem": {
@@ -448,6 +566,14 @@
                   "op": {
                     "Type": "String",
                     "Required": true
+                  },
+                  "value_type": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "string",
+                      "Value": "string"
+                    }
                   },
                   "values": {
                     "Type": "List",
@@ -484,15 +610,18 @@
       },
       "targeting_enabled": {
         "Type": "Bool",
-        "Optional": true
+        "Optional": true,
+        "Computed": true
       },
       "track_events": {
         "Type": "Bool",
-        "Optional": true
+        "Optional": true,
+        "Computed": true
       },
       "user_targets": {
         "Type": "List",
         "Optional": true,
+        "Computed": true,
         "IsBlock": true,
         "ConfigImplicitMode": "Block",
         "Elem": {
@@ -515,8 +644,6 @@
       "environments": {
         "Type": "List",
         "Optional": true,
-        "Computed": true,
-        "Deprecated": "The 'environments' attribute is now deprecated. Please use the launchdarkly_environment resource to maintain future compatability.",
         "IsBlock": true,
         "ConfigImplicitMode": "Block",
         "Elem": {
@@ -536,15 +663,21 @@
             },
             "confirm_changes": {
               "Type": "Bool",
-              "Optional": true
+              "Optional": true,
+              "Description": "Whether or not to require confirmation for a flag and segment changes in this environment",
+              "Computed": true
             },
             "default_track_events": {
               "Type": "Bool",
-              "Optional": true
+              "Optional": true,
+              "Description": "Whether or not to send data export events for every flag created in the environment",
+              "Computed": true
             },
             "default_ttl": {
               "Type": "Int",
-              "Optional": true
+              "Optional": true,
+              "Description": "The TTL for the environment. This must be between 0 and 60 minutes. The TTL setting only applies to environments using the PHP SDK.",
+              "Computed": true
             },
             "key": {
               "Type": "String",
@@ -560,11 +693,15 @@
             },
             "require_comments": {
               "Type": "Bool",
-              "Optional": true
+              "Optional": true,
+              "Description": "Whether or not to require comments for a flag and segment changes in this environment",
+              "Computed": true
             },
             "secure_mode": {
               "Type": "Bool",
-              "Optional": true
+              "Optional": true,
+              "Description": "Secure mode ensures a user of the client-side SDK cannot impersonate another user",
+              "Computed": true
             },
             "tags": {
               "Type": "Set",
@@ -577,6 +714,10 @@
             }
           }
         }
+      },
+      "include_in_snippet": {
+        "Type": "Bool",
+        "Optional": true
       },
       "key": {
         "Type": "String",
@@ -633,7 +774,7 @@
       },
       "project_key": {
         "Type": "String",
-        "Optional": true
+        "Required": true
       },
       "rules": {
         "Type": "List",
@@ -671,6 +812,14 @@
                   "op": {
                     "Type": "String",
                     "Required": true
+                  },
+                  "value_type": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "string",
+                      "Value": "string"
+                    }
                   },
                   "values": {
                     "Type": "List",
@@ -819,6 +968,523 @@
     }
   },
   "data-sources": {
+    "launchdarkly_environment": {
+      "api_key": {
+        "Type": "String",
+        "Computed": true
+      },
+      "client_side_id": {
+        "Type": "String",
+        "Computed": true
+      },
+      "color": {
+        "Type": "String",
+        "Computed": true
+      },
+      "confirm_changes": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether or not to require confirmation for a flag and segment changes in this environment",
+        "Computed": true
+      },
+      "default_track_events": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether or not to send data export events for every flag created in the environment",
+        "Computed": true
+      },
+      "default_ttl": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The TTL for the environment. This must be between 0 and 60 minutes. The TTL setting only applies to environments using the PHP SDK.",
+        "Computed": true
+      },
+      "key": {
+        "Type": "String",
+        "Required": true
+      },
+      "mobile_key": {
+        "Type": "String",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Computed": true
+      },
+      "project_key": {
+        "Type": "String",
+        "Required": true
+      },
+      "require_comments": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether or not to require comments for a flag and segment changes in this environment",
+        "Computed": true
+      },
+      "secure_mode": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Secure mode ensures a user of the client-side SDK cannot impersonate another user",
+        "Computed": true
+      },
+      "tags": {
+        "Type": "Set",
+        "Optional": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      }
+    },
+    "launchdarkly_feature_flag": {
+      "client_side_availability": {
+        "Type": "Map",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "custom_properties": {
+        "Type": "Set",
+        "Optional": true,
+        "MaxItems": 64,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "key": {
+              "Type": "String",
+              "Required": true
+            },
+            "name": {
+              "Type": "String",
+              "Required": true
+            },
+            "value": {
+              "Type": "List",
+              "Required": true,
+              "MaxItems": 64,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
+      "default_off_variation": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The value of the variation served when the flag is off for new environments"
+      },
+      "default_on_variation": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The value of the variation served when the flag is on for new environments"
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true
+      },
+      "include_in_snippet": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "key": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The human-readable name of the feature flag"
+      },
+      "maintainer_id": {
+        "Type": "String",
+        "Optional": true
+      },
+      "name": {
+        "Type": "String",
+        "Description": "The feature flag's human-readable name",
+        "Computed": true
+      },
+      "project_key": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The feature flag's project key"
+      },
+      "tags": {
+        "Type": "Set",
+        "Optional": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "temporary": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "variation_type": {
+        "Type": "String",
+        "Description": "The uniform type for all variations. Can be either \"boolean\", \"string\", \"number\", or \"json\".",
+        "Computed": true
+      },
+      "variations": {
+        "Type": "List",
+        "Optional": true,
+        "Computed": true,
+        "MinItems": 2,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "description": {
+              "Type": "String",
+              "Optional": true
+            },
+            "name": {
+              "Type": "String",
+              "Optional": true
+            },
+            "value": {
+              "Type": "String",
+              "Required": true
+            }
+          }
+        }
+      }
+    },
+    "launchdarkly_feature_flag_environment": {
+      "env_key": {
+        "Type": "String",
+        "Required": true
+      },
+      "flag_fallthrough": {
+        "Type": "List",
+        "Optional": true,
+        "Computed": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "bucket_by": {
+              "Type": "String",
+              "Optional": true
+            },
+            "rollout_weights": {
+              "Type": "List",
+              "Optional": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "Int"
+              }
+            },
+            "variation": {
+              "Type": "Int",
+              "Optional": true
+            }
+          }
+        }
+      },
+      "flag_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "off_variation": {
+        "Type": "Int",
+        "Optional": true,
+        "Computed": true
+      },
+      "prerequisites": {
+        "Type": "List",
+        "Optional": true,
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "flag_key": {
+              "Type": "String",
+              "Required": true
+            },
+            "variation": {
+              "Type": "Int",
+              "Required": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "Int"
+              }
+            }
+          }
+        }
+      },
+      "rules": {
+        "Type": "List",
+        "Optional": true,
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "bucket_by": {
+              "Type": "String",
+              "Optional": true
+            },
+            "clauses": {
+              "Type": "List",
+              "Optional": true,
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "attribute": {
+                    "Type": "String",
+                    "Required": true
+                  },
+                  "negate": {
+                    "Type": "Bool",
+                    "Required": true
+                  },
+                  "op": {
+                    "Type": "String",
+                    "Required": true
+                  },
+                  "value_type": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "string",
+                      "Value": "string"
+                    }
+                  },
+                  "values": {
+                    "Type": "List",
+                    "Required": true,
+                    "ConfigImplicitMode": "Attr",
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  }
+                }
+              }
+            },
+            "rollout_weights": {
+              "Type": "List",
+              "Optional": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "Int"
+              }
+            },
+            "variation": {
+              "Type": "Int",
+              "Optional": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "Int"
+              }
+            }
+          }
+        }
+      },
+      "targeting_enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Computed": true
+      },
+      "track_events": {
+        "Type": "Bool",
+        "Optional": true,
+        "Computed": true
+      },
+      "user_targets": {
+        "Type": "List",
+        "Optional": true,
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "values": {
+              "Type": "List",
+              "Optional": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      }
+    },
+    "launchdarkly_project": {
+      "client_side_availability": {
+        "Type": "Map",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "key": {
+        "Type": "String",
+        "Required": true
+      },
+      "name": {
+        "Type": "String",
+        "Computed": true
+      },
+      "tags": {
+        "Type": "Set",
+        "Optional": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      }
+    },
+    "launchdarkly_segment": {
+      "description": {
+        "Type": "String",
+        "Optional": true
+      },
+      "env_key": {
+        "Type": "String",
+        "Required": true
+      },
+      "excluded": {
+        "Type": "List",
+        "Optional": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "included": {
+        "Type": "List",
+        "Optional": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "key": {
+        "Type": "String",
+        "Required": true
+      },
+      "name": {
+        "Type": "String",
+        "Computed": true
+      },
+      "project_key": {
+        "Type": "String",
+        "Required": true
+      },
+      "rules": {
+        "Type": "List",
+        "Optional": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "bucket_by": {
+              "Type": "String",
+              "Optional": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "clauses": {
+              "Type": "List",
+              "Optional": true,
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "attribute": {
+                    "Type": "String",
+                    "Required": true
+                  },
+                  "negate": {
+                    "Type": "Bool",
+                    "Required": true
+                  },
+                  "op": {
+                    "Type": "String",
+                    "Required": true
+                  },
+                  "value_type": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "string",
+                      "Value": "string"
+                    }
+                  },
+                  "values": {
+                    "Type": "List",
+                    "Required": true,
+                    "ConfigImplicitMode": "Attr",
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  }
+                }
+              }
+            },
+            "weight": {
+              "Type": "Int",
+              "Optional": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "Int"
+              }
+            }
+          }
+        }
+      },
+      "tags": {
+        "Type": "Set",
+        "Optional": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      }
+    },
     "launchdarkly_team_member": {
       "custom_roles": {
         "Type": "Set",
@@ -842,6 +1508,93 @@
         "Computed": true
       },
       "role": {
+        "Type": "String",
+        "Computed": true
+      }
+    },
+    "launchdarkly_webhook": {
+      "enabled": {
+        "Type": "Bool",
+        "Computed": true
+      },
+      "id": {
+        "Type": "String",
+        "Required": true
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true
+      },
+      "policy_statements": {
+        "Type": "List",
+        "Optional": true,
+        "MinItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "actions": {
+              "Type": "List",
+              "Optional": true,
+              "MinItems": 1,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "effect": {
+              "Type": "String",
+              "Required": true
+            },
+            "not_actions": {
+              "Type": "List",
+              "Optional": true,
+              "MinItems": 1,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "not_resources": {
+              "Type": "List",
+              "Optional": true,
+              "MinItems": 1,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "resources": {
+              "Type": "List",
+              "Optional": true,
+              "MinItems": 1,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
+      "secret": {
+        "Type": "String",
+        "Optional": true
+      },
+      "tags": {
+        "Type": "Set",
+        "Optional": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "url": {
         "Type": "String",
         "Computed": true
       }

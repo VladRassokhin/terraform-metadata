@@ -3,7 +3,7 @@
   ".sdk_type": "terraform-plugin-sdk-v1",
   "name": "signalfx",
   "type": "provider",
-  "version": "v4.23.2",
+  "version": "v6.7.3",
   "provider": {
     "api_url": {
       "Type": "String",
@@ -111,11 +111,6 @@
         "Required": true,
         "Description": "Name of the integration"
       },
-      "named_token": {
-        "Type": "String",
-        "Optional": true,
-        "Description": "A named token to use for ingest"
-      },
       "signalfx_aws_account": {
         "Type": "String",
         "Description": "The SignalFx AWS account ID to use with an AWS role.",
@@ -182,6 +177,15 @@
         "Optional": true,
         "Description": "Flag that controls how SignalFx imports usage metrics from AWS to use with AWS Cost Optimizer. If `true`, SignalFx imports the metrics."
       },
+      "enable_check_large_volume": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Controls how SignalFx checks for large amounts of data for this AWS integration. If true, SignalFx monitors the amount of data coming in from the integration.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
       "enabled": {
         "Type": "Bool",
         "Required": true,
@@ -221,6 +225,11 @@
         "Computed": true,
         "Removed": "Please specify the name in `signalfx_aws_external_integration` or `signalfx_aws_integration_token`"
       },
+      "named_token": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "A named token to use for ingest"
+      },
       "namespace_sync_rule": {
         "Type": "Set",
         "Optional": true,
@@ -259,7 +268,7 @@
       "poll_rate": {
         "Type": "Int",
         "Optional": true,
-        "Description": "AWS poll rate (in seconds). One of `60` or `300`."
+        "Description": "AWS poll rate (in seconds). Between `60` and `300`."
       },
       "regions": {
         "Type": "Set",
@@ -315,11 +324,6 @@
         "Required": true,
         "Description": "Name of the integration"
       },
-      "named_token": {
-        "Type": "String",
-        "Optional": true,
-        "Description": "A named token to use for ingest"
-      },
       "signalfx_aws_account": {
         "Type": "String",
         "Description": "The SignalFx AWS account ID to use with an AWS role.",
@@ -336,6 +340,33 @@
         "Type": "String",
         "Required": true,
         "Description": "Azure application ID for the SignalFx app."
+      },
+      "custom_namespaces_per_service": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Allows for more fine-grained control of syncing of custom namespaces, should the boolean convenience parameter `sync_guest_os_namespaces` be not enough. The customer may specify a map of services to custom namespaces. If they do so, for each service which is a key in this map, we will attempt to sync metrics from namespaces in the value list in addition to the default namespaces.",
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "namespaces": {
+              "Type": "Set",
+              "Required": true,
+              "Description": "The namespaces to sync",
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "service": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The name of the service"
+            }
+          }
+        }
       },
       "enabled": {
         "Type": "Bool",
@@ -390,6 +421,15 @@
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
+        }
+      },
+      "sync_guest_os_namespaces": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "If enabled, SignalFx will try to sync additional namespaces for VMs (including VMs in scale sets): telegraf/mem, telegraf/cpu, azure.vm.windows.guest (these are namespaces recommended by Azure when enabling their Diagnostic Extension). If there are no metrics there, no new datapoints will be ingested.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
         }
       },
       "tenant_id": {
@@ -1074,7 +1114,7 @@
             },
             "metric": {
               "Type": "String",
-              "Required": true
+              "Optional": true
             }
           }
         }
@@ -1120,15 +1160,6 @@
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
-            "is_default": {
-              "Type": "Bool",
-              "Optional": true,
-              "Description": "Flag that designates a target as the default for a data link object.",
-              "Default": {
-                "Type": "bool",
-                "Value": "true"
-              }
-            },
             "minimum_time_window": {
               "Type": "String",
               "Optional": true,
@@ -1215,15 +1246,6 @@
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
-            "is_default": {
-              "Type": "Bool",
-              "Optional": true,
-              "Description": "Flag that designates a target as the default for a data link object.",
-              "Default": {
-                "Type": "bool",
-                "Value": "true"
-              }
-            },
             "name": {
               "Type": "String",
               "Required": true,
@@ -1285,7 +1307,16 @@
       "max_delay": {
         "Type": "Int",
         "Optional": true,
-        "Description": "How long (in seconds) to wait for late datapoints. Max value 900 (15m)",
+        "Description": "Maximum time (in seconds) to wait for late datapoints. Max value is 900 (15m)",
+        "Default": {
+          "Type": "int",
+          "Value": "0"
+        }
+      },
+      "min_delay": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Minimum time (in seconds) for the computation to wait even if the datapoints are arriving in a timely fashion. Max value is 900 (15m)",
         "Default": {
           "Type": "int",
           "Value": "0"
@@ -1389,6 +1420,16 @@
           "time_range"
         ]
       },
+      "tags": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Tags associated with the detector",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
       "teams": {
         "Type": "List",
         "Optional": true,
@@ -1410,6 +1451,15 @@
         "Default": {
           "Type": "int",
           "Value": "3600"
+        }
+      },
+      "timezone": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The property value is a string that denotes the geographic region associated with the time zone, (e.g. Australia/Sydney)",
+        "Default": {
+          "Type": "string",
+          "Value": "UTC"
         }
       },
       "url": {
@@ -1624,7 +1674,7 @@
             "color": {
               "Type": "String",
               "Required": true,
-              "Description": "The color to use. Must be either \"gray\", \"blue\", \"navy\", \"orange\", \"yellow\", \"magenta\", \"purple\", \"violet\", \"lilac\", \"green\", \"aquamarine\""
+              "Description": "The color to use. Must be one of gray, blue, light_blue, navy, dark_orange, orange, dark_yellow, magenta, cerise, pink, violet, purple, gray_blue, dark_green, green, aquamarine, red, yellow, vivid_yellow, light_green, or lime_green."
             },
             "gt": {
               "Type": "Float",
@@ -1727,6 +1777,15 @@
         "Type": "String",
         "Optional": true,
         "Description": "The property to use when sorting the elements. Must be prepended with + for ascending or - for descending (e.g. -foo)"
+      },
+      "timezone": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The property value is a string that denotes the geographic region associated with the time zone, (e.g. Australia/Sydney)",
+        "Default": {
+          "Type": "string",
+          "Value": "UTC"
+        }
       },
       "unit_prefix": {
         "Type": "String",
@@ -1843,7 +1902,7 @@
             "color": {
               "Type": "String",
               "Required": true,
-              "Description": "The color to use. Must be either \"gray\", \"blue\", \"navy\", \"orange\", \"yellow\", \"magenta\", \"purple\", \"violet\", \"lilac\", \"green\", \"aquamarine\""
+              "Description": "The color to use. Must be one of gray, blue, light_blue, navy, dark_orange, orange, dark_yellow, magenta, cerise, pink, violet, purple, gray_blue, dark_green, green, aquamarine, red, yellow, vivid_yellow, light_green, or lime_green."
             },
             "gt": {
               "Type": "Float",
@@ -1905,6 +1964,15 @@
         "ConflictsWith": [
           "time_range"
         ]
+      },
+      "hide_missing_values": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "(false by default) If `true`, missing data points in the chart would be hidden",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
       },
       "legend_fields_to_hide": {
         "Type": "Set",
@@ -2004,6 +2072,15 @@
           "start_time",
           "end_time"
         ]
+      },
+      "timezone": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The property value is a string that denotes the geographic region associated with the time zone, (e.g. Australia/Sydney)",
+        "Default": {
+          "Type": "string",
+          "Value": "UTC"
+        }
       },
       "unit_prefix": {
         "Type": "String",
@@ -2274,7 +2351,7 @@
             "color": {
               "Type": "String",
               "Required": true,
-              "Description": "The color to use. Must be either \"gray\", \"blue\", \"navy\", \"orange\", \"yellow\", \"magenta\", \"purple\", \"violet\", \"lilac\", \"green\", \"aquamarine\""
+              "Description": "The color to use. Must be one of gray, blue, light_blue, navy, dark_orange, orange, dark_yellow, magenta, cerise, pink, violet, purple, gray_blue, dark_green, green, aquamarine, red, yellow, vivid_yellow, light_green, or lime_green."
             },
             "gt": {
               "Type": "Float",
@@ -2370,6 +2447,15 @@
         "Default": {
           "Type": "bool",
           "Value": "false"
+        }
+      },
+      "timezone": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The property value is a string that denotes the geographic region associated with the time zone, (e.g. Australia/Sydney)",
+        "Default": {
+          "Type": "string",
+          "Value": "UTC"
         }
       },
       "unit_prefix": {
@@ -3124,6 +3210,33 @@
           "Type": "SchemaElements",
           "ElementsType": "String"
         }
+      }
+    },
+    "signalfx_gcp_services": {
+      "services": {
+        "Type": "Set",
+        "Optional": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "name": {
+              "Type": "String",
+              "Required": true
+            }
+          }
+        }
+      }
+    },
+    "signalfx_pagerduty_integration": {
+      "enabled": {
+        "Type": "Bool",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true
       }
     }
   }

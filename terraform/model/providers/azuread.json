@@ -1,9 +1,9 @@
 {
   ".schema_version": "2",
-  ".sdk_type": "terraform-plugin-sdk-v1",
+  ".sdk_type": "terraform-plugin-sdk-v2",
   "name": "azuread",
   "type": "provider",
-  "version": "v0.11.0",
+  "version": "v1.4.0",
   "provider": {
     "client_certificate_password": {
       "Type": "String",
@@ -13,51 +13,77 @@
     "client_certificate_path": {
       "Type": "String",
       "Optional": true,
+      "Description": "The path to the Client Certificate associated with the Service Principal for use when authenticating as a Service Principal using a Client Certificate.",
       "DefaultFunc": "ENV(ARM_CLIENT_CERTIFICATE_PATH)"
     },
     "client_id": {
       "Type": "String",
       "Optional": true,
+      "Description": "The Client ID which should be used for service principal authentication.",
       "DefaultFunc": "ENV(ARM_CLIENT_ID)"
     },
     "client_secret": {
       "Type": "String",
       "Optional": true,
+      "Description": "The password to decrypt the Client Certificate. For use when authenticating as a Service Principal using a Client Certificate",
       "DefaultFunc": "ENV(ARM_CLIENT_SECRET)"
+    },
+    "disable_terraform_partner_id": {
+      "Type": "Bool",
+      "Optional": true,
+      "Description": "Disable the Terraform Partner ID which is used if a custom `partner_id` isn't specified.",
+      "DefaultFunc": "ENV(ARM_DISABLE_TERRAFORM_PARTNER_ID)"
     },
     "environment": {
       "Type": "String",
       "Required": true,
+      "Description": "The Cloud Environment which should be used. Possible values are `public`, `usgovernment`, `german`, and `china`. Defaults to `public`.",
       "DefaultFunc": "ENV(ARM_ENVIRONMENT)"
+    },
+    "metadata_host": {
+      "Type": "String",
+      "Required": true,
+      "Description": "The Hostname which should be used for the Azure Metadata Service.",
+      "DefaultFunc": "ENV(ARM_METADATA_HOSTNAME)"
     },
     "msi_endpoint": {
       "Type": "String",
       "Optional": true,
+      "Description": "The path to a custom endpoint for Managed Service Identity - in most circumstances this should be detected automatically. ",
       "DefaultFunc": "ENV(ARM_MSI_ENDPOINT)"
     },
-    "subscription_id": {
+    "partner_id": {
       "Type": "String",
       "Optional": true,
-      "DefaultFunc": "ENV(ARM_SUBSCRIPTION_ID)"
+      "Description": "A GUID/UUID that is registered with Microsoft to facilitate partner resource usage attribution.",
+      "DefaultFunc": "ENV(ARM_PARTNER_ID)"
     },
     "tenant_id": {
       "Type": "String",
       "Optional": true,
+      "Description": "The Tenant ID which should be used. Works with all authentication methods except MSI.",
       "DefaultFunc": "ENV(ARM_TENANT_ID)"
     },
     "use_msi": {
       "Type": "Bool",
       "Optional": true,
+      "Description": "Allow Managed Service Identity to be used for Authentication.",
       "DefaultFunc": "ENV(ARM_USE_MSI)"
     }
   },
   "resources": {
     "azuread_application": {
+      "__timeouts__": [
+        "create",
+        "read",
+        "update",
+        "delete"
+      ],
       "app_role": {
         "Type": "Set",
         "Optional": true,
-        "IsBlock": true,
-        "ConfigImplicitMode": "Block",
+        "Computed": true,
+        "ConfigExplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
@@ -93,7 +119,8 @@
             },
             "value": {
               "Type": "String",
-              "Optional": true
+              "Optional": true,
+              "Computed": true
             }
           }
         }
@@ -105,6 +132,11 @@
       "available_to_other_tenants": {
         "Type": "Bool",
         "Optional": true
+      },
+      "display_name": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
       },
       "group_membership_claims": {
         "Type": "String",
@@ -131,7 +163,9 @@
       },
       "name": {
         "Type": "String",
-        "Required": true
+        "Optional": true,
+        "Computed": true,
+        "Deprecated": "This property has been renamed to `display_name` and will be removed in version 2.0 of this provider."
       },
       "oauth2_allow_implicit_flow": {
         "Type": "Bool",
@@ -279,7 +313,6 @@
         "Type": "Set",
         "Optional": true,
         "Computed": true,
-        "MinItems": 1,
         "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
@@ -346,16 +379,66 @@
       "type": {
         "Type": "String",
         "Optional": true,
+        "Deprecated": "This property is deprecated and will be removed in version 2.0 of this provider.",
         "Default": {
           "Type": "string",
           "Value": "webapp/api"
         }
       }
     },
+    "azuread_application_app_role": {
+      "allowed_member_types": {
+        "Type": "Set",
+        "Required": true,
+        "MinItems": 1,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "application_object_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "description": {
+        "Type": "String",
+        "Required": true
+      },
+      "display_name": {
+        "Type": "String",
+        "Required": true
+      },
+      "is_enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "role_id": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "value": {
+        "Type": "String",
+        "Optional": true
+      }
+    },
     "azuread_application_certificate": {
       "application_object_id": {
         "Type": "String",
         "Required": true
+      },
+      "encoding": {
+        "Type": "String",
+        "Optional": true,
+        "Default": {
+          "Type": "string",
+          "Value": "pem"
+        }
       },
       "end_date": {
         "Type": "String",
@@ -391,17 +474,53 @@
         "Required": true
       }
     },
-    "azuread_application_password": {
-      "application_id": {
+    "azuread_application_oauth2_permission": {
+      "admin_consent_description": {
         "Type": "String",
-        "Optional": true,
-        "Computed": true,
-        "Deprecated": "Deprecated in favour of `application_object_id` to prevent confusion"
+        "Required": true
+      },
+      "admin_consent_display_name": {
+        "Type": "String",
+        "Required": true
       },
       "application_object_id": {
         "Type": "String",
+        "Required": true
+      },
+      "is_enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "permission_id": {
+        "Type": "String",
         "Optional": true,
         "Computed": true
+      },
+      "type": {
+        "Type": "String",
+        "Required": true
+      },
+      "user_consent_description": {
+        "Type": "String",
+        "Required": true
+      },
+      "user_consent_display_name": {
+        "Type": "String",
+        "Required": true
+      },
+      "value": {
+        "Type": "String",
+        "Required": true
+      }
+    },
+    "azuread_application_password": {
+      "application_object_id": {
+        "Type": "String",
+        "Required": true
       },
       "description": {
         "Type": "String",
@@ -437,6 +556,15 @@
         "Type": "String",
         "Optional": true
       },
+      "display_name": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "mail_enabled": {
+        "Type": "Bool",
+        "Computed": true
+      },
       "members": {
         "Type": "Set",
         "Optional": true,
@@ -449,7 +577,9 @@
       },
       "name": {
         "Type": "String",
-        "Required": true
+        "Optional": true,
+        "Computed": true,
+        "Deprecated": "This property has been renamed to `display_name` and will be removed in v2.0 of this provider."
       },
       "object_id": {
         "Type": "String",
@@ -472,6 +602,10 @@
           "Type": "bool",
           "Value": "false"
         }
+      },
+      "security_enabled": {
+        "Type": "Bool",
+        "Computed": true
       }
     },
     "azuread_group_member": {
@@ -488,6 +622,46 @@
       "app_role_assignment_required": {
         "Type": "Bool",
         "Optional": true
+      },
+      "app_roles": {
+        "Type": "List",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "allowed_member_types": {
+              "Type": "Set",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "description": {
+              "Type": "String",
+              "Computed": true
+            },
+            "display_name": {
+              "Type": "String",
+              "Computed": true
+            },
+            "id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "is_enabled": {
+              "Type": "Bool",
+              "Computed": true
+            },
+            "value": {
+              "Type": "String",
+              "Computed": true
+            }
+          }
+        }
       },
       "application_id": {
         "Type": "String",
@@ -556,6 +730,14 @@
       }
     },
     "azuread_service_principal_certificate": {
+      "encoding": {
+        "Type": "String",
+        "Optional": true,
+        "Default": {
+          "Type": "string",
+          "Value": "pem"
+        }
+      },
       "end_date": {
         "Type": "String",
         "Optional": true,
@@ -637,6 +819,30 @@
           "Value": "true"
         }
       },
+      "city": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The city/region in which the user is located; for example, “US” or “UK”.",
+        "Computed": true
+      },
+      "company_name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The company name which the user is associated. This property can be useful for describing the company that an external user comes from.",
+        "Computed": true
+      },
+      "country": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The country/region in which the user is located; for example, “US” or “UK”.",
+        "Computed": true
+      },
+      "department": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name for the department in which the user works.",
+        "Computed": true
+      },
       "display_name": {
         "Type": "String",
         "Required": true
@@ -649,10 +855,22 @@
           "Value": "false"
         }
       },
+      "given_name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The given name (first name) of the user.",
+        "Computed": true
+      },
       "immutable_id": {
         "Type": "String",
         "Optional": true,
         "Description": "This must be specified if you are using a federated domain for the user's userPrincipalName (UPN) property when creating a new user account. It is used to associate an on-premises Active Directory user account with their Azure AD user object.",
+        "Computed": true
+      },
+      "job_title": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The user’s job title.",
         "Computed": true
       },
       "mail": {
@@ -662,6 +880,12 @@
       "mail_nickname": {
         "Type": "String",
         "Optional": true,
+        "Computed": true
+      },
+      "mobile": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The primary cellular telephone number for the user.",
         "Computed": true
       },
       "object_id": {
@@ -679,6 +903,36 @@
       "password": {
         "Type": "String",
         "Required": true
+      },
+      "physical_delivery_office_name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The office location in the user's place of business.",
+        "Computed": true
+      },
+      "postal_code": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The postal code for the user's postal address. The postal code is specific to the user's country/region. In the United States of America, this attribute contains the ZIP code.",
+        "Computed": true
+      },
+      "state": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The state or province in the user's address.",
+        "Computed": true
+      },
+      "street_address": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The street address of the user's place of business.",
+        "Computed": true
+      },
+      "surname": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The user's surname (family name or last name).",
+        "Computed": true
       },
       "usage_location": {
         "Type": "String",
@@ -743,6 +997,11 @@
         "Type": "Bool",
         "Computed": true
       },
+      "display_name": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
       "group_membership_claims": {
         "Type": "String",
         "Computed": true
@@ -767,7 +1026,8 @@
       "name": {
         "Type": "String",
         "Optional": true,
-        "Computed": true
+        "Computed": true,
+        "Deprecated": "This property has been renamed to `display_name` and will be removed in version 2.0 of this provider."
       },
       "oauth2_allow_implicit_flow": {
         "Type": "Bool",
@@ -975,11 +1235,6 @@
         "Type": "String",
         "Computed": true
       },
-      "subscription_id": {
-        "Type": "String",
-        "Computed": true,
-        "Deprecated": "The \"subscription_id\" attribute will be removed in version 1.0 of the provider. If you are using this attribute, you should instead use the \"azurerm_client_config\" data source from the AzureRM provider"
-      },
       "tenant_id": {
         "Type": "String",
         "Computed": true
@@ -1045,6 +1300,16 @@
         "Type": "String",
         "Computed": true
       },
+      "display_name": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "mail_enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Computed": true
+      },
       "members": {
         "Type": "List",
         "Computed": true,
@@ -1058,17 +1323,12 @@
         "Type": "String",
         "Optional": true,
         "Computed": true,
-        "ConflictsWith": [
-          "object_id"
-        ]
+        "Deprecated": "This property has been renamed to `display_name` and will be removed in v2.0 of this provider."
       },
       "object_id": {
         "Type": "String",
         "Optional": true,
-        "Computed": true,
-        "ConflictsWith": [
-          "name"
-        ]
+        "Computed": true
       },
       "owners": {
         "Type": "List",
@@ -1078,16 +1338,29 @@
           "Type": "SchemaElements",
           "ElementsType": "String"
         }
+      },
+      "security_enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Computed": true
       }
     },
     "azuread_groups": {
+      "display_names": {
+        "Type": "List",
+        "Optional": true,
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
       "names": {
         "Type": "List",
         "Optional": true,
         "Computed": true,
-        "ConflictsWith": [
-          "object_ids"
-        ],
+        "Deprecated": "This property has been renamed to `display_names` and will be removed in v2.0 of this provider.",
         "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
@@ -1098,9 +1371,6 @@
         "Type": "List",
         "Optional": true,
         "Computed": true,
-        "ConflictsWith": [
-          "names"
-        ],
         "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
@@ -1226,12 +1496,42 @@
         "Type": "Bool",
         "Computed": true
       },
+      "city": {
+        "Type": "String",
+        "Description": "The city/region in which the user is located; for example, “US” or “UK”.",
+        "Computed": true
+      },
+      "company_name": {
+        "Type": "String",
+        "Description": "The company name which the user is associated. This property can be useful for describing the company that an external user comes from.",
+        "Computed": true
+      },
+      "country": {
+        "Type": "String",
+        "Description": "The country/region in which the user is located; for example, “US” or “UK”.",
+        "Computed": true
+      },
+      "department": {
+        "Type": "String",
+        "Description": "The name for the department in which the user works.",
+        "Computed": true
+      },
       "display_name": {
         "Type": "String",
         "Computed": true
       },
+      "given_name": {
+        "Type": "String",
+        "Description": "The given name (first name) of the user.",
+        "Computed": true
+      },
       "immutable_id": {
         "Type": "String",
+        "Computed": true
+      },
+      "job_title": {
+        "Type": "String",
+        "Description": "The user’s job title.",
         "Computed": true
       },
       "mail": {
@@ -1247,6 +1547,11 @@
           "user_principal_name"
         ]
       },
+      "mobile": {
+        "Type": "String",
+        "Description": "The primary cellular telephone number for the user.",
+        "Computed": true
+      },
       "object_id": {
         "Type": "String",
         "Optional": true,
@@ -1261,6 +1566,31 @@
       },
       "onpremises_user_principal_name": {
         "Type": "String",
+        "Computed": true
+      },
+      "physical_delivery_office_name": {
+        "Type": "String",
+        "Description": "The office location in the user's place of business.",
+        "Computed": true
+      },
+      "postal_code": {
+        "Type": "String",
+        "Description": "The postal code for the user's postal address. The postal code is specific to the user's country/region. In the United States of America, this attribute contains the ZIP code.",
+        "Computed": true
+      },
+      "state": {
+        "Type": "String",
+        "Description": "The state or province in the user's address.",
+        "Computed": true
+      },
+      "street_address": {
+        "Type": "String",
+        "Description": "The street address of the user's place of business.",
+        "Computed": true
+      },
+      "surname": {
+        "Type": "String",
+        "Description": "The user's surname (family name or last name).",
         "Computed": true
       },
       "usage_location": {

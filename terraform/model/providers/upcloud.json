@@ -1,0 +1,971 @@
+{
+  ".schema_version": "2",
+  ".sdk_type": "terraform-plugin-sdk-v2",
+  "name": "upcloud",
+  "type": "provider",
+  "version": "2.0.0",
+  "provider": {
+    "password": {
+      "Type": "String",
+      "Required": true,
+      "Description": "Password for UpCloud API user",
+      "DefaultFunc": "ENV(UPCLOUD_PASSWORD)"
+    },
+    "retry_max": {
+      "Type": "Int",
+      "Optional": true,
+      "Description": "Maximum number of retries",
+      "Default": {
+        "Type": "int",
+        "Value": "4"
+      }
+    },
+    "retry_wait_max_sec": {
+      "Type": "Int",
+      "Optional": true,
+      "Description": "Maximum time to wait between retries",
+      "Default": {
+        "Type": "int",
+        "Value": "30"
+      }
+    },
+    "retry_wait_min_sec": {
+      "Type": "Int",
+      "Optional": true,
+      "Description": "Minimum time to wait between retries",
+      "Default": {
+        "Type": "int",
+        "Value": "1"
+      }
+    },
+    "username": {
+      "Type": "String",
+      "Required": true,
+      "Description": "UpCloud username with API access",
+      "DefaultFunc": "ENV(UPCLOUD_USERNAME)"
+    }
+  },
+  "resources": {
+    "upcloud_firewall_rules": {
+      "firewall_rule": {
+        "Type": "List",
+        "Required": true,
+        "MaxItems": 1000,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "action": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Action to take if the rule conditions are met"
+            },
+            "comment": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Freeform comment string for the rule"
+            },
+            "destination_address_end": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The destination address range ends from this address"
+            },
+            "destination_address_start": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The destination address range starts from this address"
+            },
+            "destination_port_end": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "The destination port range ends from this port number"
+            },
+            "destination_port_start": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "The destination port range starts from this port number"
+            },
+            "direction": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The direction of network traffic this rule will be applied to"
+            },
+            "family": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The address family of new firewall rule"
+            },
+            "icmp_type": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The ICMP type"
+            },
+            "protocol": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The protocol this rule will be applied to",
+              "Default": {
+                "Type": "string",
+                "Value": "tcp"
+              }
+            },
+            "source_address_end": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The source address range ends from this address"
+            },
+            "source_address_start": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The source address range starts from this address"
+            },
+            "source_port_end": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "The source port range ends from this port number"
+            },
+            "source_port_start": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "The source port range starts from this port number"
+            }
+          }
+        }
+      },
+      "server_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The unique id of the server to be protected the firewall rules"
+      }
+    },
+    "upcloud_floating_ip_address": {
+      "access": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Is address for utility or public network",
+        "Default": {
+          "Type": "string",
+          "Value": "public"
+        }
+      },
+      "family": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The address family of new IP address",
+        "Default": {
+          "Type": "string",
+          "Value": "IPv4"
+        }
+      },
+      "ip_address": {
+        "Type": "String",
+        "Description": "An UpCloud assigned IP Address",
+        "Computed": true
+      },
+      "mac_address": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "MAC address of server interface to assign address to"
+      },
+      "zone": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Zone of address, required when assigning a detached floating IP address",
+        "Computed": true
+      }
+    },
+    "upcloud_network": {
+      "ip_network": {
+        "Type": "List",
+        "Required": true,
+        "Description": "A list of IP subnets within the network",
+        "MaxItems": 1,
+        "MinItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "address": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The CIDR range of the subnet"
+            },
+            "dhcp": {
+              "Type": "Bool",
+              "Required": true,
+              "Description": "Is DHCP enabled?"
+            },
+            "dhcp_default_route": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Is the gateway the DHCP default route?",
+              "Computed": true
+            },
+            "dhcp_dns": {
+              "Type": "Set",
+              "Optional": true,
+              "Description": "The DNS servers given by DHCP",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "family": {
+              "Type": "String",
+              "Required": true,
+              "Description": "IP address family"
+            },
+            "gateway": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Gateway address given by DHCP",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "A valid name for the network"
+      },
+      "router": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The UUID of a router"
+      },
+      "servers": {
+        "Type": "Set",
+        "Description": "A list of attached servers",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "id": {
+              "Type": "String",
+              "Description": "The UUID of the server",
+              "Computed": true
+            },
+            "title": {
+              "Type": "String",
+              "Description": "The short description of the server",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "type": {
+        "Type": "String",
+        "Description": "The network type",
+        "Computed": true
+      },
+      "zone": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The zone the network is in"
+      }
+    },
+    "upcloud_router": {
+      "attached_networks": {
+        "Type": "List",
+        "Description": "A collection of UUID representing networks attached to this router",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the router"
+      },
+      "type": {
+        "Type": "String",
+        "Description": "The type of router",
+        "Computed": true
+      }
+    },
+    "upcloud_server": {
+      "cpu": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The number of CPU for the server",
+        "Computed": true,
+        "ConflictsWith": [
+          "plan"
+        ]
+      },
+      "firewall": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Are firewall rules active for the server"
+      },
+      "hostname": {
+        "Type": "String",
+        "Required": true,
+        "Description": "A valid domain name"
+      },
+      "login": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Configure access credentials to the server",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "create_password": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates a password should be create to allow access",
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
+              }
+            },
+            "keys": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "A list of ssh keys to access the server",
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "password_delivery": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The delivery method for the server’s root password",
+              "Default": {
+                "Type": "string",
+                "Value": "none"
+              }
+            },
+            "user": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Username to be create to access the server"
+            }
+          }
+        }
+      },
+      "mem": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The size of memory for the server (in megabytes)",
+        "Computed": true,
+        "ConflictsWith": [
+          "plan"
+        ]
+      },
+      "metadata": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Is the metadata service active for the server"
+      },
+      "network_interface": {
+        "Type": "List",
+        "Required": true,
+        "Description": "One or more blocks describing the network interfaces of the server.",
+        "MinItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "bootable": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "`true` if this interface should be used for network booting.",
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
+              }
+            },
+            "ip_address": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The assigned IP address.",
+              "Computed": true
+            },
+            "ip_address_family": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The IP address type of this interface (one of `IPv4` or `IPv6`).",
+              "Default": {
+                "Type": "string",
+                "Value": "IPv4"
+              }
+            },
+            "ip_address_floating": {
+              "Type": "Bool",
+              "Description": "`true` is a floating IP address is attached.",
+              "Computed": true
+            },
+            "mac_address": {
+              "Type": "String",
+              "Description": "The assigned MAC address.",
+              "Computed": true
+            },
+            "network": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The unique ID of a network to attach this network to.",
+              "Computed": true
+            },
+            "source_ip_filtering": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "`true` if source IP should be filtered.",
+              "Default": {
+                "Type": "bool",
+                "Value": "true"
+              }
+            },
+            "type": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Network interface type. For private network interfaces, a network must be specified with an existing network id."
+            }
+          }
+        }
+      },
+      "plan": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The pricing plan used for the server"
+      },
+      "storage_devices": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "A list of storage devices associated with the server",
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "address": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The device address the storage will be attached to. Specify only the bus name (ide/scsi/virtio) to auto-select next available address from that bus.",
+              "Computed": true
+            },
+            "storage": {
+              "Type": "String",
+              "Required": true,
+              "Description": "A valid storage UUID"
+            },
+            "type": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The device type the storage will be attached as",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "template": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Block describing the preconfigured operating system",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "address": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The device address the storage will be attached to. Specify only the bus name (ide/scsi/virtio) to auto-select next available address from that bus.",
+              "Computed": true
+            },
+            "backup_rule": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "The criteria to backup the storage",
+              "MaxItems": 1,
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "interval": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "The weekday when the backup is created"
+                  },
+                  "retention": {
+                    "Type": "Int",
+                    "Required": true,
+                    "Description": "The number of days before a backup is automatically deleted"
+                  },
+                  "time": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "The time of day when the backup is created"
+                  }
+                }
+              }
+            },
+            "id": {
+              "Type": "String",
+              "Description": "The unique identifier for the storage",
+              "Computed": true
+            },
+            "size": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "The size of the storage in gigabytes"
+            },
+            "storage": {
+              "Type": "String",
+              "Required": true,
+              "Description": "A valid storage UUID or template name"
+            },
+            "tier": {
+              "Type": "String",
+              "Description": "The storage tier to use",
+              "Computed": true
+            },
+            "title": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "A short, informative description",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "title": {
+        "Type": "String",
+        "Description": "A short, informational description",
+        "Computed": true
+      },
+      "user_data": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Defines URL for a server setup script, or the script body itself"
+      },
+      "zone": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The zone in which the server will be hosted"
+      }
+    },
+    "upcloud_storage": {
+      "backup_rule": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "The criteria to backup the storage",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "interval": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The weekday when the backup is created"
+            },
+            "retention": {
+              "Type": "Int",
+              "Required": true,
+              "Description": "The number of days before a backup is automatically deleted"
+            },
+            "time": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The time of day when the backup is created"
+            }
+          }
+        }
+      },
+      "clone": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Block defining another storage/template to clone to storage",
+        "MaxItems": 1,
+        "ConflictsWith": [
+          "import"
+        ],
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "id": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The unique identifier of the storage/template to clone"
+            }
+          }
+        }
+      },
+      "import": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Block defining external data to import to storage",
+        "MaxItems": 1,
+        "ConflictsWith": [
+          "clone"
+        ],
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "sha256sum": {
+              "Type": "String",
+              "Description": "sha256 sum of the imported data",
+              "Computed": true
+            },
+            "source": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The mode of the import task. One of `http_import` or `direct_upload`."
+            },
+            "source_hash": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "For `direct_upload`; an optional hash of the file to upload."
+            },
+            "source_location": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The location of the file to import. For `http_import` an accessible URL for `direct_upload` a local file."
+            },
+            "written_bytes": {
+              "Type": "Int",
+              "Description": "Number of bytes imported",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "size": {
+        "Type": "Int",
+        "Required": true,
+        "Description": "The size of the storage in gigabytes"
+      },
+      "tier": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The storage tier to use",
+        "Computed": true
+      },
+      "title": {
+        "Type": "String",
+        "Required": true,
+        "Description": "A short, informative description"
+      },
+      "zone": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The zone in which the storage will be created"
+      }
+    },
+    "upcloud_tag": {
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Free form text representing the meaning of the tag"
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The value representing the tag"
+      },
+      "servers": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "A collection of servers that have been assigned the tag",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      }
+    }
+  },
+  "data-sources": {
+    "upcloud_hosts": {
+      "hosts": {
+        "Type": "Set",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "description": {
+              "Type": "String",
+              "Description": "Free form text describing the host",
+              "Computed": true
+            },
+            "host_id": {
+              "Type": "Int",
+              "Description": "The unique id of the host",
+              "Computed": true
+            },
+            "zone": {
+              "Type": "String",
+              "Description": "The zone the host is in",
+              "Computed": true
+            }
+          }
+        }
+      }
+    },
+    "upcloud_ip_addresses": {
+      "addresses": {
+        "Type": "Set",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "access": {
+              "Type": "String",
+              "Description": "Is address for utility or public network",
+              "Computed": true
+            },
+            "address": {
+              "Type": "String",
+              "Description": "An UpCloud assigned IP Address",
+              "Computed": true
+            },
+            "family": {
+              "Type": "String",
+              "Description": "IP address family",
+              "Computed": true
+            },
+            "floating": {
+              "Type": "Bool",
+              "Description": "Does the IP Address represents a floating IP Address",
+              "Computed": true
+            },
+            "mac": {
+              "Type": "String",
+              "Description": "MAC address of server interface to assign address to",
+              "Computed": true
+            },
+            "part_of_plan": {
+              "Type": "Bool",
+              "Description": "Is the address a part of a plan",
+              "Computed": true
+            },
+            "ptr_record": {
+              "Type": "String",
+              "Description": "A reverse DNS record entry",
+              "Computed": true
+            },
+            "server": {
+              "Type": "String",
+              "Description": "The unique identifier for a server",
+              "Computed": true
+            },
+            "zone": {
+              "Type": "String",
+              "Description": "Zone of address, required when assigning a detached floating IP address",
+              "Computed": true
+            }
+          }
+        }
+      }
+    },
+    "upcloud_networks": {
+      "filter_name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "If specified, results will be filtered to match name using a regular expression"
+      },
+      "networks": {
+        "Type": "Set",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "id": {
+              "Type": "String",
+              "Description": "The UUID of the network",
+              "Computed": true
+            },
+            "ip_network": {
+              "Type": "Set",
+              "Description": "A list of IP subnets within the network",
+              "Computed": true,
+              "IsBlock": true,
+              "ConfigImplicitMode": "ComputedBlock",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "address": {
+                    "Type": "String",
+                    "Description": "The CIDR range of the subnet",
+                    "Computed": true
+                  },
+                  "dhcp": {
+                    "Type": "Bool",
+                    "Description": "Is DHCP enabled?",
+                    "Computed": true
+                  },
+                  "dhcp_default_route": {
+                    "Type": "Bool",
+                    "Description": "Is the gateway the DHCP default route?",
+                    "Computed": true
+                  },
+                  "dhcp_dns": {
+                    "Type": "List",
+                    "Description": "The DNS servers given by DHCP",
+                    "Computed": true,
+                    "ConfigImplicitMode": "Attr",
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  },
+                  "family": {
+                    "Type": "String",
+                    "Description": "IP address family",
+                    "Computed": true
+                  },
+                  "gateway": {
+                    "Type": "String",
+                    "Description": "Gateway address given by DHCP",
+                    "Computed": true
+                  }
+                }
+              }
+            },
+            "name": {
+              "Type": "String",
+              "Description": "A valid name for the network",
+              "Computed": true
+            },
+            "servers": {
+              "Type": "Set",
+              "Description": "A list of attached servers",
+              "Computed": true,
+              "IsBlock": true,
+              "ConfigImplicitMode": "ComputedBlock",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "id": {
+                    "Type": "String",
+                    "Description": "The UUID of the server",
+                    "Computed": true
+                  },
+                  "title": {
+                    "Type": "String",
+                    "Description": "The short description of the server",
+                    "Computed": true
+                  }
+                }
+              }
+            },
+            "type": {
+              "Type": "String",
+              "Description": "The network type",
+              "Computed": true
+            },
+            "zone": {
+              "Type": "String",
+              "Description": "The zone the network is in",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "zone": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "If specified, this data source will return only networks from this zone"
+      }
+    },
+    "upcloud_tags": {
+      "tags": {
+        "Type": "Set",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "description": {
+              "Type": "String",
+              "Description": "Free form text representing the meaning of the tag",
+              "Computed": true
+            },
+            "name": {
+              "Type": "String",
+              "Description": "The value representing the tag",
+              "Computed": true
+            },
+            "servers": {
+              "Type": "Set",
+              "Description": "A collection of servers that have been assigned the tag",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      }
+    },
+    "upcloud_zone": {
+      "description": {
+        "Type": "String",
+        "Description": "Meaningful text describing the zone",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Unique lablel for the zone"
+      },
+      "public": {
+        "Type": "Bool",
+        "Description": "Indicates whether the zone is public",
+        "Computed": true
+      }
+    },
+    "upcloud_zones": {
+      "filter_type": {
+        "Type": "String",
+        "Optional": true,
+        "Default": {
+          "Type": "string",
+          "Value": "all"
+        }
+      },
+      "zone_ids": {
+        "Type": "Set",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      }
+    }
+  }
+}

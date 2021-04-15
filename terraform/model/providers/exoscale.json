@@ -3,13 +3,13 @@
   ".sdk_type": "terraform-plugin-sdk-v1",
   "name": "exoscale",
   "type": "provider",
-  "version": "v0.17.1",
+  "version": "v0.23.0",
   "provider": {
     "compute_endpoint": {
       "Type": "String",
       "Optional": true,
       "Description": "Exoscale CloudStack API endpoint (by default: https://api.exoscale.com/v1)",
-      "DefaultFunc": "MENV(EXOSCALE_ENDPOINT,EXOSCALE_COMPUTE_ENDPOINT,CLOUDSTACK_ENDPOINT)"
+      "DefaultFunc": "MENV(EXOSCALE_ENDPOINT,EXOSCALE_API_ENDPOINT,EXOSCALE_COMPUTE_ENDPOINT,CLOUDSTACK_ENDPOINT)"
     },
     "config": {
       "Type": "String",
@@ -205,6 +205,10 @@
         "Type": "String",
         "Computed": true
       },
+      "reverse_dns": {
+        "Type": "String",
+        "Optional": true
+      },
       "security_group_ids": {
         "Type": "Set",
         "Optional": true,
@@ -363,6 +367,15 @@
         "update",
         "delete"
       ],
+      "affinity_group_ids": {
+        "Type": "Set",
+        "Optional": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
       "description": {
         "Type": "String",
         "Optional": true
@@ -371,6 +384,23 @@
         "Type": "Int",
         "Optional": true,
         "Computed": true
+      },
+      "elastic_ip_ids": {
+        "Type": "Set",
+        "Optional": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "ipv6": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
       },
       "key_pair": {
         "Type": "String",
@@ -480,9 +510,23 @@
         "Optional": true,
         "Description": "Time in seconds before considering a healthcheck probing failed"
       },
+      "healthcheck_tls_skip_verify": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Healthcheck probe disable TLS verification"
+      },
+      "healthcheck_tls_sni": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Healthcheck probe set server name for TLS SNI"
+      },
       "ip_address": {
         "Type": "String",
         "Computed": true
+      },
+      "reverse_dns": {
+        "Type": "String",
+        "Optional": true
       },
       "tags": {
         "Type": "Map",
@@ -680,6 +724,10 @@
                 "Value": "5"
               }
             },
+            "tls_sni": {
+              "Type": "String",
+              "Optional": true
+            },
             "uri": {
               "Type": "String",
               "Optional": true
@@ -782,7 +830,8 @@
         "Type": "String",
         "Optional": true,
         "ConflictsWith": [
-          "user_security_group"
+          "user_security_group",
+          "user_security_group_id"
         ]
       },
       "description": {
@@ -1025,6 +1074,160 @@
         ]
       }
     },
+    "exoscale_sks_cluster": {
+      "__timeouts__": [
+        "create",
+        "read",
+        "update",
+        "delete"
+      ],
+      "addons": {
+        "Type": "Set",
+        "Optional": true,
+        "Computed": true,
+        "DefaultFunc": "UNKNOWN",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "cni": {
+        "Type": "String",
+        "Optional": true,
+        "Default": {
+          "Type": "string",
+          "Value": "calico"
+        }
+      },
+      "created_at": {
+        "Type": "String",
+        "Computed": true
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true
+      },
+      "endpoint": {
+        "Type": "String",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true
+      },
+      "nodepools": {
+        "Type": "Set",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "service_level": {
+        "Type": "String",
+        "Optional": true,
+        "Default": {
+          "Type": "string",
+          "Value": "pro"
+        }
+      },
+      "state": {
+        "Type": "String",
+        "Computed": true
+      },
+      "version": {
+        "Type": "String",
+        "Optional": true,
+        "Default": {
+          "Type": "string",
+          "Value": "1.20.3"
+        }
+      },
+      "zone": {
+        "Type": "String",
+        "Required": true
+      }
+    },
+    "exoscale_sks_nodepool": {
+      "__timeouts__": [
+        "create",
+        "read",
+        "update",
+        "delete"
+      ],
+      "anti_affinity_group_ids": {
+        "Type": "Set",
+        "Optional": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "cluster_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "created_at": {
+        "Type": "String",
+        "Computed": true
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true
+      },
+      "disk_size": {
+        "Type": "Int",
+        "Optional": true,
+        "Default": {
+          "Type": "int",
+          "Value": "50"
+        }
+      },
+      "instance_pool_id": {
+        "Type": "String",
+        "Computed": true
+      },
+      "instance_type": {
+        "Type": "String",
+        "Required": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true
+      },
+      "security_group_ids": {
+        "Type": "Set",
+        "Optional": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "size": {
+        "Type": "Int",
+        "Required": true
+      },
+      "state": {
+        "Type": "String",
+        "Computed": true
+      },
+      "template_id": {
+        "Type": "String",
+        "Computed": true
+      },
+      "version": {
+        "Type": "String",
+        "Computed": true
+      },
+      "zone": {
+        "Type": "String",
+        "Required": true
+      }
+    },
     "exoscale_ssh_keypair": {
       "__timeouts__": [
         "create",
@@ -1050,6 +1253,24 @@
     }
   },
   "data-sources": {
+    "exoscale_affinity": {
+      "id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "ID of the Affinity Group",
+        "ConflictsWith": [
+          "name"
+        ]
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Name of the Affinity Group",
+        "ConflictsWith": [
+          "id"
+        ]
+      }
+    },
     "exoscale_compute": {
       "cpu": {
         "Type": "Int",
@@ -1332,6 +1553,102 @@
             }
           }
         }
+      }
+    },
+    "exoscale_network": {
+      "description": {
+        "Type": "String",
+        "Computed": true
+      },
+      "end_ip": {
+        "Type": "String",
+        "Computed": true
+      },
+      "id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "ID of the network",
+        "ConflictsWith": [
+          "name"
+        ]
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Name of the network",
+        "ConflictsWith": [
+          "id"
+        ]
+      },
+      "netmask": {
+        "Type": "String",
+        "Computed": true
+      },
+      "start_ip": {
+        "Type": "String",
+        "Computed": true
+      },
+      "zone": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the zone"
+      }
+    },
+    "exoscale_nlb": {
+      "created_at": {
+        "Type": "String",
+        "Computed": true
+      },
+      "description": {
+        "Type": "String",
+        "Computed": true
+      },
+      "id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "ID of the Network Load Balancer",
+        "ConflictsWith": [
+          "name"
+        ]
+      },
+      "ip_address": {
+        "Type": "String",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Name of the Network Load Balancer",
+        "ConflictsWith": [
+          "id"
+        ]
+      },
+      "state": {
+        "Type": "String",
+        "Computed": true
+      },
+      "zone": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Zone of the Network Load Balancer"
+      }
+    },
+    "exoscale_security_group": {
+      "id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "ID of the Security Group",
+        "ConflictsWith": [
+          "name"
+        ]
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Name of the Security Group",
+        "ConflictsWith": [
+          "id"
+        ]
       }
     }
   }

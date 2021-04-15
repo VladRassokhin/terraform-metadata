@@ -3,19 +3,19 @@
   ".sdk_type": "terraform-plugin-sdk-v1",
   "name": "profitbricks",
   "type": "provider",
-  "version": "v1.5.3",
+  "version": "v1.6.5",
   "provider": {
     "endpoint": {
       "Type": "String",
       "Optional": true,
       "Description": "ProfitBricks REST API URL.",
-      "DefaultFunc": "ENV(PROFITBRICKS_API_URL)"
+      "DefaultFunc": "ENV(IONOS_API_URL)"
     },
     "password": {
       "Type": "String",
       "Optional": true,
       "Description": "ProfitBricks password for API operations. If token is provided, token is preferred",
-      "DefaultFunc": "ENV(PROFITBRICKS_PASSWORD)",
+      "DefaultFunc": "ENV(IONOS_PASSWORD)",
       "ConflictsWith": [
         "token"
       ]
@@ -32,7 +32,7 @@
     "token": {
       "Type": "String",
       "Optional": true,
-      "Description": "Profitbricks bearer token for API operations.",
+      "Description": "ProfitBricks bearer token for API operations.",
       "DefaultFunc": "ENV(PROFITBRICKS_TOKEN)",
       "ConflictsWith": [
         "username",
@@ -43,13 +43,41 @@
       "Type": "String",
       "Optional": true,
       "Description": "ProfitBricks username for API operations. If token is provided, token is preferred",
-      "DefaultFunc": "ENV(PROFITBRICKS_USERNAME)",
+      "DefaultFunc": "ENV(IONOS_USERNAME)",
       "ConflictsWith": [
         "token"
       ]
     }
   },
   "resources": {
+    "profitbricks_backup_unit": {
+      "__timeouts__": [
+        "create",
+        "update",
+        "delete",
+        "default"
+      ],
+      "email": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The e-mail address you want assigned to the backup unit."
+      },
+      "login": {
+        "Type": "String",
+        "Description": "The login associated with the backup unit. Derived from the contract number",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Alphanumeric name you want assigned to the backup unit."
+      },
+      "password": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The password you want assigned to the backup unit."
+      }
+    },
     "profitbricks_datacenter": {
       "__timeouts__": [
         "create",
@@ -348,6 +376,16 @@
         "Required": true,
         "Description": "The desired kubernetes version"
       },
+      "lans": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "A list of Local Area Networks the node pool should be part of",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "Int"
+        }
+      },
       "maintenance_window": {
         "Type": "List",
         "Optional": true,
@@ -381,6 +419,16 @@
         "Required": true,
         "Description": "The number of nodes in this node pool"
       },
+      "public_ips": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "A list of fixed IPs",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
       "ram_size": {
         "Type": "Int",
         "Required": true,
@@ -409,6 +457,10 @@
         "Required": true
       },
       "name": {
+        "Type": "String",
+        "Optional": true
+      },
+      "pcc": {
         "Type": "String",
         "Optional": true
       },
@@ -486,6 +538,10 @@
         "Type": "Int",
         "Required": true
       },
+      "mac": {
+        "Type": "String",
+        "Computed": true
+      },
       "name": {
         "Type": "String",
         "Optional": true
@@ -497,6 +553,111 @@
       "server_id": {
         "Type": "String",
         "Required": true
+      }
+    },
+    "profitbricks_private_crossconnect": {
+      "__timeouts__": [
+        "create",
+        "update",
+        "delete",
+        "default"
+      ],
+      "connectable_datacenters": {
+        "Type": "List",
+        "Description": "A list containing all the connectable datacenters",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "id": {
+              "Type": "String",
+              "Description": "The UUID of the connectable datacenter",
+              "Computed": true
+            },
+            "location": {
+              "Type": "String",
+              "Description": "The physical location of the connectable datacenter",
+              "Computed": true
+            },
+            "name": {
+              "Type": "String",
+              "Description": "The name of the connectable datacenter",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The desired description for the private cross-connect"
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The desired name for the private cross-connect"
+      },
+      "peers": {
+        "Type": "List",
+        "Description": "A list containing the details of all datacenter cross-connected through this private cross-connect",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "datacenter_id": {
+              "Type": "String",
+              "Description": "The id of the cross-connected datacenter",
+              "Computed": true
+            },
+            "datacenter_name": {
+              "Type": "String",
+              "Description": "The name of the cross-connected datacenter",
+              "Computed": true
+            },
+            "lan_id": {
+              "Type": "String",
+              "Description": "The id of the cross-connected LAN",
+              "Computed": true
+            },
+            "lan_name": {
+              "Type": "String",
+              "Description": "The name of the cross-connected LAN",
+              "Computed": true
+            },
+            "location": {
+              "Type": "String",
+              "Description": "The location of the cross-connected datacenter",
+              "Computed": true
+            }
+          }
+        }
+      }
+    },
+    "profitbricks_s3_key": {
+      "__timeouts__": [
+        "create",
+        "update",
+        "delete",
+        "default"
+      ],
+      "active": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether this key should be active or not."
+      },
+      "secret_key": {
+        "Type": "String",
+        "Description": "The S3 Secret key.",
+        "Computed": true
+      },
+      "user_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The ID of the user that owns the key."
       }
     },
     "profitbricks_server": {
@@ -659,6 +820,10 @@
             "lan": {
               "Type": "Int",
               "Required": true
+            },
+            "mac": {
+              "Type": "String",
+              "Computed": true
             },
             "name": {
               "Type": "String",
@@ -954,6 +1119,254 @@
         "Optional": true
       }
     },
+    "profitbricks_k8s_cluster": {
+      "__timeouts__": [
+        "create",
+        "update",
+        "delete",
+        "default"
+      ],
+      "id": {
+        "Type": "String",
+        "Optional": true
+      },
+      "k8s_version": {
+        "Type": "String",
+        "Computed": true
+      },
+      "kube_config": {
+        "Type": "String",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true
+      },
+      "node_pools": {
+        "Type": "List",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "state": {
+        "Type": "String",
+        "Computed": true
+      }
+    },
+    "profitbricks_k8s_node_pool": {
+      "__timeouts__": [
+        "create",
+        "update",
+        "delete",
+        "default"
+      ],
+      "annotations": {
+        "Type": "Map",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "auto_scaling": {
+        "Type": "List",
+        "Description": "The range defining the minimum and maximum number of worker nodes that the managed node group can scale in",
+        "Computed": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "max_node_count": {
+              "Type": "Int",
+              "Required": true,
+              "Description": "The maximum number of worker nodes that the node pool can scale to. Should be greater than min_node_count"
+            },
+            "min_node_count": {
+              "Type": "Int",
+              "Required": true,
+              "Description": "The minimum number of worker nodes the node pool can scale down to. Should be less than max_node_count"
+            }
+          }
+        }
+      },
+      "availability_zone": {
+        "Type": "String",
+        "Description": "The compute availability zone in which the nodes should exist",
+        "Computed": true
+      },
+      "available_upgrade_versions": {
+        "Type": "List",
+        "Description": "A list of kubernetes versions available for upgrade",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "cores_count": {
+        "Type": "Int",
+        "Description": "CPU cores count",
+        "Computed": true
+      },
+      "cpu_family": {
+        "Type": "String",
+        "Description": "CPU Family",
+        "Computed": true
+      },
+      "datacenter_id": {
+        "Type": "String",
+        "Description": "The UUID of the VDC",
+        "Computed": true
+      },
+      "id": {
+        "Type": "String",
+        "Optional": true
+      },
+      "k8s_cluster_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The UUID of an existing kubernetes cluster"
+      },
+      "k8s_version": {
+        "Type": "String",
+        "Description": "The kubernetes version",
+        "Computed": true
+      },
+      "labels": {
+        "Type": "Map",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "lans": {
+        "Type": "List",
+        "Description": "A list of Local Area Networks the node pool should be part of",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "Int"
+        }
+      },
+      "maintenance_window": {
+        "Type": "List",
+        "Description": "A maintenance window comprise of a day of the week and a time for maintenance to be allowed",
+        "Computed": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "day_of_the_week": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Day of the week when maintenance is allowed"
+            },
+            "time": {
+              "Type": "String",
+              "Required": true,
+              "Description": "A clock time in the day when maintenance is allowed"
+            }
+          }
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The desired name for the node pool"
+      },
+      "node_count": {
+        "Type": "Int",
+        "Description": "The number of nodes in this node pool",
+        "Computed": true
+      },
+      "public_ips": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "A list of fixed IPs",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "ram_size": {
+        "Type": "Int",
+        "Description": "The amount of RAM in MB",
+        "Computed": true
+      },
+      "state": {
+        "Type": "String",
+        "Computed": true
+      },
+      "storage_size": {
+        "Type": "Int",
+        "Computed": true
+      },
+      "storage_type": {
+        "Type": "String",
+        "Description": "Storage type to use",
+        "Computed": true
+      }
+    },
+    "profitbricks_lan": {
+      "__timeouts__": [
+        "create",
+        "update",
+        "delete",
+        "default"
+      ],
+      "datacenter_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "id": {
+        "Type": "String",
+        "Optional": true
+      },
+      "ip_failover": {
+        "Type": "List",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "ip": {
+              "Type": "String",
+              "Computed": true
+            },
+            "nic_uuid": {
+              "Type": "String",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true
+      },
+      "pcc": {
+        "Type": "String",
+        "Computed": true
+      },
+      "public": {
+        "Type": "Bool",
+        "Computed": true
+      }
+    },
     "profitbricks_location": {
       "__timeouts__": [
         "create",
@@ -970,6 +1383,80 @@
         "Optional": true
       }
     },
+    "profitbricks_private_crossconnect": {
+      "__timeouts__": [
+        "create",
+        "update",
+        "delete",
+        "default"
+      ],
+      "connectable_datacenters": {
+        "Type": "List",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "location": {
+              "Type": "String",
+              "Computed": true
+            },
+            "name": {
+              "Type": "String",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true
+      },
+      "id": {
+        "Type": "String",
+        "Optional": true
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true
+      },
+      "peers": {
+        "Type": "List",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "datacenter_id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "datacenter_name": {
+              "Type": "String",
+              "Computed": true
+            },
+            "lan_id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "lan_name": {
+              "Type": "String",
+              "Computed": true
+            },
+            "location": {
+              "Type": "String",
+              "Computed": true
+            }
+          }
+        }
+      }
+    },
     "profitbricks_resource": {
       "__timeouts__": [
         "create",
@@ -984,6 +1471,349 @@
       "resource_type": {
         "Type": "String",
         "Optional": true
+      }
+    },
+    "profitbricks_server": {
+      "__timeouts__": [
+        "create",
+        "update",
+        "delete",
+        "default"
+      ],
+      "availability_zone": {
+        "Type": "String",
+        "Computed": true
+      },
+      "boot_cdrom": {
+        "Type": "String",
+        "Computed": true
+      },
+      "boot_volume": {
+        "Type": "String",
+        "Computed": true
+      },
+      "cdroms": {
+        "Type": "List",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "cpu_hot_plug": {
+              "Type": "Bool",
+              "Computed": true
+            },
+            "cpu_hot_unplug": {
+              "Type": "Bool",
+              "Computed": true
+            },
+            "description": {
+              "Type": "String",
+              "Computed": true
+            },
+            "disc_scsi_hot_plug": {
+              "Type": "Bool",
+              "Computed": true
+            },
+            "disc_scsi_hot_unplug": {
+              "Type": "Bool",
+              "Computed": true
+            },
+            "disc_virtio_hot_plug": {
+              "Type": "Bool",
+              "Computed": true
+            },
+            "disc_virtio_hot_unplug": {
+              "Type": "Bool",
+              "Computed": true
+            },
+            "id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "image_aliases": {
+              "Type": "List",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "image_type": {
+              "Type": "String",
+              "Computed": true
+            },
+            "licence_type": {
+              "Type": "String",
+              "Computed": true
+            },
+            "location": {
+              "Type": "String",
+              "Computed": true
+            },
+            "name": {
+              "Type": "String",
+              "Computed": true
+            },
+            "nic_hot_plug": {
+              "Type": "Bool",
+              "Computed": true
+            },
+            "nic_hot_unplug": {
+              "Type": "Bool",
+              "Computed": true
+            },
+            "public": {
+              "Type": "Bool",
+              "Computed": true
+            },
+            "ram_hot_plug": {
+              "Type": "Bool",
+              "Computed": true
+            },
+            "ram_hot_unplug": {
+              "Type": "Bool",
+              "Computed": true
+            },
+            "size": {
+              "Type": "Float",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "cores": {
+        "Type": "Int",
+        "Computed": true
+      },
+      "cpu_family": {
+        "Type": "String",
+        "Computed": true
+      },
+      "datacenter_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "id": {
+        "Type": "String",
+        "Optional": true
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true
+      },
+      "nics": {
+        "Type": "List",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "dhcp": {
+              "Type": "Bool",
+              "Computed": true
+            },
+            "firewall_active": {
+              "Type": "Bool",
+              "Computed": true
+            },
+            "firewall_rules": {
+              "Type": "List",
+              "Computed": true,
+              "IsBlock": true,
+              "ConfigImplicitMode": "ComputedBlock",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "icmp_code": {
+                    "Type": "Int",
+                    "Computed": true
+                  },
+                  "icmp_type": {
+                    "Type": "Int",
+                    "Computed": true
+                  },
+                  "id": {
+                    "Type": "String",
+                    "Computed": true
+                  },
+                  "name": {
+                    "Type": "String",
+                    "Computed": true
+                  },
+                  "port_range_end": {
+                    "Type": "Int",
+                    "Computed": true
+                  },
+                  "port_range_start": {
+                    "Type": "Int",
+                    "Computed": true
+                  },
+                  "protocol": {
+                    "Type": "String",
+                    "Computed": true
+                  },
+                  "source_ip": {
+                    "Type": "String",
+                    "Computed": true
+                  },
+                  "source_mac": {
+                    "Type": "String",
+                    "Computed": true
+                  },
+                  "target_ip": {
+                    "Type": "String",
+                    "Computed": true
+                  }
+                }
+              }
+            },
+            "id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "ips": {
+              "Type": "List",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "lan": {
+              "Type": "Int",
+              "Computed": true
+            },
+            "mac": {
+              "Type": "String",
+              "Computed": true
+            },
+            "name": {
+              "Type": "String",
+              "Computed": true
+            },
+            "nat": {
+              "Type": "Bool",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "ram": {
+        "Type": "Int",
+        "Computed": true
+      },
+      "vm_state": {
+        "Type": "String",
+        "Computed": true
+      },
+      "volumes": {
+        "Type": "List",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "availability_zone": {
+              "Type": "String",
+              "Computed": true
+            },
+            "bus": {
+              "Type": "String",
+              "Computed": true
+            },
+            "cpu_hot_plug": {
+              "Type": "Bool",
+              "Computed": true
+            },
+            "cpu_hot_unplug": {
+              "Type": "Bool",
+              "Computed": true
+            },
+            "device_number": {
+              "Type": "Int",
+              "Computed": true
+            },
+            "disc_scsi_hot_plug": {
+              "Type": "Bool",
+              "Computed": true
+            },
+            "disc_scsi_hot_unplug": {
+              "Type": "Bool",
+              "Computed": true
+            },
+            "disc_virtio_hot_plug": {
+              "Type": "Bool",
+              "Computed": true
+            },
+            "disc_virtio_hot_unplug": {
+              "Type": "Bool",
+              "Computed": true
+            },
+            "id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "image": {
+              "Type": "String",
+              "Computed": true
+            },
+            "image_alias": {
+              "Type": "String",
+              "Computed": true
+            },
+            "image_password": {
+              "Type": "String",
+              "Computed": true
+            },
+            "licence_type": {
+              "Type": "String",
+              "Computed": true
+            },
+            "name": {
+              "Type": "String",
+              "Computed": true
+            },
+            "nic_hot_plug": {
+              "Type": "Bool",
+              "Computed": true
+            },
+            "nic_hot_unplug": {
+              "Type": "Bool",
+              "Computed": true
+            },
+            "ram_hot_plug": {
+              "Type": "Bool",
+              "Computed": true
+            },
+            "ram_hot_unplug": {
+              "Type": "Bool",
+              "Computed": true
+            },
+            "size": {
+              "Type": "Int",
+              "Computed": true
+            },
+            "ssh_keys": {
+              "Type": "List",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "type": {
+              "Type": "String",
+              "Computed": true
+            }
+          }
+        }
       }
     },
     "profitbricks_snapshot": {

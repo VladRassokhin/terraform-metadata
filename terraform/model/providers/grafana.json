@@ -3,13 +3,43 @@
   ".sdk_type": "terraform",
   "name": "grafana",
   "type": "provider",
-  "version": "v1.5.0",
+  "version": "v1.9.0",
   "provider": {
     "auth": {
       "Type": "String",
       "Required": true,
       "Description": "Credentials for accessing the Grafana API.",
       "DefaultFunc": "ENV(GRAFANA_AUTH)"
+    },
+    "ca_cert": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "CA cert bundle for validating the Grafana API's certificate.",
+      "DefaultFunc": "ENV(GRAFANA_CA_CERT)"
+    },
+    "insecure_skip_verify": {
+      "Type": "Bool",
+      "Optional": true,
+      "Description": "Skip TLS certificate verification",
+      "DefaultFunc": "ENV(GRAFANA_INSECURE_SKIP_VERIFY)"
+    },
+    "org_id": {
+      "Type": "Int",
+      "Required": true,
+      "Description": "Organization id for resources",
+      "DefaultFunc": "ENV(GRAFANA_ORG_ID)"
+    },
+    "tls_cert": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "Client TLS cert for accessing the Grafana API.",
+      "DefaultFunc": "ENV(GRAFANA_TLS_CERT)"
+    },
+    "tls_key": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "Client TLS key for accessing the Grafana API.",
+      "DefaultFunc": "ENV(GRAFANA_TLS_KEY)"
     },
     "url": {
       "Type": "String",
@@ -20,6 +50,21 @@
   },
   "resources": {
     "grafana_alert_notification": {
+      "disable_resolve_message": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "frequency": {
+        "Type": "String",
+        "Optional": true,
+        "Default": {
+          "Type": "string"
+        }
+      },
       "is_default": {
         "Type": "Bool",
         "Optional": true,
@@ -32,6 +77,14 @@
         "Type": "String",
         "Required": true
       },
+      "send_reminder": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
       "settings": {
         "Type": "Map",
         "Optional": true
@@ -39,12 +92,21 @@
       "type": {
         "Type": "String",
         "Required": true
+      },
+      "uid": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
       }
     },
     "grafana_dashboard": {
       "config_json": {
         "Type": "String",
         "Required": true
+      },
+      "dashboard_id": {
+        "Type": "Int",
+        "Computed": true
       },
       "folder": {
         "Type": "Int",
@@ -53,6 +115,47 @@
       "slug": {
         "Type": "String",
         "Computed": true
+      }
+    },
+    "grafana_dashboard_permission": {
+      "dashboard_id": {
+        "Type": "Int",
+        "Required": true
+      },
+      "permissions": {
+        "Type": "Set",
+        "Required": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "permission": {
+              "Type": "String",
+              "Required": true
+            },
+            "role": {
+              "Type": "String",
+              "Optional": true
+            },
+            "team_id": {
+              "Type": "Int",
+              "Optional": true,
+              "Default": {
+                "Type": "int",
+                "Value": "-1"
+              }
+            },
+            "user_id": {
+              "Type": "Int",
+              "Optional": true,
+              "Default": {
+                "Type": "int",
+                "Value": "-1"
+              }
+            }
+          }
+        }
       }
     },
     "grafana_data_source": {
@@ -115,15 +218,119 @@
             },
             "auth_type": {
               "Type": "String",
-              "Required": true
+              "Optional": true
+            },
+            "authentication_type": {
+              "Type": "String",
+              "Optional": true
+            },
+            "client_email": {
+              "Type": "String",
+              "Optional": true
+            },
+            "conn_max_lifetime": {
+              "Type": "Int",
+              "Optional": true
             },
             "custom_metrics_namespaces": {
               "Type": "String",
               "Optional": true
             },
+            "default_project": {
+              "Type": "String",
+              "Optional": true
+            },
             "default_region": {
               "Type": "String",
-              "Required": true
+              "Optional": true
+            },
+            "encrypt": {
+              "Type": "String",
+              "Optional": true
+            },
+            "es_version": {
+              "Type": "Int",
+              "Optional": true
+            },
+            "graphite_version": {
+              "Type": "String",
+              "Optional": true
+            },
+            "http_method": {
+              "Type": "String",
+              "Optional": true
+            },
+            "interval": {
+              "Type": "String",
+              "Optional": true
+            },
+            "log_level_field": {
+              "Type": "String",
+              "Optional": true
+            },
+            "log_message_field": {
+              "Type": "String",
+              "Optional": true
+            },
+            "max_idle_conns": {
+              "Type": "Int",
+              "Optional": true
+            },
+            "max_open_conns": {
+              "Type": "Int",
+              "Optional": true
+            },
+            "postgres_version": {
+              "Type": "Int",
+              "Optional": true
+            },
+            "profile": {
+              "Type": "String",
+              "Optional": true
+            },
+            "query_timeout": {
+              "Type": "String",
+              "Optional": true
+            },
+            "ssl_mode": {
+              "Type": "String",
+              "Optional": true
+            },
+            "time_field": {
+              "Type": "String",
+              "Optional": true
+            },
+            "time_interval": {
+              "Type": "String",
+              "Optional": true
+            },
+            "timescaledb": {
+              "Type": "Bool",
+              "Optional": true
+            },
+            "tls_auth": {
+              "Type": "Bool",
+              "Optional": true
+            },
+            "tls_auth_with_ca_cert": {
+              "Type": "Bool",
+              "Optional": true
+            },
+            "tls_skip_verify": {
+              "Type": "Bool",
+              "Optional": true
+            },
+            "token_uri": {
+              "Type": "String",
+              "Optional": true
+            },
+            "tsdb_resolution": {
+              "Type": "String",
+              "Optional": true
+            },
+            "tsdb_version": {
+              "Type": "String",
+              "Optional": true
             }
           }
         }
@@ -149,11 +356,35 @@
           "Info": {
             "access_key": {
               "Type": "String",
-              "Required": true
+              "Optional": true
+            },
+            "basic_auth_password": {
+              "Type": "String",
+              "Optional": true
+            },
+            "password": {
+              "Type": "String",
+              "Optional": true
+            },
+            "private_key": {
+              "Type": "String",
+              "Optional": true
             },
             "secret_key": {
               "Type": "String",
-              "Required": true
+              "Optional": true
+            },
+            "tls_ca_cert": {
+              "Type": "String",
+              "Optional": true
+            },
+            "tls_client_cert": {
+              "Type": "String",
+              "Optional": true
+            },
+            "tls_client_key": {
+              "Type": "String",
+              "Optional": true
             }
           }
         }
@@ -184,6 +415,47 @@
         "Computed": true
       }
     },
+    "grafana_folder_permission": {
+      "folder_uid": {
+        "Type": "String",
+        "Required": true
+      },
+      "permissions": {
+        "Type": "Set",
+        "Required": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "permission": {
+              "Type": "String",
+              "Required": true
+            },
+            "role": {
+              "Type": "String",
+              "Optional": true
+            },
+            "team_id": {
+              "Type": "Int",
+              "Optional": true,
+              "Default": {
+                "Type": "int",
+                "Value": "-1"
+              }
+            },
+            "user_id": {
+              "Type": "Int",
+              "Optional": true,
+              "Default": {
+                "Type": "int",
+                "Value": "-1"
+              }
+            }
+          }
+        }
+      }
+    },
     "grafana_organization": {
       "admin_user": {
         "Type": "String",
@@ -194,7 +466,7 @@
         }
       },
       "admins": {
-        "Type": "List",
+        "Type": "Set",
         "Optional": true,
         "ConfigImplicitMode": "Attr",
         "Elem": {
@@ -211,7 +483,7 @@
         }
       },
       "editors": {
-        "Type": "List",
+        "Type": "Set",
         "Optional": true,
         "ConfigImplicitMode": "Attr",
         "Elem": {
@@ -228,6 +500,21 @@
         "Computed": true
       },
       "viewers": {
+        "Type": "Set",
+        "Optional": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      }
+    },
+    "grafana_team": {
+      "email": {
+        "Type": "String",
+        "Optional": true
+      },
+      "members": {
         "Type": "List",
         "Optional": true,
         "ConfigImplicitMode": "Attr",
@@ -235,6 +522,58 @@
           "Type": "SchemaElements",
           "ElementsType": "String"
         }
+      },
+      "name": {
+        "Type": "String",
+        "Required": true
+      },
+      "team_id": {
+        "Type": "Int",
+        "Computed": true
+      }
+    },
+    "grafana_team_preferences": {
+      "home_dashboard_id": {
+        "Type": "Int",
+        "Optional": true
+      },
+      "team_id": {
+        "Type": "Int",
+        "Required": true
+      },
+      "theme": {
+        "Type": "String",
+        "Optional": true
+      },
+      "timezone": {
+        "Type": "String",
+        "Optional": true
+      }
+    },
+    "grafana_user": {
+      "email": {
+        "Type": "String",
+        "Required": true
+      },
+      "is_admin": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "login": {
+        "Type": "String",
+        "Optional": true
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true
+      },
+      "password": {
+        "Type": "String",
+        "Required": true
       }
     }
   },

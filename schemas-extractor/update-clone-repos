@@ -1,0 +1,79 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+IFS=$'\n\t'
+
+function trim() {
+    local var="$*"
+    # remove leading whitespace characters
+    var="${var#"${var%%[![:space:]]*}"}"
+    # remove trailing whitespace characters
+    var="${var%"${var##*[![:space:]]}"}"
+    printf '%s' "$var"
+}
+
+root_path=$(pwd)
+base_location="$root_path/../../schema-extractor-repos"
+target_repo=""
+logs_path="$root_path/logs"
+out_path="$root_path/schemas"
+
+while getopts ":b:t:" opt; do
+  case "${opt}" in
+    b )
+      base_location="${OPTARG}"
+      ;;
+    t )
+      target_repo="${OPTARG}"
+      ;;
+    \? )
+      echo "oops"
+      ;;
+    : )
+      echo "Invalid Option: -$OPTARG requires an argument" 1>&2
+      exit 1
+      ;;
+  esac
+done
+
+pushd $(dirname "$0") >/dev/null
+
+if [[ "$target_repo" == "" ]]; then
+  from_config=$(cat providers.json)
+  repos=( $(echo $from_config | jq -s -r 'add | [.[].repository] | unique | .[] | select(. == null or contains("__NAME__") | not)') )
+  repos+=("github.com/hashicorp/terraform")
+else
+  repos=( "$target_repo" )
+fi
+
+completed_count=0
+
+echo "*****************************************************************"
+echo "**"
+echo "** Cloning/Updating Repos"
+echo "** Base Path: $base_location"
+echo "** Repos to clone or update: ${#repos[@]}"
+echo "**"
+echo "*****************************************************************"
+
+for repo in "${repos[@]}"; do
+  repo=$(trim "$repo")
+  location="$base_location/$repo"
+
+  if [[ -d "$location" ]]; then
+    echo "Updating repo: $repo"
+    git -C "$location" fetch --tags >/dev/null 2>&1 || echo "ERROR: Failed to update '$repo'"
+  else
+    echo "Cloning repo: $repo"
+    git clone --quiet "https://$repo" "$location" >/dev/null 2>&1
+  fi
+  completed_count=$((completed_count + 1))
+  echo "$completed_count of ${#repos[@]} completed."
+  echo ""
+done
+
+echo "********************************"
+echo "** All Repos Updated or Cloned *"
+echo "********************************"
+
+popd >/dev/null

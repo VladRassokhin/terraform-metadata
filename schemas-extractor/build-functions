@@ -1,0 +1,126 @@
+#!/usr/bin/env bash
+
+. common.sh
+
+config_data="$(cat $root_path/functions.json)"
+
+failures="$out_path/functions-failure.txt"
+
+mkdir -p "$out_path"
+rm -f "$failures"
+touch "$failures"
+
+function process_functions() {
+  name="$1"
+
+  skip_generation="$(jq_get "$name" 'skip_generation' "$config_data")"
+  if [[ $skip_generation == "true" ]]; then
+    return 0
+  fi
+
+  repository="$(jq_get "$name" 'repository' "$config_data")"
+  use_master="$(jq_get "$name" 'use_master' "$config_data")"
+  git_tag="$(jq_get "$name" 'git_tag' "$config_data")"
+
+  location="$base_location/$repository"
+
+  if [[ ! -d "$location" ]]; then
+    echo "$location doesn't exist, skipping"
+    return 1
+  fi
+
+  if output=$(git -C "$location" status --untracked-files=no --porcelain) && [[ -n "$output" ]]; then
+    if [[ -z "${RESET_REPOS:-}" ]]; then
+      mkdir -p "$logs_path"
+      echo "git working copy '$location' is not clear, cannot proceed" | tee "$logs_path/$name.log"
+      echo "$name" >>"$failures"
+      return 2
+    else
+      git -C "$location" reset --hard
+      git -C "$location" clean -fdx
+    fi
+  fi
+
+  pushd "$location" >/dev/null || return
+
+  echo "Preparing $name"
+
+  if [[ "$use_master" == "true" ]]; then
+    echo "Using master"
+    latest="master"
+  else
+    # All tags:
+    echo "Repository newest tags:"
+    git tag -l --sort=-v:refname | head -n 5
+    latest=$(git tag -l --sort=-v:refname | head -n 1)
+
+    if [[ "$git_tag" != "git_tag" ]]; then
+      latest=$git_tag
+    fi
+
+    if [[ -z "$latest" ]]; then
+      echo "There's no tags in $name, will use current state"
+    else
+      echo "Will generate schema for tag '$latest'"
+    fi
+  fi
+
+  [[ -n "$latest" ]] && git checkout -q "$latest"
+
+  if ! git rev-parse HEAD &>/dev/null; then
+    echo "'git rev-parse HEAD' failed, skipping $name"
+    return
+  fi
+
+  revision="$(git describe --tags)"
+  if [[ -n "$latest" ]] && [[ "$revision" != "$latest" ]]; then
+    echo "WARN: 'git describe' and tag mismatch: '$revision' vs '$latest', will use '$latest'"
+    revision="$latest"
+  fi
+
+  if [ -f "$out_path/$name.json" ] && command -v jq &>/dev/null; then
+    current="$(jq -r '.version' "$out_path/$name.json")"
+    echo "Version in existing schema: $current"
+    if [[ "$current" == "$revision" ]]; then
+      echo "Version in existing schema is same as desired, skipping generation"
+      return
+    fi
+  fi
+
+  sdk="builtin"
+  base_file="functions/generate-schema-functions.go"
+  echo "Using sdk: $sdk"
+  echo "Using base file: $base_file"
+
+  rm -rf generate-schema
+  mkdir generate-schema
+  sed \
+    -e "s~__REPOSITORY__~$repository~g" \
+    -e "s~__NAME__~${name}~g" \
+    -e "s~__REVISION__~$revision~g" \
+    -e "s~__SDK__~$sdk~g" \
+    -e "s~__OUT__~$out_path~g" \
+    "$root_path/template/$base_file" \
+    >functions-generate-schema.go
+
+  mkdir -p "$logs_path"
+  log_file="$logs_path/$name.log"
+
+  set +e
+  eval go mod tidy
+  eval go run functions-generate-schema.go 2>&1 | tee "$log_file"
+  ec=$?
+  if [[ $ec -eq 0 ]]; then
+    rm "$log_file"
+  else
+    echo "$1" >>"$failures"
+  fi
+  echo "Finished $1"
+  set -e
+
+  # Revert to previous state
+  [[ -n "$latest" ]] && git checkout --force -q '@{-1}'
+  popd >/dev/null || return
+}
+
+process_functions "functions"

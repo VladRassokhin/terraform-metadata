@@ -1,0 +1,3578 @@
+{
+  ".schema_version": "2",
+  ".sdk_type": "terraform-plugin-sdk-v1",
+  "name": "splunk",
+  "type": "provider",
+  "version": "v1.4.4",
+  "provider": {
+    "auth_token": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "Authentication tokens, also known as JSON Web Tokens (JWT), are a method for authenticating Splunk platform users into the Splunk platform",
+      "DefaultFunc": "ENV(SPLUNK_AUTH_TOKEN)"
+    },
+    "insecure_skip_verify": {
+      "Type": "Bool",
+      "Optional": true,
+      "Description": "insecure skip verification flag",
+      "DefaultFunc": "ENV(SPLUNK_INSECURE_SKIP_VERIFY)"
+    },
+    "password": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "Splunk instance password",
+      "DefaultFunc": "ENV(SPLUNK_PASSWORD)"
+    },
+    "timeout": {
+      "Type": "Int",
+      "Optional": true,
+      "Description": "Timeout when making calls to Splunk server. Defaults to 60 seconds",
+      "DefaultFunc": "ENV(SPLUNK_TIMEOUT)"
+    },
+    "url": {
+      "Type": "String",
+      "Required": true,
+      "Description": "Splunk instance URL",
+      "DefaultFunc": "ENV(SPLUNK_URL)"
+    },
+    "username": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "Splunk instance admin username",
+      "DefaultFunc": "ENV(SPLUNK_USERNAME)"
+    }
+  },
+  "resources": {
+    "splunk_admin_saml_groups": {
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Required. The external group name."
+      },
+      "roles": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Required. List of internal roles assigned to group.",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      }
+    },
+    "splunk_apps_local": {
+      "acl": {
+        "Type": "List",
+        "Optional": true,
+        "Computed": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "app": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The app context for the resource. Required for updating saved search ACL properties. Allowed values are:The name of an app and system",
+              "Computed": true
+            },
+            "can_change_perms": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can change permissions for this object. Defaults to true.",
+              "Computed": true
+            },
+            "can_share_app": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can change sharing to app level. Defaults to true.",
+              "Computed": true
+            },
+            "can_share_global": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can change sharing to system level. Defaults to true.",
+              "Computed": true
+            },
+            "can_share_user": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can change sharing to user level. Defaults to true.",
+              "Computed": true
+            },
+            "can_write": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can edit this object. Defaults to true.",
+              "Computed": true
+            },
+            "owner": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "User name of resource owner. Defaults to the resource creator. Required for updating any knowledge object ACL properties.nobody = All users may access the resource, but write access to the resource might be restricted.",
+              "Computed": true
+            },
+            "read": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Properties that indicate resource read permissions.",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "removable": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates whether an admin or user with sufficient permissions can delete the entity.",
+              "Computed": true
+            },
+            "sharing": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Indicates how the resource is shared. Required for updating any knowledge object ACL properties.app: Shared within a specific appglobal: (Default) Shared globally to all apps.user: Private to a user",
+              "Computed": true
+            },
+            "write": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Properties that indicate write permissions of the resource.",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
+      "auth": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Splunkbase session token for operations like install and update that require login. Use auth or session when installing or updating an app through Splunkbase."
+      },
+      "author": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "For apps posted to Splunkbase, use your Splunk account username. For internal apps, use your full name and contact information.",
+        "Computed": true
+      },
+      "configured": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Custom setup completion indicator.true = Custom app setup complete.false = Custom app setup not complete",
+        "Computed": true
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Short app description also displayed below the app title in Splunk Web Launcher.",
+        "Computed": true
+      },
+      "explicit_appname": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Custom app name. Required when installing an app from a file where filename is set to true."
+      },
+      "filename": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Indicates whether to use the name value as the app source location.true indicates that name is a path to a file to install.false indicates that name is the literal app name and that the app is created from Splunkbase using a template."
+      },
+      "label": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "App name displayed in Splunk Web, from five to 80 characters and excluding the prefix \"Splunk For\".",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Required. Literal app name or path for the file to install, depending on the value of filename.filename = false indicates that name is the literal app name and that the app is created from Splunkbase using a template.filename = true indicates that name is the URL or path to the local .tar, .tgz or .spl file. If name is the Splunkbase URL, set auth or session to authenticate the request. The app folder name cannot include spaces or special characters."
+      },
+      "session": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Login session token for installing or updating an app on Splunkbase. Alternatively, use auth."
+      },
+      "update": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "File-based update indication: true specifies that filename should be used to update an existing app. If not specified, update defaults to false, which indicates that filename should not be used to update an existing app."
+      },
+      "version": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "App version.",
+        "Computed": true
+      },
+      "visible": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Indicates whether the app is visible and navigable from Splunk Web.true = App is visible and navigable.false = App is not visible or navigable.",
+        "Computed": true
+      }
+    },
+    "splunk_authentication_users": {
+      "default_app": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "User default app. Overrides the default app inherited from the user roles. ",
+        "Computed": true
+      },
+      "email": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "User email address.",
+        "Computed": true
+      },
+      "force_change_pass": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Force user to change password indication"
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Required. Unique user login name."
+      },
+      "password": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "User login password."
+      },
+      "realname": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Full user name.",
+        "Computed": true
+      },
+      "restart_background_jobs": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Restart background search job that has not completed when Splunk restarts indication.",
+        "Computed": true
+      },
+      "roles": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Role to assign to this user. At least one existing role is required.",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "tz": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "User timezone.",
+        "Computed": true
+      }
+    },
+    "splunk_authorization_roles": {
+      "capabilities": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "List of capabilities assigned to role.",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "cumulative_realtime_search_jobs_quota": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Maximum number of concurrently running real-time searches that all members of this role can have.",
+        "Computed": true
+      },
+      "cumulative_search_jobs_quota": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Maximum number of concurrently running searches for all role members. Warning message logged when limit is reached.",
+        "Computed": true
+      },
+      "default_app": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Specify the folder name of the default app to use for this role. A user-specific default app overrides this.",
+        "Computed": true
+      },
+      "imported_roles": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Specify a role to import attributes from. To import multiple roles, specify them separately. By default a role imports no other roles. Importing other roles imports all aspects of that role, such as capabilities and allowed indexes to search. In combining multiple roles, the effective value for each attribute is the value with the broadest permissions.nDefault roles: admin, can_delete, power, user. You can specify additional roles created. ",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Required. The name of the user role to create."
+      },
+      "realtime_search_jobs_quota": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Specify the maximum number of concurrent real-time search jobs for this role. This count is independent from the normal search jobs limit.",
+        "Computed": true
+      },
+      "search_disk_quota": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Specifies the maximum disk space in MB that can be used by a user's search jobs. For example, a value of 100 limits this role to 100 MB total.",
+        "Computed": true
+      },
+      "search_filter": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Specify a search string that restricts the scope of searches run by this role. Search results for this role only show events that also match the search string you specify. In the case that a user has multiple roles with different search filters, they are combined with an OR.",
+        "Computed": true
+      },
+      "search_indexes_allowed": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "List of indexes that this role has permissions to search. These may be wildcarded, but the index name must begin with an underscore to match internal indexes.Search indexes available by default include the following. All internal indexes    All non-internal indexes    _audit    _blocksignature    _internal    _thefishbucket    history    main    You can also specify other search indexes added to the server. ",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "search_indexes_default": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "For this role, list of indexes to search when no index is specified. These indexes can be wildcarded, with the exception that '*' does not match internal indexes. To match internal indexes, start with '_'. All internal indexes are represented by '_*'. A user with this role can search other indexes using \"index= \" For example, \"index=special_index\". Search indexes available by default include the following.     All internal indexes    All non-internal indexes    _audit    _blocksignature    _internal    _thefishbucket    history    main    other search indexes added to the server",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "search_jobs_quota": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The maximum number of concurrent searches a user with this role is allowed to run. For users with multiple roles, the maximum quota value among all of the roles applies.",
+        "Computed": true
+      },
+      "search_time_win": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Maximum time span of a search, in seconds. By default, searches are not limited to any specific time window. To override any search time windows from imported roles, set srchTimeWin to '0', as the 'admin' role does.",
+        "Computed": true
+      }
+    },
+    "splunk_configs_conf": {
+      "acl": {
+        "Type": "List",
+        "Optional": true,
+        "Computed": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "app": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The app context for the resource. Required for updating saved search ACL properties. Allowed values are:The name of an app and system",
+              "Computed": true
+            },
+            "can_change_perms": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can change permissions for this object. Defaults to true.",
+              "Computed": true
+            },
+            "can_share_app": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can change sharing to app level. Defaults to true.",
+              "Computed": true
+            },
+            "can_share_global": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can change sharing to system level. Defaults to true.",
+              "Computed": true
+            },
+            "can_share_user": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can change sharing to user level. Defaults to true.",
+              "Computed": true
+            },
+            "can_write": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can edit this object. Defaults to true.",
+              "Computed": true
+            },
+            "owner": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "User name of resource owner. Defaults to the resource creator. Required for updating any knowledge object ACL properties.nobody = All users may access the resource, but write access to the resource might be restricted.",
+              "Computed": true
+            },
+            "read": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Properties that indicate resource read permissions.",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "removable": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates whether an admin or user with sufficient permissions can delete the entity.",
+              "Computed": true
+            },
+            "sharing": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Indicates how the resource is shared. Required for updating any knowledge object ACL properties.app: Shared within a specific appglobal: (Default) Shared globally to all apps.user: Private to a user",
+              "Computed": true
+            },
+            "write": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Properties that indicate write permissions of the resource.",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "A '/' separated string consisting of {conf_file_name}/{stanza_name} ex. props/custom_stanza"
+      },
+      "variables": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "A map of key value pairs for a stanza.",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      }
+    },
+    "splunk_data_ui_views": {
+      "acl": {
+        "Type": "List",
+        "Optional": true,
+        "Computed": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "app": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The app context for the resource. Required for updating saved search ACL properties. Allowed values are:The name of an app and system",
+              "Computed": true
+            },
+            "can_change_perms": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can change permissions for this object. Defaults to true.",
+              "Computed": true
+            },
+            "can_share_app": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can change sharing to app level. Defaults to true.",
+              "Computed": true
+            },
+            "can_share_global": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can change sharing to system level. Defaults to true.",
+              "Computed": true
+            },
+            "can_share_user": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can change sharing to user level. Defaults to true.",
+              "Computed": true
+            },
+            "can_write": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can edit this object. Defaults to true.",
+              "Computed": true
+            },
+            "owner": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "User name of resource owner. Defaults to the resource creator. Required for updating any knowledge object ACL properties.nobody = All users may access the resource, but write access to the resource might be restricted.",
+              "Computed": true
+            },
+            "read": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Properties that indicate resource read permissions.",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "removable": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates whether an admin or user with sufficient permissions can delete the entity.",
+              "Computed": true
+            },
+            "sharing": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Indicates how the resource is shared. Required for updating any knowledge object ACL properties.app: Shared within a specific appglobal: (Default) Shared globally to all apps.user: Private to a user",
+              "Computed": true
+            },
+            "write": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Properties that indicate write permissions of the resource.",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
+      "eai_data": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Dashboard XML definition."
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Dashboard Name."
+      }
+    },
+    "splunk_global_http_event_collector": {
+      "dedicated_io_threads": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Number of threads used by HTTP Input server.",
+        "Computed": true
+      },
+      "disabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Input disabled indicator: 0 = Input Not disabled, 1 = Input disabled.",
+        "Computed": true
+      },
+      "enable_ssl": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enable SSL protocol for HTTP data input. 1 = SSL enabled, 0 = SSL disabled.",
+        "Computed": true
+      },
+      "max_sockets": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Maximum number of simultaneous HTTP connections accepted. Adjusting this value may cause server performance issues and is not generally recommended. Possible values for this setting vary by OS.",
+        "Computed": true
+      },
+      "max_threads": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Maximum number of threads that can be used by active HTTP transactions. Adjusting this value may cause server performance issues and is not generally recommended. Possible values for this setting vary by OS.",
+        "Computed": true
+      },
+      "port": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "HTTP data input IP port.",
+        "Computed": true
+      },
+      "use_deployment_server": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Indicates whether the event collector input writes its configuration to a deployment server repository.When this setting is set to 1 (enabled), the input writes its configuration to the directory specified as repositoryLocation in serverclass.conf.Copy the full contents of the splunk_httpinput app directory to this directory for the configuration to work.When enabled, only the tokens defined in the splunk_httpinput app in this repository are viewable and editable on the API and the Data Inputs page in Splunk Web.When disabled, the input writes its configuration to $SPLUNK_HOME/etc/apps by default.Defaults to 0 (disabled). ",
+        "Computed": true
+      }
+    },
+    "splunk_indexes": {
+      "acl": {
+        "Type": "List",
+        "Optional": true,
+        "Computed": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "app": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The app context for the resource. Required for updating saved search ACL properties. Allowed values are:The name of an app and system",
+              "Computed": true
+            },
+            "can_change_perms": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can change permissions for this object. Defaults to true.",
+              "Computed": true
+            },
+            "can_share_app": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can change sharing to app level. Defaults to true.",
+              "Computed": true
+            },
+            "can_share_global": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can change sharing to system level. Defaults to true.",
+              "Computed": true
+            },
+            "can_share_user": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can change sharing to user level. Defaults to true.",
+              "Computed": true
+            },
+            "can_write": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can edit this object. Defaults to true.",
+              "Computed": true
+            },
+            "owner": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "User name of resource owner. Defaults to the resource creator. Required for updating any knowledge object ACL properties.nobody = All users may access the resource, but write access to the resource might be restricted.",
+              "Computed": true
+            },
+            "read": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Properties that indicate resource read permissions.",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "removable": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates whether an admin or user with sufficient permissions can delete the entity.",
+              "Computed": true
+            },
+            "sharing": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Indicates how the resource is shared. Required for updating any knowledge object ACL properties.app: Shared within a specific appglobal: (Default) Shared globally to all apps.user: Private to a user",
+              "Computed": true
+            },
+            "write": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Properties that indicate write permissions of the resource.",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
+      "block_sign_size": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Controls how many events make up a block for block signatures.\n\t\t\t\tIf this is set to 0, block signing is disabled for this index.\n\t\t\t\tA recommended value is 100.",
+        "Computed": true
+      },
+      "bucket_rebuild_memory_hint": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Suggestion for the bucket rebuild process for the size of the time-series (tsidx) file to make.\n\t\t\t\tCaution: This is an advanced parameter. Inappropriate use of this parameter causes splunkd to not start if rebuild is required. Do not set this parameter unless instructed by Splunk Support.\n\n\t\t\t\tDefault value, auto, varies by the amount of physical RAM on the host\n\n\t\t\t\t- less than 2GB RAM = 67108864 (64MB) tsidx\n\t\t\t\t- 2GB to 8GB RAM = 134217728 (128MB) tsidx\n\t\t\t\t- more than 8GB RAM = 268435456 (256MB) tsidx\n\n\t\t\t\tValues other than \"auto\" must be 16MB-1GB. Highest legal value (of the numerical part) is 4294967295\n\n\t\t\t\tYou can specify the value using a size suffix: \"16777216\" or \"16MB\" are equivalent.",
+        "Computed": true
+      },
+      "cold_path": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "An absolute path that contains the colddbs for the index. The path must be readable and writable. Cold databases are opened as needed when searching. May be defined in terms of a volume definition (see volume section below).\n\t\t\t\tRequired. Splunk software does not start if an index lacks a valid coldPath.",
+        "Computed": true
+      },
+      "cold_to_frozen_dir": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Destination path for the frozen archive. Use as an alternative to a coldToFrozenScript. Splunk software automatically puts frozen buckets in this directory.\n\t\t\t\tBucket freezing policy is as follows:\n\n\t\t\t\t- New style buckets (4.2 and on): removes all files but the rawdata\n\t\t\t\tTo thaw, run splunk rebuild \u003cbucket dir\u003e on the bucket, then move to the thawed directory\n\t\t\t\t- Old style buckets (Pre-4.2): gzip all the .data and .tsidx files\n\t\t\t\tTo thaw, gunzip the zipped files and move the bucket into the thawed directory\n\n\t\t\t\tIf both coldToFrozenDir and coldToFrozenScript are specified, coldToFrozenDir takes precedence",
+        "Computed": true
+      },
+      "cold_to_frozen_script": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Path to the archiving script.\n\t\t\t\tIf your script requires a program to run it (for example, python), specify the program followed by the path. The script must be in $SPLUNK_HOME/bin or one of its subdirectories.\n\n\t\t\t\tSplunk software ships with an example archiving script in $SPLUNK_HOME/bin called coldToFrozenExample.py. DO NOT use this example script directly. It uses a default path, and if modified in place any changes are overwritten on upgrade.\n\n\t\t\t\tIt is best to copy the example script to a new file in bin and modify it for your system. Most importantly, change the default archive path to an existing directory that fits your needs.\n\n\t\t\t\tIf your new script in bin/ is named myColdToFrozen.py, set this key to the following:\n\n\t\t\t\tcoldToFrozenScript = \"$SPLUNK_HOME/bin/python\" \"$SPLUNK_HOME/bin/myColdToFrozen.py\"\n\n\t\t\t\tBy default, the example script has two possible behaviors when archiving:\n\n\t\t\t\t- For buckets created from version 4.2 and on, it removes all files except for rawdata. To thaw: cd to the frozen bucket and type splunk rebuild ., then copy the bucket to thawed for that index. We recommend using the coldToFrozenDir parameter unless you need to perform a more advanced operation upon freezing buckets.\n\t\t\t\t- For older-style buckets, we simply gzip all the .tsidx files. To thaw: cd to the frozen bucket and unzip the tsidx files, then copy the bucket to thawed for that index",
+        "Computed": true
+      },
+      "compress_rawdata": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "This parameter is ignored. The splunkd process always compresses raw data.",
+        "Computed": true
+      },
+      "datatype": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Valid values: (event | metric). Specifies the type of index.",
+        "Computed": true
+      },
+      "enable_online_bucket_repair": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enables asynchronous \"online fsck\" bucket repair, which runs concurrently with Splunk software.\n\t\t\t\tWhen enabled, you do not have to wait until buckets are repaired to start the Splunk platform. However, you might observe a slight performance degratation.",
+        "Computed": true
+      },
+      "frozen_time_period_in_secs": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Number of seconds after which indexed data rolls to frozen. Defaults to 188697600 (6 years).\n\t\t\t\tFreezing data means it is removed from the index. If you need to archive your data, refer to coldToFrozenDir and coldToFrozenScript parameter documentation.",
+        "Computed": true
+      },
+      "home_path": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "An absolute path that contains the hot and warm buckets for the index.\n\t\t\t\tRequired. Splunk software does not start if an index lacks a valid homePath.\n\n\t\t\t\tCaution: The path must be readable and writable.",
+        "Computed": true
+      },
+      "max_bloom_backfill_bucket_age": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Valid values are: Integer[m|s|h|d].If a warm or cold bucket is older than the specified age, do not create or rebuild its bloomfilter. Specify 0 to never rebuild bloomfilters.",
+        "Computed": true
+      },
+      "max_concurrent_optimizes": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The number of concurrent optimize processes that can run against a hot bucket.\n\t\t\t\tThis number should be increased if instructed by Splunk Support. Typically the default value should suffice.",
+        "Computed": true
+      },
+      "max_data_size": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The maximum size in MB for a hot DB to reach before a roll to warm is triggered. Specifying \"auto\" or \"auto_high_volume\" causes Splunk software to autotune this parameter (recommended).Use \"auto_high_volume\" for high volume indexes (such as the main index); otherwise, use \"auto\". A \"high volume index\" would typically be considered one that gets over 10GB of data per day.\n\t\t\t\t- \"auto\" sets the size to 750MB.\n\t\t\t\t- \"auto_high_volume\" sets the size to 10GB on 64-bit, and 1GB on 32-bit systems.\n\n\t\t\t\tAlthough the maximum value you can set this is 1048576 MB, which corresponds to 1 TB, a reasonable number ranges anywhere from 100 - 50000. Any number outside this range should be approved by Splunk Support before proceeding.\n\n\t\t\t\tIf you specify an invalid number or string, maxDataSize is auto-tuned.\n\n\t\t\t\tNote: The precise size of your warm buckets may vary from maxDataSize, due to post-processing and timing issues with the rolling policy.",
+        "Computed": true
+      },
+      "max_hot_buckets": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Maximum hot buckets that can exist per index. Defaults to 3.\n\t\t\t\tWhen maxHotBuckets is exceeded, Splunk software rolls the least recently used (LRU) hot bucket to warm. Both normal hot buckets and quarantined hot buckets count towards this total. This setting operates independently of maxHotIdleSecs, which can also cause hot buckets to roll.",
+        "Computed": true
+      },
+      "max_hot_idle_secs": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Maximum life, in seconds, of a hot bucket. Defaults to 0.\n\t\t\t\tIf a hot bucket exceeds maxHotIdleSecs, Splunk software rolls it to warm. This setting operates independently of maxHotBuckets, which can also cause hot buckets to roll. A value of 0 turns off the idle check (equivalent to INFINITE idle time).",
+        "Computed": true
+      },
+      "max_hot_span_secs": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Upper bound of target maximum timespan of hot/warm buckets in seconds. Defaults to 7776000 seconds (90 days).\n\t\t\t\tNote: If you set this too small, you can get an explosion of hot/warm buckets in the filesystem. The system sets a lower bound implicitly for this parameter at 3600, but this is an advanced parameter that should be set with care and understanding of the characteristics of your data.",
+        "Computed": true
+      },
+      "max_mem_mb": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The amount of memory, expressed in MB, to allocate for buffering a single tsidx file into memory before flushing to disk. Defaults to 5. The default is recommended for all environments.\n\t\t\t\tIMPORTANT: Calculate this number carefully. Setting this number incorrectly may have adverse effects on your systems memory and/or splunkd stability/performance.",
+        "Computed": true
+      },
+      "max_meta_entries": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Sets the maximum number of unique lines in .data files in a bucket, which may help to reduce memory consumption. If set to 0, this setting is ignored (it is treated as infinite).\n\t\t\t\tIf exceeded, a hot bucket is rolled to prevent further increase. If your buckets are rolling due to Strings.data hitting this limit, the culprit may be the punct field in your data. If you do not use punct, it may be best to simply disable this (see props.conf.spec in $SPLUNK_HOME/etc/system/README).\n\n\t\t\t\tThere is a small time delta between when maximum is exceeded and bucket is rolled. This means a bucket may end up with epsilon more lines than specified, but this is not a major concern unless excess is significant.",
+        "Computed": true
+      },
+      "max_time_unreplicated_no_acks": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Upper limit, in seconds, on how long an event can sit in raw slice. Applies only if replication is enabled for this index. Otherwise ignored.\n\t\t\t\tIf there are any acknowledged events sharing this raw slice, this paramater does not apply. In this case, maxTimeUnreplicatedWithAcks applies.\n\n\t\t\t\tHighest legal value is 2147483647. To disable this parameter, set to 0.\n\n\t\t\t\tNote: this is an advanced parameter. Understand the consequences before changing.",
+        "Computed": true
+      },
+      "max_time_unreplicated_with_acks": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Upper limit, in seconds, on how long events can sit unacknowledged in a raw slice. Applies only if you have enabled acks on forwarders and have replication enabled (with clustering).\n\t\t\t\tNote: This is an advanced parameter. Make sure you understand the settings on all forwarders before changing this. This number should not exceed ack timeout configured on any forwarder, and should actually be set to at most half of the minimum value of that timeout. You can find this setting in outputs.conf readTimeout setting under the tcpout stanza.\n\n\t\t\t\tTo disable, set to 0, but this is NOT recommended. Highest legal value is 2147483647.",
+        "Computed": true
+      },
+      "max_total_data_size_mb": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The maximum size of an index (in MB). If an index grows larger than the maximum size, the oldest data is frozen.",
+        "Computed": true
+      },
+      "max_warm_db_count": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The maximum number of warm buckets. If this number is exceeded, the warm bucket/s with the lowest value for their latest times is moved to cold.",
+        "Computed": true
+      },
+      "min_raw_file_sync_secs": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Specify an integer (or \"disable\") for this parameter.\n\t\t\t\tThis parameter sets how frequently splunkd forces a filesystem sync while compressing journal slices.\n\n\t\t\t\tDuring this period, uncompressed slices are left on disk even after they are compressed. Then splunkd forces a filesystem sync of the compressed journal and removes the accumulated uncompressed files.\n\n\t\t\t\tIf 0 is specified, splunkd forces a filesystem sync after every slice completes compressing. Specifying \"disable\" disables syncing entirely: uncompressed slices are removed as soon as compression is complete.\n\n\t\t\t\tNote: Some filesystems are very inefficient at performing sync operations, so only enable this if you are sure it is needed",
+        "Computed": true
+      },
+      "min_stream_group_queue_size": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Minimum size of the queue that stores events in memory before committing them to a tsidx file.\n\t\t\t\tCaution: Do not set this value, except under advice from Splunk Support.",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The name of the index to create."
+      },
+      "partial_service_meta_period": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Related to serviceMetaPeriod. If set, it enables metadata sync every \u003cinteger\u003e seconds, but only for records where the sync can be done efficiently in-place, without requiring a full re-write of the metadata file. Records that require full re-write are be sync'ed at serviceMetaPeriod.\n\t\t\t\tpartialServiceMetaPeriod specifies, in seconds, how frequently it should sync. Zero means that this feature is turned off and serviceMetaPeriod is the only time when metadata sync happens.\n\n\t\t\t\tIf the value of partialServiceMetaPeriod is greater than serviceMetaPeriod, this setting has no effect.\n\n\t\t\t\tBy default it is turned off (zero).",
+        "Computed": true
+      },
+      "process_tracker_service_interval": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Specifies, in seconds, how often the indexer checks the status of the child OS processes it launched to see if it can launch new processes for queued requests. Defaults to 15.\n\t\t\t\tIf set to 0, the indexer checks child process status every second.\n\n\t\t\t\tHighest legal value is 4294967295.",
+        "Computed": true
+      },
+      "quarantine_future_secs": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Events with timestamp of quarantineFutureSecs newer than \"now\" are dropped into quarantine bucket. Defaults to 2592000 (30 days).\n\t\t\t\tThis is a mechanism to prevent main hot buckets from being polluted with fringe events.",
+        "Computed": true
+      },
+      "quarantine_past_secs": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Events with timestamp of quarantinePastSecs older than \"now\" are dropped into quarantine bucket. Defaults to 77760000 (900 days).\n\t\t\t\tThis is a mechanism to prevent the main hot buckets from being polluted with fringe events.",
+        "Computed": true
+      },
+      "raw_chunk_size_bytes": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Target uncompressed size in bytes for individual raw slice in the rawdata journal of the index. Defaults to 131072 (128KB). 0 is not a valid value. If 0 is specified, rawChunkSizeBytes is set to the default value.\n\t\t\t\tNote: rawChunkSizeBytes only specifies a target chunk size. The actual chunk size may be slightly larger by an amount proportional to an individual event size.\n\n\t\t\t\tWARNING: This is an advanced parameter. Only change it if you are instructed to do so by Splunk Support.",
+        "Computed": true
+      },
+      "rep_factor": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Index replication control. This parameter applies to only clustering slaves.\n\t\t\t\tauto = Use the master index replication configuration value.\n\n\t\t\t\t0 = Turn off replication for this index.",
+        "Computed": true
+      },
+      "rotate_period_in_secs": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "How frequently (in seconds) to check if a new hot bucket needs to be created. Also, how frequently to check if there are any warm/cold buckets that should be rolled/frozen.",
+        "Computed": true
+      },
+      "service_meta_period": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Defines how frequently metadata is synced to disk, in seconds. Defaults to 25 (seconds).\n\t\t\t\tYou may want to set this to a higher value if the sum of your metadata file sizes is larger than many tens of megabytes, to avoid the hit on I/O in the indexing fast path.",
+        "Computed": true
+      },
+      "sync_meta": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "When true, a sync operation is called before file descriptor is closed on metadata file updates. This functionality improves integrity of metadata files, especially in regards to operating system crashes/machine failures.\n\t\t\t\tNote: Do not change this parameter without the input of a Splunk Support.",
+        "Computed": true
+      },
+      "thawed_path": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "An absolute path that contains the thawed (resurrected) databases for the index.\n\t\t\t\tCannot be defined in terms of a volume definition.\n\n\t\t\t\tRequired. Splunk software does not start if an index lacks a valid thawedPath.",
+        "Computed": true
+      },
+      "throttle_check_period": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Defines how frequently Splunk software checks for index throttling condition, in seconds. Defaults to 15 (seconds).\n\t\t\t\tNote: Do not change this parameter without the input of Splunk Support.",
+        "Computed": true
+      },
+      "tstats_home_path": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Location to store datamodel acceleration TSIDX data for this index. Restart splunkd after changing this parameter.\n\t\t\t\tIf specified, it must be defined in terms of a volume definition.\n\n\t\t\t\tCaution: Path must be writable.\n\n\t\t\t\tDefault value: volume:_splunk_summaries/$_index_name/tstats",
+        "Computed": true
+      },
+      "warm_to_cold_script": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Path to a script to run when moving data from warm to cold.\n\t\t\t\tThis attribute is supported for backwards compatibility with Splunk software versions older than 4.0. Contact Splunk support if you need help configuring this setting.\n\n\t\t\t\tCaution: Migrating data across filesystems is now handled natively by splunkd. If you specify a script here, the script becomes responsible for moving the event data, and Splunk-native data migration is not used.",
+        "Computed": true
+      }
+    },
+    "splunk_inputs_http_event_collector": {
+      "acl": {
+        "Type": "List",
+        "Optional": true,
+        "Computed": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "app": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The app context for the resource. Required for updating saved search ACL properties. Allowed values are:The name of an app and system",
+              "Computed": true
+            },
+            "can_change_perms": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can change permissions for this object. Defaults to true.",
+              "Computed": true
+            },
+            "can_share_app": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can change sharing to app level. Defaults to true.",
+              "Computed": true
+            },
+            "can_share_global": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can change sharing to system level. Defaults to true.",
+              "Computed": true
+            },
+            "can_share_user": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can change sharing to user level. Defaults to true.",
+              "Computed": true
+            },
+            "can_write": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can edit this object. Defaults to true.",
+              "Computed": true
+            },
+            "owner": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "User name of resource owner. Defaults to the resource creator. Required for updating any knowledge object ACL properties.nobody = All users may access the resource, but write access to the resource might be restricted.",
+              "Computed": true
+            },
+            "read": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Properties that indicate resource read permissions.",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "removable": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates whether an admin or user with sufficient permissions can delete the entity.",
+              "Computed": true
+            },
+            "sharing": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Indicates how the resource is shared. Required for updating any knowledge object ACL properties.app: Shared within a specific appglobal: (Default) Shared globally to all apps.user: Private to a user",
+              "Computed": true
+            },
+            "write": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Properties that indicate write permissions of the resource.",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
+      "disabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Input disabled indicator: 0 = Input Not disabled, 1 = Input disabled",
+        "Computed": true
+      },
+      "host": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Default host value for events with this token",
+        "Computed": true
+      },
+      "index": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Index to store generated events",
+        "Computed": true
+      },
+      "indexes": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Set of indexes allowed for events with this token.",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Required. Token name (inputs.conf key)"
+      },
+      "source": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Default source for events with this token",
+        "Computed": true
+      },
+      "sourcetype": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Default sourcetype for events with this token",
+        "Computed": true
+      },
+      "token": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Token value for sending data to collector/event endpoint.",
+        "Computed": true
+      },
+      "use_ack": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Indexer acknowledgement for this token: 0 = disabled, 1 = enabled",
+        "Computed": true
+      }
+    },
+    "splunk_inputs_monitor": {
+      "acl": {
+        "Type": "List",
+        "Optional": true,
+        "Computed": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "app": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The app context for the resource. Required for updating saved search ACL properties. Allowed values are:The name of an app and system",
+              "Computed": true
+            },
+            "can_change_perms": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can change permissions for this object. Defaults to true.",
+              "Computed": true
+            },
+            "can_share_app": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can change sharing to app level. Defaults to true.",
+              "Computed": true
+            },
+            "can_share_global": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can change sharing to system level. Defaults to true.",
+              "Computed": true
+            },
+            "can_share_user": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can change sharing to user level. Defaults to true.",
+              "Computed": true
+            },
+            "can_write": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can edit this object. Defaults to true.",
+              "Computed": true
+            },
+            "owner": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "User name of resource owner. Defaults to the resource creator. Required for updating any knowledge object ACL properties.nobody = All users may access the resource, but write access to the resource might be restricted.",
+              "Computed": true
+            },
+            "read": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Properties that indicate resource read permissions.",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "removable": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates whether an admin or user with sufficient permissions can delete the entity.",
+              "Computed": true
+            },
+            "sharing": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Indicates how the resource is shared. Required for updating any knowledge object ACL properties.app: Shared within a specific appglobal: (Default) Shared globally to all apps.user: Private to a user",
+              "Computed": true
+            },
+            "write": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Properties that indicate write permissions of the resource.",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
+      "blacklist": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Specify a regular expression for a file path. The file path that matches this regular expression is not indexed.",
+        "Computed": true
+      },
+      "crc_salt": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "A string that modifies the file tracking identity for files in this input. The magic value \u003cSOURCE\u003e invokes special behavior (see admin documentation).",
+        "Computed": true
+      },
+      "disabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Indicates if input monitoring is disabled.",
+        "Computed": true
+      },
+      "follow_tail": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "If set to true, files that are seen for the first time is read from the end.",
+        "Computed": true
+      },
+      "host": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The value to populate in the host field for events from this data input.",
+        "Computed": true
+      },
+      "host_regex": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Specify a regular expression for a file path. If the path for a file matches this regular expression, the captured value is used to populate the host field for events from this data input. The regular expression must have one capture group.",
+        "Computed": true
+      },
+      "host_segment": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Use the specified slash-separate segment of the filepath as the host field value.",
+        "Computed": true
+      },
+      "ignore_older_than": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Specify a time value. If the modification time of a file being monitored falls outside of this rolling time window, the file is no longer being monitored.",
+        "Computed": true
+      },
+      "index": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Which index events from this input should be stored in. Defaults to default.",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The file or directory path to monitor on the system."
+      },
+      "recursive": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Setting this to false prevents monitoring of any subdirectories encountered within this data input.",
+        "Computed": true
+      },
+      "rename_source": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The value to populate in the source field for events from this data input. The same source should not be used for multiple data inputs.",
+        "Computed": true
+      },
+      "sourcetype": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The value to populate in the sourcetype field for incoming events.",
+        "Computed": true
+      },
+      "time_before_close": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "When Splunk software reaches the end of a file that is being read, the file is kept open for a minimum of the number of seconds specified in this value. After this period has elapsed, the file is checked again for more data.",
+        "Computed": true
+      },
+      "whitelist": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Specify a regular expression for a file path. Only file paths that match this regular expression are indexed.",
+        "Computed": true
+      }
+    },
+    "splunk_inputs_script": {
+      "acl": {
+        "Type": "List",
+        "Optional": true,
+        "Computed": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "app": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The app context for the resource. Required for updating saved search ACL properties. Allowed values are:The name of an app and system",
+              "Computed": true
+            },
+            "can_change_perms": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can change permissions for this object. Defaults to true.",
+              "Computed": true
+            },
+            "can_share_app": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can change sharing to app level. Defaults to true.",
+              "Computed": true
+            },
+            "can_share_global": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can change sharing to system level. Defaults to true.",
+              "Computed": true
+            },
+            "can_share_user": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can change sharing to user level. Defaults to true.",
+              "Computed": true
+            },
+            "can_write": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can edit this object. Defaults to true.",
+              "Computed": true
+            },
+            "owner": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "User name of resource owner. Defaults to the resource creator. Required for updating any knowledge object ACL properties.nobody = All users may access the resource, but write access to the resource might be restricted.",
+              "Computed": true
+            },
+            "read": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Properties that indicate resource read permissions.",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "removable": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates whether an admin or user with sufficient permissions can delete the entity.",
+              "Computed": true
+            },
+            "sharing": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Indicates how the resource is shared. Required for updating any knowledge object ACL properties.app: Shared within a specific appglobal: (Default) Shared globally to all apps.user: Private to a user",
+              "Computed": true
+            },
+            "write": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Properties that indicate write permissions of the resource.",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
+      "disabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Specifies whether the input script is disabled.",
+        "Computed": true
+      },
+      "host": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Sets the host for events from this input. Defaults to whatever host sent the event.",
+        "Computed": true
+      },
+      "index": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Sets the index for events from this input. Defaults to the main index.",
+        "Computed": true
+      },
+      "interval": {
+        "Type": "Int",
+        "Required": true,
+        "Description": "Specify an integer or cron schedule. This parameter specifies how often to execute the specified script, in seconds or a valid cron schedule. If you specify a cron schedule, the script is not executed on start-up."
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Specify the name of the scripted input."
+      },
+      "passauth": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "User to run the script as. If you provide a username, Splunk software generates an auth token for that user and passes it to the script.",
+        "Computed": true
+      },
+      "rename_source": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Specify a new name for the source field for the script.",
+        "Computed": true
+      },
+      "source": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Sets the source key/field for events from this input. Defaults to the input file path.",
+        "Computed": true
+      },
+      "sourcetype": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Sets the sourcetype key/field for events from this input.",
+        "Computed": true
+      }
+    },
+    "splunk_inputs_tcp_cooked": {
+      "acl": {
+        "Type": "List",
+        "Optional": true,
+        "Computed": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "app": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The app context for the resource. Required for updating saved search ACL properties. Allowed values are:The name of an app and system",
+              "Computed": true
+            },
+            "can_change_perms": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can change permissions for this object. Defaults to true.",
+              "Computed": true
+            },
+            "can_share_app": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can change sharing to app level. Defaults to true.",
+              "Computed": true
+            },
+            "can_share_global": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can change sharing to system level. Defaults to true.",
+              "Computed": true
+            },
+            "can_share_user": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can change sharing to user level. Defaults to true.",
+              "Computed": true
+            },
+            "can_write": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can edit this object. Defaults to true.",
+              "Computed": true
+            },
+            "owner": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "User name of resource owner. Defaults to the resource creator. Required for updating any knowledge object ACL properties.nobody = All users may access the resource, but write access to the resource might be restricted.",
+              "Computed": true
+            },
+            "read": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Properties that indicate resource read permissions.",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "removable": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates whether an admin or user with sufficient permissions can delete the entity.",
+              "Computed": true
+            },
+            "sharing": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Indicates how the resource is shared. Required for updating any knowledge object ACL properties.app: Shared within a specific appglobal: (Default) Shared globally to all apps.user: Private to a user",
+              "Computed": true
+            },
+            "write": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Properties that indicate write permissions of the resource.",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
+      "connection_host": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Valid values: (ip | dns | none)Set the host for the remote server that is sending data.ip sets the host to the IP address of the remote server sending data.dns sets the host to the reverse DNS entry for the IP address of the remote server sending data.none leaves the host as specified in inputs.conf, which is typically the Splunk system hostname.Default value is dns. ",
+        "Computed": true
+      },
+      "disabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Indicates if input is disabled.",
+        "Computed": true
+      },
+      "host": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Host from which the indexer gets data. ",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Required. The port number of this input."
+      },
+      "restrict_to_host": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Allows for restricting this input to only accept data from the host specified here.",
+        "Computed": true
+      }
+    },
+    "splunk_inputs_tcp_raw": {
+      "acl": {
+        "Type": "List",
+        "Optional": true,
+        "Computed": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "app": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The app context for the resource. Required for updating saved search ACL properties. Allowed values are:The name of an app and system",
+              "Computed": true
+            },
+            "can_change_perms": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can change permissions for this object. Defaults to true.",
+              "Computed": true
+            },
+            "can_share_app": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can change sharing to app level. Defaults to true.",
+              "Computed": true
+            },
+            "can_share_global": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can change sharing to system level. Defaults to true.",
+              "Computed": true
+            },
+            "can_share_user": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can change sharing to user level. Defaults to true.",
+              "Computed": true
+            },
+            "can_write": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can edit this object. Defaults to true.",
+              "Computed": true
+            },
+            "owner": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "User name of resource owner. Defaults to the resource creator. Required for updating any knowledge object ACL properties.nobody = All users may access the resource, but write access to the resource might be restricted.",
+              "Computed": true
+            },
+            "read": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Properties that indicate resource read permissions.",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "removable": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates whether an admin or user with sufficient permissions can delete the entity.",
+              "Computed": true
+            },
+            "sharing": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Indicates how the resource is shared. Required for updating any knowledge object ACL properties.app: Shared within a specific appglobal: (Default) Shared globally to all apps.user: Private to a user",
+              "Computed": true
+            },
+            "write": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Properties that indicate write permissions of the resource.",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
+      "connection_host": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Valid values: (ip | dns | none)Set the host for the remote server that is sending data.ip sets the host to the IP address of the remote server sending data.dns sets the host to the reverse DNS entry for the IP address of the remote server sending data.none leaves the host as specified in inputs.conf, which is typically the Splunk system hostname.Default value is dns. ",
+        "Computed": true
+      },
+      "disabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Indicates if input is disabled.",
+        "Computed": true
+      },
+      "host": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Host from which the indexer gets data. ",
+        "Computed": true
+      },
+      "index": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Index to store generated events. Defaults to default.",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Required. The input port which receives raw data."
+      },
+      "queue": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Valid values: (parsingQueue | indexQueue) Specifies where the input processor should deposit the events it reads. Defaults to parsingQueue.Set queue to parsingQueue to apply props.conf and other parsing rules to your data. Set queue to indexQueue to send your data directly into the index.",
+        "Computed": true
+      },
+      "raw_tcp_done_timeout": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": " \tSpecifies in seconds the timeout value for adding a Done-key. Default value is 10 seconds. If a connection over the port specified by name remains idle after receiving data for specified number of seconds, it adds a Done-key. This implies the last event is completely received. ",
+        "Computed": true
+      },
+      "restrict_to_host": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Allows for restricting this input to only accept data from the host specified here.",
+        "Computed": true
+      },
+      "source": {
+        "Type": "String",
+        "Optional": true,
+        "Description": " \tSets the source key/field for events from this input. Defaults to the input file path.Sets the source key initial value. The key is used during parsing/indexing, in particular to set the source field during indexing.It is also the source field used at search time. As a convenience, the chosen string is prepended with 'source::'.Note: Overriding the source key is generally not recommended. Typically, the input layer provides a more accurate string to aid in problem analysis and investigation, accurately recording the file from which the data was retrieved. Consider use of source types, tagging, and search wildcards before overriding this value. ",
+        "Computed": true
+      },
+      "sourcetype": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Set the source type for events from this input. \"sourcetype=\" is automatically prepended to \u003cstring\u003e.Defaults to audittrail (if signedaudit=true) or fschange (if signedaudit=false).",
+        "Computed": true
+      }
+    },
+    "splunk_inputs_tcp_splunk_tcp_token": {
+      "acl": {
+        "Type": "List",
+        "Optional": true,
+        "Computed": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "app": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The app context for the resource. Required for updating saved search ACL properties. Allowed values are:The name of an app and system",
+              "Computed": true
+            },
+            "can_change_perms": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can change permissions for this object. Defaults to true.",
+              "Computed": true
+            },
+            "can_share_app": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can change sharing to app level. Defaults to true.",
+              "Computed": true
+            },
+            "can_share_global": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can change sharing to system level. Defaults to true.",
+              "Computed": true
+            },
+            "can_share_user": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can change sharing to user level. Defaults to true.",
+              "Computed": true
+            },
+            "can_write": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can edit this object. Defaults to true.",
+              "Computed": true
+            },
+            "owner": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "User name of resource owner. Defaults to the resource creator. Required for updating any knowledge object ACL properties.nobody = All users may access the resource, but write access to the resource might be restricted.",
+              "Computed": true
+            },
+            "read": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Properties that indicate resource read permissions.",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "removable": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates whether an admin or user with sufficient permissions can delete the entity.",
+              "Computed": true
+            },
+            "sharing": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Indicates how the resource is shared. Required for updating any knowledge object ACL properties.app: Shared within a specific appglobal: (Default) Shared globally to all apps.user: Private to a user",
+              "Computed": true
+            },
+            "write": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Properties that indicate write permissions of the resource.",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Required. Name for the token to create."
+      },
+      "token": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Optional. Token value to use. If unspecified, a token is generated automatically.",
+        "Computed": true
+      }
+    },
+    "splunk_inputs_tcp_ssl": {
+      "disabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Indicates if input is disabled.",
+        "Computed": true
+      },
+      "password": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Server certificate password, if any.",
+        "Computed": true
+      },
+      "require_client_cert": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Determines whether a client must authenticate.",
+        "Computed": true
+      },
+      "root_ca": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Certificate authority list (root file)",
+        "Computed": true
+      },
+      "server_cert": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Full path to the server certificate.",
+        "Computed": true
+      }
+    },
+    "splunk_inputs_udp": {
+      "acl": {
+        "Type": "List",
+        "Optional": true,
+        "Computed": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "app": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The app context for the resource. Required for updating saved search ACL properties. Allowed values are:The name of an app and system",
+              "Computed": true
+            },
+            "can_change_perms": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can change permissions for this object. Defaults to true.",
+              "Computed": true
+            },
+            "can_share_app": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can change sharing to app level. Defaults to true.",
+              "Computed": true
+            },
+            "can_share_global": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can change sharing to system level. Defaults to true.",
+              "Computed": true
+            },
+            "can_share_user": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can change sharing to user level. Defaults to true.",
+              "Computed": true
+            },
+            "can_write": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can edit this object. Defaults to true.",
+              "Computed": true
+            },
+            "owner": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "User name of resource owner. Defaults to the resource creator. Required for updating any knowledge object ACL properties.nobody = All users may access the resource, but write access to the resource might be restricted.",
+              "Computed": true
+            },
+            "read": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Properties that indicate resource read permissions.",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "removable": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates whether an admin or user with sufficient permissions can delete the entity.",
+              "Computed": true
+            },
+            "sharing": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Indicates how the resource is shared. Required for updating any knowledge object ACL properties.app: Shared within a specific appglobal: (Default) Shared globally to all apps.user: Private to a user",
+              "Computed": true
+            },
+            "write": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Properties that indicate write permissions of the resource.",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
+      "connection_host": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Valid values: (ip | dns | none)Set the host for the remote server that is sending data.ip sets the host to the IP address of the remote server sending data.dns sets the host to the reverse DNS entry for the IP address of the remote server sending data.none leaves the host as specified in inputs.conf, which is typically the Splunk system hostname.Default value is ip. ",
+        "Computed": true
+      },
+      "disabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Indicates if input is disabled.",
+        "Computed": true
+      },
+      "host": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The value to populate in the host field for incoming events. This is used during parsing/indexing, in particular to set the host field. It is also the host field used at search time.",
+        "Computed": true
+      },
+      "index": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Which index events from this input should be stored in. Defaults to default.",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Required. The UDP port that this input should listen on."
+      },
+      "no_appending_timestamp": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "If set to true, prevents Splunk software from prepending a timestamp and hostname to incoming events.",
+        "Computed": true
+      },
+      "no_priority_stripping": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "If set to true, Splunk software does not remove the priority field from incoming syslog events. ",
+        "Computed": true
+      },
+      "queue": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Which queue events from this input should be sent to. Generally this does not need to be changed.",
+        "Computed": true
+      },
+      "restrict_to_host": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Restrict incoming connections on this port to the host specified here. If this is not set, the value specified in [udp://\u003cremote server\u003e:\u003cport\u003e] in inputs.conf is used.",
+        "Computed": true
+      },
+      "source": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The value to populate in the source field for incoming events. The same source should not be used for multiple data inputs.",
+        "Computed": true
+      },
+      "sourcetype": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The value to populate in the sourcetype field for incoming events.",
+        "Computed": true
+      }
+    },
+    "splunk_outputs_tcp_default": {
+      "acl": {
+        "Type": "List",
+        "Optional": true,
+        "Computed": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "app": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The app context for the resource. Required for updating saved search ACL properties. Allowed values are:The name of an app and system",
+              "Computed": true
+            },
+            "can_change_perms": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can change permissions for this object. Defaults to true.",
+              "Computed": true
+            },
+            "can_share_app": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can change sharing to app level. Defaults to true.",
+              "Computed": true
+            },
+            "can_share_global": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can change sharing to system level. Defaults to true.",
+              "Computed": true
+            },
+            "can_share_user": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can change sharing to user level. Defaults to true.",
+              "Computed": true
+            },
+            "can_write": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can edit this object. Defaults to true.",
+              "Computed": true
+            },
+            "owner": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "User name of resource owner. Defaults to the resource creator. Required for updating any knowledge object ACL properties.nobody = All users may access the resource, but write access to the resource might be restricted.",
+              "Computed": true
+            },
+            "read": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Properties that indicate resource read permissions.",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "removable": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates whether an admin or user with sufficient permissions can delete the entity.",
+              "Computed": true
+            },
+            "sharing": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Indicates how the resource is shared. Required for updating any knowledge object ACL properties.app: Shared within a specific appglobal: (Default) Shared globally to all apps.user: Private to a user",
+              "Computed": true
+            },
+            "write": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Properties that indicate write permissions of the resource.",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
+      "default_group": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Comma-separated list of one or more target group names, specified later in [tcpout:\u003ctarget_group\u003e] stanzas of outputs.conf.spec file.The forwarder sends all data to the specified groups. If you do not want to forward data automatically, do not set this attribute. Can be overridden by an inputs.conf _TCP_ROUTING setting, which in turn can be overridden by a props.conf/transforms.conf modifier.",
+        "Computed": true
+      },
+      "disabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Disables default tcpout settings",
+        "Computed": true
+      },
+      "drop_events_on_queue_full": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "If set to a positive number, wait the specified number of seconds before throwing out all new events until the output queue has space. Defaults to -1 (do not drop events).CAUTION: Do not set this value to a positive integer if you are monitoring files.Setting this to -1 or 0 causes the output queue to block when it gets full, which causes further blocking up the processing chain. If any target group queue is blocked, no more data reaches any other target group.Using auto load-balancing is the best way to minimize this condition, because, in that case, multiple receivers must be down (or jammed up) before queue blocking can occur. ",
+        "Computed": true
+      },
+      "heartbeat_frequency": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "How often (in seconds) to send a heartbeat packet to the receiving server.Heartbeats are only sent if sendCookedData=true. Defaults to 30 seconds. ",
+        "Computed": true
+      },
+      "index_and_forward": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Specifies whether to index all data locally, in addition to forwarding it. Defaults to false.This is known as an \"index-and-forward\" configuration. This attribute is only available for heavy forwarders. It is available only at the top level [tcpout] stanza in outputs.conf. It cannot be overridden in a target group. ",
+        "Computed": true
+      },
+      "max_queue_size": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Specify an integer or integer[KB|MB|GB].Sets the maximum size of the forwarder output queue. It also sets the maximum size of the wait queue to 3x this value, if you have enabled indexer acknowledgment (useACK=true).Although the wait queue and the output queues are both configured by this attribute, they are separate queues. The setting determines the maximum size of the queue in-memory (RAM) buffer.For heavy forwarders sending parsed data, maxQueueSize is the maximum number of events. Since events are typically much shorter than data blocks, the memory consumed by the queue on a parsing forwarder is likely to be much smaller than on a non-parsing forwarder, if you use this version of the setting.If specified as a lone integer (for example, maxQueueSize=100), maxQueueSize indicates the maximum number of queued events (for parsed data) or blocks of data (for unparsed data). A block of data is approximately 64KB. For non-parsing forwarders, such as universal forwarders, that send unparsed data, maxQueueSize is the maximum number of data blocks.If specified as an integer followed by KB, MB, or GB (for example, maxQueueSize=100MB), maxQueueSize indicates the maximum RAM allocated to the queue buffer. Defaults to 500KB (which means a maximum size of 500KB for the output queue and 1500KB for the wait queue, if any). ",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Configuration to be edited. The only valid value is tcpout"
+      },
+      "send_cooked_data": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "If true, events are cooked (processed by Splunk software). If false, events are raw and untouched prior to sending. Defaults to true. Set to false if you are sending to a third-party system. ",
+        "Computed": true
+      }
+    },
+    "splunk_outputs_tcp_group": {
+      "acl": {
+        "Type": "List",
+        "Optional": true,
+        "Computed": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "app": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The app context for the resource. Required for updating saved search ACL properties. Allowed values are:The name of an app and system",
+              "Computed": true
+            },
+            "can_change_perms": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can change permissions for this object. Defaults to true.",
+              "Computed": true
+            },
+            "can_share_app": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can change sharing to app level. Defaults to true.",
+              "Computed": true
+            },
+            "can_share_global": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can change sharing to system level. Defaults to true.",
+              "Computed": true
+            },
+            "can_share_user": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can change sharing to user level. Defaults to true.",
+              "Computed": true
+            },
+            "can_write": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can edit this object. Defaults to true.",
+              "Computed": true
+            },
+            "owner": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "User name of resource owner. Defaults to the resource creator. Required for updating any knowledge object ACL properties.nobody = All users may access the resource, but write access to the resource might be restricted.",
+              "Computed": true
+            },
+            "read": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Properties that indicate resource read permissions.",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "removable": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates whether an admin or user with sufficient permissions can delete the entity.",
+              "Computed": true
+            },
+            "sharing": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Indicates how the resource is shared. Required for updating any knowledge object ACL properties.app: Shared within a specific appglobal: (Default) Shared globally to all apps.user: Private to a user",
+              "Computed": true
+            },
+            "write": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Properties that indicate write permissions of the resource.",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
+      "compressed": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "If true, forwarder sends compressed data.If set to true, the receiver port must also have compression turned on. ",
+        "Computed": true
+      },
+      "disabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "If true, disables the group.",
+        "Computed": true
+      },
+      "drop_events_on_queue_full": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "If set to a positive number, wait the specified number of seconds before throwing out all new events until the output queue has space. Defaults to -1 (do not drop events).CAUTION: Do not set this value to a positive integer if you are monitoring files.Setting this to -1 or 0 causes the output queue to block when it gets full, which causes further blocking up the processing chain. If any target group queue is blocked, no more data reaches any other target group.Using auto load-balancing is the best way to minimize this condition, because, in that case, multiple receivers must be down (or jammed up) before queue blocking can occur. ",
+        "Computed": true
+      },
+      "heartbeat_frequency": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": " \tHow often (in seconds) to send a heartbeat packet to the receiving server.Heartbeats are only sent if sendCookedData=true. Defaults to 30 seconds. ",
+        "Computed": true
+      },
+      "max_queue_size": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Specify an integer or integer[KB|MB|GB].Sets the maximum size of the forwarder output queue. It also sets the maximum size of the wait queue to 3x this value, if you have enabled indexer acknowledgment (useACK=true).Although the wait queue and the output queues are both configured by this attribute, they are separate queues. The setting determines the maximum size of the queue in-memory (RAM) buffer.For heavy forwarders sending parsed data, maxQueueSize is the maximum number of events. Since events are typically much shorter than data blocks, the memory consumed by the queue on a parsing forwarder is likely to be much smaller than on a non-parsing forwarder, if you use this version of the setting.If specified as a lone integer (for example, maxQueueSize=100), maxQueueSize indicates the maximum number of queued events (for parsed data) or blocks of data (for unparsed data). A block of data is approximately 64KB. For non-parsing forwarders, such as universal forwarders, that send unparsed data, maxQueueSize is the maximum number of data blocks.If specified as an integer followed by KB, MB, or GB (for example, maxQueueSize=100MB), maxQueueSize indicates the maximum RAM allocated to the queue buffer. Defaults to 500KB (which means a maximum size of 500KB for the output queue and 1500KB for the wait queue, if any). ",
+        "Computed": true
+      },
+      "method": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Valid values: (tcpout | syslog). Specifies the type of output processor. ",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The name of the group of receivers."
+      },
+      "send_cooked_data": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "If true, events are cooked (processed by Splunk software). If false, events are raw and untouched prior to sending. Defaults to true. Set to false if you are sending to a third-party system. ",
+        "Computed": true
+      },
+      "servers": {
+        "Type": "List",
+        "Required": true,
+        "Description": "Comma-separated list of servers to include in the group.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "token": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Token value generated by the indexer after configuration.",
+        "Computed": true
+      }
+    },
+    "splunk_outputs_tcp_server": {
+      "acl": {
+        "Type": "List",
+        "Optional": true,
+        "Computed": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "app": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The app context for the resource. Required for updating saved search ACL properties. Allowed values are:The name of an app and system",
+              "Computed": true
+            },
+            "can_change_perms": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can change permissions for this object. Defaults to true.",
+              "Computed": true
+            },
+            "can_share_app": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can change sharing to app level. Defaults to true.",
+              "Computed": true
+            },
+            "can_share_global": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can change sharing to system level. Defaults to true.",
+              "Computed": true
+            },
+            "can_share_user": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can change sharing to user level. Defaults to true.",
+              "Computed": true
+            },
+            "can_write": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can edit this object. Defaults to true.",
+              "Computed": true
+            },
+            "owner": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "User name of resource owner. Defaults to the resource creator. Required for updating any knowledge object ACL properties.nobody = All users may access the resource, but write access to the resource might be restricted.",
+              "Computed": true
+            },
+            "read": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Properties that indicate resource read permissions.",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "removable": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates whether an admin or user with sufficient permissions can delete the entity.",
+              "Computed": true
+            },
+            "sharing": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Indicates how the resource is shared. Required for updating any knowledge object ACL properties.app: Shared within a specific appglobal: (Default) Shared globally to all apps.user: Private to a user",
+              "Computed": true
+            },
+            "write": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Properties that indicate write permissions of the resource.",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
+      "disabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Disables default tcpout settings",
+        "Computed": true
+      },
+      "method": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Valid values: (clone | balance | autobalance)The data distribution method used when two or more servers exist in the same forwarder group. ",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "\u003chost\u003e:\u003cport\u003e of the Splunk receiver. \u003chost\u003e can be either an ip address or server name. \u003cport\u003e is the that port that the Splunk receiver is listening on."
+      },
+      "ssl_alt_name_to_check": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The alternate name to match in the remote server's SSL certificate. ",
+        "Computed": true
+      },
+      "ssl_cert_path": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The alternate name to match in the remote server's SSL certificate. ",
+        "Computed": true
+      },
+      "ssl_cipher": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "SSL Cipher in the form ALL:!aNULL:!eNULL:!LOW:!EXP:RC4+RSA:+HIGH:+MEDIUM ",
+        "Computed": true
+      },
+      "ssl_common_name_to_check": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Check the common name of the server's certificate against this name.If there is no match, assume that Splunk Enterprise is not authenticated against this server. You must specify this setting if sslVerifyServerCert is true.",
+        "Computed": true
+      },
+      "ssl_password": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The password associated with the CAcert.The default Splunk Enterprise CAcert uses the password password.",
+        "Computed": true
+      },
+      "ssl_root_ca_path": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The path to the root certificate authority file (optional). ",
+        "Computed": true
+      },
+      "ssl_verify_server_cert": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": " \tIf true, make sure that the server you are connecting to is a valid one (authenticated). Both the common name and the alternate name of the server are then checked for a match.",
+        "Computed": true
+      }
+    },
+    "splunk_outputs_tcp_syslog": {
+      "acl": {
+        "Type": "List",
+        "Optional": true,
+        "Computed": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "app": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The app context for the resource. Required for updating saved search ACL properties. Allowed values are:The name of an app and system",
+              "Computed": true
+            },
+            "can_change_perms": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can change permissions for this object. Defaults to true.",
+              "Computed": true
+            },
+            "can_share_app": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can change sharing to app level. Defaults to true.",
+              "Computed": true
+            },
+            "can_share_global": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can change sharing to system level. Defaults to true.",
+              "Computed": true
+            },
+            "can_share_user": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can change sharing to user level. Defaults to true.",
+              "Computed": true
+            },
+            "can_write": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can edit this object. Defaults to true.",
+              "Computed": true
+            },
+            "owner": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "User name of resource owner. Defaults to the resource creator. Required for updating any knowledge object ACL properties.nobody = All users may access the resource, but write access to the resource might be restricted.",
+              "Computed": true
+            },
+            "read": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Properties that indicate resource read permissions.",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "removable": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates whether an admin or user with sufficient permissions can delete the entity.",
+              "Computed": true
+            },
+            "sharing": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Indicates how the resource is shared. Required for updating any knowledge object ACL properties.app: Shared within a specific appglobal: (Default) Shared globally to all apps.user: Private to a user",
+              "Computed": true
+            },
+            "write": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Properties that indicate write permissions of the resource.",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
+      "disabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Disables default tcpout settings",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the syslog output group. This is name used when creating syslog configuration in outputs.conf."
+      },
+      "priority": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Sets syslog priority value.The priority value should specified as an integer. See $SPLUNK_HOME/etc/system/README/outputs.conf.spec for details. ",
+        "Computed": true
+      },
+      "server": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "host:port of the server where syslog data should be sent ",
+        "Computed": true
+      },
+      "syslog_sourcetype": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Specifies a rule for handling data in addition to that provided by the \"syslog\" sourcetype. By default, there is no value for syslogSourceType.This string is used as a substring match against the sourcetype key. ",
+        "Computed": true
+      },
+      "timestamp_format": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Format of timestamp to add at start of the events to be forwarded.The format is a strftime-style timestamp formatting string. See $SPLUNK_HOME/etc/system/README/outputs.conf.spec for details. ",
+        "Computed": true
+      },
+      "type": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Protocol to use to send syslog data. Valid values: (tcp | udp ). ",
+        "Computed": true
+      }
+    },
+    "splunk_saved_searches": {
+      "acl": {
+        "Type": "List",
+        "Optional": true,
+        "Computed": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "app": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The app context for the resource. Required for updating saved search ACL properties. Allowed values are:The name of an app and system",
+              "Computed": true
+            },
+            "can_change_perms": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can change permissions for this object. Defaults to true.",
+              "Computed": true
+            },
+            "can_share_app": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can change sharing to app level. Defaults to true.",
+              "Computed": true
+            },
+            "can_share_global": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can change sharing to system level. Defaults to true.",
+              "Computed": true
+            },
+            "can_share_user": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can change sharing to user level. Defaults to true.",
+              "Computed": true
+            },
+            "can_write": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can edit this object. Defaults to true.",
+              "Computed": true
+            },
+            "owner": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "User name of resource owner. Defaults to the resource creator. Required for updating any knowledge object ACL properties.nobody = All users may access the resource, but write access to the resource might be restricted.",
+              "Computed": true
+            },
+            "read": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Properties that indicate resource read permissions.",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "removable": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates whether an admin or user with sufficient permissions can delete the entity.",
+              "Computed": true
+            },
+            "sharing": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Indicates how the resource is shared. Required for updating any knowledge object ACL properties.app: Shared within a specific appglobal: (Default) Shared globally to all apps.user: Private to a user",
+              "Computed": true
+            },
+            "write": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Properties that indicate write permissions of the resource.",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
+      "action_email": {
+        "Type": "Bool",
+        "Description": "The state of the email action. Read-only attribute. Value ignored on POST. Use actions to specify a list of enabled actions. Defaults to 0.",
+        "Computed": true
+      },
+      "action_email_auth_password": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The password to use when authenticating with the SMTP server. Normally this value is set when editing the email settings, however you can set a clear text password here and it is encrypted on the next platform restart.Defaults to empty string.",
+        "Computed": true
+      },
+      "action_email_auth_username": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The username to use when authenticating with the SMTP server. If this is empty string, no authentication is attempted. Defaults to empty stringNOTE: Your SMTP server might reject unauthenticated emails.",
+        "Computed": true
+      },
+      "action_email_bcc": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "BCC email address to use if action.email is enabled.",
+        "Computed": true
+      },
+      "action_email_cc": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "CC email address to use if action.email is enabled.",
+        "Computed": true
+      },
+      "action_email_command": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The search command (or pipeline) which is responsible for executing the action.Generally the command is a template search pipeline which is realized with values from the saved search. To reference saved search field values wrap them in $, for example to reference the savedsearch name use $name$, to reference the search use $search$. ",
+        "Computed": true
+      },
+      "action_email_format": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Valid values: (table | plain | html | raw | csv)Specify the format of text in the email. This value also applies to any attachments.",
+        "Computed": true
+      },
+      "action_email_from": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Email address from which the email action originates.Defaults to splunk@$LOCALHOST or whatever value is set in alert_actions.conf.",
+        "Computed": true
+      },
+      "action_email_hostname": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Sets the hostname used in the web link (url) sent in email actions.This value accepts two forms:hostname (for example, splunkserver, splunkserver.example.com) ",
+        "Computed": true
+      },
+      "action_email_include_results_link": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Specify whether to include a link to the results. [1|0]",
+        "Computed": true
+      },
+      "action_email_include_search": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Specify whether to include the search that caused an email to be sent. [1|0]",
+        "Computed": true
+      },
+      "action_email_include_trigger": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Specify whether to show the trigger condition that caused the alert to fire. [1|0]",
+        "Computed": true
+      },
+      "action_email_include_trigger_time": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Specify whether to show the time that the alert was fired. [1|0]",
+        "Computed": true
+      },
+      "action_email_include_view_link": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Specify whether to show the title and a link to enable the user to edit the saved search. [1|0]",
+        "Computed": true
+      },
+      "action_email_inline": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Indicates whether the search results are contained in the body of the email.Results can be either inline or attached to an email. ",
+        "Computed": true
+      },
+      "action_email_mailserver": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Set the address of the MTA server to be used to send the emails.Defaults to \u003cLOCALHOST\u003e or whatever is set in alert_actions.conf. ",
+        "Computed": true
+      },
+      "action_email_max_results": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Sets the global maximum number of search results to send when email.action is enabled. Defaults to 100.",
+        "Computed": true
+      },
+      "action_email_max_time": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Valid values are Integer[m|s|h|d].Specifies the maximum amount of time the execution of an email action takes before the action is aborted. Defaults to 5m.",
+        "Computed": true
+      },
+      "action_email_message_alert": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Message sent in the emailed alert. Defaults to: The alert condition for '$name$' was triggered.",
+        "Computed": true
+      },
+      "action_email_message_report": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Message sent in the emailed report. Defaults to: The scheduled report '$name$' has run.",
+        "Computed": true
+      },
+      "action_email_pdfview": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of the view to deliver if sendpdf is enabled",
+        "Computed": true
+      },
+      "action_email_preprocess_results": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Search string to preprocess results before emailing them. Defaults to empty string (no preprocessing).Usually the preprocessing consists of filtering out unwanted internal fields.",
+        "Computed": true
+      },
+      "action_email_report_cid_font_list": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Space-separated list. Specifies the set (and load order) of CID fonts for handling Simplified Chinese(gb), Traditional Chinese(cns), Japanese(jp), and Korean(kor) in Integrated PDF Rendering.If multiple fonts provide a glyph for a given character code, the glyph from the first font specified in the list is used.To skip loading any CID fonts, specify the empty string.Defaults to 'gb cns jp kor'",
+        "Computed": true
+      },
+      "action_email_report_include_splunk_logo": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Indicates whether to include the Splunk logo with the report.",
+        "Computed": true
+      },
+      "action_email_report_paper_orientation": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Valid values: (portrait | landscape)Specifies the paper orientation: portrait or landscape. Defaults to portrait.",
+        "Computed": true
+      },
+      "action_email_report_paper_size": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Valid values: (letter | legal | ledger | a2 | a3 | a4 | a5)Specifies the paper size for PDFs. Defaults to letter.",
+        "Computed": true
+      },
+      "action_email_report_server_enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "No Supported",
+        "Computed": true
+      },
+      "action_email_report_server_url": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Not supported.For a default locally installed report server, the URL is http://localhost:8091/",
+        "Computed": true
+      },
+      "action_email_send_csv": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Specify whether to send results as a CSV file. Default: 0 (false).",
+        "Computed": true
+      },
+      "action_email_send_pdf": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Indicates whether to create and send the results as a PDF. Defaults to false.",
+        "Computed": true
+      },
+      "action_email_send_results": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Indicates whether to attach the search results in the email.Results can be either attached or inline. See action.email.inline.",
+        "Computed": true
+      },
+      "action_email_subject": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Specifies an alternate email subject.Defaults to SplunkAlert-\u003csavedsearchname\u003e.",
+        "Computed": true
+      },
+      "action_email_to": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "A comma or semicolon separated list of recipient email addresses. Required if this search is scheduled and the email alert action is enabled.",
+        "Computed": true
+      },
+      "action_email_track_alert": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Indicates whether the execution of this action signifies a trackable alert.",
+        "Computed": true
+      },
+      "action_email_ttl": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Valid values are Integer[p].Specifies the minimum time-to-live in seconds of the search artifacts if this action is triggered. If p follows \u003cInteger\u003e, int is the number of scheduled periods. Defaults to 86400 (24 hours).If no actions are triggered, the artifacts have their ttl determined by dispatch.ttl in savedsearches.conf.",
+        "Computed": true
+      },
+      "action_email_use_ssl": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Indicates whether to use SSL when communicating with the SMTP server. Defaults to false.",
+        "Computed": true
+      },
+      "action_email_use_tls": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Indicates whether to use TLS (transport layer security) when communicating with the SMTP server (starttls).Defaults to false.",
+        "Computed": true
+      },
+      "action_email_width_sort_columns": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Indicates whether columns should be sorted from least wide to most wide, left to right.Only valid if format=text.",
+        "Computed": true
+      },
+      "action_populate_lookup": {
+        "Type": "Bool",
+        "Description": "The state of the populate lookup action. Read-only attribute. Value ignored on POST. Use actions to specify a list of enabled actions. Defaults to 0.",
+        "Computed": true
+      },
+      "action_populate_lookup_command": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The search command (or pipeline) which is responsible for executing the action.",
+        "Computed": true
+      },
+      "action_populate_lookup_dest": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Lookup name of path of the lookup to populate",
+        "Computed": true
+      },
+      "action_populate_lookup_hostname": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Sets the hostname used in the web link (url) sent in alert actions.This value accepts two forms: hostname (for example, splunkserver, splunkserver.example.com)\n\nprotocol://hostname:port (for example, http://splunkserver:8000, https://splunkserver.example.com:443)",
+        "Computed": true
+      },
+      "action_populate_lookup_max_results": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Sets the maximum number of search results sent using alerts. Defaults to 100.",
+        "Computed": true
+      },
+      "action_populate_lookup_max_time": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Valid values are: Integer[m|s|h|d]Sets the maximum amount of time the execution of an action takes before the action is aborted. Defaults to 5m.",
+        "Computed": true
+      },
+      "action_populate_lookup_track_alert": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Indicates whether the execution of this action signifies a trackable alert.",
+        "Computed": true
+      },
+      "action_populate_lookup_ttl": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Valid values are Integer[p]Specifies the minimum time-to-live in seconds of the search artifacts if this action is triggered. If p follows Integer, then this specifies the number of scheduled periods. Defaults to 10p.",
+        "Computed": true
+      },
+      "action_rss": {
+        "Type": "Bool",
+        "Description": "The state of the rss action. Read-only attribute. Value ignored on POST.Use actions to specify a list of enabled actions. Defaults to 0.",
+        "Computed": true
+      },
+      "action_rss_command": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The search command (or pipeline) which is responsible for executing the action.Generally the command is a template search pipeline which is realized with values from the saved search. To reference saved search field values wrap them in $, for example to reference the savedsearch name use $name$, to reference the search use $search$.",
+        "Computed": true
+      },
+      "action_rss_hostname": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Sets the hostname used in the web link (url) sent in alert actions.This value accepts two forms:hostname (for example, splunkserver, splunkserver.example.com)\n\nprotocol://hostname:port (for example, http://splunkserver:8000, https://splunkserver.example.com:443)",
+        "Computed": true
+      },
+      "action_rss_max_results": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Sets the maximum number of search results sent using alerts. Defaults to 100.",
+        "Computed": true
+      },
+      "action_rss_max_time": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Valid values are Integer[m|s|h|d].Sets the maximum amount of time the execution of an action takes before the action is aborted. Defaults to 1m.",
+        "Computed": true
+      },
+      "action_rss_track_alert": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Indicates whether the execution of this action signifies a trackable alert.",
+        "Computed": true
+      },
+      "action_rss_ttl": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Valid values are: Integer[p] Specifies the minimum time-to-live in seconds of the search artifacts if this action is triggered. If p follows Integer, specifies the number of scheduled periods. Defaults to 86400 (24 hours).",
+        "Computed": true
+      },
+      "action_script": {
+        "Type": "Bool",
+        "Description": "The state of the script action. Read-only attribute. Value ignored on POST. Use actions to specify a list of enabled actions. Defaults to 0.",
+        "Computed": true
+      },
+      "action_script_command": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The search command (or pipeline) which is responsible for executing the action.Generally the command is a template search pipeline which is realized with values from the saved search. To reference saved search field values wrap them in $, for example to reference the savedsearch name use $name$, to reference the search use $search$.",
+        "Computed": true
+      },
+      "action_script_filename": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "File name of the script to call. Required if script action is enabled",
+        "Computed": true
+      },
+      "action_script_hostname": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Sets the hostname used in the web link (url) sent in alert actions.This value accepts two forms:hostname (for example, splunkserver, splunkserver.example.com)\n\nprotocol://hostname:port (for example, http://splunkserver:8000, https://splunkserver.example.com:443)",
+        "Computed": true
+      },
+      "action_script_max_results": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Sets the maximum number of search results sent using alerts. Defaults to 100.",
+        "Computed": true
+      },
+      "action_script_max_time": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Valid values are Integer[m|s|h|d].Sets the maximum amount of time the execution of an action takes before the action is aborted. Defaults to 1m.",
+        "Computed": true
+      },
+      "action_script_track_alert": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Indicates whether the execution of this action signifies a trackable alert.",
+        "Computed": true
+      },
+      "action_script_ttl": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Valid values are: Integer[p] Specifies the minimum time-to-live in seconds of the search artifacts if this action is triggered. If p follows Integer, specifies the number of scheduled periods. Defaults to 86400 (24 hours).",
+        "Computed": true
+      },
+      "action_slack_param_attachment": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Optionally include a message attachment. Valid values are message, alert_link, or none",
+        "Default": {
+          "Type": "string",
+          "Value": "none"
+        }
+      },
+      "action_slack_param_channel": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Slack channel to send the message to (Should start with # or @)"
+      },
+      "action_slack_param_fields": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Show one or more fields from the search results below your Slack message. Comma-separated list of field names. Allows wildcards. eg. index,source*"
+      },
+      "action_slack_param_message": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Enter the chat message to send to the Slack channel. The message can include tokens that insert text based on the results of the search."
+      },
+      "action_slack_param_webhook_url_override": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "You can override the Slack webhook URL here if you need to send the alert message to a different Slack team."
+      },
+      "action_summary_index": {
+        "Type": "Bool",
+        "Description": "The state of the summary index action. Read-only attribute. Value ignored on POST. Use actions to specify a list of enabled actions. Defaults to 0.",
+        "Computed": true
+      },
+      "action_summary_index_command": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The search command (or pipeline) which is responsible for executing the action.Generally the command is a template search pipeline which is realized with values from the saved search. To reference saved search field values wrap them in $, for example to reference the savedsearch name use $name$, to reference the search use $search$.",
+        "Computed": true
+      },
+      "action_summary_index_hostname": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Sets the hostname used in the web link (url) sent in summary-index alert actions.This value accepts two forms:hostname (for example, splunkserver, splunkserver.example.com)protocol://hostname:port (for example, http://splunkserver:8000, https://splunkserver.example.com:443)",
+        "Computed": true
+      },
+      "action_summary_index_inline": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Determines whether to execute the summary indexing action as part of the scheduled search.NOTE: This option is considered only if the summary index action is enabled and is always executed (in other words, if counttype = always).Defaults to true ",
+        "Computed": true
+      },
+      "action_summary_index_max_results": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Sets the maximum number of search results sent using alerts. Defaults to 100.",
+        "Computed": true
+      },
+      "action_summary_index_max_time": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Valid values are Integer[m|s|h|d].Sets the maximum amount of time the execution of an action takes before the action is aborted. Defaults to 1m.",
+        "Computed": true
+      },
+      "action_summary_index_name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Specifies the name of the summary index where the results of the scheduled search are saved.Defaults to summary.",
+        "Computed": true
+      },
+      "action_summary_index_track_alert": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Indicates whether the execution of this action signifies a trackable alert.",
+        "Computed": true
+      },
+      "action_summary_index_ttl": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Valid values are: Integer[p] Specifies the minimum time-to-live in seconds of the search artifacts if this action is triggered. If p follows Integer, specifies the number of scheduled periods. Defaults to 86400 (24 hours).",
+        "Computed": true
+      },
+      "actions": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "A comma-separated list of actions to enable. For example: rss,email ",
+        "Computed": true
+      },
+      "alert_comparator": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "One of the following strings: greater than, less than, equal to, rises by, drops by, rises by perc, drops by percUsed with alert_threshold to trigger alert actions.",
+        "Computed": true
+      },
+      "alert_condition": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Contains a conditional search that is evaluated against the results of the saved search. Defaults to an empty string.",
+        "Computed": true
+      },
+      "alert_digest_mode": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Specifies whether alert actions are applied to the entire result set or on each individual result.Defaults to 1 (true).",
+        "Computed": true
+      },
+      "alert_expires": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Valid values: [number][time-unit]Sets the period of time to show the alert in the dashboard. Defaults to 24h.Use [number][time-unit] to specify a time. For example: 60 = 60 seconds, 1m = 1 minute, 1h = 60 minutes = 1 hour.",
+        "Computed": true
+      },
+      "alert_severity": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Valid values: (1 | 2 | 3 | 4 | 5 | 6) Sets the alert severity level.Valid values are:1 DEBUG 2 INFO 3 WARN 4 ERROR 5 SEVERE 6 FATAL Defaults to 3.",
+        "Computed": true
+      },
+      "alert_suppress": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Indicates whether alert suppression is enabled for this scheduled search.",
+        "Computed": true
+      },
+      "alert_suppress_fields": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Comma delimited list of fields to use for suppression when doing per result alerting. Required if suppression is turned on and per result alerting is enabled.",
+        "Computed": true
+      },
+      "alert_suppress_period": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Valid values: [number][time-unit] Specifies the suppresion period. Only valid if alert.supress is enabled.Use [number][time-unit] to specify a time. For example: 60 = 60 seconds, 1m = 1 minute, 1h = 60 minutes = 1 hour. ",
+        "Computed": true
+      },
+      "alert_threshold": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Valid values are: Integer[%]Specifies the value to compare (see alert_comparator) before triggering the alert actions. If expressed as a percentage, indicates value to use when alert_comparator is set to rises by perc or drops by perc.",
+        "Computed": true
+      },
+      "alert_track": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Valid values: (true | false | auto) Specifies whether to track the actions triggered by this scheduled search.auto - determine whether to track or not based on the tracking setting of each action, do not track scheduled searches that always trigger actions. Default value true - force alert tracking.false - disable alert tracking for this search.",
+        "Computed": true
+      },
+      "alert_type": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "What to base the alert on, overriden by alert_condition if it is specified. Valid values are: always, custom, number of events, number of hosts, number of sources.",
+        "Computed": true
+      },
+      "allow_skew": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Allows the search scheduler to distribute scheduled searches randomly and more evenly over their specified search periods.",
+        "Computed": true
+      },
+      "auto_summarize": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Indicates whether the scheduler should ensure that the data for this search is automatically summarized. Defaults to 0.",
+        "Computed": true
+      },
+      "auto_summarize_command": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "An auto summarization template for this search. See auto summarization options in savedsearches.conf for more details.",
+        "Computed": true
+      },
+      "auto_summarize_cron_schedule": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Cron schedule that probes and generates the summaries for this saved search.The default value is */10 * * * * and corresponds to \"every ten hours\".",
+        "Computed": true
+      },
+      "auto_summarize_dispatch_earliest_time": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "A time string that specifies the earliest time for summarizing this search. Can be a relative or absolute time.If this value is an absolute time, use the dispatch.time_format to format the value.",
+        "Computed": true
+      },
+      "auto_summarize_dispatch_latest_time": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "A time string that specifies the latest time for summarizing this saved search. Can be a relative or absolute time.If this value is an absolute time, use the dispatch.time_format to format the value.",
+        "Computed": true
+      },
+      "auto_summarize_dispatch_time_format": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Defines the time format that Splunk software uses to specify the earliest and latest time. Defaults to %FT%T.%Q%:z",
+        "Computed": true
+      },
+      "auto_summarize_dispatch_ttl": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Valid values: Integer[p]. Defaults to 60.Indicates the time to live (in seconds) for the artifacts of the summarization of the scheduled search. ",
+        "Computed": true
+      },
+      "auto_summarize_max_disabled_buckets": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The maximum number of buckets with the suspended summarization before the summarization search is completely stopped, and the summarization of the search is suspended for auto_summarize.suspend_period. Defaults to 2.",
+        "Computed": true
+      },
+      "auto_summarize_max_summary_ratio": {
+        "Type": "Float",
+        "Optional": true,
+        "Description": "The maximum ratio of summary_size/bucket_size, which specifies when to stop summarization and deem it unhelpful for a bucket. Defaults to 0.1 Note: The test is only performed if the summary size is larger than auto_summarize.max_summary_size.",
+        "Computed": true
+      },
+      "auto_summarize_max_summary_size": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The minimum summary size, in bytes, before testing whether the summarization is helpful.The default value is 52428800 and is equivalent to 5MB. ",
+        "Computed": true
+      },
+      "auto_summarize_max_time": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Maximum time (in seconds) that the summary search is allowed to run. Defaults to 3600.Note: This is an approximate time. The summary search stops at clean bucket boundaries. ",
+        "Computed": true
+      },
+      "auto_summarize_suspend_period": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Time specfier indicating when to suspend summarization of this search if the summarization is deemed unhelpful.Defaults to 24h. ",
+        "Computed": true
+      },
+      "auto_summarize_timespan": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The list of time ranges that each summarized chunk should span. This comprises the list of available granularity levels for which summaries would be available. Specify a comma delimited list of time specifiers.For example a timechart over the last month whose granuality is at the day level should set this to 1d. If you need the same data summarized at the hour level for weekly charts, use: 1h,1d. ",
+        "Computed": true
+      },
+      "cron_schedule": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Valid values: cron stringThe cron schedule to execute this search. For example: */5 * * * * causes the search to execute every 5 minutes. ",
+        "Computed": true
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Human-readable description of this saved search. Defaults to empty string. ",
+        "Computed": true
+      },
+      "disabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Indicates if the saved search is enabled. Defaults to 0.Disabled saved searches are not visible in Splunk Web. ",
+        "Computed": true
+      },
+      "dispatch_buckets": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The maximum number of timeline buckets. Defaults to 0. ",
+        "Computed": true
+      },
+      "dispatch_earliest_time": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "A time string that specifies the earliest time for this search. Can be a relative or absolute time.If this value is an absolute time, use the dispatch.time_format to format the value.",
+        "Computed": true
+      },
+      "dispatch_index_earliest": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "A time string that specifies the latest time for this search. Can be a relative or absolute time.If this value is an absolute time, use the dispatch.time_format to format the value.",
+        "Computed": true
+      },
+      "dispatch_index_latest": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "A time string that specifies the earliest time for this search. Can be a relative or absolute time.If this value is an absolute time, use the dispatch.time_format to format the value.",
+        "Computed": true
+      },
+      "dispatch_indexed_realtime": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "A time string that specifies the earliest time for this search. Can be a relative or absolute time.If this value is an absolute time, use the dispatch.time_format to format the value. ",
+        "Computed": true
+      },
+      "dispatch_indexed_realtime_minspan": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Allows for a per-job override of the [search] indexed_realtime_disk_sync_delay setting in limits.conf.",
+        "Computed": true
+      },
+      "dispatch_indexed_realtime_offset": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Allows for a per-job override of the [search] indexed_realtime_disk_sync_delay setting in limits.conf.",
+        "Computed": true
+      },
+      "dispatch_latest_time": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "A time string that specifies the latest time for this saved search. Can be a relative or absolute time.If this value is an absolute time, use the dispatch.time_format to format the value.",
+        "Computed": true
+      },
+      "dispatch_lookups": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enables or disables the lookups for this search. Defaults to 1. ",
+        "Computed": true
+      },
+      "dispatch_max_count": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The maximum number of results before finalizing the search. Defaults to 500000. ",
+        "Computed": true
+      },
+      "dispatch_max_time": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Indicates the maximum amount of time (in seconds) before finalizing the search. Defaults to 0. ",
+        "Computed": true
+      },
+      "dispatch_reduce_freq": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Specifies, in seconds, how frequently the MapReduce reduce phase runs on accumulated map values. Defaults to 10.",
+        "Computed": true
+      },
+      "dispatch_rt_backfill": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether to back fill the real time window for this search. Parameter valid only if this is a real time search. Defaults to 0.",
+        "Computed": true
+      },
+      "dispatch_rt_maximum_span": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Allows for a per-job override of the [search] indexed_realtime_maximum_span setting in limits.conf.",
+        "Computed": true
+      },
+      "dispatch_spawn_process": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Specifies whether a new search process spawns when this saved search is executed. Defaults to 1. Searches against indexes must run in a separate process. ",
+        "Computed": true
+      },
+      "dispatch_time_format": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "A time format string that defines the time format for specifying the earliest and latest time. Defaults to %FT%T.%Q%:z",
+        "Computed": true
+      },
+      "dispatch_ttl": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Valid values: Integer[p]. Defaults to 2p.Indicates the time to live (in seconds) for the artifacts of the scheduled search, if no actions are triggered. ",
+        "Computed": true
+      },
+      "display_view": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Defines the default UI view name (not label) in which to load the results. Accessibility is subject to the user having sufficient permissions.",
+        "Computed": true
+      },
+      "is_scheduled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether this search is to be run on a schedule ",
+        "Computed": true
+      },
+      "is_visible": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Specifies whether this saved search should be listed in the visible saved search list. Defaults to 1. ",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "max_concurrent": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The maximum number of concurrent instances of this search the scheduler is allowed to run. Defaults to 1. ",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "A name for the search."
+      },
+      "realtime_schedule": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Defaults to 1. Controls the way the scheduler computes the next execution time of a scheduled search. If this value is set to 1, the scheduler bases its determination of the next scheduled search execution time on the current time. If this value is set to 0, the scheduler bases its determination of the next scheduled search on the last search execution time. This is called continuous scheduling. If set to 0, the scheduler never skips scheduled execution periods. However, the execution of the saved search might fall behind depending on the scheduler load. Use continuous scheduling whenever you enable the summary index option.",
+        "Computed": true
+      },
+      "request_ui_dispatch_app": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Specifies a field used by Splunk Web to denote the app this search should be dispatched in. ",
+        "Computed": true
+      },
+      "request_ui_dispatch_view": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Specifies a field used by Splunk Web to denote the view this search should be displayed in. ",
+        "Computed": true
+      },
+      "restart_on_searchpeer_add": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Specifies whether to restart a real-time search managed by the scheduler when a search peer becomes available for this saved search. Defaults to 1. ",
+        "Computed": true
+      },
+      "run_on_startup": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Indicates whether this search runs at startup. If it does not run on startup, it runs at the next scheduled time. Defaults to 0. Set to 1 for scheduled searches that populate lookup tables. ",
+        "Computed": true
+      },
+      "schedule_priority": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Raises the scheduling priority of the named search. Defaults to Default",
+        "Computed": true
+      },
+      "schedule_window": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Time window (in minutes) during which the search has lower priority. Defaults to 0. The scheduler can give higher priority to more critical searches during this window. The window must be smaller than the search period.Set to auto to let the scheduler determine the optimal window value automatically. Requires the edit_search_schedule_window capability to override auto. ",
+        "Computed": true
+      },
+      "search": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Required when creating a new search"
+      },
+      "vsid": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Defines the viewstate id associated with the UI view listed in 'displayview'. ",
+        "Computed": true
+      },
+      "workload_pool": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Specifies the new workload pool where the existing running search will be placed.",
+        "Computed": true
+      }
+    },
+    "splunk_sh_indexes_manager": {
+      "acl": {
+        "Type": "List",
+        "Optional": true,
+        "Computed": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "app": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The app context for the resource. Required for updating saved search ACL properties. Allowed values are:The name of an app and system",
+              "Computed": true
+            },
+            "can_change_perms": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can change permissions for this object. Defaults to true.",
+              "Computed": true
+            },
+            "can_share_app": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can change sharing to app level. Defaults to true.",
+              "Computed": true
+            },
+            "can_share_global": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can change sharing to system level. Defaults to true.",
+              "Computed": true
+            },
+            "can_share_user": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can change sharing to user level. Defaults to true.",
+              "Computed": true
+            },
+            "can_write": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates if the active user can edit this object. Defaults to true.",
+              "Computed": true
+            },
+            "owner": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "User name of resource owner. Defaults to the resource creator. Required for updating any knowledge object ACL properties.nobody = All users may access the resource, but write access to the resource might be restricted.",
+              "Computed": true
+            },
+            "read": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Properties that indicate resource read permissions.",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "removable": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Indicates whether an admin or user with sufficient permissions can delete the entity.",
+              "Computed": true
+            },
+            "sharing": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Indicates how the resource is shared. Required for updating any knowledge object ACL properties.app: Shared within a specific appglobal: (Default) Shared globally to all apps.user: Private to a user",
+              "Computed": true
+            },
+            "write": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Properties that indicate write permissions of the resource.",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
+      "datatype": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Valid values: (event | metric). Specifies the type of index.",
+        "Computed": true
+      },
+      "frozen_time_period_in_secs": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Number of seconds after which indexed data rolls to frozen. Defaults to 188697600 (6 years).\n\t\t\t\tFreezing data means it is removed from the index. If you need to archive your data, refer to coldToFrozenDir and coldToFrozenScript parameter documentation.",
+        "Default": {
+          "Type": "string",
+          "Value": "94608000"
+        }
+      },
+      "max_global_raw_data_size_mb": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The maximum size of an index (in MB). If an index grows larger than the maximum size, the oldest data is frozen.",
+        "Default": {
+          "Type": "string",
+          "Value": "100"
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The name of the index to create."
+      }
+    }
+  },
+  "data-sources": {}
+}

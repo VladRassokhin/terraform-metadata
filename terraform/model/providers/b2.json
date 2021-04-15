@@ -1,0 +1,804 @@
+{
+  ".schema_version": "2",
+  ".sdk_type": "terraform-plugin-sdk-v2",
+  "name": "b2",
+  "type": "provider",
+  "version": "v0.4.0",
+  "provider": {
+    "application_key": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "B2 Application Key (B2_APPLICATION_KEY env)",
+      "DefaultFunc": "ENV(B2_APPLICATION_KEY)"
+    },
+    "application_key_id": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "B2 Application Key ID (B2_APPLICATION_KEY_ID env)",
+      "DefaultFunc": "ENV(B2_APPLICATION_KEY_ID)"
+    },
+    "endpoint": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "B2 endpoint - production or custom URL (B2_ENDPOINT env)",
+      "DefaultFunc": "ENV(B2_ENDPOINT)"
+    }
+  },
+  "resources": {
+    "b2_application_key": {
+      "application_key": {
+        "Type": "String",
+        "Description": "The key.",
+        "Computed": true
+      },
+      "application_key_id": {
+        "Type": "String",
+        "Description": "The ID of the newly created key.",
+        "Computed": true
+      },
+      "bucket_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "When present, restricts access to one bucket."
+      },
+      "capabilities": {
+        "Type": "Set",
+        "Required": true,
+        "Description": "A set of strings, each one naming a capability the key has.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "key_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The name of the key."
+      },
+      "name_prefix": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "When present, restricts access to files whose names start with the prefix."
+      },
+      "options": {
+        "Type": "Set",
+        "Description": "List of application key options.",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      }
+    },
+    "b2_bucket": {
+      "account_id": {
+        "Type": "String",
+        "Description": "Account ID that the bucket belongs to.",
+        "Computed": true
+      },
+      "bucket_id": {
+        "Type": "String",
+        "Description": "The ID of the bucket.",
+        "Computed": true
+      },
+      "bucket_info": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "User-defined information to be stored with the bucket.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "bucket_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The name of the bucket."
+      },
+      "bucket_type": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The bucket type. Either 'allPublic', meaning that files in this bucket can be downloaded by anybody, or 'allPrivate'."
+      },
+      "cors_rules": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "The initial list of CORS rules for this bucket.",
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "allowed_headers": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "If present, this is a list of headers that are allowed in a pre-flight OPTIONS's request's Access-Control-Request-Headers header value.",
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "allowed_operations": {
+              "Type": "List",
+              "Required": true,
+              "Description": "A list specifying which operations the rule allows.",
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "allowed_origins": {
+              "Type": "List",
+              "Required": true,
+              "Description": "A non-empty list specifying which origins the rule covers. ",
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "cors_rule_name": {
+              "Type": "String",
+              "Required": true,
+              "Description": "A name for humans to recognize the rule in a user interface."
+            },
+            "expose_headers": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "If present, this is a list of headers that may be exposed to an application inside the client.",
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "max_age_seconds": {
+              "Type": "Int",
+              "Required": true,
+              "Description": "This specifies the maximum number of seconds that a browser may cache the response to a preflight request."
+            }
+          }
+        }
+      },
+      "default_server_side_encryption": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "The default server-side encryption settings for this bucket.",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "algorithm": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Server-side encryption algorithm."
+            },
+            "mode": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Server-side encryption mode.",
+              "Default": {
+                "Type": "string",
+                "Value": "none"
+              }
+            }
+          }
+        }
+      },
+      "lifecycle_rules": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "The initial list of lifecycle rules for this bucket.",
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "days_from_hiding_to_deleting": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "It says how long to keep file versions that are not the current version."
+            },
+            "days_from_uploading_to_hiding": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "It causes files to be hidden automatically after the given number of days."
+            },
+            "file_name_prefix": {
+              "Type": "String",
+              "Required": true,
+              "Description": "It specifies which files in the bucket it applies to."
+            }
+          }
+        }
+      },
+      "options": {
+        "Type": "Set",
+        "Description": "List of bucket options.",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "revision": {
+        "Type": "Int",
+        "Description": "Bucket revision.",
+        "Computed": true
+      }
+    },
+    "b2_bucket_file_version": {
+      "action": {
+        "Type": "String",
+        "Description": "One of 'start', 'upload', 'hide', 'folder', or other values added in the future.",
+        "Computed": true
+      },
+      "bucket_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The ID of the bucket."
+      },
+      "content_md5": {
+        "Type": "String",
+        "Description": "MD5 sum of the content.",
+        "Computed": true
+      },
+      "content_sha1": {
+        "Type": "String",
+        "Description": "SHA1 hash of the content.",
+        "Computed": true
+      },
+      "content_type": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Content type. If not set, it will be set based on the file extension."
+      },
+      "file_id": {
+        "Type": "String",
+        "Description": "The unique identifier for this version of this file.",
+        "Computed": true
+      },
+      "file_info": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "The custom information that is uploaded with the file.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "file_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The name of the B2 file."
+      },
+      "server_side_encryption": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Server-side encryption settings.",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "algorithm": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Server-side encryption algorithm."
+            },
+            "mode": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Server-side encryption mode."
+            }
+          }
+        }
+      },
+      "size": {
+        "Type": "Int",
+        "Description": "The file size.",
+        "Computed": true
+      },
+      "source": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Path to the local file."
+      },
+      "upload_timestamp": {
+        "Type": "Int",
+        "Description": "This is a UTC time when this file was uploaded.",
+        "Computed": true
+      }
+    }
+  },
+  "data-sources": {
+    "b2_account_info": {
+      "account_auth_token": {
+        "Type": "String",
+        "Description": "An authorization token to use with all calls, other than b2_authorize_account, that need an Authorization header. This authorization token is valid for at most 24 hours.",
+        "Computed": true
+      },
+      "account_id": {
+        "Type": "String",
+        "Description": "The identifier for the account.",
+        "Computed": true
+      },
+      "allowed": {
+        "Type": "List",
+        "Description": "An object containing the capabilities of this auth token, and any restrictions on using it.",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "bucket_id": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "When present, restricts access to one bucket.",
+              "Computed": true
+            },
+            "bucket_name": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "When 'bucket_id' is set, and it is a valid bucket that has not been deleted, this field is set to the name of the bucket.",
+              "Computed": true
+            },
+            "capabilities": {
+              "Type": "Set",
+              "Description": "A list of strings, each one naming a capability the key has.",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "name_prefix": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "When present, access is restricted to files whose names start with the prefix.",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "api_url": {
+        "Type": "String",
+        "Description": "The base URL to use for all API calls except for uploading and downloading files.",
+        "Computed": true
+      },
+      "download_url": {
+        "Type": "String",
+        "Description": "The base URL to use for downloading files.",
+        "Computed": true
+      },
+      "s3_api_url": {
+        "Type": "String",
+        "Description": "The base URL to use for S3-compatible API calls.",
+        "Computed": true
+      }
+    },
+    "b2_application_key": {
+      "application_key_id": {
+        "Type": "String",
+        "Description": "The ID of the key.",
+        "Computed": true
+      },
+      "bucket_id": {
+        "Type": "String",
+        "Description": "When present, restricts access to one bucket.",
+        "Computed": true
+      },
+      "capabilities": {
+        "Type": "Set",
+        "Description": "A set of strings, each one naming a capability the key has.",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "key_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The name assigned when the key was created."
+      },
+      "name_prefix": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "When present, restricts access to files whose names start with the prefix.",
+        "Computed": true
+      },
+      "options": {
+        "Type": "Set",
+        "Description": "A list of application key options.",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      }
+    },
+    "b2_bucket": {
+      "account_id": {
+        "Type": "String",
+        "Description": "Account ID that the bucket belongs to.",
+        "Computed": true
+      },
+      "bucket_id": {
+        "Type": "String",
+        "Description": "The ID of the bucket.",
+        "Computed": true
+      },
+      "bucket_info": {
+        "Type": "Map",
+        "Description": "User-defined information to be stored with the bucket.",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "bucket_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The name of the bucket."
+      },
+      "bucket_type": {
+        "Type": "String",
+        "Description": "The bucket type. Either 'allPublic', meaning that files in this bucket can be downloaded by anybody, or 'allPrivate'.",
+        "Computed": true
+      },
+      "cors_rules": {
+        "Type": "List",
+        "Description": "The initial list of CORS rules for this bucket.",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "allowed_headers": {
+              "Type": "List",
+              "Description": "If present, this is a list of headers that are allowed in a pre-flight OPTIONS's request's Access-Control-Request-Headers header value.",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "allowed_operations": {
+              "Type": "List",
+              "Description": "A list specifying which operations the rule allows.",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "allowed_origins": {
+              "Type": "List",
+              "Description": "A non-empty list specifying which origins the rule covers. ",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "cors_rule_name": {
+              "Type": "String",
+              "Description": "A name for humans to recognize the rule in a user interface.",
+              "Computed": true
+            },
+            "expose_headers": {
+              "Type": "List",
+              "Description": "If present, this is a list of headers that may be exposed to an application inside the client.",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "max_age_seconds": {
+              "Type": "Int",
+              "Description": "This specifies the maximum number of seconds that a browser may cache the response to a preflight request.",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "default_server_side_encryption": {
+        "Type": "List",
+        "Description": "The default server-side encryption settings of this bucket.",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "algorithm": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Server-side encryption algorithm.",
+              "Computed": true
+            },
+            "mode": {
+              "Type": "String",
+              "Description": "Server-side encryption mode.",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "lifecycle_rules": {
+        "Type": "List",
+        "Description": "The initial list of lifecycle rules for this bucket.",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "days_from_hiding_to_deleting": {
+              "Type": "Int",
+              "Description": "It says how long to keep file versions that are not the current version.",
+              "Computed": true
+            },
+            "days_from_uploading_to_hiding": {
+              "Type": "Int",
+              "Description": "It causes files to be hidden automatically after the given number of days.",
+              "Computed": true
+            },
+            "file_name_prefix": {
+              "Type": "String",
+              "Description": "It specifies which files in the bucket it applies to.",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "options": {
+        "Type": "Set",
+        "Description": "List of bucket options.",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "revision": {
+        "Type": "Int",
+        "Description": "Bucket revision.",
+        "Computed": true
+      }
+    },
+    "b2_bucket_file": {
+      "bucket_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The ID of the bucket."
+      },
+      "file_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The file name."
+      },
+      "file_versions": {
+        "Type": "List",
+        "Description": "File versions.",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "action": {
+              "Type": "String",
+              "Description": "One of 'start', 'upload', 'hide', 'folder', or other values added in the future.",
+              "Computed": true
+            },
+            "content_md5": {
+              "Type": "String",
+              "Description": "MD5 sum of the content.",
+              "Computed": true
+            },
+            "content_sha1": {
+              "Type": "String",
+              "Description": "SHA1 hash of the content.",
+              "Computed": true
+            },
+            "content_type": {
+              "Type": "String",
+              "Description": "Content type. If not set, it will be set based on the file extension.",
+              "Computed": true
+            },
+            "file_id": {
+              "Type": "String",
+              "Description": "The unique identifier for this version of this file.",
+              "Computed": true
+            },
+            "file_info": {
+              "Type": "Map",
+              "Description": "The custom information that is uploaded with the file.",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "file_name": {
+              "Type": "String",
+              "Description": "The name of the B2 file.",
+              "Computed": true
+            },
+            "server_side_encryption": {
+              "Type": "List",
+              "Description": "Server-side encryption settings.",
+              "Computed": true,
+              "IsBlock": true,
+              "ConfigImplicitMode": "ComputedBlock",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "algorithm": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Server-side encryption algorithm.",
+                    "Computed": true
+                  },
+                  "mode": {
+                    "Type": "String",
+                    "Description": "Server-side encryption mode.",
+                    "Computed": true
+                  }
+                }
+              }
+            },
+            "size": {
+              "Type": "Int",
+              "Description": "The file size.",
+              "Computed": true
+            },
+            "upload_timestamp": {
+              "Type": "Int",
+              "Description": "This is a UTC time when this file was uploaded.",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "show_versions": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Show all file versions."
+      }
+    },
+    "b2_bucket_files": {
+      "bucket_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The ID of the bucket."
+      },
+      "file_versions": {
+        "Type": "List",
+        "Description": "File versions in the folder.",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "action": {
+              "Type": "String",
+              "Description": "One of 'start', 'upload', 'hide', 'folder', or other values added in the future.",
+              "Computed": true
+            },
+            "content_md5": {
+              "Type": "String",
+              "Description": "MD5 sum of the content.",
+              "Computed": true
+            },
+            "content_sha1": {
+              "Type": "String",
+              "Description": "SHA1 hash of the content.",
+              "Computed": true
+            },
+            "content_type": {
+              "Type": "String",
+              "Description": "Content type. If not set, it will be set based on the file extension.",
+              "Computed": true
+            },
+            "file_id": {
+              "Type": "String",
+              "Description": "The unique identifier for this version of this file.",
+              "Computed": true
+            },
+            "file_info": {
+              "Type": "Map",
+              "Description": "The custom information that is uploaded with the file.",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "file_name": {
+              "Type": "String",
+              "Description": "The name of the B2 file.",
+              "Computed": true
+            },
+            "server_side_encryption": {
+              "Type": "List",
+              "Description": "Server-side encryption settings.",
+              "Computed": true,
+              "IsBlock": true,
+              "ConfigImplicitMode": "ComputedBlock",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "algorithm": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Server-side encryption algorithm.",
+                    "Computed": true
+                  },
+                  "mode": {
+                    "Type": "String",
+                    "Description": "Server-side encryption mode.",
+                    "Computed": true
+                  }
+                }
+              }
+            },
+            "size": {
+              "Type": "Int",
+              "Description": "The file size.",
+              "Computed": true
+            },
+            "upload_timestamp": {
+              "Type": "Int",
+              "Description": "This is a UTC time when this file was uploaded.",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "folder_name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The folder name (B2 file name prefix)."
+      },
+      "recursive": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Recursive mode."
+      },
+      "show_versions": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Show all file versions."
+      }
+    }
+  }
+}

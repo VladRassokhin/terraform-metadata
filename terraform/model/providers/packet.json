@@ -3,7 +3,7 @@
   ".sdk_type": "terraform-plugin-sdk-v1",
   "name": "packet",
   "type": "provider",
-  "version": "v2.10.1",
+  "version": "v3.2.1",
   "provider": {
     "auth_token": {
       "Type": "String",
@@ -69,7 +69,15 @@
         "Type": "String",
         "Computed": true
       },
+      "custom_data": {
+        "Type": "String",
+        "Optional": true
+      },
       "deployed_facility": {
+        "Type": "String",
+        "Computed": true
+      },
+      "deployed_hardware_reservation_id": {
         "Type": "String",
         "Computed": true
       },
@@ -87,11 +95,6 @@
           "ElementsType": "String"
         }
       },
-      "facility": {
-        "Type": "String",
-        "Optional": true,
-        "Removed": "Use the \"facilities\" array instead, i.e. change \n  facility = \"ewr1\"\nto \n  facilities = [\"ewr1\"]"
-      },
       "force_detach_volumes": {
         "Type": "Bool",
         "Optional": true,
@@ -102,8 +105,7 @@
       },
       "hardware_reservation_id": {
         "Type": "String",
-        "Optional": true,
-        "Computed": true
+        "Optional": true
       },
       "hostname": {
         "Type": "String",
@@ -141,16 +143,6 @@
               "Description": "one of public_ipv4,private_ipv4,public_ipv6"
             }
           }
-        }
-      },
-      "ip_address_types": {
-        "Type": "Set",
-        "Computed": true,
-        "Removed": "Removed in favor of 'ip_address' attribute.",
-        "ConfigImplicitMode": "Attr",
-        "Elem": {
-          "Type": "SchemaElements",
-          "ElementsType": "String"
         }
       },
       "ipxe_script_url": {
@@ -194,7 +186,8 @@
       },
       "network_type": {
         "Type": "String",
-        "Optional": true
+        "Computed": true,
+        "Deprecated": "You should handle Network Type with the new packet_device_network_type resource."
       },
       "operating_system": {
         "Type": "String",
@@ -293,6 +286,16 @@
           "Type": "bool",
           "Value": "false"
         }
+      }
+    },
+    "packet_device_network_type": {
+      "device_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "type": {
+        "Type": "String",
+        "Required": true
       }
     },
     "packet_ip_attachment": {
@@ -609,12 +612,20 @@
           "Type": "SchemaInfo",
           "Info": {
             "always_pxe": {
-              "Type": "String",
-              "Optional": true
+              "Type": "Bool",
+              "Optional": true,
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
+              }
             },
             "billing_cycle": {
               "Type": "String",
               "Required": true
+            },
+            "customdata": {
+              "Type": "String",
+              "Optional": true
             },
             "description": {
               "Type": "String",
@@ -633,6 +644,10 @@
               "Type": "String",
               "Required": true
             },
+            "ipxe_script_url": {
+              "Type": "String",
+              "Optional": true
+            },
             "locked": {
               "Type": "String",
               "Optional": true
@@ -646,6 +661,15 @@
               "Required": true
             },
             "project_ssh_keys": {
+              "Type": "List",
+              "Optional": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "tags": {
               "Type": "List",
               "Optional": true,
               "ConfigImplicitMode": "Attr",
@@ -1254,6 +1278,10 @@
       "quantity": {
         "Type": "Int",
         "Computed": true
+      },
+      "type": {
+        "Type": "String",
+        "Computed": true
       }
     },
     "packet_project": {
@@ -1333,6 +1361,50 @@
           "Type": "SchemaElements",
           "ElementsType": "String"
         }
+      }
+    },
+    "packet_project_ssh_key": {
+      "created": {
+        "Type": "String",
+        "Computed": true
+      },
+      "fingerprint": {
+        "Type": "String",
+        "Computed": true
+      },
+      "id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The id of the SSH Key",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Description": "The label of the Equinix Metal SSH Key",
+        "Computed": true
+      },
+      "owner_id": {
+        "Type": "String",
+        "Computed": true
+      },
+      "project_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The Equinix Metal project id of the Equinix Metal SSH Key"
+      },
+      "public_key": {
+        "Type": "String",
+        "Description": "The public SSH key that will be authorized for SSH access on Equinix Metal devices provisioned with this key",
+        "Computed": true
+      },
+      "search": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name, fingerprint, id, or public_key of the SSH Key to search for in the Equinix Metal project"
+      },
+      "updated": {
+        "Type": "String",
+        "Computed": true
       }
     },
     "packet_spot_market_price": {

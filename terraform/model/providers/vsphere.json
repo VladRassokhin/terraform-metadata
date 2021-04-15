@@ -3,13 +3,19 @@
   ".sdk_type": "terraform-plugin-sdk-v1",
   "name": "vsphere",
   "type": "provider",
-  "version": "v1.21.0",
+  "version": "v1.25.0",
   "provider": {
     "allow_unverified_ssl": {
       "Type": "Bool",
       "Optional": true,
       "Description": "If set, VMware vSphere client will permit unverifiable SSL certificates.",
       "DefaultFunc": "ENV(VSPHERE_ALLOW_UNVERIFIED_SSL)"
+    },
+    "api_timeout": {
+      "Type": "Int",
+      "Optional": true,
+      "Description": "API timeout in minutes (Default: 5)",
+      "DefaultFunc": "ENV(VSPHERE_API_TIMEOUT)"
     },
     "client_debug": {
       "Type": "Bool",
@@ -540,6 +546,40 @@
           "Type": "SchemaElements",
           "ElementsType": "String"
         }
+      },
+      "vsan_disk_group": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "A list of disk UUIDs to add to the vSAN cluster.",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "cache": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Cache disk."
+            },
+            "storage": {
+              "Type": "Set",
+              "Optional": true,
+              "Description": "List of storage disks.",
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
+      "vsan_enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether the VSAN service is enabled for the cluster.",
+        "Computed": true
       }
     },
     "vsphere_compute_cluster_host_group": {
@@ -752,6 +792,53 @@
         "Required": true,
         "Description": "The name of the content library."
       },
+      "publication": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Publication configuration for content library.",
+        "Computed": true,
+        "MaxItems": 1,
+        "ConflictsWith": [
+          "subscription"
+        ],
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "authentication_method": {
+              "Type": "String",
+              "Optional": true,
+              "Default": {
+                "Type": "string",
+                "Value": "NONE"
+              }
+            },
+            "password": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "publish_url": {
+              "Type": "String",
+              "Computed": true
+            },
+            "published": {
+              "Type": "Bool",
+              "Optional": true,
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
+              }
+            },
+            "username": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            }
+          }
+        }
+      },
       "storage_backing": {
         "Type": "Set",
         "Required": true,
@@ -760,6 +847,64 @@
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
+        }
+      },
+      "subscription": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Publication configuration for content library.",
+        "MaxItems": 1,
+        "ConflictsWith": [
+          "publication"
+        ],
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "authentication_method": {
+              "Type": "String",
+              "Optional": true,
+              "Default": {
+                "Type": "string",
+                "Value": "NONE"
+              }
+            },
+            "automatic_sync": {
+              "Type": "Bool",
+              "Optional": true,
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
+              }
+            },
+            "on_demand": {
+              "Type": "Bool",
+              "Optional": true,
+              "Default": {
+                "Type": "bool",
+                "Value": "true"
+              }
+            },
+            "password": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "subscription_url": {
+              "Type": "String",
+              "Optional": true,
+              "Default": {
+                "Type": "string",
+                "Value": "NONE"
+              }
+            },
+            "username": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            }
+          }
         }
       }
     },
@@ -770,14 +915,12 @@
         "Description": "Optional description of the content library item."
       },
       "file_url": {
-        "Type": "Set",
-        "Required": true,
+        "Type": "String",
+        "Optional": true,
         "Description": "ID of source VM of content library item.",
-        "ConfigImplicitMode": "Attr",
-        "Elem": {
-          "Type": "SchemaElements",
-          "ElementsType": "String"
-        }
+        "ConflictsWith": [
+          "source_uuid"
+        ]
       },
       "library_id": {
         "Type": "String",
@@ -788,6 +931,14 @@
         "Type": "String",
         "Required": true,
         "Description": "The name of the content library item."
+      },
+      "source_uuid": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The managed object ID of an existing VM to be cloned to the content library.",
+        "ConflictsWith": [
+          "file_url"
+        ]
       },
       "type": {
         "Type": "String",
@@ -1314,7 +1465,7 @@
       "standby_uplinks": {
         "Type": "List",
         "Optional": true,
-        "Description": "List of active uplinks used for load balancing, matching the names of the uplinks assigned in the DVS.",
+        "Description": "List of standby uplinks used for load balancing, matching the names of the uplinks assigned in the DVS.",
         "Computed": true,
         "ConfigImplicitMode": "Attr",
         "Elem": {
@@ -1600,6 +1751,15 @@
           }
         }
       },
+      "ignore_other_pvlan_mappings": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether to ignore existing PVLAN mappings not managed by this resource. Defaults to false.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
       "ingress_shaping_average_bandwidth": {
         "Type": "Int",
         "Optional": true,
@@ -1830,10 +1990,37 @@
           "vlan_range"
         ]
       },
+      "pvlan_mapping": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "A private VLAN (PVLAN) mapping.",
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "primary_vlan_id": {
+              "Type": "Int",
+              "Required": true,
+              "Description": "The primary VLAN ID. The VLAN IDs of 0 and 4095 are reserved and cannot be used in this property."
+            },
+            "pvlan_type": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The private VLAN type. Valid values are promiscuous, community and isolated."
+            },
+            "secondary_vlan_id": {
+              "Type": "Int",
+              "Required": true,
+              "Description": "The secondary VLAN ID. The VLAN IDs of 0 and 4095 are reserved and cannot be used in this property."
+            }
+          }
+        }
+      },
       "standby_uplinks": {
         "Type": "List",
         "Optional": true,
-        "Description": "List of active uplinks used for load balancing, matching the names of the uplinks assigned in the DVS.",
+        "Description": "List of standby uplinks used for load balancing, matching the names of the uplinks assigned in the DVS.",
         "Computed": true,
         "ConfigImplicitMode": "Attr",
         "Elem": {
@@ -2072,6 +2259,51 @@
         "Type": "String",
         "Required": true,
         "Description": "The managed object ID of the virtual machine."
+      }
+    },
+    "vsphere_entity_permissions": {
+      "entity_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The managed object id or uuid of the entity."
+      },
+      "entity_type": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The entity managed object type."
+      },
+      "permissions": {
+        "Type": "List",
+        "Required": true,
+        "Description": "Permissions to be given to the entity.",
+        "MinItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "is_group": {
+              "Type": "Bool",
+              "Required": true,
+              "Description": "Whether user_or_group field refers to a user or a group. True for a group and false for a user."
+            },
+            "propagate": {
+              "Type": "Bool",
+              "Required": true,
+              "Description": "Whether or not this permission propagates down the hierarchy to sub-entities."
+            },
+            "role_id": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Reference to the role providing the access."
+            },
+            "user_or_group": {
+              "Type": "String",
+              "Required": true,
+              "Description": "User or group receiving access."
+            }
+          }
+        }
       }
     },
     "vsphere_file": {
@@ -2957,6 +3189,28 @@
         }
       }
     },
+    "vsphere_role": {
+      "label": {
+        "Type": "String",
+        "Description": "The display label of the role.",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the storage policy."
+      },
+      "role_privileges": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "The privileges to be associated with the role.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      }
+    },
     "vsphere_storage_drs_vm_override": {
       "datastore_cluster_id": {
         "Type": "String",
@@ -3780,6 +4034,7 @@
               "Type": "String",
               "Optional": true,
               "Description": "The datastore ID for this virtual disk, if different than the virtual machine.",
+              "Computed": true,
               "ConflictsWith": [
                 "datastore_cluster_id"
               ]
@@ -3894,7 +4149,8 @@
             "storage_policy_id": {
               "Type": "String",
               "Optional": true,
-              "Description": "The ID of the storage policy to assign to the virtual disk in VM."
+              "Description": "The ID of the storage policy to assign to the virtual disk in VM.",
+              "Computed": true
             },
             "thin_provisioned": {
               "Type": "Bool",
@@ -3992,10 +4248,7 @@
         "Type": "String",
         "Optional": true,
         "Description": "The guest ID for the operating system.",
-        "Default": {
-          "Type": "string",
-          "Value": "other-64"
-        }
+        "Computed": true
       },
       "guest_ip_addresses": {
         "Type": "List",
@@ -4246,10 +4499,12 @@
               "Type": "Bool",
               "Optional": true,
               "Description": "Allow unverified ssl certificates while deploying ovf/ova from url.",
-              "Default": {
-                "Type": "bool",
-                "Value": "true"
-              }
+              "DefaultFunc": "ENV(VSPHERE_ALLOW_UNVERIFIED_SSL)"
+            },
+            "deployment_option": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The Deployment option to be chosen. If empty, the default option is used."
             },
             "disk_provisioning": {
               "Type": "String",
@@ -4407,7 +4662,8 @@
       "storage_policy_id": {
         "Type": "String",
         "Optional": true,
-        "Description": "The ID of the storage policy to assign to the virtual machine home directory."
+        "Description": "The ID of the storage policy to assign to the virtual machine home directory.",
+        "Computed": true
       },
       "swap_placement_policy": {
         "Type": "String",
@@ -4824,12 +5080,17 @@
       "library_id": {
         "Type": "String",
         "Required": true,
-        "Description": "ID of the content library to contain item"
+        "Description": "ID of the content library to contain item."
       },
       "name": {
         "Type": "String",
         "Required": true,
         "Description": "The name of the content library item."
+      },
+      "type": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Type of content library item."
       }
     },
     "vsphere_custom_attribute": {
@@ -4970,6 +5231,27 @@
         "Description": "The hexadecimal value of the PCI device's vendor ID."
       }
     },
+    "vsphere_host_thumbprint": {
+      "address": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The address of the ESXi to extract the thumbprint from."
+      },
+      "insecure": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Boolean that can be set to true to disable SSL certificate verification."
+      },
+      "port": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The port to connect to on the ESXi host.",
+        "Default": {
+          "Type": "string",
+          "Value": "443"
+        }
+      }
+    },
     "vsphere_network": {
       "datacenter_id": {
         "Type": "String",
@@ -4992,6 +5274,164 @@
         "Computed": true
       }
     },
+    "vsphere_ovf_vm_template": {
+      "allow_unverified_ssl_cert": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Allow unverified ssl certificates while deploying ovf/ova from url.",
+        "DefaultFunc": "ENV(VSPHERE_ALLOW_UNVERIFIED_SSL)"
+      },
+      "alternate_guest_name": {
+        "Type": "String",
+        "Description": "The guest name for the operating system when guest_id is other or other-64.",
+        "Computed": true
+      },
+      "annotation": {
+        "Type": "String",
+        "Description": "User-provided description of the virtual machine.",
+        "Computed": true
+      },
+      "cpu_hot_add_enabled": {
+        "Type": "Bool",
+        "Description": "Allow CPUs to be added to this virtual machine while it is running.",
+        "Computed": true
+      },
+      "cpu_hot_remove_enabled": {
+        "Type": "Bool",
+        "Description": "Allow CPUs to be added to this virtual machine while it is running.",
+        "Computed": true
+      },
+      "cpu_performance_counters_enabled": {
+        "Type": "Bool",
+        "Description": "Enable CPU performance counters on this virtual machine.",
+        "Computed": true
+      },
+      "datastore_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The ID of the virtual machine's datastore. The virtual machine configuration is placed here, along with any virtual disks that are created without datastores."
+      },
+      "deployment_option": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The Deployment option to be chosen. If empty, the default option is used."
+      },
+      "disk_provisioning": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "An optional disk provisioning. If set, all the disks in the deployed ovf will have the same specified disk type (e.g., thin provisioned)."
+      },
+      "firmware": {
+        "Type": "String",
+        "Description": "The firmware interface to use on the virtual machine. Can be one of bios or EFI.",
+        "Computed": true
+      },
+      "folder": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of the folder to locate the virtual machine in."
+      },
+      "guest_id": {
+        "Type": "String",
+        "Description": "The guest ID for the operating system.",
+        "Computed": true
+      },
+      "host_system_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The ID of an optional host system to pin the virtual machine to."
+      },
+      "ide_controller_count": {
+        "Type": "Int",
+        "Description": "The number of IDE controllers that Terraform manages on this virtual machine. This directly affects the amount of disks you can add to the virtual machine and the maximum disk unit number. Note that lowering this value does not remove controllers.",
+        "Computed": true
+      },
+      "ip_allocation_policy": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The IP allocation policy."
+      },
+      "ip_protocol": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The IP protocol."
+      },
+      "local_ovf_path": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The absolute path to the ovf/ova file in the local system."
+      },
+      "memory": {
+        "Type": "Int",
+        "Description": "The size of the virtual machine's memory, in MB.",
+        "Computed": true
+      },
+      "memory_hot_add_enabled": {
+        "Type": "Bool",
+        "Description": "Allow memory to be added to this virtual machine while it is running.",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the virtual machine to create."
+      },
+      "nested_hv_enabled": {
+        "Type": "Bool",
+        "Description": "Enable nested hardware virtualization on this virtual machine, facilitating nested virtualization in the guest.",
+        "Computed": true
+      },
+      "num_cores_per_socket": {
+        "Type": "Int",
+        "Description": "The number of cores to distribute amongst the CPUs in this virtual machine. If specified, the value supplied to num_cpus must be evenly divisible by this value.",
+        "Computed": true
+      },
+      "num_cpus": {
+        "Type": "Int",
+        "Description": "The number of virtual processors to assign to this virtual machine.",
+        "Computed": true
+      },
+      "ovf_network_map": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "The mapping of name of network identifiers from the ovf descriptor to network UUID in the VI infrastructure.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "remote_ovf_url": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "URL to the remote ovf/ova file to be deployed."
+      },
+      "resource_pool_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The ID of a resource pool to put the virtual machine in."
+      },
+      "sata_controller_count": {
+        "Type": "Int",
+        "Description": "The number of SATA controllers that Terraform manages on this virtual machine. This directly affects the amount of disks you can add to the virtual machine and the maximum disk unit number. Note that lowering this value does not remove controllers.",
+        "Computed": true
+      },
+      "scsi_controller_count": {
+        "Type": "Int",
+        "Description": "The number of SCSI controllers that Terraform manages on this virtual machine. This directly affects the amount of disks you can add to the virtual machine and the maximum disk unit number. Note that lowering this value does not remove controllers.",
+        "Computed": true
+      },
+      "scsi_type": {
+        "Type": "String",
+        "Description": "The type of SCSI bus this virtual machine will have. Can be one of lsilogic, lsilogic-sas or pvscsi.",
+        "Computed": true
+      },
+      "swap_placement_policy": {
+        "Type": "String",
+        "Description": "The swap file placement policy for this virtual machine. Can be one of inherit, hostLocal, or vmDirectory.",
+        "Computed": true
+      }
+    },
     "vsphere_resource_pool": {
       "datacenter_id": {
         "Type": "String",
@@ -5002,6 +5442,33 @@
         "Type": "String",
         "Optional": true,
         "Description": "The name or path of the resource pool."
+      }
+    },
+    "vsphere_role": {
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Description of the role."
+      },
+      "label": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The display label of the role."
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Name of the role."
+      },
+      "role_privileges": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Privileges to be associated with the role",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       }
     },
     "vsphere_storage_policy": {
@@ -5070,8 +5537,81 @@
     "vsphere_virtual_machine": {
       "alternate_guest_name": {
         "Type": "String",
-        "Description": "The alternate guest name of the virtual machine when guest_id is a non-specific operating system, like otherGuest.",
+        "Optional": true,
+        "Description": "The guest name for the operating system when guest_id is other or other-64."
+      },
+      "annotation": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "User-provided description of the virtual machine."
+      },
+      "boot_delay": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The number of milliseconds to wait before starting the boot sequence."
+      },
+      "boot_retry_delay": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The number of milliseconds to wait before retrying the boot sequence. This only valid if boot_retry_enabled is true.",
+        "Default": {
+          "Type": "int",
+          "Value": "10000"
+        }
+      },
+      "boot_retry_enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "If set to true, a virtual machine that fails to boot will try again after the delay defined in boot_retry_delay."
+      },
+      "change_version": {
+        "Type": "String",
+        "Description": "A unique identifier for a given version of the last configuration applied, such the timestamp of the last update to the configuration.",
         "Computed": true
+      },
+      "cpu_hot_add_enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Allow CPUs to be added to this virtual machine while it is running."
+      },
+      "cpu_hot_remove_enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Allow CPUs to be added to this virtual machine while it is running."
+      },
+      "cpu_limit": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The maximum amount of memory (in MB) or CPU (in MHz) that this virtual machine can consume, regardless of available resources.%!(EXTRA string=cpu)",
+        "Default": {
+          "Type": "int",
+          "Value": "-1"
+        }
+      },
+      "cpu_performance_counters_enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enable CPU performance counters on this virtual machine."
+      },
+      "cpu_reservation": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The amount of memory (in MB) or CPU (in MHz) that this virtual machine is guaranteed.%!(EXTRA string=cpu)"
+      },
+      "cpu_share_count": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The amount of shares to allocate to cpu for a custom share level.",
+        "Computed": true
+      },
+      "cpu_share_level": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The allocation level for cpu resources. Can be one of high, low, normal, or custom.",
+        "Default": {
+          "Type": "string",
+          "Value": "normal"
+        }
       },
       "datacenter_id": {
         "Type": "String",
@@ -5091,6 +5631,10 @@
               "Type": "Bool",
               "Computed": true
             },
+            "label": {
+              "Type": "String",
+              "Computed": true
+            },
             "size": {
               "Type": "Int",
               "Computed": true
@@ -5098,18 +5642,61 @@
             "thin_provisioned": {
               "Type": "Bool",
               "Computed": true
+            },
+            "unit_number": {
+              "Type": "Int",
+              "Computed": true
             }
           }
         }
       },
+      "efi_secure_boot_enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "When the boot type set in firmware is efi, this enables EFI secure boot."
+      },
+      "enable_disk_uuid": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Expose the UUIDs of attached virtual disks to the virtual machine, allowing access to them in the guest."
+      },
+      "enable_logging": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enable logging on this virtual machine."
+      },
+      "ept_rvi_mode": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The EPT/RVI (hardware memory virtualization) setting for this virtual machine. Can be one of automatic, on, or off.",
+        "Default": {
+          "Type": "string",
+          "Value": "automatic"
+        }
+      },
+      "extra_config": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "Extra configuration data for this virtual machine. Can be used to supply advanced parameters not normally in configuration, such as instance metadata, or configuration data for OVF images.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
       "firmware": {
         "Type": "String",
-        "Description": "The firmware type for this virtual machine.",
-        "Computed": true
+        "Optional": true,
+        "Description": "The firmware interface to use on the virtual machine. Can be one of bios or EFI.",
+        "Default": {
+          "Type": "string",
+          "Value": "bios"
+        }
       },
       "guest_id": {
         "Type": "String",
-        "Description": "The guest ID of the virtual machine.",
+        "Optional": true,
+        "Description": "The guest ID for the operating system.",
         "Computed": true
       },
       "guest_ip_addresses": {
@@ -5122,6 +5709,21 @@
           "ElementsType": "String"
         }
       },
+      "hardware_version": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The hardware version for the virtual machine.",
+        "Computed": true
+      },
+      "hv_mode": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The (non-nested) hardware virtualization setting for this virtual machine. Can be one of hvAuto, hvOn, or hvOff.",
+        "Default": {
+          "Type": "string",
+          "Value": "hvAuto"
+        }
+      },
       "ide_controller_scan_count": {
         "Type": "Int",
         "Optional": true,
@@ -5131,10 +5733,67 @@
           "Value": "2"
         }
       },
+      "latency_sensitivity": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Controls the scheduling delay of the virtual machine. Use a higher sensitivity for applications that require lower latency, such as VOIP, media player applications, or applications that require frequent access to mouse or keyboard devices. Can be one of low, normal, medium, or high.",
+        "Default": {
+          "Type": "types.LatencySensitivitySensitivityLevel",
+          "Value": "normal"
+        }
+      },
+      "memory": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The size of the virtual machine's memory, in MB.",
+        "Default": {
+          "Type": "int",
+          "Value": "1024"
+        }
+      },
+      "memory_hot_add_enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Allow memory to be added to this virtual machine while it is running."
+      },
+      "memory_limit": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The maximum amount of memory (in MB) or CPU (in MHz) that this virtual machine can consume, regardless of available resources.%!(EXTRA string=memory)",
+        "Default": {
+          "Type": "int",
+          "Value": "-1"
+        }
+      },
+      "memory_reservation": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The amount of memory (in MB) or CPU (in MHz) that this virtual machine is guaranteed.%!(EXTRA string=memory)"
+      },
+      "memory_share_count": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The amount of shares to allocate to memory for a custom share level.",
+        "Computed": true
+      },
+      "memory_share_level": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The allocation level for memory resources. Can be one of high, low, normal, or custom.",
+        "Default": {
+          "Type": "string",
+          "Value": "normal"
+        }
+      },
       "name": {
         "Type": "String",
         "Required": true,
-        "Description": "The name or path of the virtual machine."
+        "Description": "The name of this virtual machine."
+      },
+      "nested_hv_enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enable nested hardware virtualization on this virtual machine, facilitating nested virtualization in the guest."
       },
       "network_interface_types": {
         "Type": "List",
@@ -5144,6 +5803,65 @@
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
+        }
+      },
+      "num_cores_per_socket": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The number of cores to distribute amongst the CPUs in this virtual machine. If specified, the value supplied to num_cpus must be evenly divisible by this value.",
+        "Default": {
+          "Type": "int",
+          "Value": "1"
+        }
+      },
+      "num_cpus": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The number of virtual processors to assign to this virtual machine.",
+        "Default": {
+          "Type": "int",
+          "Value": "1"
+        }
+      },
+      "run_tools_scripts_after_power_on": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enable the execution of post-power-on scripts when VMware tools is installed.",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "run_tools_scripts_after_resume": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enable the execution of post-resume scripts when VMware tools is installed.",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "run_tools_scripts_before_guest_reboot": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enable the execution of pre-reboot scripts when VMware tools is installed."
+      },
+      "run_tools_scripts_before_guest_shutdown": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enable the execution of pre-shutdown scripts when VMware tools is installed.",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "run_tools_scripts_before_guest_standby": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enable the execution of pre-standby scripts when VMware tools is installed.",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
         }
       },
       "sata_controller_scan_count": {
@@ -5173,6 +5891,64 @@
         "Type": "String",
         "Description": "The common SCSI bus type of all controllers on the virtual machine.",
         "Computed": true
+      },
+      "storage_policy_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The ID of the storage policy to assign to the virtual machine home directory.",
+        "Computed": true
+      },
+      "swap_placement_policy": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The swap file placement policy for this virtual machine. Can be one of inherit, hostLocal, or vmDirectory.",
+        "Default": {
+          "Type": "string",
+          "Value": "inherit"
+        }
+      },
+      "sync_time_with_host": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enable guest clock synchronization with the host. Requires VMware tools to be installed."
+      },
+      "uuid": {
+        "Type": "String",
+        "Description": "The UUID of the virtual machine. Also exposed as the ID of the resource.",
+        "Computed": true
+      },
+      "vapp": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "vApp configuration data for this virtual machine. Can be used to provide configuration data for OVF images.",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "properties": {
+              "Type": "Map",
+              "Optional": true,
+              "Description": "A map of customizable vApp properties and their values. Allows customization of VMs cloned from OVF templates which have customizable vApp properties.",
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
+      "vapp_transport": {
+        "Type": "List",
+        "Description": "vApp transport methods supported by virtual machine.",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       }
     },
     "vsphere_vmfs_disks": {

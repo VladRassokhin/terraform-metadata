@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+IFS=$'\n\t'
+
+pushd "$(dirname "$0")" >/dev/null
+
+echo "Fetching providers from Terraform Registry..."
+idx=1
+providers=""
+while data=$(curl -s "https://registry.terraform.io/v2/providers?filter[tier]=official,partner&page[number]=${idx}&page[size]=100" | jq -e '.data | .[]'); do
+  new_p=$(echo $data | jq '{(.attributes.name): {repository: (.attributes.source | sub("https:\/\/"; ""))}}' | jq -s add)
+  providers=$(echo $providers $new_p)
+  echo "Fetched page $idx"
+  idx=$((idx + 1))
+done
+
+rm -rf provider-data.json
+rm -rf providers.list
+rm -rf providers.json
+
+echo $providers | jq -s add > provider-data.json
+echo $providers | jq -r 'keys | .[]' > providers.list
+
+providers_base=""
+
+if [[ -f providers-base.json ]]; then
+  providers_base=$(cat providers-base.json)
+fi
+
+echo $providers $providers_base | jq -s add > providers.json
+
+
+echo "Done"
+popd >/dev/null
+
+# "https://registry.terraform.io/v2/providers?filter[tier]=official,partner&page[number]=3&page[size]=100"

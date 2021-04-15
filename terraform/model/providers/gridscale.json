@@ -3,7 +3,7 @@
   ".sdk_type": "terraform-plugin-sdk-v1",
   "name": "gridscale",
   "type": "provider",
-  "version": "v1.6.2",
+  "version": "v1.9.0",
   "provider": {
     "api_url": {
       "Type": "String",
@@ -19,18 +19,99 @@
     },
     "token": {
       "Type": "String",
-      "Required": true,
+      "Optional": true,
       "Description": "API-token for the gridscale API.",
       "DefaultFunc": "ENV(GRIDSCALE_TOKEN)"
     },
     "uuid": {
       "Type": "String",
-      "Required": true,
+      "Optional": true,
       "Description": "User-UUID for the gridscale API.",
       "DefaultFunc": "ENV(GRIDSCALE_UUID)"
     }
   },
   "resources": {
+    "gridscale_backupschedule": {
+      "__timeouts__": [
+        "create",
+        "update",
+        "delete"
+      ],
+      "active": {
+        "Type": "Bool",
+        "Required": true,
+        "Description": "The status of the schedule active or not"
+      },
+      "change_time": {
+        "Type": "String",
+        "Description": "Defines the date and time of the last object change",
+        "Computed": true
+      },
+      "create_time": {
+        "Type": "String",
+        "Description": "Defines the date and time the object was initially created",
+        "Computed": true
+      },
+      "keep_backups": {
+        "Type": "Int",
+        "Required": true,
+        "Description": "The amount of storage backups to keep before overwriting the last created backup"
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The human-readable name of the object"
+      },
+      "next_runtime": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The date and time that the storage backup schedule will be run. Format: \"2006-01-02 15:04:05\""
+      },
+      "next_runtime_computed": {
+        "Type": "String",
+        "Description": "The date and time that the storage backup schedule will be run. This date and time is computed by gridscale's server.",
+        "Computed": true
+      },
+      "run_interval": {
+        "Type": "Int",
+        "Required": true,
+        "Description": "The interval at which the schedule will run (in minutes)"
+      },
+      "status": {
+        "Type": "String",
+        "Description": "Status indicates the status of the object",
+        "Computed": true
+      },
+      "storage_backups": {
+        "Type": "Set",
+        "Description": "Related backups",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "create_time": {
+              "Type": "String",
+              "Computed": true
+            },
+            "name": {
+              "Type": "String",
+              "Computed": true
+            },
+            "object_uuid": {
+              "Type": "String",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "storage_uuid": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Uuid of the storage used to create storage backups"
+      }
+    },
     "gridscale_firewall": {
       "__timeouts__": [
         "create",
@@ -64,13 +145,13 @@
       },
       "location_name": {
         "Type": "String",
-        "Description": "The human-readable name of the location. It supports the full UTF-8 charset, with a maximum of 64 characters",
+        "Description": "The human-readable name of the location. It supports the full UTF-8 character set, with a maximum of 64 characters",
         "Computed": true
       },
       "name": {
         "Type": "String",
         "Required": true,
-        "Description": "The human-readable name of the object. It supports the full UTF-8 charset, with a maximum of 64 characters"
+        "Description": "The human-readable name of the object. It supports the full UTF-8 character set, with a maximum of 64 characters"
       },
       "network": {
         "Type": "Set",
@@ -111,6 +192,7 @@
       "rules_v4_in": {
         "Type": "List",
         "Optional": true,
+        "Computed": true,
         "IsBlock": true,
         "ConfigImplicitMode": "Block",
         "Elem": {
@@ -139,7 +221,7 @@
             "order": {
               "Type": "Int",
               "Required": true,
-              "Description": "The order at which the firewall will compare packets against its rules, \na packet will be compared against the first rule, it will either allow it to pass or block it \nand it won t be matched against any other rules. However, if it does no match the rule, \nthen it will proceed onto rule 2. Packets that do not match any rules are blocked by default."
+              "Description": "The order at which the firewall will compare packets against its rules.\nA packet will be compared against the first rule, it will either allow it to pass or block it\nand it won't be matched against any other rules. However, if it does no match the rule,\nthen it will proceed onto rule 2. Packets that do not match any rules are blocked by default (Only for inbound)."
             },
             "protocol": {
               "Type": "String",
@@ -190,7 +272,7 @@
             "order": {
               "Type": "Int",
               "Required": true,
-              "Description": "The order at which the firewall will compare packets against its rules, \na packet will be compared against the first rule, it will either allow it to pass or block it \nand it won t be matched against any other rules. However, if it does no match the rule, \nthen it will proceed onto rule 2. Packets that do not match any rules are blocked by default."
+              "Description": "The order at which the firewall will compare packets against its rules.\nA packet will be compared against the first rule, it will either allow it to pass or block it\nand it won't be matched against any other rules. However, if it does no match the rule,\nthen it will proceed onto rule 2. Packets that do not match any rules are blocked by default (Only for inbound)."
             },
             "protocol": {
               "Type": "String",
@@ -213,6 +295,7 @@
       "rules_v6_in": {
         "Type": "List",
         "Optional": true,
+        "Computed": true,
         "IsBlock": true,
         "ConfigImplicitMode": "Block",
         "Elem": {
@@ -241,7 +324,7 @@
             "order": {
               "Type": "Int",
               "Required": true,
-              "Description": "The order at which the firewall will compare packets against its rules, \na packet will be compared against the first rule, it will either allow it to pass or block it \nand it won t be matched against any other rules. However, if it does no match the rule, \nthen it will proceed onto rule 2. Packets that do not match any rules are blocked by default."
+              "Description": "The order at which the firewall will compare packets against its rules.\nA packet will be compared against the first rule, it will either allow it to pass or block it\nand it won't be matched against any other rules. However, if it does no match the rule,\nthen it will proceed onto rule 2. Packets that do not match any rules are blocked by default (Only for inbound)."
             },
             "protocol": {
               "Type": "String",
@@ -292,7 +375,7 @@
             "order": {
               "Type": "Int",
               "Required": true,
-              "Description": "The order at which the firewall will compare packets against its rules, \na packet will be compared against the first rule, it will either allow it to pass or block it \nand it won t be matched against any other rules. However, if it does no match the rule, \nthen it will proceed onto rule 2. Packets that do not match any rules are blocked by default."
+              "Description": "The order at which the firewall will compare packets against its rules.\nA packet will be compared against the first rule, it will either allow it to pass or block it\nand it won't be matched against any other rules. However, if it does no match the rule,\nthen it will proceed onto rule 2. Packets that do not match any rules are blocked by default (Only for inbound)."
             },
             "protocol": {
               "Type": "String",
@@ -355,7 +438,7 @@
       },
       "ip": {
         "Type": "String",
-        "Description": "Defines the IP Address.",
+        "Description": "Defines the IP address.",
         "Computed": true
       },
       "labels": {
@@ -380,7 +463,7 @@
       },
       "location_name": {
         "Type": "String",
-        "Description": "The human-readable name of the location. It supports the full UTF-8 charset, with a maximum of 64 characters",
+        "Description": "The human-readable name of the location. It supports the full UTF-8 character set, with a maximum of 64 characters",
         "Computed": true
       },
       "location_uuid": {
@@ -391,7 +474,7 @@
       "name": {
         "Type": "String",
         "Optional": true,
-        "Description": "The human-readable name of the object. It supports the full UTF-8 charset, with a maximum of 64 characters."
+        "Description": "The human-readable name of the object. It supports the full UTF-8 character set, with a maximum of 64 characters."
       },
       "prefix": {
         "Type": "String",
@@ -400,7 +483,7 @@
       "reverse_dns": {
         "Type": "String",
         "Optional": true,
-        "Description": "Defines the reverse DNS entry for the IP Address (PTR Resource Record).",
+        "Description": "Defines the reverse DNS entry for the IP address (PTR Resource Record).",
         "Computed": true
       },
       "status": {
@@ -449,7 +532,7 @@
       },
       "ip": {
         "Type": "String",
-        "Description": "Defines the IP Address.",
+        "Description": "Defines the IP address.",
         "Computed": true
       },
       "labels": {
@@ -474,7 +557,7 @@
       },
       "location_name": {
         "Type": "String",
-        "Description": "The human-readable name of the location. It supports the full UTF-8 charset, with a maximum of 64 characters",
+        "Description": "The human-readable name of the location. It supports the full UTF-8 character set, with a maximum of 64 characters",
         "Computed": true
       },
       "location_uuid": {
@@ -485,7 +568,7 @@
       "name": {
         "Type": "String",
         "Optional": true,
-        "Description": "The human-readable name of the object. It supports the full UTF-8 charset, with a maximum of 64 characters."
+        "Description": "The human-readable name of the object. It supports the full UTF-8 character set, with a maximum of 64 characters."
       },
       "prefix": {
         "Type": "String",
@@ -494,7 +577,7 @@
       "reverse_dns": {
         "Type": "String",
         "Optional": true,
-        "Description": "Defines the reverse DNS entry for the IP Address (PTR Resource Record).",
+        "Description": "Defines the reverse DNS entry for the IP address (PTR Resource Record).",
         "Computed": true
       },
       "status": {
@@ -514,7 +597,7 @@
       ],
       "capacity": {
         "Type": "Int",
-        "Description": "The capacity of a storage/ISO Image/template/snapshot in GB.",
+        "Description": "The capacity of a storage/ISO image/template/snapshot in GB.",
         "Computed": true
       },
       "change_time": {
@@ -534,7 +617,7 @@
       },
       "description": {
         "Type": "String",
-        "Description": "Description of the ISO Image.",
+        "Description": "Description of the ISO image.",
         "Computed": true
       },
       "labels": {
@@ -559,7 +642,7 @@
       },
       "location_name": {
         "Type": "String",
-        "Description": "The human-readable name of the location. It supports the full UTF-8 charset, with a maximum of 64 characters",
+        "Description": "The human-readable name of the location. It supports the full UTF-8 character set, with a maximum of 64 characters",
         "Computed": true
       },
       "location_uuid": {
@@ -570,7 +653,7 @@
       "name": {
         "Type": "String",
         "Required": true,
-        "Description": "The human-readable name of the object. It supports the full UTF-8 charset, with a maximum of 64 characters."
+        "Description": "The human-readable name of the object. It supports the full UTF-8 character set, with a maximum of 64 characters."
       },
       "private": {
         "Type": "Bool",
@@ -608,7 +691,7 @@
       "source_url": {
         "Type": "String",
         "Required": true,
-        "Description": "Contains the source URL of the ISO Image that it was originally fetched from."
+        "Description": "Contains the source URL of the ISO image that it was originally fetched from."
       },
       "status": {
         "Type": "String",
@@ -622,7 +705,138 @@
       },
       "version": {
         "Type": "String",
-        "Description": "Upstream version of the ISO Image release",
+        "Description": "Upstream version of the ISO image release",
+        "Computed": true
+      }
+    },
+    "gridscale_k8s": {
+      "__timeouts__": [
+        "create",
+        "update",
+        "delete"
+      ],
+      "change_time": {
+        "Type": "String",
+        "Description": "Time of the last change",
+        "Computed": true
+      },
+      "create_time": {
+        "Type": "String",
+        "Description": "Time this service was created.",
+        "Computed": true
+      },
+      "kubeconfig": {
+        "Type": "String",
+        "Description": "K8s config data",
+        "Computed": true
+      },
+      "labels": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "List of labels.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "listen_port": {
+        "Type": "Set",
+        "Description": "The port number where this k8s service accepts connections.",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "name": {
+              "Type": "String",
+              "Computed": true
+            },
+            "port": {
+              "Type": "Int",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The human-readable name of the object. It supports the full UTF-8 character set, with a maximum of 64 characters."
+      },
+      "network_uuid": {
+        "Type": "String",
+        "Description": "Network UUID containing security zone",
+        "Computed": true
+      },
+      "node_pool": {
+        "Type": "List",
+        "Required": true,
+        "Description": "Node pool's specification.",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "cores": {
+              "Type": "Int",
+              "Required": true,
+              "Description": "Cores per worker node."
+            },
+            "memory": {
+              "Type": "Int",
+              "Required": true,
+              "Description": "Memory per worker node (in GiB)."
+            },
+            "name": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Name of node pool."
+            },
+            "node_count": {
+              "Type": "Int",
+              "Required": true,
+              "Description": "Number of worker nodes."
+            },
+            "storage": {
+              "Type": "Int",
+              "Required": true,
+              "Description": "Storage per worker node (in GiB)."
+            },
+            "storage_type": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Storage type (one of storage, `storage_high, storage_insane)."
+            }
+          }
+        }
+      },
+      "release": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The k8s release of this instance."
+      },
+      "security_zone_uuid": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Security zone UUID linked to PaaS service.",
+        "Computed": true
+      },
+      "service_template_uuid": {
+        "Type": "String",
+        "Description": "PaaS service template identifier for this service.",
+        "Computed": true
+      },
+      "status": {
+        "Type": "String",
+        "Description": "Current status of the service",
+        "Computed": true
+      },
+      "usage_in_minutes": {
+        "Type": "Int",
+        "Description": "Number of minutes that PaaS service is in use",
         "Computed": true
       }
     },
@@ -717,7 +931,7 @@
       "name": {
         "Type": "String",
         "Required": true,
-        "Description": "The human-readable name of the object. It supports the full UTF-8 charset, with a maximum of 64 characters"
+        "Description": "The human-readable name of the object. It supports the full UTF-8 character set, with a maximum of 64 characters"
       },
       "redirect_http_to_https": {
         "Type": "Bool",
@@ -732,6 +946,324 @@
           "Type": "string",
           "Value": "active"
         }
+      }
+    },
+    "gridscale_marketplace_application": {
+      "__timeouts__": [
+        "create",
+        "update",
+        "delete"
+      ],
+      "category": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Category of marketplace application. Accepted values: \"CMS\", \"project management\", \"Adminpanel\", \"Collaboration\", \"Cloud Storage\", \"Archiving\""
+      },
+      "change_time": {
+        "Type": "String",
+        "Description": "Defines the date and time of the last object change",
+        "Computed": true
+      },
+      "create_time": {
+        "Type": "String",
+        "Description": "Defines the date and time the object was initially created",
+        "Computed": true
+      },
+      "is_application_owner": {
+        "Type": "Bool",
+        "Description": "Whether the you are the owner of application or not",
+        "Computed": true
+      },
+      "is_publish_global": {
+        "Type": "Bool",
+        "Description": "Whether a template is published to other partner or not",
+        "Computed": true
+      },
+      "is_publish_global_requested": {
+        "Type": "Bool",
+        "Description": "Whether a partner wants their tenant template published to other partners",
+        "Computed": true
+      },
+      "is_publish_requested": {
+        "Type": "Bool",
+        "Description": "Whether the tenants want their template to be published or not",
+        "Computed": true
+      },
+      "is_published": {
+        "Type": "Bool",
+        "Description": "Whether the template is published by the partner to their tenant",
+        "Computed": true
+      },
+      "meta_advices": {
+        "Type": "String",
+        "Optional": true
+      },
+      "meta_author": {
+        "Type": "String",
+        "Optional": true
+      },
+      "meta_components": {
+        "Type": "Set",
+        "Optional": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "meta_features": {
+        "Type": "String",
+        "Optional": true
+      },
+      "meta_hints": {
+        "Type": "String",
+        "Optional": true
+      },
+      "meta_icon": {
+        "Type": "String",
+        "Optional": true
+      },
+      "meta_license": {
+        "Type": "String",
+        "Optional": true
+      },
+      "meta_os": {
+        "Type": "String",
+        "Optional": true
+      },
+      "meta_overview": {
+        "Type": "String",
+        "Optional": true
+      },
+      "meta_terms_of_use": {
+        "Type": "String",
+        "Optional": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The human-readable name of the object. It supports the full UTF-8 character set, with a maximum of 64 characters"
+      },
+      "object_storage_path": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Path to the images for the application, must be in .gz format and started with s3//"
+      },
+      "publish": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether you want to publish your application or not",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "publish_global_requested_date": {
+        "Type": "String",
+        "Description": "The date when a partner requested their tenants template to be published",
+        "Computed": true
+      },
+      "publish_requested_date": {
+        "Type": "String",
+        "Description": "The date when the tenant requested their template to be published",
+        "Computed": true
+      },
+      "published_date": {
+        "Type": "String",
+        "Description": "The date when the template is published into other tenant in the same partner",
+        "Computed": true
+      },
+      "published_global_date": {
+        "Type": "String",
+        "Description": "The date when a template is published to other partner",
+        "Computed": true
+      },
+      "setup_cores": {
+        "Type": "Int",
+        "Required": true,
+        "Description": "Number of server's cores"
+      },
+      "setup_memory": {
+        "Type": "Int",
+        "Required": true,
+        "Description": "The capacity of server's memory in GB"
+      },
+      "setup_storage_capacity": {
+        "Type": "Int",
+        "Required": true,
+        "Description": "The capacity of server's storage in GB"
+      },
+      "status": {
+        "Type": "String",
+        "Description": "status indicates the status of the object",
+        "Computed": true
+      },
+      "type": {
+        "Type": "String",
+        "Description": "The type of template",
+        "Computed": true
+      },
+      "unique_hash": {
+        "Type": "String",
+        "Description": "Unique hash to allow user to import the self-created marketplace application",
+        "Computed": true
+      }
+    },
+    "gridscale_marketplace_application_import": {
+      "__timeouts__": [
+        "create",
+        "update",
+        "delete"
+      ],
+      "category": {
+        "Type": "String",
+        "Description": "Category of marketplace application. Accepted values: \"CMS\", \"project management\", \"Adminpanel\", \"Collaboration\", \"Cloud Storage\", \"Archiving\"",
+        "Computed": true
+      },
+      "change_time": {
+        "Type": "String",
+        "Description": "Defines the date and time of the last object change",
+        "Computed": true
+      },
+      "create_time": {
+        "Type": "String",
+        "Description": "Defines the date and time the object was initially created",
+        "Computed": true
+      },
+      "import_unique_hash": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Hash of a specific marketplace application that you want to import"
+      },
+      "is_application_owner": {
+        "Type": "Bool",
+        "Description": "Whether the you are the owner of application or not",
+        "Computed": true
+      },
+      "is_publish_global": {
+        "Type": "Bool",
+        "Description": "Whether a template is published to other partner or not",
+        "Computed": true
+      },
+      "is_publish_global_requested": {
+        "Type": "Bool",
+        "Description": "Whether a partner wants their tenant template published to other partners",
+        "Computed": true
+      },
+      "is_publish_requested": {
+        "Type": "Bool",
+        "Description": "Whether the tenants want their template to be published or not",
+        "Computed": true
+      },
+      "is_published": {
+        "Type": "Bool",
+        "Description": "Whether the template is published by the partner to their tenant",
+        "Computed": true
+      },
+      "meta_advices": {
+        "Type": "String",
+        "Computed": true
+      },
+      "meta_author": {
+        "Type": "String",
+        "Computed": true
+      },
+      "meta_components": {
+        "Type": "Set",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "meta_features": {
+        "Type": "String",
+        "Computed": true
+      },
+      "meta_hints": {
+        "Type": "String",
+        "Computed": true
+      },
+      "meta_icon": {
+        "Type": "String",
+        "Computed": true
+      },
+      "meta_license": {
+        "Type": "String",
+        "Computed": true
+      },
+      "meta_os": {
+        "Type": "String",
+        "Computed": true
+      },
+      "meta_overview": {
+        "Type": "String",
+        "Computed": true
+      },
+      "meta_terms_of_use": {
+        "Type": "String",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Description": "The human-readable name of the object. It supports the full UTF-8 character set, with a maximum of 64 characters",
+        "Computed": true
+      },
+      "object_storage_path": {
+        "Type": "String",
+        "Description": "Path to the images for the application, must be in .gz format and started with s3//",
+        "Computed": true
+      },
+      "publish_global_requested_date": {
+        "Type": "String",
+        "Description": "The date when a partner requested their tenants template to be published",
+        "Computed": true
+      },
+      "publish_requested_date": {
+        "Type": "String",
+        "Description": "The date when the tenant requested their template to be published",
+        "Computed": true
+      },
+      "published_date": {
+        "Type": "String",
+        "Description": "The date when the template is published into other tenant in the same partner",
+        "Computed": true
+      },
+      "published_global_date": {
+        "Type": "String",
+        "Description": "The date when a template is published to other partner",
+        "Computed": true
+      },
+      "setup_cores": {
+        "Type": "Int",
+        "Description": "Number of server's cores",
+        "Computed": true
+      },
+      "setup_memory": {
+        "Type": "Int",
+        "Description": "The capacity of server's memory in GB",
+        "Computed": true
+      },
+      "setup_storage_capacity": {
+        "Type": "Int",
+        "Description": "The capacity of server's storage in GB",
+        "Computed": true
+      },
+      "status": {
+        "Type": "String",
+        "Description": "status indicates the status of the object",
+        "Computed": true
+      },
+      "type": {
+        "Type": "String",
+        "Description": "The type of template",
+        "Computed": true
+      },
+      "unique_hash": {
+        "Type": "String",
+        "Description": "Unique hash to allow user to import the self-created marketplace application",
+        "Computed": true
       }
     },
     "gridscale_network": {
@@ -786,7 +1318,7 @@
       },
       "location_name": {
         "Type": "String",
-        "Description": "The human-readable name of the location. It supports the full UTF-8 charset, with a maximum of 64 characters",
+        "Description": "The human-readable name of the location. It supports the full UTF-8 character set, with a maximum of 64 characters",
         "Computed": true
       },
       "location_uuid": {
@@ -797,7 +1329,7 @@
       "name": {
         "Type": "String",
         "Required": true,
-        "Description": "The human-readable name of the object. It supports the full UTF-8 charset, with a maximum of 64 characters."
+        "Description": "The human-readable name of the object. It supports the full UTF-8 character set, with a maximum of 64 characters."
       },
       "network_type": {
         "Type": "String",
@@ -847,6 +1379,11 @@
         "Description": "Current price of PaaS service",
         "Computed": true
       },
+      "kubeconfig": {
+        "Type": "String",
+        "Description": "K8s config data",
+        "Computed": true
+      },
       "labels": {
         "Type": "Set",
         "Optional": true,
@@ -880,7 +1417,7 @@
       "name": {
         "Type": "String",
         "Required": true,
-        "Description": "The human-readable name of the object. It supports the full UTF-8 charset, with a maximum of 64 characters"
+        "Description": "The human-readable name of the object. It supports the full UTF-8 character set, with a maximum of 64 characters"
       },
       "network_uuid": {
         "Type": "String",
@@ -946,6 +1483,11 @@
         "Type": "String",
         "Required": true,
         "Description": "Template that PaaS service uses"
+      },
+      "service_template_uuid_computed": {
+        "Type": "String",
+        "Description": "Template that PaaS service uses. The `service_template_uuid_computed` will be different from `service_template_uuid`, when `service_template_uuid` is updated outside of terraform.",
+        "Computed": true
       },
       "status": {
         "Type": "String",
@@ -1028,6 +1570,110 @@
       "status": {
         "Type": "String",
         "Description": "Status indicates the status of the object",
+        "Computed": true
+      }
+    },
+    "gridscale_postgresql": {
+      "__timeouts__": [
+        "create",
+        "update",
+        "delete"
+      ],
+      "change_time": {
+        "Type": "String",
+        "Description": "Time of the last change.",
+        "Computed": true
+      },
+      "create_time": {
+        "Type": "String",
+        "Description": "Date time this service has been created.",
+        "Computed": true
+      },
+      "labels": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "List of labels.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "listen_port": {
+        "Type": "Set",
+        "Description": "The port numbers where this PostgreSQL service accepts connections.",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "name": {
+              "Type": "String",
+              "Computed": true
+            },
+            "port": {
+              "Type": "Int",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "max_core_count": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Maximum CPU core count. The PostgreSQL instance's CPU core count will be autoscaled based on the workload. The number of cores stays between 1 and `max_core_count`.",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The human-readable name of the object. It supports the full UTF-8 character set, with a maximum of 64 characters."
+      },
+      "network_uuid": {
+        "Type": "String",
+        "Description": "Network UUID containing security zone.",
+        "Computed": true
+      },
+      "password": {
+        "Type": "String",
+        "Description": "Password for PostgreSQL service. It is used to connect to the PostgreSQL instance.",
+        "Computed": true
+      },
+      "performance_class": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Performance class of PostgreSQL service."
+      },
+      "release": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The PostgreSQL release of this instance.\\n\n\t\t\t\tFor convenience, please use gscloud https://github.com/gridscale/gscloud to get the list of available PostgreSQL service releases."
+      },
+      "security_zone_uuid": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Security zone UUID linked to PostgreSQL service.",
+        "Computed": true
+      },
+      "service_template_uuid": {
+        "Type": "String",
+        "Description": "PaaS service template that PostgreSQL service uses.",
+        "Computed": true
+      },
+      "status": {
+        "Type": "String",
+        "Description": "Current status of PostgreSQL service.",
+        "Computed": true
+      },
+      "usage_in_minutes": {
+        "Type": "Int",
+        "Description": "Number of minutes that PostgreSQL service is in use.",
+        "Computed": true
+      },
+      "username": {
+        "Type": "String",
+        "Description": "Username for PostgreSQL service. It is used to connect to the PostgreSQL instance.",
         "Computed": true
       }
     },
@@ -1120,10 +1766,10 @@
       "name": {
         "Type": "String",
         "Required": true,
-        "Description": "The human-readable name of the object. It supports the full UTF-8 charset, with a maximum of 64 characters"
+        "Description": "The human-readable name of the object. It supports the full UTF-8 character set, with a maximum of 64 characters"
       },
       "network": {
-        "Type": "Set",
+        "Type": "List",
         "Optional": true,
         "MaxItems": 7,
         "IsBlock": true,
@@ -1162,7 +1808,11 @@
             },
             "ordering": {
               "Type": "Int",
-              "Computed": true
+              "Optional": true,
+              "Default": {
+                "Type": "int",
+                "Value": "0"
+              }
             },
             "rules_v4_in": {
               "Type": "List",
@@ -1195,7 +1845,7 @@
                   "order": {
                     "Type": "Int",
                     "Required": true,
-                    "Description": "The order at which the firewall will compare packets against its rules, \na packet will be compared against the first rule, it will either allow it to pass or block it \nand it won t be matched against any other rules. However, if it does no match the rule, \nthen it will proceed onto rule 2. Packets that do not match any rules are blocked by default."
+                    "Description": "The order at which the firewall will compare packets against its rules.\nA packet will be compared against the first rule, it will either allow it to pass or block it\nand it won't be matched against any other rules. However, if it does no match the rule,\nthen it will proceed onto rule 2. Packets that do not match any rules are blocked by default (Only for inbound)."
                   },
                   "protocol": {
                     "Type": "String",
@@ -1246,7 +1896,7 @@
                   "order": {
                     "Type": "Int",
                     "Required": true,
-                    "Description": "The order at which the firewall will compare packets against its rules, \na packet will be compared against the first rule, it will either allow it to pass or block it \nand it won t be matched against any other rules. However, if it does no match the rule, \nthen it will proceed onto rule 2. Packets that do not match any rules are blocked by default."
+                    "Description": "The order at which the firewall will compare packets against its rules.\nA packet will be compared against the first rule, it will either allow it to pass or block it\nand it won't be matched against any other rules. However, if it does no match the rule,\nthen it will proceed onto rule 2. Packets that do not match any rules are blocked by default (Only for inbound)."
                   },
                   "protocol": {
                     "Type": "String",
@@ -1297,7 +1947,7 @@
                   "order": {
                     "Type": "Int",
                     "Required": true,
-                    "Description": "The order at which the firewall will compare packets against its rules, \na packet will be compared against the first rule, it will either allow it to pass or block it \nand it won t be matched against any other rules. However, if it does no match the rule, \nthen it will proceed onto rule 2. Packets that do not match any rules are blocked by default."
+                    "Description": "The order at which the firewall will compare packets against its rules.\nA packet will be compared against the first rule, it will either allow it to pass or block it\nand it won't be matched against any other rules. However, if it does no match the rule,\nthen it will proceed onto rule 2. Packets that do not match any rules are blocked by default (Only for inbound)."
                   },
                   "protocol": {
                     "Type": "String",
@@ -1348,7 +1998,7 @@
                   "order": {
                     "Type": "Int",
                     "Required": true,
-                    "Description": "The order at which the firewall will compare packets against its rules, \na packet will be compared against the first rule, it will either allow it to pass or block it \nand it won t be matched against any other rules. However, if it does no match the rule, \nthen it will proceed onto rule 2. Packets that do not match any rules are blocked by default."
+                    "Description": "The order at which the firewall will compare packets against its rules.\nA packet will be compared against the first rule, it will either allow it to pass or block it\nand it won't be matched against any other rules. However, if it does no match the rule,\nthen it will proceed onto rule 2. Packets that do not match any rules are blocked by default (Only for inbound)."
                   },
                   "protocol": {
                     "Type": "String",
@@ -1459,7 +2109,7 @@
       ],
       "capacity": {
         "Type": "Int",
-        "Description": "The capacity of a storage/ISO Image/template/snapshot in GB",
+        "Description": "The capacity of a storage/ISO image/template/snapshot in GB",
         "Computed": true
       },
       "change_time": {
@@ -1489,7 +2139,7 @@
       },
       "license_product_no": {
         "Type": "Int",
-        "Description": "If a template has been used that requires a license key (e.g. Windows Servers) this shows \nthe product_no of the license (see the /prices endpoint for more details)",
+        "Description": "If a template has been used that requires a license key (e.g. Windows Servers) this shows\nthe product_no of the license (see the /prices endpoint for more details)",
         "Computed": true
       },
       "location_country": {
@@ -1642,7 +2292,11 @@
       "next_runtime": {
         "Type": "String",
         "Optional": true,
-        "Description": "The date and time that the snapshot schedule will be run",
+        "Description": "The date and time that the snapshot schedule will be run"
+      },
+      "next_runtime_computed": {
+        "Type": "String",
+        "Description": "The date and time that the snapshot schedule will be run. This date and time is computed by gridscale's server.",
         "Computed": true
       },
       "run_interval": {
@@ -1714,7 +2368,7 @@
       "name": {
         "Type": "String",
         "Required": true,
-        "Description": "The human-readable name of the object. It supports the full UTF-8 charset, with a maximum of 64 characters."
+        "Description": "The human-readable name of the object. It supports the full UTF-8 character set, with a maximum of 64 characters."
       },
       "sshkey": {
         "Type": "String",
@@ -1782,7 +2436,7 @@
       },
       "location_name": {
         "Type": "String",
-        "Description": "The human-readable name of the location. It supports the full UTF-8 charset, with a maximum of 64 characters.",
+        "Description": "The human-readable name of the location. It supports the full UTF-8 character set, with a maximum of 64 characters.",
         "Computed": true
       },
       "location_uuid": {
@@ -1793,11 +2447,16 @@
       "name": {
         "Type": "String",
         "Required": true,
-        "Description": "The human-readable name of the object. It supports the full UTF-8 charset, with a maximum of 64 characters."
+        "Description": "The human-readable name of the object. It supports the full UTF-8 character set, with a maximum of 64 characters."
       },
       "parent_uuid": {
         "Type": "String",
         "Computed": true
+      },
+      "rollback_from_backup_uuid": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Rollback the storage from a specific storage backup."
       },
       "status": {
         "Type": "String",
@@ -1855,6 +2514,197 @@
         "Computed": true
       }
     },
+    "gridscale_storage_clone": {
+      "__timeouts__": [
+        "create",
+        "update",
+        "delete"
+      ],
+      "capacity": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The capacity of a storage in GB.",
+        "Computed": true
+      },
+      "change_time": {
+        "Type": "String",
+        "Description": "Defines the date and time of the last object change.",
+        "Computed": true
+      },
+      "create_time": {
+        "Type": "String",
+        "Description": "Defines the date and time the object was initially created.",
+        "Computed": true
+      },
+      "current_price": {
+        "Type": "Float",
+        "Computed": true
+      },
+      "labels": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "List of labels.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "last_used_template": {
+        "Type": "String",
+        "Computed": true
+      },
+      "license_product_no": {
+        "Type": "Int",
+        "Description": "If a template has been used that requires a license key (e.g. Windows Servers) this shows the product_no of the license (see the /prices endpoint for more details).",
+        "Computed": true
+      },
+      "location_country": {
+        "Type": "String",
+        "Description": "Formatted by the 2 digit country code (ISO 3166-2) of the host country.",
+        "Computed": true
+      },
+      "location_iata": {
+        "Type": "String",
+        "Description": "Uses IATA airport code, which works as a location identifier.",
+        "Computed": true
+      },
+      "location_name": {
+        "Type": "String",
+        "Description": "The human-readable name of the location. It supports the full UTF-8 character set, with a maximum of 64 characters.",
+        "Computed": true
+      },
+      "location_uuid": {
+        "Type": "String",
+        "Description": "Identifies the data center this object belongs to.",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The human-readable name of the object. It supports the full UTF-8 character set, with a maximum of 64 characters.",
+        "Computed": true
+      },
+      "parent_uuid": {
+        "Type": "String",
+        "Computed": true
+      },
+      "source_storage_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "ID of the storage instance that will be cloned."
+      },
+      "status": {
+        "Type": "String",
+        "Description": "status indicates the status of the object.",
+        "Computed": true
+      },
+      "storage_type": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "(one of storage, storage_high, storage_insane)",
+        "Computed": true
+      },
+      "usage_in_minutes": {
+        "Type": "Int",
+        "Computed": true
+      }
+    },
+    "gridscale_storage_import": {
+      "__timeouts__": [
+        "create",
+        "update",
+        "delete"
+      ],
+      "capacity": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The capacity of a storage in GB.",
+        "Computed": true
+      },
+      "change_time": {
+        "Type": "String",
+        "Description": "Defines the date and time of the last object change.",
+        "Computed": true
+      },
+      "create_time": {
+        "Type": "String",
+        "Description": "Defines the date and time the object was initially created.",
+        "Computed": true
+      },
+      "current_price": {
+        "Type": "Float",
+        "Computed": true
+      },
+      "labels": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "List of labels.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "last_used_template": {
+        "Type": "String",
+        "Computed": true
+      },
+      "license_product_no": {
+        "Type": "Int",
+        "Description": "If a template has been used that requires a license key (e.g. Windows Servers) this shows the product_no of the license (see the /prices endpoint for more details).",
+        "Computed": true
+      },
+      "location_country": {
+        "Type": "String",
+        "Description": "Formatted by the 2 digit country code (ISO 3166-2) of the host country.",
+        "Computed": true
+      },
+      "location_iata": {
+        "Type": "String",
+        "Description": "Uses IATA airport code, which works as a location identifier.",
+        "Computed": true
+      },
+      "location_name": {
+        "Type": "String",
+        "Description": "The human-readable name of the location. It supports the full UTF-8 character set, with a maximum of 64 characters.",
+        "Computed": true
+      },
+      "location_uuid": {
+        "Type": "String",
+        "Description": "Identifies the data center this object belongs to.",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The human-readable name of the object. It supports the full UTF-8 character set, with a maximum of 64 characters."
+      },
+      "parent_uuid": {
+        "Type": "String",
+        "Computed": true
+      },
+      "status": {
+        "Type": "String",
+        "Description": "status indicates the status of the object.",
+        "Computed": true
+      },
+      "storage_backup_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "ID of the storage backup that will be used to create a new storage from."
+      },
+      "storage_type": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "(one of storage, storage_high, storage_insane)",
+        "Computed": true
+      },
+      "usage_in_minutes": {
+        "Type": "Int",
+        "Computed": true
+      }
+    },
     "gridscale_template": {
       "__timeouts__": [
         "create",
@@ -1863,7 +2713,7 @@
       ],
       "capacity": {
         "Type": "Int",
-        "Description": "The capacity of a storage/ISO Image/template/snapshot in GB.",
+        "Description": "The capacity of a storage/ISO image/template/snapshot in GB.",
         "Computed": true
       },
       "change_time": {
@@ -1883,12 +2733,12 @@
       },
       "description": {
         "Type": "String",
-        "Description": "Description of the Template.",
+        "Description": "Description of the template.",
         "Computed": true
       },
       "distro": {
         "Type": "String",
-        "Description": "The OS distrobution that the Template contains.",
+        "Description": "The OS distribution that the template contains.",
         "Computed": true
       },
       "labels": {
@@ -1918,7 +2768,7 @@
       },
       "location_name": {
         "Type": "String",
-        "Description": "The human-readable name of the location. It supports the full UTF-8 charset, with a maximum of 64 characters",
+        "Description": "The human-readable name of the location. It supports the full UTF-8 character set, with a maximum of 64 characters",
         "Computed": true
       },
       "location_uuid": {
@@ -1929,7 +2779,7 @@
       "name": {
         "Type": "String",
         "Required": true,
-        "Description": "The human-readable name of the object. It supports the full UTF-8 charset, with a maximum of 64 characters."
+        "Description": "The human-readable name of the object. It supports the full UTF-8 character set, with a maximum of 64 characters."
       },
       "ostype": {
         "Type": "String",
@@ -1963,6 +2813,117 @@
     }
   },
   "data-sources": {
+    "gridscale_backup_list": {
+      "storage_backups": {
+        "Type": "List",
+        "Description": "Storage's backups. The order is based on their created time. E.g: Latest backup is always the first backup in the list",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "capacity": {
+              "Type": "Int",
+              "Computed": true
+            },
+            "create_time": {
+              "Type": "String",
+              "Computed": true
+            },
+            "name": {
+              "Type": "String",
+              "Computed": true
+            },
+            "object_uuid": {
+              "Type": "String",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "storage_uuid": {
+        "Type": "String",
+        "Required": true,
+        "Description": "UUID of the storage"
+      }
+    },
+    "gridscale_backupschedule": {
+      "active": {
+        "Type": "Bool",
+        "Description": "The status of the schedule active or not",
+        "Computed": true
+      },
+      "change_time": {
+        "Type": "String",
+        "Description": "Defines the date and time of the last object change",
+        "Computed": true
+      },
+      "create_time": {
+        "Type": "String",
+        "Description": "Defines the date and time the object was initially created",
+        "Computed": true
+      },
+      "keep_backups": {
+        "Type": "Int",
+        "Description": "The amount of Backups to keep before overwriting the last created Backup",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Description": "The human-readable name of the object",
+        "Computed": true
+      },
+      "next_runtime": {
+        "Type": "String",
+        "Description": "The date and time that the backup schedule will be run",
+        "Computed": true
+      },
+      "resource_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "ID of a resource"
+      },
+      "run_interval": {
+        "Type": "Int",
+        "Description": "The interval at which the schedule will run (in minutes)",
+        "Computed": true
+      },
+      "status": {
+        "Type": "String",
+        "Description": "Status indicates the status of the object",
+        "Computed": true
+      },
+      "storage_backups": {
+        "Type": "Set",
+        "Description": "Related backups",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "create_time": {
+              "Type": "String",
+              "Computed": true
+            },
+            "name": {
+              "Type": "String",
+              "Computed": true
+            },
+            "object_uuid": {
+              "Type": "String",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "storage_uuid": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Uuid of the storage used to create backups"
+      }
+    },
     "gridscale_firewall": {
       "change_time": {
         "Type": "String",
@@ -1991,12 +2952,12 @@
       },
       "location_name": {
         "Type": "String",
-        "Description": "The human-readable name of the location. It supports the full UTF-8 charset, with a maximum of 64 characters",
+        "Description": "The human-readable name of the location. It supports the full UTF-8 character set, with a maximum of 64 characters",
         "Computed": true
       },
       "name": {
         "Type": "String",
-        "Description": "The human-readable name of the object. It supports the full UTF-8 charset, with a maximum of 64 characters",
+        "Description": "The human-readable name of the object. It supports the full UTF-8 character set, with a maximum of 64 characters",
         "Computed": true
       },
       "network": {
@@ -2071,7 +3032,7 @@
             "order": {
               "Type": "Int",
               "Required": true,
-              "Description": "The order at which the firewall will compare packets against its rules, \na packet will be compared against the first rule, it will either allow it to pass or block it \nand it won t be matched against any other rules. However, if it does no match the rule, \nthen it will proceed onto rule 2. Packets that do not match any rules are blocked by default."
+              "Description": "The order at which the firewall will compare packets against its rules.\nA packet will be compared against the first rule, it will either allow it to pass or block it\nand it won't be matched against any other rules. However, if it does no match the rule,\nthen it will proceed onto rule 2. Packets that do not match any rules are blocked by default (Only for inbound)."
             },
             "protocol": {
               "Type": "String",
@@ -2122,7 +3083,7 @@
             "order": {
               "Type": "Int",
               "Required": true,
-              "Description": "The order at which the firewall will compare packets against its rules, \na packet will be compared against the first rule, it will either allow it to pass or block it \nand it won t be matched against any other rules. However, if it does no match the rule, \nthen it will proceed onto rule 2. Packets that do not match any rules are blocked by default."
+              "Description": "The order at which the firewall will compare packets against its rules.\nA packet will be compared against the first rule, it will either allow it to pass or block it\nand it won't be matched against any other rules. However, if it does no match the rule,\nthen it will proceed onto rule 2. Packets that do not match any rules are blocked by default (Only for inbound)."
             },
             "protocol": {
               "Type": "String",
@@ -2173,7 +3134,7 @@
             "order": {
               "Type": "Int",
               "Required": true,
-              "Description": "The order at which the firewall will compare packets against its rules, \na packet will be compared against the first rule, it will either allow it to pass or block it \nand it won t be matched against any other rules. However, if it does no match the rule, \nthen it will proceed onto rule 2. Packets that do not match any rules are blocked by default."
+              "Description": "The order at which the firewall will compare packets against its rules.\nA packet will be compared against the first rule, it will either allow it to pass or block it\nand it won't be matched against any other rules. However, if it does no match the rule,\nthen it will proceed onto rule 2. Packets that do not match any rules are blocked by default (Only for inbound)."
             },
             "protocol": {
               "Type": "String",
@@ -2224,7 +3185,7 @@
             "order": {
               "Type": "Int",
               "Required": true,
-              "Description": "The order at which the firewall will compare packets against its rules, \na packet will be compared against the first rule, it will either allow it to pass or block it \nand it won t be matched against any other rules. However, if it does no match the rule, \nthen it will proceed onto rule 2. Packets that do not match any rules are blocked by default."
+              "Description": "The order at which the firewall will compare packets against its rules.\nA packet will be compared against the first rule, it will either allow it to pass or block it\nand it won't be matched against any other rules. However, if it does no match the rule,\nthen it will proceed onto rule 2. Packets that do not match any rules are blocked by default (Only for inbound)."
             },
             "protocol": {
               "Type": "String",
@@ -2278,7 +3239,7 @@
       },
       "ip": {
         "Type": "String",
-        "Description": "Defines the IP Address.",
+        "Description": "Defines the IP address.",
         "Computed": true
       },
       "labels": {
@@ -2303,7 +3264,7 @@
       },
       "location_name": {
         "Type": "String",
-        "Description": "The human-readable name of the location. It supports the full UTF-8 charset, with a maximum of 64 characters",
+        "Description": "The human-readable name of the location. It supports the full UTF-8 character set, with a maximum of 64 characters",
         "Computed": true
       },
       "location_uuid": {
@@ -2313,7 +3274,7 @@
       },
       "name": {
         "Type": "String",
-        "Description": "The human-readable name of the object. It supports the full UTF-8 charset, with a maximum of 64 characters.",
+        "Description": "The human-readable name of the object. It supports the full UTF-8 character set, with a maximum of 64 characters.",
         "Computed": true
       },
       "prefix": {
@@ -2327,7 +3288,7 @@
       },
       "reverse_dns": {
         "Type": "String",
-        "Description": "Defines the reverse DNS entry for the IP Address (PTR Resource Record).",
+        "Description": "Defines the reverse DNS entry for the IP address (PTR Resource Record).",
         "Computed": true
       },
       "status": {
@@ -2367,7 +3328,7 @@
       },
       "ip": {
         "Type": "String",
-        "Description": "Defines the IP Address.",
+        "Description": "Defines the IP address.",
         "Computed": true
       },
       "labels": {
@@ -2392,7 +3353,7 @@
       },
       "location_name": {
         "Type": "String",
-        "Description": "The human-readable name of the location. It supports the full UTF-8 charset, with a maximum of 64 characters",
+        "Description": "The human-readable name of the location. It supports the full UTF-8 character set, with a maximum of 64 characters",
         "Computed": true
       },
       "location_uuid": {
@@ -2402,7 +3363,7 @@
       },
       "name": {
         "Type": "String",
-        "Description": "The human-readable name of the object. It supports the full UTF-8 charset, with a maximum of 64 characters.",
+        "Description": "The human-readable name of the object. It supports the full UTF-8 character set, with a maximum of 64 characters.",
         "Computed": true
       },
       "prefix": {
@@ -2416,7 +3377,7 @@
       },
       "reverse_dns": {
         "Type": "String",
-        "Description": "Defines the reverse DNS entry for the IP Address (PTR Resource Record).",
+        "Description": "Defines the reverse DNS entry for the IP address (PTR Resource Record).",
         "Computed": true
       },
       "status": {
@@ -2431,7 +3392,7 @@
     "gridscale_isoimage": {
       "capacity": {
         "Type": "Int",
-        "Description": "The capacity of a storage/ISO Image/template/snapshot in GB.",
+        "Description": "The capacity of a storage/ISO image/template/snapshot in GB.",
         "Computed": true
       },
       "change_time": {
@@ -2451,7 +3412,7 @@
       },
       "description": {
         "Type": "String",
-        "Description": "Description of the ISO Image.",
+        "Description": "Description of the ISO image.",
         "Computed": true
       },
       "labels": {
@@ -2476,7 +3437,7 @@
       },
       "location_name": {
         "Type": "String",
-        "Description": "The human-readable name of the location. It supports the full UTF-8 charset, with a maximum of 64 characters",
+        "Description": "The human-readable name of the location. It supports the full UTF-8 character set, with a maximum of 64 characters",
         "Computed": true
       },
       "location_uuid": {
@@ -2486,7 +3447,7 @@
       },
       "name": {
         "Type": "String",
-        "Description": "The human-readable name of the object. It supports the full UTF-8 charset, with a maximum of 64 characters.",
+        "Description": "The human-readable name of the object. It supports the full UTF-8 character set, with a maximum of 64 characters.",
         "Computed": true
       },
       "private": {
@@ -2529,7 +3490,7 @@
       },
       "source_url": {
         "Type": "String",
-        "Description": "Contains the source URL of the ISO Image that it was originally fetched from.",
+        "Description": "Contains the source URL of the ISO image that it was originally fetched from.",
         "Computed": true
       },
       "status": {
@@ -2544,7 +3505,7 @@
       },
       "version": {
         "Type": "String",
-        "Description": "Upstream version of the ISO Image release",
+        "Description": "Upstream version of the ISO image release",
         "Computed": true
       }
     },
@@ -2629,7 +3590,7 @@
       },
       "name": {
         "Type": "String",
-        "Description": "The human-readable name of the object. It supports the full UTF-8 charset, with a maximum of 64 characters",
+        "Description": "The human-readable name of the object. It supports the full UTF-8 character set, with a maximum of 64 characters",
         "Computed": true
       },
       "redirect_http_to_https": {
@@ -2645,6 +3606,158 @@
       "status": {
         "Type": "String",
         "Description": "Status indicates the status of the object.",
+        "Computed": true
+      }
+    },
+    "gridscale_marketplace_application": {
+      "category": {
+        "Type": "String",
+        "Description": "Category of marketplace application. Accepted values: \"CMS\", \"project management\", \"Adminpanel\", \"Collaboration\", \"Cloud Storage\", \"Archiving\"",
+        "Computed": true
+      },
+      "change_time": {
+        "Type": "String",
+        "Description": "Defines the date and time of the last object change",
+        "Computed": true
+      },
+      "create_time": {
+        "Type": "String",
+        "Description": "Defines the date and time the object was initially created",
+        "Computed": true
+      },
+      "is_application_owner": {
+        "Type": "Bool",
+        "Description": "Whether the you are the owner of application or not",
+        "Computed": true
+      },
+      "is_publish_global": {
+        "Type": "Bool",
+        "Description": "Whether a template is published to other partner or not",
+        "Computed": true
+      },
+      "is_publish_global_requested": {
+        "Type": "Bool",
+        "Description": "Whether a partner wants their tenant template published to other partners",
+        "Computed": true
+      },
+      "is_publish_requested": {
+        "Type": "Bool",
+        "Description": "Whether the tenants want their template to be published or not",
+        "Computed": true
+      },
+      "is_published": {
+        "Type": "Bool",
+        "Description": "Whether the template is published by the partner to their tenant",
+        "Computed": true
+      },
+      "meta_advices": {
+        "Type": "String",
+        "Computed": true
+      },
+      "meta_author": {
+        "Type": "String",
+        "Computed": true
+      },
+      "meta_components": {
+        "Type": "Set",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "meta_features": {
+        "Type": "String",
+        "Computed": true
+      },
+      "meta_hints": {
+        "Type": "String",
+        "Computed": true
+      },
+      "meta_icon": {
+        "Type": "String",
+        "Computed": true
+      },
+      "meta_license": {
+        "Type": "String",
+        "Computed": true
+      },
+      "meta_os": {
+        "Type": "String",
+        "Computed": true
+      },
+      "meta_overview": {
+        "Type": "String",
+        "Computed": true
+      },
+      "meta_terms_of_use": {
+        "Type": "String",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Description": "The human-readable name of the object. It supports the full UTF-8 character set, with a maximum of 64 characters",
+        "Computed": true
+      },
+      "object_storage_path": {
+        "Type": "String",
+        "Description": "Path to the images for the application, must be in .gz format and started with s3//",
+        "Computed": true
+      },
+      "publish_global_requested_date": {
+        "Type": "String",
+        "Description": "The date when a partner requested their tenants template to be published",
+        "Computed": true
+      },
+      "publish_requested_date": {
+        "Type": "String",
+        "Description": "The date when the tenant requested their template to be published",
+        "Computed": true
+      },
+      "published_date": {
+        "Type": "String",
+        "Description": "The date when the template is published into other tenant in the same partner",
+        "Computed": true
+      },
+      "published_global_date": {
+        "Type": "String",
+        "Description": "The date when a template is published to other partner",
+        "Computed": true
+      },
+      "resource_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "ID of a resource"
+      },
+      "setup_cores": {
+        "Type": "Int",
+        "Description": "Number of server's cores",
+        "Computed": true
+      },
+      "setup_memory": {
+        "Type": "Int",
+        "Description": "The capacity of server's memory in GB",
+        "Computed": true
+      },
+      "setup_storage_capacity": {
+        "Type": "Int",
+        "Description": "The capacity of server's storage in GB",
+        "Computed": true
+      },
+      "status": {
+        "Type": "String",
+        "Description": "status indicates the status of the object",
+        "Computed": true
+      },
+      "type": {
+        "Type": "String",
+        "Description": "The type of template",
+        "Computed": true
+      },
+      "unique_hash": {
+        "Type": "String",
+        "Description": "Unique hash to allow user to import the self-created marketplace application",
         "Computed": true
       }
     },
@@ -2691,7 +3804,7 @@
       },
       "location_name": {
         "Type": "String",
-        "Description": "The human-readable name of the location. It supports the full UTF-8 charset, with a maximum of 64 characters",
+        "Description": "The human-readable name of the location. It supports the full UTF-8 character set, with a maximum of 64 characters",
         "Computed": true
       },
       "location_uuid": {
@@ -2701,7 +3814,7 @@
       },
       "name": {
         "Type": "String",
-        "Description": "The human-readable name of the object. It supports the full UTF-8 charset, with a maximum of 64 characters.",
+        "Description": "The human-readable name of the object. It supports the full UTF-8 character set, with a maximum of 64 characters.",
         "Computed": true
       },
       "network_type": {
@@ -2785,7 +3898,7 @@
       },
       "name": {
         "Type": "String",
-        "Description": "The human-readable name of the object. It supports the full UTF-8 charset, with a maximum of 64 characters",
+        "Description": "The human-readable name of the object. It supports the full UTF-8 character set, with a maximum of 64 characters",
         "Computed": true
       },
       "network_uuid": {
@@ -2983,7 +4096,7 @@
       },
       "location_name": {
         "Type": "String",
-        "Description": "The human-readable name of the location. It supports the full UTF-8 charset, with a maximum of 64 characters",
+        "Description": "The human-readable name of the location. It supports the full UTF-8 character set, with a maximum of 64 characters",
         "Computed": true
       },
       "location_uuid": {
@@ -2993,7 +4106,7 @@
       },
       "name": {
         "Type": "String",
-        "Description": "The human-readable name of the object. It supports the full UTF-8 charset, with a maximum of 64 characters.",
+        "Description": "The human-readable name of the object. It supports the full UTF-8 character set, with a maximum of 64 characters.",
         "Computed": true
       },
       "network_type": {
@@ -3084,7 +4197,7 @@
       },
       "name": {
         "Type": "String",
-        "Description": "The human-readable name of the object. It supports the full UTF-8 charset, with a maximum of 64 characters",
+        "Description": "The human-readable name of the object. It supports the full UTF-8 character set, with a maximum of 64 characters",
         "Computed": true
       },
       "network": {
@@ -3159,7 +4272,7 @@
                   "order": {
                     "Type": "Int",
                     "Required": true,
-                    "Description": "The order at which the firewall will compare packets against its rules, \na packet will be compared against the first rule, it will either allow it to pass or block it \nand it won t be matched against any other rules. However, if it does no match the rule, \nthen it will proceed onto rule 2. Packets that do not match any rules are blocked by default."
+                    "Description": "The order at which the firewall will compare packets against its rules.\nA packet will be compared against the first rule, it will either allow it to pass or block it\nand it won't be matched against any other rules. However, if it does no match the rule,\nthen it will proceed onto rule 2. Packets that do not match any rules are blocked by default (Only for inbound)."
                   },
                   "protocol": {
                     "Type": "String",
@@ -3210,7 +4323,7 @@
                   "order": {
                     "Type": "Int",
                     "Required": true,
-                    "Description": "The order at which the firewall will compare packets against its rules, \na packet will be compared against the first rule, it will either allow it to pass or block it \nand it won t be matched against any other rules. However, if it does no match the rule, \nthen it will proceed onto rule 2. Packets that do not match any rules are blocked by default."
+                    "Description": "The order at which the firewall will compare packets against its rules.\nA packet will be compared against the first rule, it will either allow it to pass or block it\nand it won't be matched against any other rules. However, if it does no match the rule,\nthen it will proceed onto rule 2. Packets that do not match any rules are blocked by default (Only for inbound)."
                   },
                   "protocol": {
                     "Type": "String",
@@ -3261,7 +4374,7 @@
                   "order": {
                     "Type": "Int",
                     "Required": true,
-                    "Description": "The order at which the firewall will compare packets against its rules, \na packet will be compared against the first rule, it will either allow it to pass or block it \nand it won t be matched against any other rules. However, if it does no match the rule, \nthen it will proceed onto rule 2. Packets that do not match any rules are blocked by default."
+                    "Description": "The order at which the firewall will compare packets against its rules.\nA packet will be compared against the first rule, it will either allow it to pass or block it\nand it won't be matched against any other rules. However, if it does no match the rule,\nthen it will proceed onto rule 2. Packets that do not match any rules are blocked by default (Only for inbound)."
                   },
                   "protocol": {
                     "Type": "String",
@@ -3312,7 +4425,7 @@
                   "order": {
                     "Type": "Int",
                     "Required": true,
-                    "Description": "The order at which the firewall will compare packets against its rules, \na packet will be compared against the first rule, it will either allow it to pass or block it \nand it won t be matched against any other rules. However, if it does no match the rule, \nthen it will proceed onto rule 2. Packets that do not match any rules are blocked by default."
+                    "Description": "The order at which the firewall will compare packets against its rules.\nA packet will be compared against the first rule, it will either allow it to pass or block it\nand it won't be matched against any other rules. However, if it does no match the rule,\nthen it will proceed onto rule 2. Packets that do not match any rules are blocked by default (Only for inbound)."
                   },
                   "protocol": {
                     "Type": "String",
@@ -3421,7 +4534,7 @@
     "gridscale_snapshot": {
       "capacity": {
         "Type": "Int",
-        "Description": "The capacity of a storage/ISO Image/template/snapshot in GB",
+        "Description": "The capacity of a storage/ISO image/template/snapshot in GB",
         "Computed": true
       },
       "change_time": {
@@ -3451,7 +4564,7 @@
       },
       "license_product_no": {
         "Type": "Int",
-        "Description": "If a template has been used that requires a license key (e.g. Windows Servers) this shows \nthe product_no of the license (see the /prices endpoint for more details)",
+        "Description": "If a template has been used that requires a license key (e.g. Windows Servers) this shows\nthe product_no of the license (see the /prices endpoint for more details)",
         "Computed": true
       },
       "location_country": {
@@ -3604,7 +4717,7 @@
       },
       "name": {
         "Type": "String",
-        "Description": "The human-readable name of the object. It supports the full UTF-8 charset, with a maximum of 64 characters.",
+        "Description": "The human-readable name of the object. It supports the full UTF-8 character set, with a maximum of 64 characters.",
         "Computed": true
       },
       "resource_id": {
@@ -3673,7 +4786,7 @@
       },
       "location_name": {
         "Type": "String",
-        "Description": "The human-readable name of the location. It supports the full UTF-8 charset, with a maximum of 64 characters.",
+        "Description": "The human-readable name of the location. It supports the full UTF-8 character set, with a maximum of 64 characters.",
         "Computed": true
       },
       "location_uuid": {
@@ -3683,7 +4796,7 @@
       },
       "name": {
         "Type": "String",
-        "Description": "The human-readable name of the object. It supports the full UTF-8 charset, with a maximum of 64 characters.",
+        "Description": "The human-readable name of the object. It supports the full UTF-8 character set, with a maximum of 64 characters.",
         "Computed": true
       },
       "parent_uuid": {
@@ -3713,7 +4826,7 @@
     "gridscale_template": {
       "capacity": {
         "Type": "Int",
-        "Description": "The capacity of a storage/ISO Image/template/snapshot in GB.",
+        "Description": "The capacity of a storage/ISO image/template/snapshot in GB.",
         "Computed": true
       },
       "change_time": {
@@ -3733,12 +4846,12 @@
       },
       "description": {
         "Type": "String",
-        "Description": "Description of the Template.",
+        "Description": "Description of the template.",
         "Computed": true
       },
       "distro": {
         "Type": "String",
-        "Description": "The OS distrobution that the Template contains.",
+        "Description": "The OS distribution that the template contains.",
         "Computed": true
       },
       "labels": {
@@ -3768,7 +4881,7 @@
       },
       "location_name": {
         "Type": "String",
-        "Description": "The human-readable name of the location. It supports the full UTF-8 charset, with a maximum of 64 characters",
+        "Description": "The human-readable name of the location. It supports the full UTF-8 character set, with a maximum of 64 characters",
         "Computed": true
       },
       "location_uuid": {

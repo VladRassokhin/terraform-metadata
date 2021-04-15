@@ -3,7 +3,7 @@
   ".sdk_type": "terraform-plugin-sdk-v1",
   "name": "newrelic",
   "type": "provider",
-  "version": "v2.1.0",
+  "version": "v2.21.0",
   "provider": {
     "account_id": {
       "Type": "Int",
@@ -51,11 +51,6 @@
       "Type": "String",
       "Optional": true,
       "DefaultFunc": "ENV(NEW_RELIC_INSIGHTS_INSERT_URL)"
-    },
-    "insights_query_key": {
-      "Type": "String",
-      "Optional": true,
-      "DefaultFunc": "ENV(NEW_RELIC_INSIGHTS_QUERY_KEY)"
     },
     "insights_query_url": {
       "Type": "String",
@@ -147,7 +142,7 @@
             "include_json_attachment": {
               "Type": "String",
               "Optional": true,
-              "Description": "0 or 1. Flag for whether or not to attach a JSON document containing information about the associated alert to the email that is sent to recipients."
+              "Description": "true or false. Flag for whether or not to attach a JSON document containing information about the associated alert to the email that is sent to recipients."
             },
             "key": {
               "Type": "String",
@@ -231,7 +226,7 @@
       "type": {
         "Type": "String",
         "Required": true,
-        "Description": "(Required) The type of channel. One of: (opsgenie, pagerduty, slack, user, victorops, webhook, email)."
+        "Description": "(Required) The type of channel. One of: (webhook, email, opsgenie, pagerduty, slack, user, victorops)."
       }
     },
     "newrelic_alert_condition": {
@@ -333,7 +328,7 @@
       "type": {
         "Type": "String",
         "Required": true,
-        "Description": "The type of condition. One of: (browser_metric, mobile_metric, servers_metric, apm_app_metric, apm_jvm_metric, apm_kt_metric)."
+        "Description": "The type of condition. One of: (apm_app_metric, apm_jvm_metric, apm_kt_metric, browser_metric, mobile_metric, servers_metric)."
       },
       "user_defined_metric": {
         "Type": "String",
@@ -351,12 +346,148 @@
         "Description": "Automatically close instance-based violations, including JVM health metric violations, after the number of hours specified. Must be: 1, 2, 4, 8, 12 or 24."
       }
     },
+    "newrelic_alert_muting_rule": {
+      "account_id": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The account id of the MutingRule..",
+        "Computed": true
+      },
+      "condition": {
+        "Type": "List",
+        "Required": true,
+        "Description": "The condition that defines which violations to target.",
+        "MaxItems": 1,
+        "MinItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "conditions": {
+              "Type": "List",
+              "Required": true,
+              "Description": "The individual MutingRuleConditions within the group.",
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "attribute": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "The attribute on a violation."
+                  },
+                  "operator": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "The operator used to compare the attribute's value with the supplied value(s)."
+                  },
+                  "values": {
+                    "Type": "List",
+                    "Required": true,
+                    "Description": "The value(s) to compare against the attribute's value.",
+                    "MinItems": 1,
+                    "ConfigImplicitMode": "Attr",
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  }
+                }
+              }
+            },
+            "operator": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The operator used to combine all the MutingRuleConditions within the group."
+            }
+          }
+        }
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The description of the MutingRule."
+      },
+      "enabled": {
+        "Type": "Bool",
+        "Required": true,
+        "Description": "Whether the MutingRule is enabled."
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The name of the MutingRule."
+      },
+      "schedule": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "The time window when the MutingRule should actively mute violations.",
+        "MaxItems": 1,
+        "MinItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "end_repeat": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The datetime stamp when the MutingRule schedule should stop repeating.",
+              "ConflictsWith": [
+                "schedule.0.repeat_count"
+              ]
+            },
+            "end_time": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The datetime stamp representing when the MutingRule should end."
+            },
+            "repeat": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The frequency the MutingRule schedule repeats. One of [DAILY, WEEKLY, MONTHLY]"
+            },
+            "repeat_count": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "The number of times the MutingRule schedule should repeat.",
+              "ConflictsWith": [
+                "schedule.0.end_repeat"
+              ]
+            },
+            "start_time": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The datetime stamp representing when the MutingRule should start."
+            },
+            "time_zone": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The time zone that applies to the MutingRule schedule."
+            },
+            "weekly_repeat_days": {
+              "Type": "Set",
+              "Optional": true,
+              "Description": "The day(s) of the week that a MutingRule should repeat when the repeat field is set to WEEKLY.",
+              "MaxItems": 7,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      }
+    },
     "newrelic_alert_policy": {
       "account_id": {
         "Type": "Int",
         "Optional": true,
         "Description": "The New Relic account ID to operate on.",
-        "DefaultFunc": "UNKNOWN"
+        "Computed": true
       },
       "channel_ids": {
         "Type": "List",
@@ -385,7 +516,7 @@
     },
     "newrelic_alert_policy_channel": {
       "channel_ids": {
-        "Type": "List",
+        "Type": "Set",
         "Required": true,
         "Description": "Array of channel IDs to apply to the specified policy. We recommended sorting channel IDs in ascending order to avoid drift your Terraform state.",
         "MinItems": 1,
@@ -399,6 +530,46 @@
         "Type": "Int",
         "Required": true,
         "Description": "The ID of the policy."
+      }
+    },
+    "newrelic_api_access_key": {
+      "account_id": {
+        "Type": "Int",
+        "Required": true
+      },
+      "ingest_type": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true,
+        "ConflictsWith": [
+          "user_id"
+        ]
+      },
+      "key": {
+        "Type": "String",
+        "Computed": true
+      },
+      "key_type": {
+        "Type": "String",
+        "Required": true
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "notes": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "user_id": {
+        "Type": "Int",
+        "Optional": true,
+        "Computed": true,
+        "ConflictsWith": [
+          "ingest_type"
+        ]
       }
     },
     "newrelic_application_settings": {
@@ -507,6 +678,11 @@
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
+            "account_id": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "The target account ID to fetch data from, if not the current account."
+            },
             "column": {
               "Type": "Int",
               "Required": true,
@@ -590,7 +766,8 @@
             },
             "limit": {
               "Type": "Int",
-              "Optional": true
+              "Optional": true,
+              "Description": "The limit of distinct data series to display.  Requires `order_by` to be set."
             },
             "metric": {
               "Type": "Set",
@@ -641,7 +818,8 @@
             },
             "order_by": {
               "Type": "String",
-              "Optional": true
+              "Optional": true,
+              "Description": "Set the order of result series.  Required when using `limit`."
             },
             "raw_metric_name": {
               "Type": "String",
@@ -737,8 +915,9 @@
     "newrelic_events_to_metrics_rule": {
       "account_id": {
         "Type": "Int",
-        "Required": true,
-        "Description": "Account with the event and where the metrics will be put."
+        "Optional": true,
+        "Description": "Account with the event and where the metrics will be put.",
+        "Computed": true
       },
       "description": {
         "Type": "String",
@@ -802,6 +981,11 @@
             }
           }
         }
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The description of the Infrastructure alert condition."
       },
       "enabled": {
         "Type": "Bool",
@@ -957,7 +1141,13 @@
         "Type": "Int",
         "Optional": true,
         "Description": "The New Relic account ID for managing your NRQL alert conditions.",
-        "DefaultFunc": "UNKNOWN"
+        "Computed": true
+      },
+      "aggregation_window": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The duration of the time window used to evaluate the NRQL query, in seconds.",
+        "Computed": true
       },
       "baseline_direction": {
         "Type": "String",
@@ -967,6 +1157,11 @@
           "value_function"
         ]
       },
+      "close_violations_on_expiration": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether to close all open violations when the signal expires."
+      },
       "critical": {
         "Type": "List",
         "Optional": true,
@@ -974,7 +1169,7 @@
         "MaxItems": 1,
         "MinItems": 1,
         "ConflictsWith": [
-          "term.0"
+          "term"
         ],
         "IsBlock": true,
         "ConfigImplicitMode": "Block",
@@ -985,18 +1180,15 @@
               "Type": "Int",
               "Optional": true,
               "Description": "In minutes, must be in the range of 1 to 120 (inclusive).",
-              "ConflictsWith": [
-                "term.0.threshold_duration"
-              ],
               "Deprecated": "use `threshold_duration` attribute instead"
             },
             "operator": {
               "Type": "String",
               "Optional": true,
-              "Description": "One of (above, below, equal). Defaults to 'equal'.",
+              "Description": "One of (above, below, equals). Defaults to 'equals'.",
               "Default": {
                 "Type": "string",
-                "Value": "equal"
+                "Value": "equals"
               }
             },
             "threshold": {
@@ -1007,26 +1199,17 @@
             "threshold_duration": {
               "Type": "Int",
               "Optional": true,
-              "Description": "The duration of time, in seconds, that the threshold must violate for in order to create a violation. Value must be a multiple of 60 and within 120-3600 seconds for baseline conditions and 120-7200 seconds for static conditions.",
-              "ConflictsWith": [
-                "term.0.duration"
-              ]
+              "Description": "The duration, in seconds, that the threshold must violate in order to create a violation. Value must be a multiple of the 'aggregation_window' (which has a default of 60 seconds). Value must be within 120-3600 seconds for baseline and outlier conditions, within 120-7200 seconds for static conditions with the sum value function, and within 60-7200 seconds for static conditions with the single_value value function."
             },
             "threshold_occurrences": {
               "Type": "String",
               "Optional": true,
-              "Description": "The criteria for how many data points must be in violation for the specified threshold duration. Valid values are: 'ALL' or 'AT_LEAST_ONCE' (case insensitive).",
-              "ConflictsWith": [
-                "term.0.time_function"
-              ]
+              "Description": "The criteria for how many data points must be in violation for the specified threshold duration. Valid values are: 'ALL' or 'AT_LEAST_ONCE' (case insensitive)."
             },
             "time_function": {
               "Type": "String",
               "Optional": true,
               "Description": "Valid values are: 'all' or 'any'",
-              "ConflictsWith": [
-                "term.0.threshold_occurrences"
-              ],
               "Deprecated": "use `threshold_occurrences` attribute instead"
             }
           }
@@ -1050,6 +1233,21 @@
         "Type": "Int",
         "Optional": true,
         "Description": "Number of expected groups when using outlier detection."
+      },
+      "expiration_duration": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The amount of time (in seconds) to wait before considering the signal expired."
+      },
+      "fill_option": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Which strategy to use when filling gaps in the signal. If static, the 'fill value' will be used for filling gaps in the signal. Valid values are: 'NONE', 'LAST_VALUE', or 'STATIC' (case insensitive)."
+      },
+      "fill_value": {
+        "Type": "Float",
+        "Optional": true,
+        "Description": "If using the 'static' fill option, this value will be used for filling gaps in the signal."
       },
       "ignore_overlap": {
         "Type": "Bool",
@@ -1100,6 +1298,11 @@
           }
         }
       },
+      "open_violation_on_expiration": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether to create a new violation to capture that the signal expired."
+      },
       "open_violation_on_group_overlap": {
         "Type": "Bool",
         "Optional": true,
@@ -1138,18 +1341,15 @@
               "Type": "Int",
               "Optional": true,
               "Description": "In minutes, must be in the range of 1 to 120 (inclusive).",
-              "ConflictsWith": [
-                "term.0.threshold_duration"
-              ],
               "Deprecated": "use `threshold_duration` attribute instead"
             },
             "operator": {
               "Type": "String",
               "Optional": true,
-              "Description": "One of (above, below, equal). Defaults to 'equal'.",
+              "Description": "One of (above, below, equals). Defaults to 'equals'.",
               "Default": {
                 "Type": "string",
-                "Value": "equal"
+                "Value": "equals"
               }
             },
             "priority": {
@@ -1169,26 +1369,17 @@
             "threshold_duration": {
               "Type": "Int",
               "Optional": true,
-              "Description": "The duration of time, in seconds, that the threshold must violate for in order to create a violation. Value must be a multiple of 60 and within 120-3600 seconds for baseline conditions and 120-7200 seconds for static conditions.",
-              "ConflictsWith": [
-                "term.0.duration"
-              ]
+              "Description": "The duration, in seconds, that the threshold must violate in order to create a violation. Value must be a multiple of the 'aggregation_window' (which has a default of 60 seconds). Value must be within 120-3600 seconds for baseline and outlier conditions, within 120-7200 seconds for static conditions with the sum value function, and within 60-7200 seconds for static conditions with the single_value value function."
             },
             "threshold_occurrences": {
               "Type": "String",
               "Optional": true,
-              "Description": "The criteria for how many data points must be in violation for the specified threshold duration. Valid values are: 'ALL' or 'AT_LEAST_ONCE' (case insensitive).",
-              "ConflictsWith": [
-                "term.0.time_function"
-              ]
+              "Description": "The criteria for how many data points must be in violation for the specified threshold duration. Valid values are: 'ALL' or 'AT_LEAST_ONCE' (case insensitive)."
             },
             "time_function": {
               "Type": "String",
               "Optional": true,
               "Description": "Valid values are: 'all' or 'any'",
-              "ConflictsWith": [
-                "term.0.threshold_occurrences"
-              ],
               "Deprecated": "use `threshold_occurrences` attribute instead"
             }
           }
@@ -1211,19 +1402,20 @@
       "violation_time_limit": {
         "Type": "String",
         "Optional": true,
-        "Description": "Sets a time limit, in hours, that will automatically force-close a long-lasting violation after the time limit you select. Possible values are 'ONE_HOUR', 'TWO_HOURS', 'FOUR_HOURS', 'EIGHT_HOURS', 'TWELVE_HOURS', 'TWENTY_FOUR_HOURS' (case insensitive).",
+        "Description": "Sets a time limit, in hours, that will automatically force-close a long-lasting violation after the time limit you select. Possible values are 'ONE_HOUR', 'TWO_HOURS', 'FOUR_HOURS', 'EIGHT_HOURS', 'TWELVE_HOURS', 'TWENTY_FOUR_HOURS', 'THIRTY_DAYS' (case insensitive).",
+        "Computed": true,
         "ConflictsWith": [
           "violation_time_limit_seconds"
-        ]
+        ],
+        "Deprecated": "use `violation_time_limit_seconds` attribute instead"
       },
       "violation_time_limit_seconds": {
         "Type": "Int",
         "Optional": true,
-        "Description": "Sets a time limit, in seconds, that will automatically force-close a long-lasting violation after the time limit you select. Possible values are 3600, 7200, 14400, 28800, 43200, and 86400.",
+        "Description": "Sets a time limit, in seconds, that will automatically force-close a long-lasting violation after the time limit you select.  Must be in the range of 300 to 2592000 (inclusive)",
         "ConflictsWith": [
           "violation_time_limit"
-        ],
-        "Deprecated": "use `violation_time_limit` attribute instead"
+        ]
       },
       "warning": {
         "Type": "List",
@@ -1232,7 +1424,7 @@
         "MaxItems": 1,
         "MinItems": 1,
         "ConflictsWith": [
-          "term.0"
+          "term"
         ],
         "IsBlock": true,
         "ConfigImplicitMode": "Block",
@@ -1243,18 +1435,15 @@
               "Type": "Int",
               "Optional": true,
               "Description": "In minutes, must be in the range of 1 to 120 (inclusive).",
-              "ConflictsWith": [
-                "term.0.threshold_duration"
-              ],
               "Deprecated": "use `threshold_duration` attribute instead"
             },
             "operator": {
               "Type": "String",
               "Optional": true,
-              "Description": "One of (above, below, equal). Defaults to 'equal'.",
+              "Description": "One of (above, below, equals). Defaults to 'equals'.",
               "Default": {
                 "Type": "string",
-                "Value": "equal"
+                "Value": "equals"
               }
             },
             "threshold": {
@@ -1265,29 +1454,889 @@
             "threshold_duration": {
               "Type": "Int",
               "Optional": true,
-              "Description": "The duration of time, in seconds, that the threshold must violate for in order to create a violation. Value must be a multiple of 60 and within 120-3600 seconds for baseline conditions and 120-7200 seconds for static conditions.",
-              "ConflictsWith": [
-                "term.0.duration"
-              ]
+              "Description": "The duration, in seconds, that the threshold must violate in order to create a violation. Value must be a multiple of the 'aggregation_window' (which has a default of 60 seconds). Value must be within 120-3600 seconds for baseline and outlier conditions, within 120-7200 seconds for static conditions with the sum value function, and within 60-7200 seconds for static conditions with the single_value value function."
             },
             "threshold_occurrences": {
               "Type": "String",
               "Optional": true,
-              "Description": "The criteria for how many data points must be in violation for the specified threshold duration. Valid values are: 'ALL' or 'AT_LEAST_ONCE' (case insensitive).",
-              "ConflictsWith": [
-                "term.0.time_function"
-              ]
+              "Description": "The criteria for how many data points must be in violation for the specified threshold duration. Valid values are: 'ALL' or 'AT_LEAST_ONCE' (case insensitive)."
             },
             "time_function": {
               "Type": "String",
               "Optional": true,
               "Description": "Valid values are: 'all' or 'any'",
-              "ConflictsWith": [
-                "term.0.threshold_occurrences"
-              ],
               "Deprecated": "use `threshold_occurrences` attribute instead"
             }
           }
+        }
+      }
+    },
+    "newrelic_nrql_drop_rule": {
+      "account_id": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Account with the NRQL drop rule will be put.",
+        "Computed": true
+      },
+      "action": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The drop rule action (drop_data or drop_attributes)."
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Provides additional information about the rule."
+      },
+      "nrql": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Explains which data to apply the drop rule to."
+      },
+      "rule_id": {
+        "Type": "String",
+        "Description": "The id, uniquely identifying the rule.",
+        "Computed": true
+      }
+    },
+    "newrelic_one_dashboard": {
+      "account_id": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The New Relic account ID where you want to create the dashboard.",
+        "Computed": true
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The dashboard's description."
+      },
+      "guid": {
+        "Type": "String",
+        "Description": "The unique entity identifier of the dashboard in New Relic.",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The dashboard's name."
+      },
+      "page": {
+        "Type": "List",
+        "Required": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "description": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The dashboard page's description."
+            },
+            "guid": {
+              "Type": "String",
+              "Description": "The unique entity identifier of the dashboard page in New Relic.",
+              "Computed": true
+            },
+            "name": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The dashboard page's name."
+            },
+            "widget_area": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "An area widget.",
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "column": {
+                    "Type": "Int",
+                    "Required": true
+                  },
+                  "height": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "int",
+                      "Value": "3"
+                    }
+                  },
+                  "id": {
+                    "Type": "String",
+                    "Description": "The ID of the widget.",
+                    "Computed": true
+                  },
+                  "nrql_query": {
+                    "Type": "List",
+                    "Required": true,
+                    "IsBlock": true,
+                    "ConfigImplicitMode": "Block",
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "account_id": {
+                          "Type": "Int",
+                          "Optional": true,
+                          "Description": "The account id used for the NRQL query.",
+                          "Computed": true
+                        },
+                        "query": {
+                          "Type": "String",
+                          "Required": true,
+                          "Description": "The NRQL query."
+                        }
+                      }
+                    }
+                  },
+                  "row": {
+                    "Type": "Int",
+                    "Required": true
+                  },
+                  "title": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "A title for the widget."
+                  },
+                  "width": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "int",
+                      "Value": "4"
+                    }
+                  }
+                }
+              }
+            },
+            "widget_bar": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "A bar widget.",
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "column": {
+                    "Type": "Int",
+                    "Required": true
+                  },
+                  "height": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "int",
+                      "Value": "3"
+                    }
+                  },
+                  "id": {
+                    "Type": "String",
+                    "Description": "The ID of the widget.",
+                    "Computed": true
+                  },
+                  "linked_entity_guids": {
+                    "Type": "List",
+                    "Optional": true,
+                    "Description": "Related entities. Currently only supports Dashboard entities, but may allow other cases in the future.",
+                    "ConfigImplicitMode": "Attr",
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  },
+                  "nrql_query": {
+                    "Type": "List",
+                    "Required": true,
+                    "IsBlock": true,
+                    "ConfigImplicitMode": "Block",
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "account_id": {
+                          "Type": "Int",
+                          "Optional": true,
+                          "Description": "The account id used for the NRQL query.",
+                          "Computed": true
+                        },
+                        "query": {
+                          "Type": "String",
+                          "Required": true,
+                          "Description": "The NRQL query."
+                        }
+                      }
+                    }
+                  },
+                  "row": {
+                    "Type": "Int",
+                    "Required": true
+                  },
+                  "title": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "A title for the widget."
+                  },
+                  "width": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "int",
+                      "Value": "4"
+                    }
+                  }
+                }
+              }
+            },
+            "widget_billboard": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "A billboard widget.",
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "column": {
+                    "Type": "Int",
+                    "Required": true
+                  },
+                  "critical": {
+                    "Type": "Float",
+                    "Optional": true,
+                    "Description": "The critical threshold value."
+                  },
+                  "height": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "int",
+                      "Value": "3"
+                    }
+                  },
+                  "id": {
+                    "Type": "String",
+                    "Description": "The ID of the widget.",
+                    "Computed": true
+                  },
+                  "nrql_query": {
+                    "Type": "List",
+                    "Required": true,
+                    "IsBlock": true,
+                    "ConfigImplicitMode": "Block",
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "account_id": {
+                          "Type": "Int",
+                          "Optional": true,
+                          "Description": "The account id used for the NRQL query.",
+                          "Computed": true
+                        },
+                        "query": {
+                          "Type": "String",
+                          "Required": true,
+                          "Description": "The NRQL query."
+                        }
+                      }
+                    }
+                  },
+                  "row": {
+                    "Type": "Int",
+                    "Required": true
+                  },
+                  "title": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "A title for the widget."
+                  },
+                  "warning": {
+                    "Type": "Float",
+                    "Optional": true,
+                    "Description": "The warning threshold value."
+                  },
+                  "width": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "int",
+                      "Value": "4"
+                    }
+                  }
+                }
+              }
+            },
+            "widget_bullet": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "A bullet widget.",
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "column": {
+                    "Type": "Int",
+                    "Required": true
+                  },
+                  "height": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "int",
+                      "Value": "3"
+                    }
+                  },
+                  "id": {
+                    "Type": "String",
+                    "Description": "The ID of the widget.",
+                    "Computed": true
+                  },
+                  "limit": {
+                    "Type": "Float",
+                    "Optional": true,
+                    "Description": "The maximum value for the visualization"
+                  },
+                  "nrql_query": {
+                    "Type": "List",
+                    "Required": true,
+                    "IsBlock": true,
+                    "ConfigImplicitMode": "Block",
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "account_id": {
+                          "Type": "Int",
+                          "Optional": true,
+                          "Description": "The account id used for the NRQL query.",
+                          "Computed": true
+                        },
+                        "query": {
+                          "Type": "String",
+                          "Required": true,
+                          "Description": "The NRQL query."
+                        }
+                      }
+                    }
+                  },
+                  "row": {
+                    "Type": "Int",
+                    "Required": true
+                  },
+                  "title": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "A title for the widget."
+                  },
+                  "width": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "int",
+                      "Value": "4"
+                    }
+                  }
+                }
+              }
+            },
+            "widget_funnel": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "A funnel widget.",
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "column": {
+                    "Type": "Int",
+                    "Required": true
+                  },
+                  "height": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "int",
+                      "Value": "3"
+                    }
+                  },
+                  "id": {
+                    "Type": "String",
+                    "Description": "The ID of the widget.",
+                    "Computed": true
+                  },
+                  "nrql_query": {
+                    "Type": "List",
+                    "Required": true,
+                    "IsBlock": true,
+                    "ConfigImplicitMode": "Block",
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "account_id": {
+                          "Type": "Int",
+                          "Optional": true,
+                          "Description": "The account id used for the NRQL query.",
+                          "Computed": true
+                        },
+                        "query": {
+                          "Type": "String",
+                          "Required": true,
+                          "Description": "The NRQL query."
+                        }
+                      }
+                    }
+                  },
+                  "row": {
+                    "Type": "Int",
+                    "Required": true
+                  },
+                  "title": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "A title for the widget."
+                  },
+                  "width": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "int",
+                      "Value": "4"
+                    }
+                  }
+                }
+              }
+            },
+            "widget_heatmap": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "A heatmap widget.",
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "column": {
+                    "Type": "Int",
+                    "Required": true
+                  },
+                  "height": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "int",
+                      "Value": "3"
+                    }
+                  },
+                  "id": {
+                    "Type": "String",
+                    "Description": "The ID of the widget.",
+                    "Computed": true
+                  },
+                  "nrql_query": {
+                    "Type": "List",
+                    "Required": true,
+                    "IsBlock": true,
+                    "ConfigImplicitMode": "Block",
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "account_id": {
+                          "Type": "Int",
+                          "Optional": true,
+                          "Description": "The account id used for the NRQL query.",
+                          "Computed": true
+                        },
+                        "query": {
+                          "Type": "String",
+                          "Required": true,
+                          "Description": "The NRQL query."
+                        }
+                      }
+                    }
+                  },
+                  "row": {
+                    "Type": "Int",
+                    "Required": true
+                  },
+                  "title": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "A title for the widget."
+                  },
+                  "width": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "int",
+                      "Value": "4"
+                    }
+                  }
+                }
+              }
+            },
+            "widget_histogram": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "A histogram widget.",
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "column": {
+                    "Type": "Int",
+                    "Required": true
+                  },
+                  "height": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "int",
+                      "Value": "3"
+                    }
+                  },
+                  "id": {
+                    "Type": "String",
+                    "Description": "The ID of the widget.",
+                    "Computed": true
+                  },
+                  "nrql_query": {
+                    "Type": "List",
+                    "Required": true,
+                    "IsBlock": true,
+                    "ConfigImplicitMode": "Block",
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "account_id": {
+                          "Type": "Int",
+                          "Optional": true,
+                          "Description": "The account id used for the NRQL query.",
+                          "Computed": true
+                        },
+                        "query": {
+                          "Type": "String",
+                          "Required": true,
+                          "Description": "The NRQL query."
+                        }
+                      }
+                    }
+                  },
+                  "row": {
+                    "Type": "Int",
+                    "Required": true
+                  },
+                  "title": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "A title for the widget."
+                  },
+                  "width": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "int",
+                      "Value": "4"
+                    }
+                  }
+                }
+              }
+            },
+            "widget_line": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "A line widget.",
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "column": {
+                    "Type": "Int",
+                    "Required": true
+                  },
+                  "height": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "int",
+                      "Value": "3"
+                    }
+                  },
+                  "id": {
+                    "Type": "String",
+                    "Description": "The ID of the widget.",
+                    "Computed": true
+                  },
+                  "nrql_query": {
+                    "Type": "List",
+                    "Required": true,
+                    "IsBlock": true,
+                    "ConfigImplicitMode": "Block",
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "account_id": {
+                          "Type": "Int",
+                          "Optional": true,
+                          "Description": "The account id used for the NRQL query.",
+                          "Computed": true
+                        },
+                        "query": {
+                          "Type": "String",
+                          "Required": true,
+                          "Description": "The NRQL query."
+                        }
+                      }
+                    }
+                  },
+                  "row": {
+                    "Type": "Int",
+                    "Required": true
+                  },
+                  "title": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "A title for the widget."
+                  },
+                  "width": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "int",
+                      "Value": "4"
+                    }
+                  }
+                }
+              }
+            },
+            "widget_markdown": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "A markdown widget.",
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "column": {
+                    "Type": "Int",
+                    "Required": true
+                  },
+                  "height": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "int",
+                      "Value": "3"
+                    }
+                  },
+                  "id": {
+                    "Type": "String",
+                    "Description": "The ID of the widget.",
+                    "Computed": true
+                  },
+                  "row": {
+                    "Type": "Int",
+                    "Required": true
+                  },
+                  "text": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "string"
+                    }
+                  },
+                  "title": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "A title for the widget."
+                  },
+                  "width": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "int",
+                      "Value": "4"
+                    }
+                  }
+                }
+              }
+            },
+            "widget_pie": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "A pie widget.",
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "column": {
+                    "Type": "Int",
+                    "Required": true
+                  },
+                  "height": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "int",
+                      "Value": "3"
+                    }
+                  },
+                  "id": {
+                    "Type": "String",
+                    "Description": "The ID of the widget.",
+                    "Computed": true
+                  },
+                  "linked_entity_guids": {
+                    "Type": "List",
+                    "Optional": true,
+                    "Description": "Related entities. Currently only supports Dashboard entities, but may allow other cases in the future.",
+                    "ConfigImplicitMode": "Attr",
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  },
+                  "nrql_query": {
+                    "Type": "List",
+                    "Required": true,
+                    "IsBlock": true,
+                    "ConfigImplicitMode": "Block",
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "account_id": {
+                          "Type": "Int",
+                          "Optional": true,
+                          "Description": "The account id used for the NRQL query.",
+                          "Computed": true
+                        },
+                        "query": {
+                          "Type": "String",
+                          "Required": true,
+                          "Description": "The NRQL query."
+                        }
+                      }
+                    }
+                  },
+                  "row": {
+                    "Type": "Int",
+                    "Required": true
+                  },
+                  "title": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "A title for the widget."
+                  },
+                  "width": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "int",
+                      "Value": "4"
+                    }
+                  }
+                }
+              }
+            },
+            "widget_table": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "A table widget.",
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "column": {
+                    "Type": "Int",
+                    "Required": true
+                  },
+                  "height": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "int",
+                      "Value": "3"
+                    }
+                  },
+                  "id": {
+                    "Type": "String",
+                    "Description": "The ID of the widget.",
+                    "Computed": true
+                  },
+                  "linked_entity_guids": {
+                    "Type": "List",
+                    "Optional": true,
+                    "Description": "Related entities. Currently only supports Dashboard entities, but may allow other cases in the future.",
+                    "ConfigImplicitMode": "Attr",
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  },
+                  "nrql_query": {
+                    "Type": "List",
+                    "Required": true,
+                    "IsBlock": true,
+                    "ConfigImplicitMode": "Block",
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "account_id": {
+                          "Type": "Int",
+                          "Optional": true,
+                          "Description": "The account id used for the NRQL query.",
+                          "Computed": true
+                        },
+                        "query": {
+                          "Type": "String",
+                          "Required": true,
+                          "Description": "The NRQL query."
+                        }
+                      }
+                    }
+                  },
+                  "row": {
+                    "Type": "Int",
+                    "Required": true
+                  },
+                  "title": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "A title for the widget."
+                  },
+                  "width": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Default": {
+                      "Type": "int",
+                      "Value": "4"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "permalink": {
+        "Type": "String",
+        "Description": "The URL of the dashboard.",
+        "Computed": true
+      },
+      "permissions": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Determines who can see or edit the dashboard. Valid values are private, public_read_only, public_read_write. Defaults to public_read_only.",
+        "Default": {
+          "Type": "string",
+          "Value": "public_read_only"
         }
       }
     },
@@ -1434,28 +2483,6 @@
         "Description": "Runbook URL to display in notifications."
       }
     },
-    "newrelic_synthetics_label": {
-      "href": {
-        "Type": "String",
-        "Description": "The URL of the Synthetics label.",
-        "Computed": true
-      },
-      "monitor_id": {
-        "Type": "String",
-        "Required": true,
-        "Description": "The ID of the monitor that will be assigned the label."
-      },
-      "type": {
-        "Type": "String",
-        "Required": true,
-        "Description": "A string representing the label key/category."
-      },
-      "value": {
-        "Type": "String",
-        "Required": true,
-        "Description": "A string representing the label value."
-      }
-    },
     "newrelic_synthetics_monitor": {
       "bypass_head_request": {
         "Type": "Bool",
@@ -1535,6 +2562,86 @@
         "Description": "The plaintext representing the monitor script."
       }
     },
+    "newrelic_synthetics_multilocation_alert_condition": {
+      "critical": {
+        "Type": "List",
+        "Required": true,
+        "Description": "A condition term with priority set to critical.",
+        "MaxItems": 1,
+        "MinItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "threshold": {
+              "Type": "Int",
+              "Required": true,
+              "Description": "The minimum number of monitor locations that must be concurrently failing before a violation is opened."
+            }
+          }
+        }
+      },
+      "enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Set whether to enable the alert condition. Defaults to true.",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "entities": {
+        "Type": "List",
+        "Required": true,
+        "Description": "The GUIDs of the Synthetics monitors to alert on.",
+        "MinItems": 1,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The title of this condition."
+      },
+      "policy_id": {
+        "Type": "Int",
+        "Required": true,
+        "Description": "The ID of the policy where this condition will be used."
+      },
+      "runbook_url": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Runbook URL to display in notifications."
+      },
+      "violation_time_limit_seconds": {
+        "Type": "Int",
+        "Required": true,
+        "Description": "The maximum number of seconds a violation can remain open before being closed by the system.  Must be one of: 0, 3600, 7200, 14400, 28800, 43200, 86400"
+      },
+      "warning": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "A condition term with priority set to warning.",
+        "MaxItems": 1,
+        "MinItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "threshold": {
+              "Type": "Int",
+              "Required": true,
+              "Description": "The minimum number of monitor locations that must be concurrently failing before a violation is opened."
+            }
+          }
+        }
+      }
+    },
     "newrelic_synthetics_secure_credential": {
       "created_at": {
         "Type": "String",
@@ -1567,8 +2674,9 @@
     "newrelic_workload": {
       "account_id": {
         "Type": "Int",
-        "Required": true,
-        "Description": "The New Relic account ID where you want to create the workload."
+        "Optional": true,
+        "Description": "The New Relic account ID where you want to create the workload.",
+        "Computed": true
       },
       "composite_entity_search_query": {
         "Type": "String",
@@ -1637,6 +2745,27 @@
     }
   },
   "data-sources": {
+    "newrelic_account": {
+      "account_id": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The ID of the account in New Relic."
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of the account in New Relic."
+      },
+      "scope": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The scope of the account in New Relic.  Valid values are \"global\" and \"in_region\".  Defaults to \"in_region\".",
+        "Default": {
+          "Type": "string",
+          "Value": "IN_REGION"
+        }
+      }
+    },
     "newrelic_alert_channel": {
       "config": {
         "Type": "List",
@@ -1754,7 +2883,7 @@
       },
       "type": {
         "Type": "String",
-        "Description": "The type of channel. One of: (webhook, email, opsgenie, pagerduty, slack, user, victorops).",
+        "Description": "The type of channel. One of: (pagerduty, slack, user, victorops, webhook, email, opsgenie).",
         "Computed": true
       }
     },
@@ -1763,7 +2892,7 @@
         "Type": "Int",
         "Optional": true,
         "Description": "The New Relic account ID to operate on.",
-        "DefaultFunc": "UNKNOWN"
+        "Computed": true
       },
       "created_at": {
         "Type": "String",
@@ -1821,13 +2950,13 @@
       },
       "application_id": {
         "Type": "Int",
-        "Description": "The domain-specific ID of the entity (only returned for APM and Browser applications)",
+        "Description": "The domain-specific ID of the entity (only returned for APM and Browser applications).",
         "Computed": true
       },
       "domain": {
         "Type": "String",
         "Optional": true,
-        "Description": "The entity's domain. Valid values are APM, BROWSER, INFRA, MOBILE, and SYNTH.",
+        "Description": "The entity's domain. Valid values are APM, BROWSER, INFRA, MOBILE, SYNTH, and VIZ. If not specified, all domains are searched.",
         "Computed": true
       },
       "guid": {
@@ -1835,10 +2964,24 @@
         "Description": "A unique entity identifier.",
         "Computed": true
       },
+      "ignore_case": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Ignore case when searching the entity name.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
       "name": {
         "Type": "String",
         "Required": true,
         "Description": "The name of the entity in New Relic One.  The first entity matching this name for the given search parameters will be returned."
+      },
+      "serving_apm_application_id": {
+        "Type": "Int",
+        "Description": "The browser-specific ID of the backing APM entity. (only returned for Browser applications)",
+        "Computed": true
       },
       "tag": {
         "Type": "List",
@@ -1866,7 +3009,7 @@
       "type": {
         "Type": "String",
         "Optional": true,
-        "Description": "The entity's type. Valid values are APPLICATION, DASHBOARD, HOST, MONITOR, and WORRKLOAD.",
+        "Description": "The entity's type. Valid values are APPLICATION, DASHBOARD, HOST, MONITOR, and WORKLOAD.",
         "Computed": true
       }
     },
@@ -1921,6 +3064,33 @@
         "Type": "String",
         "Required": true,
         "Description": "The name of the synthetics monitor in New Relic."
+      }
+    },
+    "newrelic_synthetics_monitor_location": {
+      "description": {
+        "Type": "String",
+        "Description": "A description of the Synthetics monitor location.",
+        "Computed": true
+      },
+      "high_security_mode": {
+        "Type": "Bool",
+        "Description": "Represents if high security mode is enabled for the location. A value of true means that high security mode is enabled, and a value of false means it is disabled.",
+        "Computed": true
+      },
+      "label": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The label of the Synthetics monitor location."
+      },
+      "name": {
+        "Type": "String",
+        "Description": "The name of the Synthetics monitor location.",
+        "Computed": true
+      },
+      "private": {
+        "Type": "Bool",
+        "Description": "Represents if this location is a private location. A value of true means that the location is private, and a value of false means it is public.",
+        "Computed": true
       }
     },
     "newrelic_synthetics_secure_credential": {

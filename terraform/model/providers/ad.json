@@ -1,0 +1,1148 @@
+{
+  ".schema_version": "2",
+  ".sdk_type": "terraform-plugin-sdk-v2",
+  "name": "ad",
+  "type": "provider",
+  "version": "v0.4.1",
+  "provider": {
+    "krb_conf": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "Path to kerberos configuration file. (default: none, environment variable: AD_KRB_CONF)",
+      "DefaultFunc": "ENV(AD_KRB_CONF)"
+    },
+    "krb_realm": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "The name of the kerberos realm (domain) we will use for authentication. (default: \"\", environment variable: AD_KRB_REALM)",
+      "DefaultFunc": "ENV(AD_KRB_REALM)"
+    },
+    "krb_spn": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "Alternative Service Principal Name. (default: none, environment variable: AD_KRB_SPN)",
+      "DefaultFunc": "ENV(AD_KRB_SPN)"
+    },
+    "winrm_hostname": {
+      "Type": "String",
+      "Required": true,
+      "Description": "The hostname of the server we will use to run powershell scripts over WinRM. (Environment variable: AD_HOSTNAME)",
+      "DefaultFunc": "ENV(AD_HOSTNAME)"
+    },
+    "winrm_insecure": {
+      "Type": "Bool",
+      "Optional": true,
+      "Description": "Trust unknown certificates. (default: false, environment variable: AD_WINRM_INSECURE)",
+      "DefaultFunc": "ENV(AD_WINRM_INSECURE)"
+    },
+    "winrm_password": {
+      "Type": "String",
+      "Required": true,
+      "Description": "The password used to authenticate to the server's WinRM service. (Environment variable: AD_PASSWORD)",
+      "DefaultFunc": "ENV(AD_PASSWORD)"
+    },
+    "winrm_port": {
+      "Type": "Int",
+      "Optional": true,
+      "Description": "The port WinRM is listening for connections. (default: 5985, environment variable: AD_PORT)",
+      "DefaultFunc": "ENV(AD_PORT)"
+    },
+    "winrm_proto": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "The WinRM protocol we will use. (default: http, environment variable: AD_PROTO)",
+      "DefaultFunc": "ENV(AD_PROTO)"
+    },
+    "winrm_use_ntlm": {
+      "Type": "Bool",
+      "Optional": true,
+      "Description": "Use NTLM authentication. (default: false, environment variable: AD_WINRM_USE_NTLM)",
+      "DefaultFunc": "ENV(AD_WINRM_USE_NTLM)"
+    },
+    "winrm_username": {
+      "Type": "String",
+      "Required": true,
+      "Description": "The username used to authenticate to the server's WinRM service. (Environment variable: AD_USER)",
+      "DefaultFunc": "ENV(AD_USER)"
+    }
+  },
+  "resources": {
+    "ad_computer": {
+      "container": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The DN of the container used to hold the computer account.",
+        "Computed": true
+      },
+      "dn": {
+        "Type": "String",
+        "Computed": true
+      },
+      "guid": {
+        "Type": "String",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The name for the computer account."
+      },
+      "pre2kname": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The pre-win2k name for the computer account.",
+        "Computed": true
+      }
+    },
+    "ad_gplink": {
+      "enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Controls the state of the GP link between a GPO and a container object.",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "enforced": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "If set to true, the GPO will be enforced on the container object.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "gpo_guid": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The GUID of the GPO that will be linked to the container object."
+      },
+      "order": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Sets the precedence between multiple GPOs linked to the same container object."
+      },
+      "target_dn": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The DN of the object the GPO will be linked to."
+      }
+    },
+    "ad_gpo": {
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Description of the GPO."
+      },
+      "dn": {
+        "Type": "String",
+        "Computed": true
+      },
+      "domain": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Domain of the GPO."
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the GPO."
+      },
+      "numeric_status": {
+        "Type": "Int",
+        "Computed": true
+      },
+      "status": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Status of the GPO. Can be one of `AllSettingsEnabled`, `UserSettingsDisabled`, `ComputerSettingsDisabled`, or `AllSettingsDisabled` (case sensitive).",
+        "Default": {
+          "Type": "string",
+          "Value": "AllSettingsEnabled"
+        }
+      }
+    },
+    "ad_gpo_security": {
+      "account_lockout": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Settings related to account lockout. (https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-gpsb/2cd39c97-97cd-4859-a7b4-1229dad5f53d)",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "force_logoff_when_hour_expire": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Disconnect SMB sessions when logon hours expire."
+            },
+            "lockout_bad_count": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Number of failed logon attempts until a account is locked."
+            },
+            "lockout_duration": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Number of minutes a locked out account must remain locked out."
+            },
+            "reset_lockout_count": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Number of minutes a account will remain locked after a failed logon attempt."
+            }
+          }
+        }
+      },
+      "application_log": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Application log related settings. (https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-gpsb/0b9673a7-ce0a-49b4-912b-591efdb37cdf)",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "audit_log_retention_period": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Control log retention. Values: 0: overwrite events as needed, 1: overwrite events as specified specified by `retention_days`, 2: never overwrite events."
+            },
+            "maximum_log_size": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Maximum size of log in KiloBytes. (64-4194240)"
+            },
+            "restrict_guest_access": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Restrict access to logs for guest users. A non-zero value restricts access to guest users."
+            },
+            "retention_days": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Number of days before new events overwrite old events. (1-365)"
+            }
+          }
+        }
+      },
+      "audit_log": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Audit log related settings. (https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-gpsb/0b9673a7-ce0a-49b4-912b-591efdb37cdf)",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "audit_log_retention_period": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Control log retention. Values: 0: overwrite events as needed, 1: overwrite events as specified specified by `retention_days`, 2: never overwrite events."
+            },
+            "maximum_log_size": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Maximum size of log in KiloBytes. (64-4194240)"
+            },
+            "restrict_guest_access": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Restrict access to logs for guest users. A non-zero value restricts access to guest users."
+            },
+            "retention_days": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Number of days before new events overwrite old events. (1-365)"
+            }
+          }
+        }
+      },
+      "event_audit": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Event audit related settings. (https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-gpsb/01f8e057-f6a8-4d6e-8a00-99bcd241b403). Valid values for all items below are: 0 (None), 1 (Success audits only), 2 (Failure audits only), 3 (Success and failure audits), 4 (None)",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "audit_account_logon": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Audit credential validation."
+            },
+            "audit_account_manage": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Audit account management events."
+            },
+            "audit_ds_access": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Audit access attempts to AD objects."
+            },
+            "audit_logon_events": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Audit logon events."
+            },
+            "audit_object_access": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Audit access attempts to non-AD objects."
+            },
+            "audit_policy_change": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Audit attempts to change a policy."
+            },
+            "audit_privilege_use": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Audit user attempts of exercising user rights."
+            },
+            "audit_process_tracking": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Audit process related events."
+            },
+            "audit_system_events": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Audit system events."
+            }
+          }
+        }
+      },
+      "filesystem": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Settings related to File System permissions. (https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-gpsb/abeebe06-49aa-44d4-ae5b-d6aff458e8e7)",
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "acl": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Security descriptor to apply. (https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-dtyp/f4296d69-1c0f-491f-9587-a960b292d070)"
+            },
+            "path": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Path of the file or directory."
+            },
+            "propagation_mode": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Control permission propagation. 0: Propagate permissions to all subfolders and files, 1: Replace existing permissions on all subfolders and files, 2: Do not allow permissions to be replaced."
+            }
+          }
+        }
+      },
+      "gpo_container": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The GUID of the container the security settings belong to."
+      },
+      "kerberos_policy": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Settings related to kerberos policies. (https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-gpsb/0fce5b92-bcc1-4b96-9c2b-56397c3f144f)",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "max_clock_skew": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Maximum time difference, in minutes, between the client clock and the server clock. (0-99999)."
+            },
+            "max_renew_age": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Number of days during which a ticket-granting ticket can be renewed (0-99999)."
+            },
+            "max_service_age": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Maximum amount of minutes a ticket must be valid to access a service or resource. Minimum should be 10 and maximum should be equal to `max_ticket_age`."
+            },
+            "max_ticket_age": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Maximum amount of hours a ticket-granting ticket is valid (0-99999)."
+            },
+            "ticket_validate_client": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Control if the session ticket is validated for every request. A non-zero value disables the policy."
+            }
+          }
+        }
+      },
+      "password_policies": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Settings related to password policies. (https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-gpsb/0b40db09-d95d-40a6-8467-32aedec8140c)",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "clear_text_password": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Store password with reversible encryption (0-2^16). The password will not be stored with reversible encryption if the value is set to 0. Reversible encryption will be used in any other case."
+            },
+            "maximum_password_age": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Number of days before password expires (-1-999). If set to -1, it means the password never expires."
+            },
+            "minimum_password_age": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Number of days a password must be used before changing it (0-999)."
+            },
+            "minimum_password_length": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Minimum number of characters used in a password (0-2^16). If set to 0, it means no password is required."
+            },
+            "password_complexity": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Password must meet complexity requirements (0-2^16). If set to 0, then requirements do not apply, any other value means requirements are applied"
+            },
+            "password_history_size": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The number of unique new passwords that are required before an old password can be reused in association with a user account (0-2^16).  A value of 0 indicates that the password history is disabled."
+            }
+          }
+        }
+      },
+      "registry_keys": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Settings related to Registry Keys. (https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-gpsb/13712a60-de1e-4642-bd9c-ab054dd86278)",
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "acl": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Security descriptor to apply. (https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-dtyp/f4296d69-1c0f-491f-9587-a960b292d070)"
+            },
+            "key_name": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Fully qualified name of the key (https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-rrp/97587de7-3524-4291-8527-3951711      0c0eb)"
+            },
+            "propagation_mode": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Control permission propagation. 0: Propagate permissions to all subkeys, 1: Replace existing permissions on all subkeys, 2: Do not allow permissions to be replaced on the key."
+            }
+          }
+        }
+      },
+      "registry_values": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Settings related to Registry Values. (https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-gpsb/3a14ca47-a22f-43c5-b35e-6be791003ca7)",
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "key_name": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Fully qualified name of the key (https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-rrp/97587de7-3524-4291-8527-39517110c0eb)"
+            },
+            "value": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The value of the key, matching the type set in `value_type`."
+            },
+            "value_type": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Data type of the key's value. 1: String, 2: Expand String, 3: Binary, 4: DWORD, 5: MULTI_SZ."
+            }
+          }
+        }
+      },
+      "restricted_groups": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Settings related to Groups Membership. (https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-gpsb/b73d8bae-ed22-48aa-acba-7065ab52d709)",
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "group_memberof": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Comma separated list of group names or SIDs that this group belongs to."
+            },
+            "group_members": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Comma separated list of group names or SIDs that are members of the group."
+            },
+            "group_name": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Name of the group we are managing."
+            }
+          }
+        }
+      },
+      "system_log": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "System log related settings. (https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-gpsb/0b9673a7-ce0a-49b4-912b-591efdb37cdf)",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "audit_log_retention_period": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Control log retention. Values: 0: overwrite events as needed, 1: overwrite events as specified specified by `retention_days`, 2: never overwrite events."
+            },
+            "maximum_log_size": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Maximum size of log in KiloBytes. (64-4194240)"
+            },
+            "restrict_guest_access": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Restrict access to logs for guest users. A non-zero value restricts access to guest users."
+            },
+            "retention_days": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Number of days before new events overwrite old events. (1-365)"
+            }
+          }
+        }
+      },
+      "system_services": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Settings related to System Services. (https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-gpsb/32deea3e-3fa4-414b-ba25-4121ad8c055c)",
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "acl": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Security descriptor to apply. (https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-dtyp/f4296d69-1c0f-491f-9587-a960b292d070)"
+            },
+            "service_name": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Name of the service."
+            },
+            "startup_mode": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Startup mode of the service. Possible values are 2: Automatic, 3: Manual, 4: Disabled."
+            }
+          }
+        }
+      }
+    },
+    "ad_group": {
+      "category": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The group's category. Can be one of `system` or `security` (case sensitive).",
+        "Default": {
+          "Type": "string",
+          "Value": "security"
+        }
+      },
+      "container": {
+        "Type": "String",
+        "Required": true,
+        "Description": "A DN of a container object holding the group."
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The name of the group."
+      },
+      "sam_account_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The pre-win2k name of the group."
+      },
+      "scope": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The group's scope. Can be one of `global`, `local`, or `universal` (case sensitive).",
+        "Default": {
+          "Type": "string",
+          "Value": "global"
+        }
+      }
+    },
+    "ad_group_membership": {
+      "group_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The ID of the group. This can be a GUID, a SID, a Distinguished Name, or the SAM Account Name of the group."
+      },
+      "group_members": {
+        "Type": "Set",
+        "Required": true,
+        "Description": "A list of member AD Principals. Each principal can be identified by its GUID, SID, Distinguished Name, or SAM Account Name. Only one is required",
+        "MinItems": 1,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      }
+    },
+    "ad_ou": {
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Description of the OU."
+      },
+      "dn": {
+        "Type": "String",
+        "Description": "The OU's DN.",
+        "Computed": true
+      },
+      "guid": {
+        "Type": "String",
+        "Description": "The OU's GUID.",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the OU."
+      },
+      "path": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "DN of the object that contains the OU."
+      },
+      "protected": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Protect this OU from being deleted accidentaly.",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      }
+    },
+    "ad_user": {
+      "cannot_change_password": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "If set to true, the user will not be allowed to change their password.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "city": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Specifies the user's town or city. This parameter sets the City property of a user object."
+      },
+      "company": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Specifies the user's company. This parameter sets the Company property of a user object."
+      },
+      "container": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "A DN of the container object that will be holding the user."
+      },
+      "country": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Specifies the country by setting the country code (refer to ISO 3166)"
+      },
+      "custom_attributes": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "JSON encoded map that represents key/value pairs for custom attributes. Please note that `terraform import` will not import these attributes."
+      },
+      "department": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Specifies the user's department. This parameter sets the Department property of a user object."
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Specifies a description of the object. This parameter sets the value of the Description property for the user object."
+      },
+      "display_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The Display Name of an Active Directory user."
+      },
+      "division": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Specifies the user's division. This parameter sets the Division property of a user object."
+      },
+      "email_address": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Specifies the user's e-mail address. This parameter sets the EmailAddress property of a user object."
+      },
+      "employee_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Specifies the user's employee ID. This parameter sets the EmployeeID property of a user object."
+      },
+      "employee_number": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Specifies the user's employee number. This parameter sets the EmployeeNumber property of a user object."
+      },
+      "enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "If set to false, the user will be disabled.",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "fax": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Specifies the user's fax phone number. This parameter sets the Fax property of a user object."
+      },
+      "given_name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Specifies the user's given name. This parameter sets the GivenName property of a user object."
+      },
+      "home_directory": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Specifies a user's home directory. This parameter sets the HomeDirectory property of a user object."
+      },
+      "home_drive": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Specifies a drive that is associated with the UNC path defined by the HomeDirectory property. The drive letter is specified as \u003cDriveLetter\u003e: where \u003cDriveLetter\u003e indicates the letter of the drive to associate. The \u003cDriveLetter\u003e must be a single, uppercase letter and the colon is required. This parameter sets the HomeDrive property of the user object."
+      },
+      "home_page": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Specifies the URL of the home page of the object. This parameter sets the homePage property of a user object."
+      },
+      "home_phone": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Specifies the user's home telephone number. This parameter sets the HomePhone property of a user object."
+      },
+      "initial_password": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The user's initial password. This will be set on creation but will *not* be enforced in subsequent plans."
+      },
+      "initials": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Specifies the initials that represent part of a user's name. Maximum 6 char."
+      },
+      "mobile_phone": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Specifies the user's mobile phone number. This parameter sets the MobilePhone property of a user object."
+      },
+      "office": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Specifies the location of the user's office or place of business. This parameter sets the Office property of a user object."
+      },
+      "office_phone": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Specifies the user's office telephone number. This parameter sets the OfficePhone property of a user object."
+      },
+      "organization": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Specifies the user's organization. This parameter sets the Organization property of a user object."
+      },
+      "other_name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Specifies a name in addition to a user's given name and surname, such as the user's middle name."
+      },
+      "password_never_expires": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "If set to true, the password for this user will not expire.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "po_box": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Specifies the user's post office box number. This parameter sets the POBox property of a user object."
+      },
+      "postal_code": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Specifies the user's postal code or zip code. This parameter sets the PostalCode property of a user object."
+      },
+      "principal_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The Principal Name of an Active Directory user."
+      },
+      "sam_account_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The pre-win2k user logon name."
+      },
+      "smart_card_logon_required": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "If set to true, a smart card is required to logon. This parameter sets the SmartCardLoginRequired property for a user object.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "state": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Specifies the user's or Organizational Unit's state or province. This parameter sets the State property of a user object."
+      },
+      "street_address": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Specifies the user's street address. This parameter sets the StreetAddress property of a user object."
+      },
+      "surname": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Specifies the user's last name or surname. This parameter sets the Surname property of a user object."
+      },
+      "title": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Specifies the user's title. This parameter sets the Title property of a user object"
+      },
+      "trusted_for_delegation": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "If set to true, the user account is trusted for Kerberos delegation. A service that runs under an account that is trusted for Kerberos delegation can assume the identity of a client requesting the service. This parameter sets the TrustedForDelegation property of an account object.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      }
+    }
+  },
+  "data-sources": {
+    "ad_computer": {
+      "dn": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The Distinguished Name of the computer object."
+      },
+      "guid": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The GUID of the computer object."
+      },
+      "name": {
+        "Type": "String",
+        "Description": "The name of the computer object.",
+        "Computed": true
+      }
+    },
+    "ad_gpo": {
+      "domain": {
+        "Type": "String",
+        "Description": "Domain of the GPO.",
+        "Computed": true
+      },
+      "guid": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "GUID of the GPO."
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Name of the GPO."
+      }
+    },
+    "ad_group": {
+      "category": {
+        "Type": "String",
+        "Description": "The Group's category.",
+        "Computed": true
+      },
+      "container": {
+        "Type": "String",
+        "Description": "The Group's container object.",
+        "Computed": true
+      },
+      "display_name": {
+        "Type": "String",
+        "Description": "The display name of the Group object.",
+        "Computed": true
+      },
+      "group_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The group's identifier. It can be the group's GUID, SID, Distinguished Name, or SAM Account Name."
+      },
+      "name": {
+        "Type": "String",
+        "Description": "The name of the Group object.",
+        "Computed": true
+      },
+      "sam_account_name": {
+        "Type": "String",
+        "Description": "The SAM account name of the Group object.",
+        "Computed": true
+      },
+      "scope": {
+        "Type": "String",
+        "Description": "The Group's scope.",
+        "Computed": true
+      }
+    },
+    "ad_ou": {
+      "description": {
+        "Type": "String",
+        "Description": "The OU's description.",
+        "Computed": true
+      },
+      "dn": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Distinguished Name of the OU object."
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Name of the OU object. If this is used then the `path` attribute needs to be set as well."
+      },
+      "path": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Path of the OU object. If this is used then the `Name` attribute needs to be set as well."
+      },
+      "protected": {
+        "Type": "String",
+        "Description": "The OU's protected status.",
+        "Computed": true
+      }
+    },
+    "ad_user": {
+      "city": {
+        "Type": "String",
+        "Description": "City assigned to user object.",
+        "Computed": true
+      },
+      "company": {
+        "Type": "String",
+        "Description": "Company assigned to user object.",
+        "Computed": true
+      },
+      "country": {
+        "Type": "String",
+        "Description": "Country assigned to user object.",
+        "Computed": true
+      },
+      "department": {
+        "Type": "String",
+        "Description": "Department assigned to user object.",
+        "Computed": true
+      },
+      "description": {
+        "Type": "String",
+        "Description": "Description of the user object.",
+        "Computed": true
+      },
+      "display_name": {
+        "Type": "String",
+        "Description": "The display name of the user object.",
+        "Computed": true
+      },
+      "division": {
+        "Type": "String",
+        "Description": "Division assigned to user object.",
+        "Computed": true
+      },
+      "email_address": {
+        "Type": "String",
+        "Description": "Email address assigned to user object.",
+        "Computed": true
+      },
+      "employee_id": {
+        "Type": "String",
+        "Description": "Employee ID assigned to user object.",
+        "Computed": true
+      },
+      "employee_number": {
+        "Type": "String",
+        "Description": "Employee Number assigned to user object.",
+        "Computed": true
+      },
+      "fax": {
+        "Type": "String",
+        "Description": "Fax number assigned to user object.",
+        "Computed": true
+      },
+      "given_name": {
+        "Type": "String",
+        "Description": "Given name of the user object.",
+        "Computed": true
+      },
+      "home_directory": {
+        "Type": "String",
+        "Description": "Home directory of the user object.",
+        "Computed": true
+      },
+      "home_drive": {
+        "Type": "String",
+        "Description": "Home drive of the user object.",
+        "Computed": true
+      },
+      "home_page": {
+        "Type": "String",
+        "Description": "Home page of the user object.",
+        "Computed": true
+      },
+      "home_phone": {
+        "Type": "String",
+        "Description": "Home phone of the user object.",
+        "Computed": true
+      },
+      "initials": {
+        "Type": "String",
+        "Description": "Initials of the user object.",
+        "Computed": true
+      },
+      "mobile_phone": {
+        "Type": "String",
+        "Description": "Mobile phone of the user object.",
+        "Computed": true
+      },
+      "office": {
+        "Type": "String",
+        "Description": "Office assigned to user object.",
+        "Computed": true
+      },
+      "office_phone": {
+        "Type": "String",
+        "Description": "Office phone of the user object.",
+        "Computed": true
+      },
+      "organization": {
+        "Type": "String",
+        "Description": "Organization assigned to user object.",
+        "Computed": true
+      },
+      "other_name": {
+        "Type": "String",
+        "Description": "Extra name of the user object.",
+        "Computed": true
+      },
+      "po_box": {
+        "Type": "String",
+        "Description": "Post office assigned to user object.",
+        "Computed": true
+      },
+      "postal_code": {
+        "Type": "String",
+        "Description": "Postal code of the user object.",
+        "Computed": true
+      },
+      "principal_name": {
+        "Type": "String",
+        "Description": "The principal name of the user object.",
+        "Computed": true
+      },
+      "sam_account_name": {
+        "Type": "String",
+        "Description": "The SAM account name of the user object.",
+        "Computed": true
+      },
+      "smart_card_logon_required": {
+        "Type": "Bool",
+        "Description": "Smart card required to logon or not",
+        "Computed": true
+      },
+      "state": {
+        "Type": "String",
+        "Description": "State of the user object.",
+        "Computed": true
+      },
+      "street_address": {
+        "Type": "String",
+        "Description": "Address of the user object.",
+        "Computed": true
+      },
+      "surname": {
+        "Type": "String",
+        "Description": "Surname of the user object.",
+        "Computed": true
+      },
+      "title": {
+        "Type": "String",
+        "Description": "Title of the user object",
+        "Computed": true
+      },
+      "trusted_for_delegation": {
+        "Type": "Bool",
+        "Description": "Check if user is trusted for delegation",
+        "Computed": true
+      },
+      "user_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The user's identifier. It can be the group's GUID, SID, Distinguished Name, or SAM Account Name."
+      }
+    }
+  }
+}

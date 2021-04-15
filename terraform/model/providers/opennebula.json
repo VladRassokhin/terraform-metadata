@@ -3,13 +3,19 @@
   ".sdk_type": "terraform",
   "name": "opennebula",
   "type": "provider",
-  "version": "v0.2.1",
+  "version": "v0.3.0",
   "provider": {
     "endpoint": {
       "Type": "String",
       "Required": true,
       "Description": "The URL to your public or private OpenNebula",
       "DefaultFunc": "ENV(OPENNEBULA_ENDPOINT)"
+    },
+    "flow_endpoint": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "The URL to your public or private OpenNebula Flow server",
+      "DefaultFunc": "ENV(OPENNEBULA_FLOW_ENDPOINT)"
     },
     "password": {
       "Type": "String",
@@ -71,8 +77,7 @@
       "quotas": {
         "Type": "Set",
         "Optional": true,
-        "Description": "Define group quota",
-        "Computed": true,
+        "Description": "Define user quota",
         "IsBlock": true,
         "ConfigImplicitMode": "Block",
         "Elem": {
@@ -82,7 +87,6 @@
               "Type": "List",
               "Optional": true,
               "Description": "Datastore quotas",
-              "Computed": true,
               "IsBlock": true,
               "ConfigImplicitMode": "Block",
               "Elem": {
@@ -96,20 +100,12 @@
                   "images": {
                     "Type": "Int",
                     "Optional": true,
-                    "Description": "Maximum number of Images allowed (default: default quota)",
-                    "Default": {
-                      "Type": "int",
-                      "Value": "-1"
-                    }
+                    "Description": "Maximum number of Images allowed (default: default quota)"
                   },
                   "size": {
                     "Type": "Int",
                     "Optional": true,
-                    "Description": "Maximum size in MB allowed on the datastore (default: default quota)",
-                    "Default": {
-                      "Type": "int",
-                      "Value": "-1"
-                    }
+                    "Description": "Maximum size in MB allowed on the datastore (default: default quota)"
                   }
                 }
               }
@@ -118,7 +114,6 @@
               "Type": "List",
               "Optional": true,
               "Description": "Image quotas",
-              "Computed": true,
               "IsBlock": true,
               "ConfigImplicitMode": "Block",
               "Elem": {
@@ -132,11 +127,7 @@
                   "running_vms": {
                     "Type": "Int",
                     "Optional": true,
-                    "Description": "Maximum number of Running VMs allowed for this image (default: default quota)",
-                    "Default": {
-                      "Type": "int",
-                      "Value": "-1"
-                    }
+                    "Description": "Maximum number of Running VMs allowed for this image (default: default quota)"
                   }
                 }
               }
@@ -158,11 +149,7 @@
                   "leases": {
                     "Type": "Int",
                     "Optional": true,
-                    "Description": "Maximum number of Leases allowed for this network (default: default quota)",
-                    "Default": {
-                      "Type": "int",
-                      "Value": "-1"
-                    }
+                    "Description": "Maximum number of Leases allowed for this network (default: default quota)"
                   }
                 }
               }
@@ -171,7 +158,6 @@
               "Type": "Set",
               "Optional": true,
               "Description": "VM quotas",
-              "Computed": true,
               "IsBlock": true,
               "ConfigImplicitMode": "Block",
               "Elem": {
@@ -180,65 +166,37 @@
                   "cpu": {
                     "Type": "Float",
                     "Optional": true,
-                    "Description": "Maximum number of CPU allowed (default: default quota)",
-                    "Default": {
-                      "Type": "int",
-                      "Value": "-1"
-                    }
+                    "Description": "Maximum number of CPU allowed (default: default quota)"
                   },
                   "memory": {
                     "Type": "Int",
                     "Optional": true,
-                    "Description": "Maximum Memory (MB) allowed (default: default quota)",
-                    "Default": {
-                      "Type": "int",
-                      "Value": "-1"
-                    }
+                    "Description": "Maximum Memory (MB) allowed (default: default quota)"
                   },
                   "running_cpu": {
                     "Type": "Float",
                     "Optional": true,
-                    "Description": "Maximum number of 'running' CPUs allowed (default: default quota)",
-                    "Default": {
-                      "Type": "int",
-                      "Value": "-1"
-                    }
+                    "Description": "Maximum number of 'running' CPUs allowed (default: default quota)"
                   },
                   "running_memory": {
                     "Type": "Int",
                     "Optional": true,
-                    "Description": "'Running' Memory (MB) allowed (default: default quota)",
-                    "Default": {
-                      "Type": "int",
-                      "Value": "-1"
-                    }
+                    "Description": "'Running' Memory (MB) allowed (default: default quota)"
                   },
                   "running_vms": {
                     "Type": "Int",
                     "Optional": true,
-                    "Description": "Maximum number of Running VMs allowed (default: default quota)",
-                    "Default": {
-                      "Type": "int",
-                      "Value": "-1"
-                    }
+                    "Description": "Maximum number of Running VMs allowed (default: default quota)"
                   },
                   "system_disk_size": {
                     "Type": "Int",
                     "Optional": true,
-                    "Description": "Maximum System Disk size (MB) allowed (default: default quota)",
-                    "Default": {
-                      "Type": "int",
-                      "Value": "-1"
-                    }
+                    "Description": "Maximum System Disk size (MB) allowed (default: default quota)"
                   },
                   "vms": {
                     "Type": "Int",
                     "Optional": true,
-                    "Description": "Maximum number of VMs allowed (default: default quota)",
-                    "Default": {
-                      "Type": "int",
-                      "Value": "-1"
-                    }
+                    "Description": "Maximum number of VMs allowed (default: default quota)"
                   }
                 }
               }
@@ -526,6 +484,149 @@
         "Computed": true
       }
     },
+    "opennebula_service": {
+      "extra_template": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Extra template information in json format to be added to the service template during instantiate."
+      },
+      "gid": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "ID of the group that will own the Service",
+        "Computed": true
+      },
+      "gname": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Name of the group that will own the Service",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Name of the Service",
+        "Computed": true
+      },
+      "networks": {
+        "Type": "Map",
+        "Description": "Map with the service networks names as key and id as value",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "Int"
+        }
+      },
+      "permissions": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Permissions for the service (in Unix format, owner-group-other, use-manage-admin)",
+        "Computed": true
+      },
+      "roles": {
+        "Type": "List",
+        "Description": "Map with the role dinamically generated information",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "cardinality": {
+              "Type": "Int",
+              "Description": "Cardinality of the role",
+              "Computed": true
+            },
+            "name": {
+              "Type": "String",
+              "Description": "Name of the Role",
+              "Computed": true
+            },
+            "nodes": {
+              "Type": "List",
+              "Description": "List of role nodes",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "Int"
+              }
+            },
+            "state": {
+              "Type": "Int",
+              "Description": "Current state of the role",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "state": {
+        "Type": "Int",
+        "Description": "Current state of the Service",
+        "Computed": true
+      },
+      "template_id": {
+        "Type": "Int",
+        "Required": true,
+        "Description": "Id of the Service template to use"
+      },
+      "uid": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "ID of the user that will own the Service",
+        "Computed": true
+      },
+      "uname": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Name of the user that will own the Service",
+        "Computed": true
+      }
+    },
+    "opennebula_service_template": {
+      "gid": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "ID of the group that will own the Service Template",
+        "Computed": true
+      },
+      "gname": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Name of the group that will own the Service Template",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Name of the Service Template",
+        "Computed": true
+      },
+      "permissions": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Permissions for the Service Template (in Unix format, owner-group-other, use-manage-admin)",
+        "Computed": true
+      },
+      "template": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Service Template body in json format"
+      },
+      "uid": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "ID of the user that will own the Service Template",
+        "Computed": true
+      },
+      "uname": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Name of the user that will own the Service Template",
+        "Computed": true
+      }
+    },
     "opennebula_template": {
       "context": {
         "Type": "Map",
@@ -542,7 +643,6 @@
         "Type": "List",
         "Optional": true,
         "Description": "Definition of disks assigned to the Virtual Machine",
-        "Computed": true,
         "IsBlock": true,
         "ConfigImplicitMode": "Block",
         "Elem": {
@@ -550,22 +650,24 @@
           "Info": {
             "driver": {
               "Type": "String",
-              "Optional": true,
-              "Computed": true
+              "Optional": true
             },
             "image_id": {
               "Type": "Int",
-              "Required": true
+              "Optional": true,
+              "Description": "Image Id  of the image to attach to the VM. Defaults to -1: no image attached.",
+              "Default": {
+                "Type": "int",
+                "Value": "-1"
+              }
             },
             "size": {
               "Type": "Int",
-              "Optional": true,
-              "Computed": true
+              "Optional": true
             },
             "target": {
               "Type": "String",
-              "Optional": true,
-              "Computed": true
+              "Optional": true
             }
           }
         }
@@ -635,7 +737,6 @@
         "Type": "List",
         "Optional": true,
         "Description": "Definition of network adapter(s) assigned to the Virtual Machine",
-        "Computed": true,
         "IsBlock": true,
         "ConfigImplicitMode": "Block",
         "Elem": {
@@ -643,18 +744,15 @@
           "Info": {
             "ip": {
               "Type": "String",
-              "Optional": true,
-              "Computed": true
+              "Optional": true
             },
             "mac": {
               "Type": "String",
-              "Optional": true,
-              "Computed": true
+              "Optional": true
             },
             "model": {
               "Type": "String",
-              "Optional": true,
-              "Computed": true
+              "Optional": true
             },
             "network": {
               "Type": "String",
@@ -664,19 +762,13 @@
               "Type": "Int",
               "Required": true
             },
-            "nic_id": {
-              "Type": "Int",
-              "Computed": true
-            },
             "physical_device": {
               "Type": "String",
-              "Optional": true,
-              "Computed": true
+              "Optional": true
             },
             "security_groups": {
               "Type": "List",
               "Optional": true,
-              "Computed": true,
               "ConfigImplicitMode": "Attr",
               "Elem": {
                 "Type": "SchemaElements",
@@ -770,6 +862,176 @@
             "vmgroup_id": {
               "Type": "Int",
               "Required": true
+            }
+          }
+        }
+      }
+    },
+    "opennebula_user": {
+      "auth_driver": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Authentication driver. Select between: core, public, ssh, x509, ldap, server_cipher, server_x509 and custom. Defaults to 'core'.",
+        "Default": {
+          "Type": "string",
+          "Value": "core"
+        }
+      },
+      "groups": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "List of group IDs to add to the user",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "Int"
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the User"
+      },
+      "password": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Password of the User. Required for all `auth_driver` options excepted 'ldap'"
+      },
+      "primary_group": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Primary (Default) Group ID of the user. Defaults to 0",
+        "Default": {
+          "Type": "int",
+          "Value": "0"
+        }
+      },
+      "quotas": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Define user quota",
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "datastore_quotas": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Datastore quotas",
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "id": {
+                    "Type": "Int",
+                    "Required": true,
+                    "Description": "Datastore ID"
+                  },
+                  "images": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Description": "Maximum number of Images allowed (default: default quota)"
+                  },
+                  "size": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Description": "Maximum size in MB allowed on the datastore (default: default quota)"
+                  }
+                }
+              }
+            },
+            "image_quotas": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Image quotas",
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "id": {
+                    "Type": "Int",
+                    "Required": true,
+                    "Description": "Image ID"
+                  },
+                  "running_vms": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Description": "Maximum number of Running VMs allowed for this image (default: default quota)"
+                  }
+                }
+              }
+            },
+            "network_quotas": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Network quotas",
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "id": {
+                    "Type": "Int",
+                    "Required": true,
+                    "Description": "Network ID"
+                  },
+                  "leases": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Description": "Maximum number of Leases allowed for this network (default: default quota)"
+                  }
+                }
+              }
+            },
+            "vm_quotas": {
+              "Type": "Set",
+              "Optional": true,
+              "Description": "VM quotas",
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "cpu": {
+                    "Type": "Float",
+                    "Optional": true,
+                    "Description": "Maximum number of CPU allowed (default: default quota)"
+                  },
+                  "memory": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Description": "Maximum Memory (MB) allowed (default: default quota)"
+                  },
+                  "running_cpu": {
+                    "Type": "Float",
+                    "Optional": true,
+                    "Description": "Maximum number of 'running' CPUs allowed (default: default quota)"
+                  },
+                  "running_memory": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Description": "'Running' Memory (MB) allowed (default: default quota)"
+                  },
+                  "running_vms": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Description": "Maximum number of Running VMs allowed (default: default quota)"
+                  },
+                  "system_disk_size": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Description": "Maximum System Disk size (MB) allowed (default: default quota)"
+                  },
+                  "vms": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Description": "Maximum number of VMs allowed (default: default quota)"
+                  }
+                }
+              }
             }
           }
         }
@@ -874,30 +1136,47 @@
         "Type": "List",
         "Optional": true,
         "Description": "Definition of disks assigned to the Virtual Machine",
-        "Computed": true,
         "IsBlock": true,
         "ConfigImplicitMode": "Block",
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
+            "computed_driver": {
+              "Type": "String",
+              "Computed": true
+            },
+            "computed_size": {
+              "Type": "Int",
+              "Computed": true
+            },
+            "computed_target": {
+              "Type": "String",
+              "Computed": true
+            },
+            "disk_id": {
+              "Type": "Int",
+              "Computed": true
+            },
             "driver": {
               "Type": "String",
-              "Optional": true,
-              "Computed": true
+              "Optional": true
             },
             "image_id": {
               "Type": "Int",
-              "Required": true
+              "Optional": true,
+              "Description": "Image Id  of the image to attach to the VM. Defaults to -1: no image attached.",
+              "Default": {
+                "Type": "int",
+                "Value": "-1"
+              }
             },
             "size": {
               "Type": "Int",
-              "Optional": true,
-              "Computed": true
+              "Optional": true
             },
             "target": {
               "Type": "String",
-              "Optional": true,
-              "Computed": true
+              "Optional": true
             }
           }
         }
@@ -984,26 +1263,47 @@
         "Type": "List",
         "Optional": true,
         "Description": "Definition of network adapter(s) assigned to the Virtual Machine",
-        "Computed": true,
         "IsBlock": true,
         "ConfigImplicitMode": "Block",
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
+            "computed_ip": {
+              "Type": "String",
+              "Computed": true
+            },
+            "computed_mac": {
+              "Type": "String",
+              "Computed": true
+            },
+            "computed_model": {
+              "Type": "String",
+              "Computed": true
+            },
+            "computed_physical_device": {
+              "Type": "String",
+              "Computed": true
+            },
+            "computed_security_groups": {
+              "Type": "List",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "Int"
+              }
+            },
             "ip": {
               "Type": "String",
-              "Optional": true,
-              "Computed": true
+              "Optional": true
             },
             "mac": {
               "Type": "String",
-              "Optional": true,
-              "Computed": true
+              "Optional": true
             },
             "model": {
               "Type": "String",
-              "Optional": true,
-              "Computed": true
+              "Optional": true
             },
             "network": {
               "Type": "String",
@@ -1019,13 +1319,11 @@
             },
             "physical_device": {
               "Type": "String",
-              "Optional": true,
-              "Computed": true
+              "Optional": true
             },
             "security_groups": {
               "Type": "List",
               "Optional": true,
-              "Computed": true,
               "ConfigImplicitMode": "Attr",
               "Elem": {
                 "Type": "SchemaElements",
@@ -1090,7 +1388,11 @@
       "template_id": {
         "Type": "Int",
         "Optional": true,
-        "Description": "Id of the VM template to use"
+        "Description": "Id of the VM template to use. Defaults to -1: no template used.",
+        "Default": {
+          "Type": "int",
+          "Value": "-1"
+        }
       },
       "timeout": {
         "Type": "Int",
@@ -1403,6 +1705,20 @@
           "Value": "1500"
         }
       },
+      "hold_ips": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "List of IPs to be held the VNET",
+        "ConflictsWith": [
+          "reservation_vnet",
+          "reservation_size"
+        ],
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
       "hold_size": {
         "Type": "Int",
         "Optional": true,
@@ -1411,7 +1727,8 @@
         "ConflictsWith": [
           "reservation_vnet",
           "reservation_size"
-        ]
+        ],
+        "Deprecated": "use 'hold_ips' instead"
       },
       "ip_hold": {
         "Type": "String",
@@ -1421,7 +1738,8 @@
         "ConflictsWith": [
           "reservation_vnet",
           "reservation_size"
-        ]
+        ],
+        "Deprecated": "use 'hold_ips' instead"
       },
       "mtu": {
         "Type": "Int",
@@ -1476,6 +1794,7 @@
           "bridge",
           "physical_device",
           "ar",
+          "hold_ips",
           "hold_size",
           "ip_hold",
           "type",
@@ -1497,6 +1816,7 @@
           "bridge",
           "physical_device",
           "ar",
+          "hold_ips",
           "hold_size",
           "ip_hold",
           "type",
@@ -1585,127 +1905,127 @@
       },
       "quotas": {
         "Type": "Set",
-        "Description": "Define group quota",
-        "Computed": true,
+        "Optional": true,
+        "Description": "Define user quota",
         "IsBlock": true,
-        "ConfigImplicitMode": "ComputedBlock",
+        "ConfigImplicitMode": "Block",
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
             "datastore_quotas": {
               "Type": "List",
+              "Optional": true,
               "Description": "Datastore quotas",
-              "Computed": true,
               "IsBlock": true,
-              "ConfigImplicitMode": "ComputedBlock",
+              "ConfigImplicitMode": "Block",
               "Elem": {
                 "Type": "SchemaInfo",
                 "Info": {
                   "id": {
                     "Type": "Int",
-                    "Description": "Datastore ID",
-                    "Computed": true
+                    "Required": true,
+                    "Description": "Datastore ID"
                   },
                   "images": {
                     "Type": "Int",
-                    "Description": "Maximum number of Images allowed (default: default quota)",
-                    "Computed": true
+                    "Optional": true,
+                    "Description": "Maximum number of Images allowed (default: default quota)"
                   },
                   "size": {
                     "Type": "Int",
-                    "Description": "Maximum size in MB allowed on the datastore (default: default quota)",
-                    "Computed": true
+                    "Optional": true,
+                    "Description": "Maximum size in MB allowed on the datastore (default: default quota)"
                   }
                 }
               }
             },
             "image_quotas": {
               "Type": "List",
+              "Optional": true,
               "Description": "Image quotas",
-              "Computed": true,
               "IsBlock": true,
-              "ConfigImplicitMode": "ComputedBlock",
+              "ConfigImplicitMode": "Block",
               "Elem": {
                 "Type": "SchemaInfo",
                 "Info": {
                   "id": {
                     "Type": "Int",
-                    "Description": "Image ID",
-                    "Computed": true
+                    "Required": true,
+                    "Description": "Image ID"
                   },
                   "running_vms": {
                     "Type": "Int",
-                    "Description": "Maximum number of Running VMs allowed for this image (default: default quota)",
-                    "Computed": true
+                    "Optional": true,
+                    "Description": "Maximum number of Running VMs allowed for this image (default: default quota)"
                   }
                 }
               }
             },
             "network_quotas": {
               "Type": "List",
+              "Optional": true,
               "Description": "Network quotas",
-              "Computed": true,
               "IsBlock": true,
-              "ConfigImplicitMode": "ComputedBlock",
+              "ConfigImplicitMode": "Block",
               "Elem": {
                 "Type": "SchemaInfo",
                 "Info": {
                   "id": {
                     "Type": "Int",
-                    "Description": "Network ID",
-                    "Computed": true
+                    "Required": true,
+                    "Description": "Network ID"
                   },
                   "leases": {
                     "Type": "Int",
-                    "Description": "Maximum number of Leases allowed for this network (default: default quota)",
-                    "Computed": true
+                    "Optional": true,
+                    "Description": "Maximum number of Leases allowed for this network (default: default quota)"
                   }
                 }
               }
             },
             "vm_quotas": {
               "Type": "Set",
+              "Optional": true,
               "Description": "VM quotas",
-              "Computed": true,
               "IsBlock": true,
-              "ConfigImplicitMode": "ComputedBlock",
+              "ConfigImplicitMode": "Block",
               "Elem": {
                 "Type": "SchemaInfo",
                 "Info": {
                   "cpu": {
-                    "Type": "Int",
-                    "Description": "Maximum number of CPU allowed (default: default quota)",
-                    "Computed": true
+                    "Type": "Float",
+                    "Optional": true,
+                    "Description": "Maximum number of CPU allowed (default: default quota)"
                   },
                   "memory": {
                     "Type": "Int",
-                    "Description": "Maximum Memory (MB) allowed (default: default quota)",
-                    "Computed": true
+                    "Optional": true,
+                    "Description": "Maximum Memory (MB) allowed (default: default quota)"
                   },
                   "running_cpu": {
-                    "Type": "Int",
-                    "Description": "Maximum number of 'running' CPUs allowed (default: default quota)",
-                    "Computed": true
+                    "Type": "Float",
+                    "Optional": true,
+                    "Description": "Maximum number of 'running' CPUs allowed (default: default quota)"
                   },
                   "running_memory": {
                     "Type": "Int",
-                    "Description": "'Running' Memory (MB) allowed (default: default quota)",
-                    "Computed": true
+                    "Optional": true,
+                    "Description": "'Running' Memory (MB) allowed (default: default quota)"
                   },
                   "running_vms": {
                     "Type": "Int",
-                    "Description": "Maximum number of Running VMs allowed (default: default quota)",
-                    "Computed": true
+                    "Optional": true,
+                    "Description": "Maximum number of Running VMs allowed (default: default quota)"
                   },
                   "system_disk_size": {
                     "Type": "Int",
-                    "Description": "Maximum System Disk size (MB) allowed (default: default quota)",
-                    "Computed": true
+                    "Optional": true,
+                    "Description": "Maximum System Disk size (MB) allowed (default: default quota)"
                   },
                   "vms": {
                     "Type": "Int",
-                    "Description": "Maximum number of VMs allowed (default: default quota)",
-                    "Computed": true
+                    "Optional": true,
+                    "Description": "Maximum number of VMs allowed (default: default quota)"
                   }
                 }
               }
@@ -1774,7 +2094,6 @@
         "Type": "List",
         "Optional": true,
         "Description": "Definition of disks assigned to the Virtual Machine",
-        "Computed": true,
         "IsBlock": true,
         "ConfigImplicitMode": "Block",
         "Elem": {
@@ -1782,22 +2101,24 @@
           "Info": {
             "driver": {
               "Type": "String",
-              "Optional": true,
-              "Computed": true
+              "Optional": true
             },
             "image_id": {
               "Type": "Int",
-              "Required": true
+              "Optional": true,
+              "Description": "Image Id  of the image to attach to the VM. Defaults to -1: no image attached.",
+              "Default": {
+                "Type": "int",
+                "Value": "-1"
+              }
             },
             "size": {
               "Type": "Int",
-              "Optional": true,
-              "Computed": true
+              "Optional": true
             },
             "target": {
               "Type": "String",
-              "Optional": true,
-              "Computed": true
+              "Optional": true
             }
           }
         }
@@ -1852,7 +2173,6 @@
         "Type": "List",
         "Optional": true,
         "Description": "Definition of network adapter(s) assigned to the Virtual Machine",
-        "Computed": true,
         "IsBlock": true,
         "ConfigImplicitMode": "Block",
         "Elem": {
@@ -1860,18 +2180,15 @@
           "Info": {
             "ip": {
               "Type": "String",
-              "Optional": true,
-              "Computed": true
+              "Optional": true
             },
             "mac": {
               "Type": "String",
-              "Optional": true,
-              "Computed": true
+              "Optional": true
             },
             "model": {
               "Type": "String",
-              "Optional": true,
-              "Computed": true
+              "Optional": true
             },
             "network": {
               "Type": "String",
@@ -1881,19 +2198,13 @@
               "Type": "Int",
               "Required": true
             },
-            "nic_id": {
-              "Type": "Int",
-              "Computed": true
-            },
             "physical_device": {
               "Type": "String",
-              "Optional": true,
-              "Computed": true
+              "Optional": true
             },
             "security_groups": {
               "Type": "List",
               "Optional": true,
-              "Computed": true,
               "ConfigImplicitMode": "Attr",
               "Elem": {
                 "Type": "SchemaElements",
@@ -1966,6 +2277,176 @@
             "vmgroup_id": {
               "Type": "Int",
               "Required": true
+            }
+          }
+        }
+      }
+    },
+    "opennebula_user": {
+      "auth_driver": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Authentication driver. Select between: core, public, ssh, x509, ldap, server_cipher, server_x509 and custom. Defaults to 'core'.",
+        "Default": {
+          "Type": "string",
+          "Value": "core"
+        }
+      },
+      "groups": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "List of group IDs to add to the user",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "Int"
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the User"
+      },
+      "password": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Password of the User"
+      },
+      "primary_group": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Primary (Default) Group ID of the user. Defaults to 0",
+        "Default": {
+          "Type": "int",
+          "Value": "0"
+        }
+      },
+      "quotas": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Define user quota",
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "datastore_quotas": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Datastore quotas",
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "id": {
+                    "Type": "Int",
+                    "Required": true,
+                    "Description": "Datastore ID"
+                  },
+                  "images": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Description": "Maximum number of Images allowed (default: default quota)"
+                  },
+                  "size": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Description": "Maximum size in MB allowed on the datastore (default: default quota)"
+                  }
+                }
+              }
+            },
+            "image_quotas": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Image quotas",
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "id": {
+                    "Type": "Int",
+                    "Required": true,
+                    "Description": "Image ID"
+                  },
+                  "running_vms": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Description": "Maximum number of Running VMs allowed for this image (default: default quota)"
+                  }
+                }
+              }
+            },
+            "network_quotas": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Network quotas",
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "id": {
+                    "Type": "Int",
+                    "Required": true,
+                    "Description": "Network ID"
+                  },
+                  "leases": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Description": "Maximum number of Leases allowed for this network (default: default quota)"
+                  }
+                }
+              }
+            },
+            "vm_quotas": {
+              "Type": "Set",
+              "Optional": true,
+              "Description": "VM quotas",
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "cpu": {
+                    "Type": "Float",
+                    "Optional": true,
+                    "Description": "Maximum number of CPU allowed (default: default quota)"
+                  },
+                  "memory": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Description": "Maximum Memory (MB) allowed (default: default quota)"
+                  },
+                  "running_cpu": {
+                    "Type": "Float",
+                    "Optional": true,
+                    "Description": "Maximum number of 'running' CPUs allowed (default: default quota)"
+                  },
+                  "running_memory": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Description": "'Running' Memory (MB) allowed (default: default quota)"
+                  },
+                  "running_vms": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Description": "Maximum number of Running VMs allowed (default: default quota)"
+                  },
+                  "system_disk_size": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Description": "Maximum System Disk size (MB) allowed (default: default quota)"
+                  },
+                  "vms": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Description": "Maximum number of VMs allowed (default: default quota)"
+                  }
+                }
+              }
             }
           }
         }

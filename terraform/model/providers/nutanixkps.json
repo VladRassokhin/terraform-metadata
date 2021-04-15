@@ -1,0 +1,831 @@
+{
+  ".schema_version": "2",
+  ".sdk_type": "terraform-plugin-sdk-v2",
+  "name": "nutanixkps",
+  "type": "provider",
+  "version": "v1.1.8",
+  "provider": {
+    "api_token": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "API authentication token used during API requests. You can generate API keys in the KPS cloud management console by using the Manage API Keys option.",
+      "DefaultFunc": "ENV(NUTANIX_KPS_API_TOKEN)"
+    },
+    "host": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "Karbon Platform Services endpoint for hosting the Service Domain. ",
+      "DefaultFunc": "ENV(NUTANIX_KPS_HOST)"
+    },
+    "password": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "Password for the Karbon Platform Services local user account user.",
+      "DefaultFunc": "ENV(NUTANIX_KPS_PASSWORD)"
+    },
+    "username": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "Username for the Karbon Platform Services local user account user.",
+      "DefaultFunc": "ENV(NUTANIX_KPS_USERNAME)"
+    }
+  },
+  "resources": {
+    "nutanixkps_application": {
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Description of the application. For example, describe the application's purpose."
+      },
+      "edge_ids": {
+        "Type": "List",
+        "Required": true,
+        "Description": "List of service domain and / or node IDs which are part of this application. \n\t\t\t\tEven if you want to add a single ID, use square brackets. For example, [ '\u003csvc domain id\u003e' ]",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "helm_chart_filename": {
+        "Type": "String",
+        "Required": true,
+        "Description": "TGZ file name with path for the Helm chart for this application"
+      },
+      "helm_values_filename": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Values yaml file name with path"
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the application:\n\t\t\t\tName must include lowercase alphanumeric characters and must start and end with an lowercase alphanumeric character.\n\t\t\t\tDash (-) and dot (.) characters are allowed as delimiters. Maximum length of 200 characters."
+      },
+      "project_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Id of the project to which this application belongs"
+      },
+      "tenant_id": {
+        "Type": "String",
+        "Description": "Id of the tenant to which this application belongs",
+        "Computed": true
+      }
+    },
+    "nutanixkps_node": {
+      "description": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Describe the node. For example, the main purpose or use case of the node."
+      },
+      "gateway": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Gateway IPv4 address for this node"
+      },
+      "ip_address": {
+        "Type": "String",
+        "Required": true,
+        "Description": "IPv4 address of this node"
+      },
+      "is_bootstrap_master": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Default setting is true. Set to false indicates this node is not a bootstrap master.",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the node: \n\t\t\t\tName must include lowercase alphanumeric characters and must start and end with an lowercase alphanumeric character.\n\t\t\t\tDash (-) and dot (.) characters are allowed as delimiters. Maximum length of 60 characters."
+      },
+      "role": {
+        "Type": "List",
+        "Required": true,
+        "Description": "Set the role as master or worker. Default setting is true to enable the role as master as well as worker. \n\t\t\t\tSet to false to disable a role.",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "master": {
+              "Type": "Bool",
+              "Required": true
+            },
+            "worker": {
+              "Type": "Bool",
+              "Required": true
+            }
+          }
+        }
+      },
+      "serial_number": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Node serial number. Any alpha characters must be in all capitals."
+      },
+      "service_domain_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Id of the service domain to which this node belongs"
+      },
+      "subnet": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Subnet mask for this node"
+      },
+      "wait_for_onboarding": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Default setting is false and the terraform provider does not wait for the node to be onboarded. \n\t\t\t\tSet to true indicates that the terraform provider waits for the node to be onboarded.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "wait_timeout_minutes": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Wait timeout in minutes",
+        "Default": {
+          "Type": "int",
+          "Value": "60"
+        }
+      }
+    },
+    "nutanixkps_project": {
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Describe the project. For example, the main purpose or use case of the project.\n\t\t\t\tMaximum length of 200 characters."
+      },
+      "edge_ids": {
+        "Type": "List",
+        "Required": true,
+        "Description": "List of service domain and / or node IDs which are part of this project. \n\t\t\t\tEven if you want to add a single ID, use square brackets. For example, [ '\u003csvc domain id\u003e' ]",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "edge_selector_type": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Type for selecting nodes / service domains belonging to this project. \n\t\t\t\tValid values for this field are: 'Category' or 'Explicit'.\n\t\t\t\tCurrently the terraform provider supports only Explicit mode.",
+        "Default": {
+          "Type": "string",
+          "Value": "Explicit"
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the project: Maximum length of 200 characters."
+      },
+      "privileged": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Default setting is false. \n\t\t\t\tSet to true indicates that the project can run with elevated privileges",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "tenant_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Id of the tenant to which this application belongs",
+        "Computed": true
+      },
+      "user": {
+        "Type": "List",
+        "Required": true,
+        "Description": "List of users who can access this project",
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "role": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Valid values for Role are: PROJECT_ADMIN, PROJECT_USER"
+            },
+            "user_id": {
+              "Type": "String",
+              "Required": true,
+              "Description": "ID of the user to be added to the project"
+            }
+          }
+        }
+      }
+    },
+    "nutanixkps_servicebinding": {
+      "bind_resource": {
+        "Type": "List",
+        "Required": true,
+        "Description": "The resource, service domain or project, to which the service class will be bound",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "id": {
+              "Type": "String",
+              "Required": true,
+              "Description": "ID of the resource, either a service domain or a project"
+            },
+            "type": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Valid values for this field are: 'SERVICEDOMAIN' or 'PROJECT'"
+            }
+          }
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the Service Binding. Maximum length of 200 characters."
+      },
+      "service_class_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Service class ID of the service you want to bind. \n\t\t\t\tFor example, ID of the AI Inferencing or the Istio service. \n\t\t\t\tYou can obtain service class IDs by querying the ServiceClass resource."
+      }
+    },
+    "nutanixkps_servicedomain": {
+      "description": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Describe the service domain. For example, the main purpose or use case of the service domain."
+      },
+      "last_updated": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Last updated timestamp, auto-computed. No input required for this field.",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the service domain: \n\t\t\t\tName must include lowercase alphanumeric characters and must start and end with an lowercase alphanumeric character.\n\t\t\t\tDash (-) and dot (.) characters are allowed as delimiters. Maximum length of 60 characters."
+      },
+      "virtual_ip": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Virtual IPv4 address for this Service Domain"
+      }
+    },
+    "nutanixkps_serviceinstance": {
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Describe the service instance. For example, the main purpose or use case of the service instance.\n\t\t\t\tMaximum length of 200 charachters."
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the service instance: Maximum length of 200 characters."
+      },
+      "project_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "ID of the project to which this service instance belongs."
+      },
+      "service_class_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Service class ID of the service you want to bind.\n\t\t\t\tFor example, ID of the AI Inferencing or the Istio service.\n\t\t\t\tYou can obtain service class IDs by querying the ServiceClass resource."
+      }
+    },
+    "nutanixkps_storageprofile": {
+      "ebs_storage_config": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Configuration for the EBS type storage profile which uses the AWS EBS volumes as the backend storage for this profile.",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "encrypted": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Set to true if the data in the volume should be encrypted. By default this value is false.",
+              "Default": {
+                "Type": "string",
+                "Value": "false"
+              }
+            },
+            "iops_per_gb": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Input / output operations per second, measured in GB"
+            },
+            "type": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Type of the EBS volume. For example, gp2, gp3, io1, io2, st1, sc1"
+            }
+          }
+        }
+      },
+      "is_default": {
+        "Type": "Bool",
+        "Required": true,
+        "Description": "Default setting is true.\n\t\t\t\tSet to false indicates this storage profile is not the default profile for the service domain."
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the service instance: Maximum length of 200 characters."
+      },
+      "nutanix_volumes_config": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Configuration for the Nutanix AOS cluster storage which uses Nutanix Volumes as the backend storage for this profile.",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "data_services_ip": {
+              "Type": "String",
+              "Required": true,
+              "Description": "IPv4 data services address used by Nutanix Volumes.\n\t\t\t\t\t\t\tNutanix Volumes is a load-balanced iSCSI target storage feature of AOS.\n\t\t\t\t\t\t\tYou can obtain this field value by logging in to the Nutanix Prism console.\n\t\t\t\t\t\t\tIn the Prism web console, see Cluster Details to get the cluster data services IP address."
+            },
+            "data_services_port": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "Data services default port 3260.",
+              "Default": {
+                "Type": "int",
+                "Value": "3260"
+              }
+            },
+            "flash_mode": {
+              "Type": "Bool",
+              "Optional": true,
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
+              }
+            },
+            "prism_element_cluster_port": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "Prism Element cluster default port 9440.",
+              "Default": {
+                "Type": "int",
+                "Value": "9440"
+              }
+            },
+            "prism_element_cluster_vip": {
+              "Type": "String",
+              "Required": true,
+              "Description": "This field sets a logical IP address for the cluster.\n\t\t\t\t\t\t\tYou can obtain this field value by logging in to the Nutanix Prism console. \n\t\t\t\t\t\t\tIn the Prism web console, see Cluster Details to get the cluster virtual IP address."
+            },
+            "prism_element_password": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Password for the Prism element cluster.\n\t\t\t\t\t\t\tYou can obtain the credentials by contacting your Prism Element cluster administrator if you don't have them already.",
+              "DefaultFunc": "ENV(NUTANIX_PE_PASSWORD)"
+            },
+            "prism_element_storage_container_name": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Name of the storage container: The maximum length is 75 characters.\n\t\t\t\t\t\t\tAllowed characters are uppercase and lowercase standard Latin letters (A-Z and a-z), Simplified Chinese, decimal digits (0-9), dots (.), hyphens (-), and underscores (_)."
+            },
+            "prism_element_username": {
+              "Type": "String",
+              "Required": true,
+              "Description": "User name for the Prism element cluster.\n\t\t\t\t\t\t\tYou can obtain the credentials by contacting your Prism Element cluster administrator if you don't have them already.",
+              "DefaultFunc": "ENV(NUTANIX_PE_USERNAME)"
+            }
+          }
+        }
+      },
+      "service_domain_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "ID of the Service Domain to which this Storage Profile belongs."
+      },
+      "type": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Type of the Storage Profile, auto-computed. No input required for this field.",
+        "Computed": true
+      }
+    },
+    "nutanixkps_vm_cloud_config": {
+      "cloud_fqdn": {
+        "Type": "String",
+        "Required": true
+      },
+      "public_ip_address": {
+        "Type": "String",
+        "Required": true
+      }
+    }
+  },
+  "data-sources": {
+    "nutanixkps_node": {
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "gateway": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "ip_address": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "is_bootstrap_master": {
+        "Type": "Bool",
+        "Optional": true,
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "node_id": {
+        "Type": "String",
+        "Optional": true,
+        "ConflictsWith": [
+          "node_name"
+        ]
+      },
+      "node_name": {
+        "Type": "String",
+        "Optional": true,
+        "ConflictsWith": [
+          "node_id"
+        ]
+      },
+      "role": {
+        "Type": "List",
+        "Optional": true,
+        "Computed": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "master": {
+              "Type": "Bool",
+              "Optional": true,
+              "Computed": true
+            },
+            "worker": {
+              "Type": "Bool",
+              "Optional": true,
+              "Computed": true
+            }
+          }
+        }
+      },
+      "serial_number": {
+        "Type": "String",
+        "Required": true
+      },
+      "service_domain_id": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "subnet": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      }
+    },
+    "nutanixkps_nodes": {
+      "nodes": {
+        "Type": "List",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "description": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "gateway": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "ip_address": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "is_bootstrap_master": {
+              "Type": "Bool",
+              "Optional": true,
+              "Computed": true
+            },
+            "name": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "role": {
+              "Type": "List",
+              "Optional": true,
+              "Computed": true,
+              "MaxItems": 1,
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "master": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "worker": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Computed": true
+                  }
+                }
+              }
+            },
+            "serial_number": {
+              "Type": "String",
+              "Required": true
+            },
+            "service_domain_id": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "subnet": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            }
+          }
+        }
+      }
+    },
+    "nutanixkps_serviceclass": {
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "min_service_domain_version": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "service_class_id": {
+        "Type": "String",
+        "Optional": true,
+        "ConflictsWith": [
+          "service_class_name"
+        ]
+      },
+      "service_class_name": {
+        "Type": "String",
+        "Optional": true,
+        "ConflictsWith": [
+          "service_class_id"
+        ]
+      },
+      "service_version": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "state": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "tags": {
+        "Type": "List",
+        "Optional": true,
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "name": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "value": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            }
+          }
+        }
+      },
+      "type": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      }
+    },
+    "nutanixkps_serviceclasses": {
+      "service_classes": {
+        "Type": "List",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "description": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "min_service_domain_version": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "name": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "service_version": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "state": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "tags": {
+              "Type": "List",
+              "Optional": true,
+              "Computed": true,
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "name": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "value": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  }
+                }
+              }
+            },
+            "type": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            }
+          }
+        }
+      }
+    },
+    "nutanixkps_servicedomains": {
+      "servicedomains": {
+        "Type": "List",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "description": {
+              "Type": "String",
+              "Computed": true
+            },
+            "id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "name": {
+              "Type": "String",
+              "Computed": true
+            }
+          }
+        }
+      }
+    },
+    "nutanixkps_user": {
+      "email": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "role": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "tenant_id": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "user_id": {
+        "Type": "String",
+        "Optional": true,
+        "ConflictsWith": [
+          "user_name"
+        ]
+      },
+      "user_name": {
+        "Type": "String",
+        "Optional": true,
+        "ConflictsWith": [
+          "user_id"
+        ]
+      }
+    },
+    "nutanixkps_users": {
+      "users": {
+        "Type": "List",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "email": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "name": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "role": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "tenant_id": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            }
+          }
+        }
+      }
+    },
+    "nutanixkps_vm_config": {
+      "public_ip_address": {
+        "Type": "String",
+        "Required": true
+      },
+      "serial_number": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      }
+    }
+  }
+}

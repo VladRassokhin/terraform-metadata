@@ -1,15 +1,34 @@
 {
   ".schema_version": "2",
-  ".sdk_type": "terraform-plugin-sdk-v1",
+  ".sdk_type": "terraform-plugin-sdk-v2",
   "name": "linode",
   "type": "provider",
-  "version": "v1.12.3",
+  "version": "v1.16.0",
   "provider": {
     "api_version": {
       "Type": "String",
       "Optional": true,
       "Description": "An HTTP User-Agent Prefix to prepend in API requests.",
       "DefaultFunc": "ENV(LINODE_API_VERSION)"
+    },
+    "max_retry_delay_ms": {
+      "Type": "Int",
+      "Optional": true,
+      "Description": "Maximum delay in milliseconds before retrying a request."
+    },
+    "min_retry_delay_ms": {
+      "Type": "Int",
+      "Optional": true,
+      "Description": "Minimum delay in milliseconds before retrying a request."
+    },
+    "skip_instance_ready_poll": {
+      "Type": "Bool",
+      "Optional": true,
+      "Description": "Skip waiting for a linode_instance resource to be running.",
+      "Default": {
+        "Type": "bool",
+        "Value": "false"
+      }
     },
     "token": {
       "Type": "String",
@@ -55,7 +74,7 @@
       "expire_sec": {
         "Type": "Int",
         "Optional": true,
-        "Description": "The amount of time in seconds that may pass before this Domain is no longer authoritative. Valid values are 0, 00, 3600, 7200, 14400, 28800, 57600, 86400, 172800, 345600, 604800, 1209600, and 2419200 - any other value will be rounded to the nearest valid value."
+        "Description": "The amount of time in seconds that may pass before this Domain is no longer authoritative. Valid values are 0, 300, 3600, 7200, 14400, 28800, 57600, 86400, 172800, 345600, 604800, 1209600, and 2419200 - any other value will be rounded to the nearest valid value."
       },
       "group": {
         "Type": "String",
@@ -230,10 +249,25 @@
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
-            "addresses": {
-              "Type": "Set",
+            "action": {
+              "Type": "String",
               "Required": true,
-              "Description": "A list of IP addresses, CIDR blocks, or 0.0.0.0/0 (to whitelist all) this rule applies to.",
+              "Description": "Controls whether traffic is accepted or dropped by this rule. Overrides the Firewall’s inbound_policy if this is an inbound rule, or the outbound_policy if this is an outbound rule."
+            },
+            "ipv4": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "A list of IP addresses, CIDR blocks, or 0.0.0.0/0 (to allow all) this rule applies to.",
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "ipv6": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "A list of IPv6 addresses or networks this rule applies to.",
               "MinItems": 1,
               "ConfigImplicitMode": "Attr",
               "Elem": {
@@ -241,16 +275,15 @@
                 "ElementsType": "String"
               }
             },
-            "ports": {
-              "Type": "Set",
+            "label": {
+              "Type": "String",
               "Required": true,
-              "Description": "A list of ports and/or port ranges (i.e. \"443\" or \"80-90\").",
-              "MinItems": 1,
-              "ConfigImplicitMode": "Attr",
-              "Elem": {
-                "Type": "SchemaElements",
-                "ElementsType": "String"
-              }
+              "Description": "Used to identify this rule. For display purposes only."
+            },
+            "ports": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "A string representation of ports and/or port ranges (i.e. \"443\" or \"80-90, 91\")."
             },
             "protocol": {
               "Type": "String",
@@ -260,17 +293,20 @@
           }
         }
       },
+      "inbound_policy": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The default behavior for inbound traffic. This setting can be overridden by updating the inbound.action property for an individual Firewall Rule."
+      },
       "label": {
         "Type": "String",
-        "Optional": true,
-        "Description": "The label for the Firewall. For display purposes only. If no label is provided, a default will be assigned.",
-        "Computed": true
+        "Required": true,
+        "Description": "The label for the Firewall. For display purposes only. If no label is provided, a default will be assigned."
       },
       "linodes": {
         "Type": "Set",
-        "Required": true,
+        "Optional": true,
         "Description": "The IDs of Linodes to apply this firewall to.",
-        "MinItems": 1,
         "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
@@ -286,10 +322,25 @@
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
-            "addresses": {
-              "Type": "Set",
+            "action": {
+              "Type": "String",
               "Required": true,
-              "Description": "A list of IP addresses, CIDR blocks, or 0.0.0.0/0 (to whitelist all) this rule applies to.",
+              "Description": "Controls whether traffic is accepted or dropped by this rule. Overrides the Firewall’s inbound_policy if this is an inbound rule, or the outbound_policy if this is an outbound rule."
+            },
+            "ipv4": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "A list of IP addresses, CIDR blocks, or 0.0.0.0/0 (to allow all) this rule applies to.",
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "ipv6": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "A list of IPv6 addresses or networks this rule applies to.",
               "MinItems": 1,
               "ConfigImplicitMode": "Attr",
               "Elem": {
@@ -297,16 +348,15 @@
                 "ElementsType": "String"
               }
             },
-            "ports": {
-              "Type": "Set",
+            "label": {
+              "Type": "String",
               "Required": true,
-              "Description": "A list of ports and/or port ranges (i.e. \"443\" or \"80-90\").",
-              "MinItems": 1,
-              "ConfigImplicitMode": "Attr",
-              "Elem": {
-                "Type": "SchemaElements",
-                "ElementsType": "String"
-              }
+              "Description": "Used to identify this rule. For display purposes only."
+            },
+            "ports": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "A string representation of ports and/or port ranges (i.e. \"443\" or \"80-90, 91\")."
             },
             "protocol": {
               "Type": "String",
@@ -315,6 +365,11 @@
             }
           }
         }
+      },
+      "outbound_policy": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The default behavior for outbound traffic. This setting can be overridden by updating the outbound.action property for an individual Firewall Rule."
       },
       "status": {
         "Type": "String",
@@ -1153,6 +1208,58 @@
         }
       }
     },
+    "linode_instance_ip": {
+      "address": {
+        "Type": "String",
+        "Description": "The resulting IPv4 address.",
+        "Computed": true
+      },
+      "gateway": {
+        "Type": "String",
+        "Description": "The default gateway for this address",
+        "Computed": true
+      },
+      "linode_id": {
+        "Type": "Int",
+        "Required": true,
+        "Description": "The ID of the Linode to allocate an IPv4 address for."
+      },
+      "prefix": {
+        "Type": "Int",
+        "Description": "The number of bits set in the subnet mask.",
+        "Computed": true
+      },
+      "public": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether the IPv4 address is public or private.",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "rdns": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The reverse DNS assigned to this address.",
+        "Computed": true
+      },
+      "region": {
+        "Type": "String",
+        "Description": "The region this IP resides in.",
+        "Computed": true
+      },
+      "subnet_mask": {
+        "Type": "String",
+        "Description": "The mask that separates host bits from network bits for this address.",
+        "Computed": true
+      },
+      "type": {
+        "Type": "String",
+        "Description": "The type of IP address.",
+        "Computed": true
+      }
+    },
     "linode_lke_cluster": {
       "__timeouts__": [
         "create",
@@ -1311,11 +1418,29 @@
         }
       },
       "transfer": {
-        "Type": "Map",
+        "Type": "List",
         "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
         "Elem": {
-          "Type": "SchemaElements",
-          "ElementsType": "String"
+          "Type": "SchemaInfo",
+          "Info": {
+            "in": {
+              "Type": "Float",
+              "Description": "The total transfer, in MB, used by this NodeBalancer this month",
+              "Computed": true
+            },
+            "out": {
+              "Type": "Float",
+              "Description": "The total inbound transfer, in MB, used for this NodeBalancer this month",
+              "Computed": true
+            },
+            "total": {
+              "Type": "Float",
+              "Description": "The total outbound transfer, in MB, used for this NodeBalancer this month",
+              "Computed": true
+            }
+          }
         }
       },
       "updated": {
@@ -1379,11 +1504,24 @@
         "Computed": true
       },
       "node_status": {
-        "Type": "Map",
+        "Type": "List",
         "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
         "Elem": {
-          "Type": "SchemaElements",
-          "ElementsType": "String"
+          "Type": "SchemaInfo",
+          "Info": {
+            "down": {
+              "Type": "Int",
+              "Description": "The number of backends considered to be 'DOWN' and unhealthy. These are not in rotation, and not serving requests.",
+              "Computed": true
+            },
+            "up": {
+              "Type": "Int",
+              "Description": "The number of backends considered to be 'UP' and healthy, and that are serving requests.",
+              "Computed": true
+            }
+          }
         }
       },
       "nodebalancer_id": {
@@ -1407,6 +1545,15 @@
         "Default": {
           "Type": "linodego.ConfigProtocol",
           "Value": "http"
+        }
+      },
+      "proxy_protocol": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The version of ProxyProtocol to use for the underlying NodeBalancer. This requires protocol to be `tcp`. Valid values are `none`, `v1`, and `v2`.",
+        "Default": {
+          "Type": "linodego.ConfigProxyProtocol",
+          "Value": "none"
         }
       },
       "ssl_cert": {
@@ -1476,6 +1623,28 @@
       }
     },
     "linode_object_storage_bucket": {
+      "cert": {
+        "Type": "List",
+        "Optional": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "certificate": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The Base64 encoded and PEM formatted SSL certificate."
+            },
+            "private_key": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The private key associated with the TLS/SSL certificate."
+            }
+          }
+        }
+      },
       "cluster": {
         "Type": "String",
         "Required": true,
@@ -1493,15 +1662,139 @@
         "Description": "This keypair's access key. This is not secret.",
         "Computed": true
       },
+      "bucket_access": {
+        "Type": "List",
+        "Optional": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "bucket_name": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The unique label of the bucket to which the key will grant limited access."
+            },
+            "cluster": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The Object Storage cluster where a bucket to which the key is granting access is hosted."
+            },
+            "permissions": {
+              "Type": "String",
+              "Required": true,
+              "Description": "This Limited Access Key’s permissions for the selected bucket."
+            }
+          }
+        }
+      },
       "label": {
         "Type": "String",
         "Required": true,
         "Description": "The label given to this key. For display purposes only."
       },
+      "limited": {
+        "Type": "Bool",
+        "Description": "Whether or not this key is a limited access key.",
+        "Computed": true
+      },
       "secret_key": {
         "Type": "String",
         "Description": "This keypair's secret key.",
         "Computed": true
+      }
+    },
+    "linode_object_storage_object": {
+      "access_key": {
+        "Type": "String",
+        "Required": true
+      },
+      "acl": {
+        "Type": "String",
+        "Optional": true,
+        "Default": {
+          "Type": "string",
+          "Value": "private"
+        }
+      },
+      "bucket": {
+        "Type": "String",
+        "Required": true
+      },
+      "cache_control": {
+        "Type": "String",
+        "Optional": true
+      },
+      "cluster": {
+        "Type": "String",
+        "Required": true
+      },
+      "content": {
+        "Type": "String",
+        "Optional": true
+      },
+      "content_base64": {
+        "Type": "String",
+        "Optional": true
+      },
+      "content_disposition": {
+        "Type": "String",
+        "Optional": true
+      },
+      "content_encoding": {
+        "Type": "String",
+        "Optional": true
+      },
+      "content_language": {
+        "Type": "String",
+        "Optional": true
+      },
+      "content_type": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "etag": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "force_destroy": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "key": {
+        "Type": "String",
+        "Required": true
+      },
+      "metadata": {
+        "Type": "Map",
+        "Optional": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "secret_key": {
+        "Type": "String",
+        "Required": true
+      },
+      "source": {
+        "Type": "String",
+        "Optional": true
+      },
+      "version_id": {
+        "Type": "String",
+        "Computed": true
+      },
+      "website_redirect": {
+        "Type": "String",
+        "Optional": true
       }
     },
     "linode_rdns": {
@@ -1665,6 +1958,92 @@
         "Type": "String",
         "Description": "The token used to access the API.",
         "Computed": true
+      }
+    },
+    "linode_user": {
+      "email": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The email of the user."
+      },
+      "restricted": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "If true, the user must be explicitly granted access to platform actions and entities.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "ssh_keys": {
+        "Type": "List",
+        "Description": "SSH keys to add to the user profile.",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "tfa_enabled": {
+        "Type": "Bool",
+        "Description": "If the User has Two Factor Authentication (TFA) enabled.",
+        "Computed": true
+      },
+      "username": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The username of the user."
+      }
+    },
+    "linode_vlan": {
+      "attached_linodes": {
+        "Type": "List",
+        "Description": "The Linodes attached to this vlan.",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "id": {
+              "Type": "Int",
+              "Computed": true
+            },
+            "ipv4_address": {
+              "Type": "String",
+              "Computed": true
+            },
+            "mac_address": {
+              "Type": "String",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "cidr_block": {
+        "Type": "String",
+        "Optional": true
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Description of the vlan for display purposes only."
+      },
+      "linodes": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "The IDs of the Linodes to attach to this vlan.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "Int"
+        }
+      },
+      "region": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The region where the vlan is deployed."
       }
     },
     "linode_volume": {
@@ -2091,6 +2470,111 @@
         "Type": "Int",
         "Description": "The number of VCPU cores this Linode Type offers.",
         "Computed": true
+      }
+    },
+    "linode_lke_cluster": {
+      "api_endpoints": {
+        "Type": "List",
+        "Description": "The API endpoints for the cluster.",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "id": {
+        "Type": "Int",
+        "Required": true
+      },
+      "k8s_version": {
+        "Type": "String",
+        "Description": "The desired Kubernetes version for this Kubernetes cluster in the format of \u003cmajor\u003e.\u003cminor\u003e. The latest supported patch version will be deployed.",
+        "Computed": true
+      },
+      "kubeconfig": {
+        "Type": "String",
+        "Description": "The Base64-encoded Kubeconfig for the cluster.",
+        "Computed": true
+      },
+      "label": {
+        "Type": "String",
+        "Description": "The unique label for the cluster.",
+        "Computed": true
+      },
+      "pools": {
+        "Type": "List",
+        "Description": "A node pool in the cluster.",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "count": {
+              "Type": "Int",
+              "Description": "The number of nodes in the Node Pool.",
+              "Computed": true
+            },
+            "id": {
+              "Type": "Int",
+              "Description": "The ID of the Node Pool.",
+              "Computed": true
+            },
+            "nodes": {
+              "Type": "List",
+              "Description": "The nodes in the node pool.",
+              "Computed": true,
+              "IsBlock": true,
+              "ConfigImplicitMode": "ComputedBlock",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "id": {
+                    "Type": "String",
+                    "Description": "The ID of the node.",
+                    "Computed": true
+                  },
+                  "instance_id": {
+                    "Type": "Int",
+                    "Description": "The ID of the underlying Linode instance.",
+                    "Computed": true
+                  },
+                  "status": {
+                    "Type": "String",
+                    "Description": "The status of the node.",
+                    "Computed": true
+                  }
+                }
+              }
+            },
+            "type": {
+              "Type": "String",
+              "Description": "A Linode Type for all of the nodes in the Node Pool.",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "region": {
+        "Type": "String",
+        "Description": "This cluster's location.",
+        "Computed": true
+      },
+      "status": {
+        "Type": "String",
+        "Description": "The status of the cluster.",
+        "Computed": true
+      },
+      "tags": {
+        "Type": "Set",
+        "Description": "An array of tags applied to this object. Tags are for organizational purposes only.",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       }
     },
     "linode_networking_ip": {

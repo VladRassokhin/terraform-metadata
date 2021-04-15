@@ -1,0 +1,201 @@
+#!/usr/bin/env bash
+
+. common.sh
+
+config_data="$(cat $root_path/providers.json)"
+
+providers_out_path="$out_path/providers"
+failures="$out_path/providers-failure.txt"
+
+mkdir -p "$providers_out_path"
+rm -f "$failures"
+touch "$failures"
+
+function process_provider() {
+  name="$1"
+
+  skip_generation="$(jq_get "$name" 'skip_generation' "$config_data")"
+  if [[ $skip_generation == "true" ]]; then
+    return 0
+  fi
+
+  repository="$(jq_get "$name" 'repository' "$config_data")"
+  pkg_name="$(jq_get "$name" 'pkg_name' "$config_data")"
+  provider_args="$(jq_get "$name" 'provider_args' "$config_data")"
+  use_master="$(jq_get "$name" 'use_master' "$config_data")"
+  go_envs="$(jq_get "$name" 'go_envs' "$config_data")"
+  module_name="$(jq_get "$name" 'module_name' "$config_data")"
+  provider_func="$(jq_get "$name" 'provider_func' "$config_data")"
+  go_args="$(jq_get "$name" 'go_args' "$config_data")"
+
+  location="$base_location/$repository"
+
+  if [[ ! -d "$location" ]]; then
+    echo "$location doesn't exist, skipping"
+    return 1
+  fi
+
+  if output=$(git -C "$location" status --untracked-files=no --porcelain) && [[ -n "$output" ]]; then
+    if [[ -z "${RESET_REPOS:-}" ]]; then
+      mkdir -p "$logs_path"
+      echo "git working copy '$location' is not clear, cannot proceed" | tee "$logs_back/provider-$name.log"
+      echo "$name" >>"$failures"
+      return 2
+    else
+      git -C "$location" reset --hard
+      git -C "$location" clean -fdx
+    fi
+  fi
+
+  pushd "$location" >/dev/null || return
+
+  echo "Preparing $name"
+
+  if [[ "$use_master" == "true" ]]; then
+    echo "Using master"
+    latest="master"
+  else
+    # All tags:
+    echo "Repository newest tags:"
+    git tag -l --sort=-v:refname | head -n 5
+    latest=$(git tag -l --sort=-v:refname | head -n 1)
+    if [[ -z "$latest" ]]; then
+      echo "There's no tags in $name, will use current state"
+    else
+      echo "Will generate schema for tag '$latest'"
+    fi
+  fi
+
+  [[ -n "$latest" ]] && git checkout -q "$latest"
+
+  if ! git rev-parse HEAD &>/dev/null; then
+    echo "'git rev-parse HEAD' failed, skipping $name"
+    return
+  fi
+
+  revision="$(git describe --tags)"
+  if [[ -n "$latest" ]] && [[ "$revision" != "$latest" ]]; then
+    echo "WARN: 'git describe' and tag mismatch: '$revision' vs '$latest', will use '$latest'"
+    revision="$latest"
+  fi
+
+  if [ -f "$providers_out_path/$name.json" ] && command -v jq &>/dev/null; then
+    current="$(jq -r '.version' "$providers_out_path/$name.json")"
+    echo "Version in existing schema: $current"
+    if [[ "$current" == "$revision" ]]; then
+      echo "Version in existing schema is same as desired, skipping generation"
+      return
+    fi
+  fi
+
+  if [[ "$pkg_name" == "__PKG_NAME__" && -d "internal/provider" && -f "internal/provider/provider.go"  ]]; then
+    pkg_name="internal/provider"
+  elif [[ "$pkg_name" == "__PKG_NAME__" ]]; then
+    pkg_name=$name
+  fi
+
+  sdk="terraform"
+  if [ -f "go.mod" ] && [ -d 'tfplugin5' ]; then
+    sdk="terraform-tfplugin5"
+  elif [ -f "go.mod" ] && grep -q 'github.com/hashicorp/terraform-plugin-sdk/v2' "go.mod"; then
+    sdk="terraform-plugin-sdk-v2"
+  elif grep -q 'github.com/hashicorp/terraform-plugin-sdk/v2' -r "$pkg_name"; then
+    sdk="terraform-plugin-sdk-v2"
+  elif [ -f "go.mod" ] && grep -q 'github.com/hashicorp/terraform-plugin-sdk v1' "go.mod"; then
+    sdk="terraform-plugin-sdk-v1"
+  elif grep -q 'github.com/hashicorp/terraform-plugin-sdk' -r "$pkg_name"; then
+    sdk="terraform-plugin-sdk-v1"
+  fi
+
+  if [[ "$go_args" == "__GO_ARGS__" && -d vendor ]]; then
+    go_args="-mod=vendor"
+  elif [[ "$go_args" == "__GO_ARGS__" ]]; then
+    go_args="-mod=mod"
+  fi
+
+  go_mod="on"
+
+  if [[ ! -f go.mod ]]; then
+    go_mod="off"
+    go_args=""
+  fi
+
+  base_file="provider/$sdk/generate-schema.go"
+
+  if [[ "$name" == "azuread" ]]; then
+    base_file="provider/azuread/generate-schema.go"
+  fi
+
+  mod_name=$(grep "module" "go.mod")
+  mod_name=${mod_name/"module "/""}
+
+  if [[ "$module_name" != "__REPOSITORY__" ]]; then
+    mod_name=$module_name
+  fi
+
+  if [[ "$provider_func" == "__PROVIDER_FUNC__" && "$pkg_name" == "internal/provider" ]] && grep -q 'New()' "internal/provider/provider.go"; then
+    provider_func="New"
+  elif [[ "$provider_func" == "__PROVIDER_FUNC__" ]]; then
+    provider_func="Provider"
+  fi
+
+  echo "Module Name: $mod_name"
+  echo "Package Name: $pkg_name"
+  echo "Provider Function: $provider_func"
+  echo "Provider Arguments: $provider_args"
+  echo "Using sdk: $sdk"
+  echo "Using base file: $base_file"
+  echo "GO111MODULE: $go_mod"
+  echo "Using go_envs: $go_envs"
+  echo "Using go_args: $go_args"
+
+  sed \
+    -e "s~__REPOSITORY__~$mod_name~g" \
+    -e "s~__NAME__~${name}~g" \
+    -e "s~__PKG_NAME__~${pkg_name}~g" \
+    -e "s~__REVISION__~$revision~g" \
+    -e "s~__PROVIDER_ARGS__~$provider_args~g" \
+    -e "s~__SDK__~$sdk~g" \
+    -e "s~__OUT__~$providers_out_path~g" \
+    -e "s~__PROVIDER_FUNC__~$provider_func~g" \
+    "$root_path/template/$base_file" \
+    >generate-schema.go
+
+  mkdir -p "$logs_path"
+  log_file="$logs_path/provider-$name.log"
+  set +e
+  GO111MODULE=$go_mod go run "$go_args" generate-schema.go 2>&1 | tee "$log_file"
+  ec=$?
+  if [[ $ec -eq 0 ]]; then
+    rm "$log_file"
+  else
+    echo "$name" >>"$failures"
+  fi
+  echo "Completed $name"
+  set -e
+
+  # Revert to previous state
+  [[ -n "$latest" ]] && git checkout --force -q '@{-1}'
+
+  popd >/dev/null || return
+
+}
+
+providers=( $(echo $config_data | jq -r 'keys[] | select(contains("__NAME__") | not)') )
+
+echo "*****************************************************************"
+echo "**"
+echo "** Building Providers"
+echo "** Providers to Build: ${#providers[@]}"
+echo "**"
+echo "*****************************************************************"
+
+completed_count=0
+for provider in "${providers[@]}"; do
+  process_provider "$provider``" || true
+  completed_count=$((completed_count + 1))
+  echo "$completed_count of ${#providers[@]}" completed...
+  echo ""
+done
+
+echo $config_data | jq -r 'keys[] | select(contains("__NAME__") | not)' > $out_path/providers.list

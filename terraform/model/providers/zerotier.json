@@ -1,0 +1,379 @@
+{
+  ".schema_version": "2",
+  ".sdk_type": "terraform-plugin-sdk-v2",
+  "name": "zerotier",
+  "type": "provider",
+  "version": "v0.1.55",
+  "provider": {
+    "zerotier_central__token": {
+      "Type": "String",
+      "Required": true,
+      "Description": "ZeroTier Central API Token; you can generate a new one at https://my.zerotier.com/account.",
+      "DefaultFunc": "ENV(ZEROTIER_CENTRAL_TOKEN)"
+    },
+    "zerotier_central__url": {
+      "Type": "String",
+      "Required": true,
+      "Description": "ZeroTier Central API endpoint. Unlikely you'll need to alter this unless you're testing ZeroTier central itself.",
+      "DefaultFunc": "ENV(ZEROTIER_CENTRAL_URL)"
+    }
+  },
+  "resources": {
+    "zerotier_identity": {
+      "private_key": {
+        "Type": "String",
+        "Description": "The private key of the identity.",
+        "Computed": true
+      },
+      "public_key": {
+        "Type": "String",
+        "Description": "The public key of the identity.",
+        "Computed": true
+      }
+    },
+    "zerotier_member": {
+      "allow_ethernet_bridging": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Is this member allowed to activate ethernet bridging over the ZeroTier network?",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "authorized": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Is the member authorized on the network?",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "capabilities": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "List of network capabilities",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "Int"
+        }
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Text description of this member.",
+        "Default": {
+          "Type": "string",
+          "Value": "Managed by Terraform"
+        }
+      },
+      "hidden": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Is this member visible?",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "ip_assignments": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "List of IP address assignments",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "member_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "ID of this member."
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Descriptive name of this member.",
+        "Computed": true
+      },
+      "network_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "ID of the network this member belongs to"
+      },
+      "no_auto_assign_ips": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Exempt this member from the IP auto assignment pool on a Network",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      }
+    },
+    "zerotier_network": {
+      "assign_ipv4": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "IPv4 Assignment RuleSets",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "Bool"
+        }
+      },
+      "assign_ipv6": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "IPv6 Assignment RuleSets",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "Bool"
+        }
+      },
+      "assignment_pool": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Rules regarding IPv4 and IPv6 assignments",
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "cidr": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "An address range in CIDR notation. This must have no other keys assigned to this block as CIDR denotes the start and end address automatically"
+            },
+            "end": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The last address in the assignment rule. This must be the highest number in the pool. end must also be accompanied by start."
+            },
+            "start": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The first address in the assignment rule. This must be the lowest number in the pool. `start` must also be accompanied by `end`."
+            }
+          }
+        }
+      },
+      "creation_time": {
+        "Type": "Int",
+        "Description": "The time at which this network was created, in epoch seconds",
+        "Computed": true
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The description of the network",
+        "Default": {
+          "Type": "string",
+          "Value": "Managed by Terraform"
+        }
+      },
+      "enable_broadcast": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enable broadcast packets on the network",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "flow_rules": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The layer 2 flow rules to apply to packets traveling across this network. Please see https://www.zerotier.com/manual/#3_4_1 for more information.",
+        "Default": {
+          "Type": "string",
+          "Value": "accept;"
+        }
+      },
+      "id": {
+        "Type": "String",
+        "Description": "ZeroTier's internal network identifier, aka NetworkID",
+        "Computed": true
+      },
+      "mtu": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "MTU to set on the client virtual network adapter"
+      },
+      "multicast_limit": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Maximum number of recipients per multicast or broadcast. Warning - Setting this to 0 will disable IPv4 communication on your network!",
+        "Default": {
+          "Type": "int",
+          "Value": "32"
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The name of the network"
+      },
+      "private": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether or not the network is private.  If false, members will *NOT* need to be authorized to join.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "route": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "A ipv4 or ipv6 network route",
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "target": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Network to route for"
+            },
+            "via": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Gateway address"
+            }
+          }
+        }
+      },
+      "tf_last_updated": {
+        "Type": "Int",
+        "Description": "The time at which this terraform was last updated, in epoch seconds",
+        "Computed": true
+      }
+    }
+  },
+  "data-sources": {
+    "zerotier_network": {
+      "assign_ipv4": {
+        "Type": "Map",
+        "Description": "IPv4 Assignment RuleSets",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "Bool"
+        }
+      },
+      "assign_ipv6": {
+        "Type": "Map",
+        "Description": "IPv6 Assignment RuleSets",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "Bool"
+        }
+      },
+      "assignment_pool": {
+        "Type": "Set",
+        "Description": "Rules regarding IPv4 and IPv6 assignments",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "cidr": {
+              "Type": "String",
+              "Description": "An address range in CIDR notation. This must have no other keys assigned to this block as CIDR denotes the start and end address automatically",
+              "Computed": true
+            },
+            "end": {
+              "Type": "String",
+              "Description": "The last address in the assignment rule. This must be the highest number in the pool. end must also be accompanied by start.",
+              "Computed": true
+            },
+            "start": {
+              "Type": "String",
+              "Description": "The first address in the assignment rule. This must be the lowest number in the pool. `start` must also be accompanied by `end`.",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "creation_time": {
+        "Type": "Int",
+        "Description": "The time at which this network was created, in epoch seconds",
+        "Computed": true
+      },
+      "description": {
+        "Type": "String",
+        "Description": "The description of the network",
+        "Computed": true
+      },
+      "enable_broadcast": {
+        "Type": "Bool",
+        "Description": "Enable broadcast packets on the network",
+        "Computed": true
+      },
+      "flow_rules": {
+        "Type": "String",
+        "Description": "The layer 2 flow rules to apply to packets traveling across this network. Please see https://www.zerotier.com/manual/#3_4_1 for more information.",
+        "Computed": true
+      },
+      "id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "ZeroTier's internal network identifier, aka NetworkID"
+      },
+      "mtu": {
+        "Type": "Int",
+        "Description": "MTU to set on the client virtual network adapter",
+        "Computed": true
+      },
+      "multicast_limit": {
+        "Type": "Int",
+        "Description": "Maximum number of recipients per multicast or broadcast. Warning - Setting this to 0 will disable IPv4 communication on your network!",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Description": "The name of the network",
+        "Computed": true
+      },
+      "private": {
+        "Type": "Bool",
+        "Description": "Whether or not the network is private.  If false, members will *NOT* need to be authorized to join.",
+        "Computed": true
+      },
+      "route": {
+        "Type": "Set",
+        "Description": "A ipv4 or ipv6 network route",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "target": {
+              "Type": "String",
+              "Description": "Network to route for",
+              "Computed": true
+            },
+            "via": {
+              "Type": "String",
+              "Description": "Gateway address",
+              "Computed": true
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -3,7 +3,7 @@
   ".sdk_type": "terraform-plugin-sdk-v1",
   "name": "mongodbatlas",
   "type": "provider",
-  "version": "v0.6.1",
+  "version": "v0.8.2",
   "provider": {
     "private_key": {
       "Type": "String",
@@ -176,6 +176,14 @@
         "Type": "String",
         "Required": true
       },
+      "threshold": {
+        "Type": "Map",
+        "Optional": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
       "updated": {
         "Type": "String",
         "Computed": true
@@ -204,6 +212,59 @@
       "project_id": {
         "Type": "String",
         "Required": true
+      }
+    },
+    "mongodbatlas_cloud_provider_access": {
+      "atlas_assumed_role_external_id": {
+        "Type": "String",
+        "Computed": true
+      },
+      "atlas_aws_account_arn": {
+        "Type": "String",
+        "Computed": true
+      },
+      "authorized_date": {
+        "Type": "String",
+        "Computed": true
+      },
+      "created_date": {
+        "Type": "String",
+        "Computed": true
+      },
+      "feature_usages": {
+        "Type": "List",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "feature_id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "feature_type": {
+              "Type": "String",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "iam_assumed_role_arn": {
+        "Type": "String",
+        "Optional": true
+      },
+      "project_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "provider_name": {
+        "Type": "String",
+        "Required": true
+      },
+      "role_id": {
+        "Type": "String",
+        "Computed": true
       }
     },
     "mongodbatlas_cloud_provider_snapshot": {
@@ -513,15 +574,63 @@
           "Info": {
             "aws_private_link": {
               "Type": "Map",
-              "Computed": true
+              "Computed": true,
+              "Deprecated": "This field is deprecated. Use connection_strings.private_endpoint[n].connection_string instead"
             },
             "aws_private_link_srv": {
               "Type": "Map",
-              "Computed": true
+              "Computed": true,
+              "Deprecated": "This field is deprecated. Use connection_strings.private_endpoint[n].srv_connection_string instead"
             },
             "private": {
               "Type": "String",
               "Computed": true
+            },
+            "private_endpoint": {
+              "Type": "List",
+              "Computed": true,
+              "IsBlock": true,
+              "ConfigImplicitMode": "ComputedBlock",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "connection_string": {
+                    "Type": "String",
+                    "Computed": true
+                  },
+                  "endpoints": {
+                    "Type": "List",
+                    "Computed": true,
+                    "IsBlock": true,
+                    "ConfigImplicitMode": "ComputedBlock",
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "endpoint_id": {
+                          "Type": "String",
+                          "Computed": true
+                        },
+                        "provider_name": {
+                          "Type": "String",
+                          "Computed": true
+                        },
+                        "region": {
+                          "Type": "String",
+                          "Computed": true
+                        }
+                      }
+                    }
+                  },
+                  "srv_connection_string": {
+                    "Type": "String",
+                    "Computed": true
+                  },
+                  "type": {
+                    "Type": "String",
+                    "Computed": true
+                  }
+                }
+              }
             },
             "private_srv": {
               "Type": "String",
@@ -845,7 +954,7 @@
     "mongodbatlas_custom_db_role": {
       "actions": {
         "Type": "List",
-        "Required": true,
+        "Optional": true,
         "IsBlock": true,
         "ConfigImplicitMode": "Block",
         "Elem": {
@@ -882,7 +991,7 @@
         }
       },
       "inherited_roles": {
-        "Type": "List",
+        "Type": "Set",
         "Optional": true,
         "IsBlock": true,
         "ConfigImplicitMode": "Block",
@@ -916,6 +1025,14 @@
         "ConflictsWith": [
           "database_name"
         ]
+      },
+      "aws_iam_type": {
+        "Type": "String",
+        "Optional": true,
+        "Default": {
+          "Type": "string",
+          "Value": "NONE"
+        }
       },
       "database_name": {
         "Type": "String",
@@ -960,8 +1077,7 @@
       },
       "roles": {
         "Type": "Set",
-        "Optional": true,
-        "Computed": true,
+        "Required": true,
         "IsBlock": true,
         "ConfigImplicitMode": "Block",
         "Elem": {
@@ -981,6 +1097,25 @@
               "Type": "String",
               "Optional": true,
               "Computed": true
+            }
+          }
+        }
+      },
+      "scopes": {
+        "Type": "Set",
+        "Optional": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "name": {
+              "Type": "String",
+              "Optional": true
+            },
+            "type": {
+              "Type": "String",
+              "Optional": true
             }
           }
         }
@@ -1362,6 +1497,113 @@
         "Required": true
       }
     },
+    "mongodbatlas_privatelink_endpoint": {
+      "endpoint_service_name": {
+        "Type": "String",
+        "Computed": true
+      },
+      "error_message": {
+        "Type": "String",
+        "Computed": true
+      },
+      "interface_endpoints": {
+        "Type": "List",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "private_endpoints": {
+        "Type": "List",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "private_link_id": {
+        "Type": "String",
+        "Computed": true
+      },
+      "private_link_service_name": {
+        "Type": "String",
+        "Computed": true
+      },
+      "private_link_service_resource_id": {
+        "Type": "String",
+        "Computed": true
+      },
+      "project_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "provider_name": {
+        "Type": "String",
+        "Required": true
+      },
+      "region": {
+        "Type": "String",
+        "Required": true
+      },
+      "status": {
+        "Type": "String",
+        "Computed": true
+      }
+    },
+    "mongodbatlas_privatelink_endpoint_service": {
+      "aws_connection_status": {
+        "Type": "String",
+        "Computed": true
+      },
+      "azure_status": {
+        "Type": "String",
+        "Computed": true
+      },
+      "delete_requested": {
+        "Type": "Bool",
+        "Computed": true
+      },
+      "endpoint_service_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "error_message": {
+        "Type": "String",
+        "Computed": true
+      },
+      "interface_endpoint_id": {
+        "Type": "String",
+        "Computed": true
+      },
+      "private_endpoint_connection_name": {
+        "Type": "String",
+        "Computed": true
+      },
+      "private_endpoint_ip_address": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "private_endpoint_resource_id": {
+        "Type": "String",
+        "Computed": true
+      },
+      "private_link_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "project_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "provider_name": {
+        "Type": "String",
+        "Required": true
+      }
+    },
     "mongodbatlas_project": {
       "cluster_count": {
         "Type": "Int",
@@ -1402,6 +1644,48 @@
             }
           }
         }
+      }
+    },
+    "mongodbatlas_project_ip_access_list": {
+      "__timeouts__": [
+        "read",
+        "delete"
+      ],
+      "aws_security_group": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true,
+        "ConflictsWith": [
+          "ip_address",
+          "cidr_block"
+        ]
+      },
+      "cidr_block": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true,
+        "ConflictsWith": [
+          "aws_security_group",
+          "ip_address"
+        ]
+      },
+      "comment": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "ip_address": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true,
+        "ConflictsWith": [
+          "aws_security_group",
+          "cidr_block"
+        ]
+      },
+      "project_id": {
+        "Type": "String",
+        "Required": true
       }
     },
     "mongodbatlas_project_ip_whitelist": {
@@ -1490,6 +1774,76 @@
           "Type": "SchemaElements",
           "ElementsType": "String"
         }
+      }
+    },
+    "mongodbatlas_third_party_integration": {
+      "account_id": {
+        "Type": "String",
+        "Optional": true
+      },
+      "api_key": {
+        "Type": "String",
+        "Optional": true
+      },
+      "api_token": {
+        "Type": "String",
+        "Optional": true
+      },
+      "channel_name": {
+        "Type": "String",
+        "Optional": true
+      },
+      "flow_name": {
+        "Type": "String",
+        "Optional": true
+      },
+      "license_key": {
+        "Type": "String",
+        "Optional": true
+      },
+      "org_name": {
+        "Type": "String",
+        "Optional": true
+      },
+      "project_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "read_token": {
+        "Type": "String",
+        "Optional": true
+      },
+      "region": {
+        "Type": "String",
+        "Optional": true
+      },
+      "routing_key": {
+        "Type": "String",
+        "Optional": true
+      },
+      "secret": {
+        "Type": "String",
+        "Optional": true
+      },
+      "service_key": {
+        "Type": "String",
+        "Optional": true
+      },
+      "team_name": {
+        "Type": "String",
+        "Optional": true
+      },
+      "type": {
+        "Type": "String",
+        "Required": true
+      },
+      "url": {
+        "Type": "String",
+        "Optional": true
+      },
+      "write_token": {
+        "Type": "String",
+        "Optional": true
       }
     },
     "mongodbatlas_x509_authentication_database_user": {
@@ -1663,6 +2017,15 @@
               "Type": "String",
               "Computed": true
             },
+            "roles": {
+              "Type": "List",
+              "Optional": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
             "service_key": {
               "Type": "String",
               "Computed": true
@@ -1698,6 +2061,14 @@
         "Type": "String",
         "Required": true
       },
+      "threshold": {
+        "Type": "Map",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
       "updated": {
         "Type": "String",
         "Computed": true
@@ -1719,6 +2090,70 @@
       "enabled": {
         "Type": "Bool",
         "Computed": true
+      },
+      "project_id": {
+        "Type": "String",
+        "Required": true
+      }
+    },
+    "mongodbatlas_cloud_provider_access": {
+      "aws_iam_roles": {
+        "Type": "List",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "atlas_assumed_role_external_id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "atlas_aws_account_arn": {
+              "Type": "String",
+              "Computed": true
+            },
+            "authorized_date": {
+              "Type": "String",
+              "Computed": true
+            },
+            "created_date": {
+              "Type": "String",
+              "Computed": true
+            },
+            "feature_usages": {
+              "Type": "List",
+              "Computed": true,
+              "IsBlock": true,
+              "ConfigImplicitMode": "ComputedBlock",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "feature_id": {
+                    "Type": "String",
+                    "Computed": true
+                  },
+                  "feature_type": {
+                    "Type": "String",
+                    "Computed": true
+                  }
+                }
+              }
+            },
+            "iam_assumed_role_arn": {
+              "Type": "String",
+              "Computed": true
+            },
+            "provider_name": {
+              "Type": "String",
+              "Computed": true
+            },
+            "role_id": {
+              "Type": "String",
+              "Computed": true
+            }
+          }
+        }
       },
       "project_id": {
         "Type": "String",
@@ -1902,7 +2337,7 @@
         "Computed": true
       },
       "oplog_ts": {
-        "Type": "String",
+        "Type": "Int",
         "Computed": true
       },
       "point_in_time_utc_seconds": {
@@ -2155,6 +2590,52 @@
             "private": {
               "Type": "String",
               "Computed": true
+            },
+            "private_endpoint": {
+              "Type": "List",
+              "Computed": true,
+              "IsBlock": true,
+              "ConfigImplicitMode": "ComputedBlock",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "connection_string": {
+                    "Type": "String",
+                    "Computed": true
+                  },
+                  "endpoints": {
+                    "Type": "List",
+                    "Computed": true,
+                    "IsBlock": true,
+                    "ConfigImplicitMode": "ComputedBlock",
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "endpoint_id": {
+                          "Type": "String",
+                          "Computed": true
+                        },
+                        "provider_name": {
+                          "Type": "String",
+                          "Computed": true
+                        },
+                        "region": {
+                          "Type": "String",
+                          "Computed": true
+                        }
+                      }
+                    }
+                  },
+                  "srv_connection_string": {
+                    "Type": "String",
+                    "Computed": true
+                  },
+                  "type": {
+                    "Type": "String",
+                    "Computed": true
+                  }
+                }
+              }
             },
             "private_srv": {
               "Type": "String",
@@ -2500,6 +2981,52 @@
                   "private": {
                     "Type": "String",
                     "Computed": true
+                  },
+                  "private_endpoint": {
+                    "Type": "List",
+                    "Computed": true,
+                    "IsBlock": true,
+                    "ConfigImplicitMode": "ComputedBlock",
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "connection_string": {
+                          "Type": "String",
+                          "Computed": true
+                        },
+                        "endpoints": {
+                          "Type": "List",
+                          "Computed": true,
+                          "IsBlock": true,
+                          "ConfigImplicitMode": "ComputedBlock",
+                          "Elem": {
+                            "Type": "SchemaInfo",
+                            "Info": {
+                              "endpoint_id": {
+                                "Type": "String",
+                                "Computed": true
+                              },
+                              "provider_name": {
+                                "Type": "String",
+                                "Computed": true
+                              },
+                              "region": {
+                                "Type": "String",
+                                "Computed": true
+                              }
+                            }
+                          }
+                        },
+                        "srv_connection_string": {
+                          "Type": "String",
+                          "Computed": true
+                        },
+                        "type": {
+                          "Type": "String",
+                          "Computed": true
+                        }
+                      }
+                    }
                   },
                   "private_srv": {
                     "Type": "String",
@@ -2931,6 +3458,10 @@
           "database_name"
         ]
       },
+      "aws_iam_type": {
+        "Type": "String",
+        "Computed": true
+      },
       "database_name": {
         "Type": "String",
         "Optional": true,
@@ -2985,6 +3516,25 @@
           }
         }
       },
+      "scopes": {
+        "Type": "List",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "name": {
+              "Type": "String",
+              "Computed": true
+            },
+            "type": {
+              "Type": "String",
+              "Computed": true
+            }
+          }
+        }
+      },
       "username": {
         "Type": "String",
         "Required": true
@@ -3008,6 +3558,10 @@
           "Type": "SchemaInfo",
           "Info": {
             "auth_database_name": {
+              "Type": "String",
+              "Computed": true
+            },
+            "aws_iam_type": {
               "Type": "String",
               "Computed": true
             },
@@ -3051,6 +3605,25 @@
                     "Computed": true
                   },
                   "role_name": {
+                    "Type": "String",
+                    "Computed": true
+                  }
+                }
+              }
+            },
+            "scopes": {
+              "Type": "List",
+              "Computed": true,
+              "IsBlock": true,
+              "ConfigImplicitMode": "ComputedBlock",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "name": {
+                    "Type": "String",
+                    "Computed": true
+                  },
+                  "type": {
                     "Type": "String",
                     "Computed": true
                   }
@@ -3488,6 +4061,108 @@
         "Required": true
       }
     },
+    "mongodbatlas_privatelink_endpoint": {
+      "endpoint_service_name": {
+        "Type": "String",
+        "Computed": true
+      },
+      "error_message": {
+        "Type": "String",
+        "Computed": true
+      },
+      "interface_endpoints": {
+        "Type": "List",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "private_endpoints": {
+        "Type": "List",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "private_link_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "private_link_service_name": {
+        "Type": "String",
+        "Computed": true
+      },
+      "private_link_service_resource_id": {
+        "Type": "String",
+        "Computed": true
+      },
+      "project_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "provider_name": {
+        "Type": "String",
+        "Required": true
+      },
+      "status": {
+        "Type": "String",
+        "Computed": true
+      }
+    },
+    "mongodbatlas_privatelink_endpoint_service": {
+      "aws_connection_status": {
+        "Type": "String",
+        "Computed": true
+      },
+      "azure_status": {
+        "Type": "String",
+        "Computed": true
+      },
+      "delete_requested": {
+        "Type": "Bool",
+        "Computed": true
+      },
+      "endpoint_service_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "error_message": {
+        "Type": "String",
+        "Computed": true
+      },
+      "interface_endpoint_id": {
+        "Type": "String",
+        "Computed": true
+      },
+      "private_endpoint_connection_name": {
+        "Type": "String",
+        "Computed": true
+      },
+      "private_endpoint_ip_address": {
+        "Type": "String",
+        "Computed": true
+      },
+      "private_endpoint_resource_id": {
+        "Type": "String",
+        "Computed": true
+      },
+      "private_link_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "project_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "provider_name": {
+        "Type": "String",
+        "Required": true
+      }
+    },
     "mongodbatlas_project": {
       "cluster_count": {
         "Type": "Int",
@@ -3538,6 +4213,80 @@
             }
           }
         }
+      }
+    },
+    "mongodbatlas_project_ip_access_list": {
+      "aws_security_group": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true,
+        "ConflictsWith": [
+          "ip_address",
+          "cidr_block"
+        ]
+      },
+      "cidr_block": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true,
+        "ConflictsWith": [
+          "aws_security_group",
+          "ip_address"
+        ]
+      },
+      "comment": {
+        "Type": "String",
+        "Computed": true
+      },
+      "ip_address": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true,
+        "ConflictsWith": [
+          "aws_security_group",
+          "cidr_block"
+        ]
+      },
+      "project_id": {
+        "Type": "String",
+        "Required": true
+      }
+    },
+    "mongodbatlas_project_ip_whitelist": {
+      "aws_security_group": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true,
+        "ConflictsWith": [
+          "ip_address",
+          "cidr_block"
+        ]
+      },
+      "cidr_block": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true,
+        "ConflictsWith": [
+          "aws_security_group",
+          "ip_address"
+        ]
+      },
+      "comment": {
+        "Type": "String",
+        "Computed": true
+      },
+      "ip_address": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true,
+        "ConflictsWith": [
+          "aws_security_group",
+          "cidr_block"
+        ]
+      },
+      "project_id": {
+        "Type": "String",
+        "Required": true
       }
     },
     "mongodbatlas_projects": {
@@ -3612,7 +4361,11 @@
     "mongodbatlas_team": {
       "name": {
         "Type": "String",
-        "Computed": true
+        "Optional": true,
+        "Computed": true,
+        "ConflictsWith": [
+          "team_id"
+        ]
       },
       "org_id": {
         "Type": "String",
@@ -3620,7 +4373,11 @@
       },
       "team_id": {
         "Type": "String",
-        "Required": true
+        "Optional": true,
+        "Computed": true,
+        "ConflictsWith": [
+          "name"
+        ]
       },
       "usernames": {
         "Type": "Set",
@@ -3635,7 +4392,11 @@
     "mongodbatlas_teams": {
       "name": {
         "Type": "String",
-        "Computed": true
+        "Optional": true,
+        "Computed": true,
+        "ConflictsWith": [
+          "team_id"
+        ]
       },
       "org_id": {
         "Type": "String",
@@ -3643,7 +4404,11 @@
       },
       "team_id": {
         "Type": "String",
-        "Required": true
+        "Optional": true,
+        "Computed": true,
+        "ConflictsWith": [
+          "name"
+        ]
       },
       "usernames": {
         "Type": "Set",
@@ -3652,6 +4417,162 @@
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
+        }
+      }
+    },
+    "mongodbatlas_third_party_integration": {
+      "account_id": {
+        "Type": "String",
+        "Computed": true
+      },
+      "api_key": {
+        "Type": "String",
+        "Computed": true
+      },
+      "api_token": {
+        "Type": "String",
+        "Computed": true
+      },
+      "channel_name": {
+        "Type": "String",
+        "Computed": true
+      },
+      "flow_name": {
+        "Type": "String",
+        "Computed": true
+      },
+      "license_key": {
+        "Type": "String",
+        "Computed": true
+      },
+      "org_name": {
+        "Type": "String",
+        "Computed": true
+      },
+      "project_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "read_token": {
+        "Type": "String",
+        "Computed": true
+      },
+      "region": {
+        "Type": "String",
+        "Computed": true
+      },
+      "routing_key": {
+        "Type": "String",
+        "Computed": true
+      },
+      "secret": {
+        "Type": "String",
+        "Computed": true
+      },
+      "service_key": {
+        "Type": "String",
+        "Computed": true
+      },
+      "team_name": {
+        "Type": "String",
+        "Computed": true
+      },
+      "type": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Third-party service integration identifier"
+      },
+      "url": {
+        "Type": "String",
+        "Computed": true
+      },
+      "write_token": {
+        "Type": "String",
+        "Computed": true
+      }
+    },
+    "mongodbatlas_third_party_integrations": {
+      "project_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "results": {
+        "Type": "List",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "account_id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "api_key": {
+              "Type": "String",
+              "Computed": true
+            },
+            "api_token": {
+              "Type": "String",
+              "Computed": true
+            },
+            "channel_name": {
+              "Type": "String",
+              "Computed": true
+            },
+            "flow_name": {
+              "Type": "String",
+              "Computed": true
+            },
+            "license_key": {
+              "Type": "String",
+              "Computed": true
+            },
+            "org_name": {
+              "Type": "String",
+              "Computed": true
+            },
+            "project_id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "read_token": {
+              "Type": "String",
+              "Computed": true
+            },
+            "region": {
+              "Type": "String",
+              "Computed": true
+            },
+            "routing_key": {
+              "Type": "String",
+              "Computed": true
+            },
+            "secret": {
+              "Type": "String",
+              "Computed": true
+            },
+            "service_key": {
+              "Type": "String",
+              "Computed": true
+            },
+            "team_name": {
+              "Type": "String",
+              "Computed": true
+            },
+            "type": {
+              "Type": "String",
+              "Computed": true
+            },
+            "url": {
+              "Type": "String",
+              "Computed": true
+            },
+            "write_token": {
+              "Type": "String",
+              "Computed": true
+            }
+          }
         }
       }
     },

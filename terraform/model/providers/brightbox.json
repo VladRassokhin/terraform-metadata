@@ -1,9 +1,9 @@
 {
   ".schema_version": "2",
-  ".sdk_type": "terraform-plugin-sdk-v1",
+  ".sdk_type": "terraform-plugin-sdk-v2",
   "name": "brightbox",
   "type": "provider",
-  "version": "v1.3.0",
+  "version": "v2.0.3",
   "provider": {
     "account": {
       "Type": "String",
@@ -137,6 +137,16 @@
         "Description": "Old alias of the IPv4 address",
         "Computed": true
       },
+      "public_ipv4": {
+        "Type": "String",
+        "Description": "IPv4 address",
+        "Computed": true
+      },
+      "public_ipv6": {
+        "Type": "String",
+        "Description": "IPv6 address",
+        "Computed": true
+      },
       "reverse_dns": {
         "Type": "String",
         "Optional": true,
@@ -152,6 +162,27 @@
         "Type": "String",
         "Optional": true,
         "Description": "The object this Cloud IP maps to"
+      }
+    },
+    "brightbox_config_map": {
+      "__timeouts__": [
+        "create",
+        "delete"
+      ],
+      "data": {
+        "Type": "Map",
+        "Required": true,
+        "Description": "keys/values making up the ConfigMap",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "User editable label"
       }
     },
     "brightbox_database_server": {
@@ -238,7 +269,10 @@
         "Type": "String",
         "Optional": true,
         "Description": "Crontab pattern for scheduled snapshots. Must be at least hourly",
-        "Computed": true
+        "Default": {
+          "Type": "string",
+          "Value": "0 7 * * *"
+        }
       },
       "snapshots_schedule_next_at": {
         "Type": "String",
@@ -290,7 +324,10 @@
       "destination": {
         "Type": "String",
         "Optional": true,
-        "Description": "Subnet, ServerGroup or ServerID"
+        "Description": "Subnet, ServerGroup or ServerID",
+        "ConflictsWith": [
+          "source"
+        ]
       },
       "destination_port": {
         "Type": "String",
@@ -315,7 +352,10 @@
       "source": {
         "Type": "String",
         "Optional": true,
-        "Description": "Subnet, ServerGroup or ServerID"
+        "Description": "Subnet, ServerGroup or ServerID",
+        "ConflictsWith": [
+          "destination"
+        ]
       },
       "source_port": {
         "Type": "String",
@@ -343,6 +383,20 @@
         "Type": "String",
         "Optional": true,
         "Description": "RSA private key used to sign the certificate in PEM format"
+      },
+      "domains": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Array of domain names to attempt to register with ACME",
+        "ConflictsWith": [
+          "certificate_pem",
+          "certificate_private_key"
+        ],
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       },
       "healthcheck": {
         "Type": "List",
@@ -397,6 +451,15 @@
           }
         }
       },
+      "https_redirect": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Redirect any requests on port 80 automatically to port 443",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
       "listener": {
         "Type": "Set",
         "Required": true,
@@ -420,6 +483,11 @@
               "Type": "String",
               "Required": true,
               "Description": "The protocol to load balance (http/tcp)"
+            },
+            "proxy_protocol": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The version of the Proxy Protocol supported by the backend servers"
             },
             "timeout": {
               "Type": "Int",
@@ -445,7 +513,7 @@
       "name": {
         "Type": "String",
         "Optional": true,
-        "Description": "Eitable user label"
+        "Description": "Editable user label"
       },
       "nodes": {
         "Type": "Set",
@@ -464,10 +532,17 @@
         "Description": "Method of load balancing. Supports `least-connections`, `round-robin` or `source-address`)",
         "Computed": true
       },
+      "ssl_minimum_version": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The minimum TLS/SSL version for the load balancer to accept. Supports `TLSv1.0`, `TLSv1.1`, `TLSv1.2`, `TLSv1.3` and `SSLv3`",
+        "Computed": true
+      },
       "sslv3": {
         "Type": "Bool",
         "Optional": true,
         "Description": "Allow SSLv3 to be used",
+        "Deprecated": "No longer supported. Will always return false",
         "Default": {
           "Type": "bool",
           "Value": "false"
@@ -571,6 +646,12 @@
         "create",
         "delete"
       ],
+      "disk_encrypted": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Is true if the server has been built with an encrypted disk",
+        "Computed": true
+      },
       "fqdn": {
         "Type": "String",
         "Description": "Fully qualified domain name",
@@ -663,7 +744,7 @@
       "user_data_base64": {
         "Type": "String",
         "Optional": true,
-        "Description": "Base64 encoded data made availalbe to Cloud Init",
+        "Description": "Base64 encoded data made available to Cloud Init",
         "ConflictsWith": [
           "user_data"
         ]
@@ -685,15 +766,25 @@
         "create",
         "delete"
       ],
+      "default": {
+        "Type": "Bool",
+        "Description": "Is this the default group for the account?",
+        "Computed": true
+      },
       "description": {
         "Type": "String",
         "Optional": true,
-        "Description": "USer editable label"
+        "Description": "User editable label"
+      },
+      "fqdn": {
+        "Type": "String",
+        "Description": "Fully Qualified Domain Name",
+        "Computed": true
       },
       "name": {
         "Type": "String",
         "Optional": true,
-        "Description": "USer editable label"
+        "Description": "User editable label"
       }
     }
   },
@@ -826,10 +917,20 @@
       }
     },
     "brightbox_server_group": {
+      "default": {
+        "Type": "Bool",
+        "Description": "Is this the default group for the account?",
+        "Computed": true
+      },
       "description": {
         "Type": "String",
         "Optional": true,
         "Description": "User Description",
+        "Computed": true
+      },
+      "fqdn": {
+        "Type": "String",
+        "Description": "Fully Qualified Domain Name",
         "Computed": true
       },
       "name": {

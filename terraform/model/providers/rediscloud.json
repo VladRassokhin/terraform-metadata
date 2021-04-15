@@ -1,0 +1,988 @@
+{
+  ".schema_version": "2",
+  ".sdk_type": "terraform-plugin-sdk-v2",
+  "name": "rediscloud",
+  "type": "provider",
+  "version": "v0.2.1",
+  "provider": {
+    "api_key": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "This is the Redis Cloud API key. It must be provided but can also be set by the `REDISCLOUD_ACCESS_KEY` environment variable."
+    },
+    "secret_key": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "This is the Redis Cloud API secret key. It must be provided but can also be set by the `REDISCLOUD_SECRET_KEY` environment variable."
+    },
+    "url": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "This is the URL of Redis Cloud and will default to `https://api.redislabs.com/v1`. This can also be set by the `REDISCLOUD_URL` environment variable.",
+      "DefaultFunc": "ENV(REDISCLOUD_URL)"
+    }
+  },
+  "resources": {
+    "rediscloud_cloud_account": {
+      "__timeouts__": [
+        "create",
+        "read",
+        "update",
+        "delete"
+      ],
+      "access_key_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Cloud provider access key"
+      },
+      "access_secret_key": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Cloud provider secret key"
+      },
+      "console_password": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Cloud provider management console password"
+      },
+      "console_username": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Cloud provider management console username"
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Display name of the account"
+      },
+      "provider_type": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Cloud provider type - either `AWS` or `GCP`"
+      },
+      "sign_in_login_url": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Cloud provider management console login URL"
+      },
+      "status": {
+        "Type": "String",
+        "Description": "The current status of the account - `draft`, `pending` or `active`",
+        "Computed": true
+      }
+    },
+    "rediscloud_subscription": {
+      "__timeouts__": [
+        "create",
+        "read",
+        "update",
+        "delete"
+      ],
+      "allowlist": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "An allowlist object",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "cidrs": {
+              "Type": "Set",
+              "Optional": true,
+              "Description": "Set of CIDR ranges that are allowed to access the databases associated with this subscription",
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "security_group_ids": {
+              "Type": "Set",
+              "Optional": true,
+              "Description": "Set of security groups that are allowed to access the databases associated with this subscription",
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
+      "cloud_provider": {
+        "Type": "List",
+        "Required": true,
+        "Description": "A cloud provider object",
+        "MaxItems": 1,
+        "MinItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "cloud_account_id": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Cloud account identifier. Default: Redis Labs internal cloud account (using Cloud Account Id = 1 implies using Redis Labs internal cloud account). Note that a GCP subscription can be created only with Redis Labs internal cloud account",
+              "Default": {
+                "Type": "string",
+                "Value": "1"
+              }
+            },
+            "provider": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The cloud provider to use with the subscription, (either `AWS` or `GCP`)",
+              "Default": {
+                "Type": "string",
+                "Value": "AWS"
+              }
+            },
+            "region": {
+              "Type": "Set",
+              "Required": true,
+              "Description": "Cloud networking details, per region (single region or multiple regions for Active-Active cluster only)",
+              "MinItems": 1,
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "multiple_availability_zones": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Description": "Support deployment on multiple availability zones within the selected region",
+                    "Default": {
+                      "Type": "bool",
+                      "Value": "false"
+                    }
+                  },
+                  "networking_deployment_cidr": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "Deployment CIDR mask"
+                  },
+                  "networking_vpc_id": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Either an existing VPC Id (already exists in the specific region) or create a new VPC (if no VPC is specified)",
+                    "Default": {
+                      "Type": "string"
+                    }
+                  },
+                  "networks": {
+                    "Type": "List",
+                    "Description": "List of networks used",
+                    "Computed": true,
+                    "IsBlock": true,
+                    "ConfigImplicitMode": "ComputedBlock",
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "networking_deployment_cidr": {
+                          "Type": "String",
+                          "Description": "Deployment CIDR mask",
+                          "Computed": true
+                        },
+                        "networking_subnet_id": {
+                          "Type": "String",
+                          "Description": "The subnet that the subscription deploys into",
+                          "Computed": true
+                        },
+                        "networking_vpc_id": {
+                          "Type": "String",
+                          "Description": "Either an existing VPC Id (already exists in the specific region) or create a new VPC (if no VPC is specified)",
+                          "Computed": true
+                        }
+                      }
+                    }
+                  },
+                  "preferred_availability_zones": {
+                    "Type": "List",
+                    "Required": true,
+                    "Description": "List of availability zones used",
+                    "ConfigImplicitMode": "Attr",
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  },
+                  "region": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "Deployment region as defined by cloud provider"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "database": {
+        "Type": "Set",
+        "Required": true,
+        "Description": "A database object",
+        "MinItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "alert": {
+              "Type": "Set",
+              "Optional": true,
+              "Description": "Set of alerts to enable on the database",
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "name": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "Alert name"
+                  },
+                  "value": {
+                    "Type": "Int",
+                    "Required": true,
+                    "Description": "Alert value"
+                  }
+                }
+              }
+            },
+            "average_item_size_in_bytes": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "Relevant only to ram-and-flash clusters. Estimated average size (measured in bytes) of the items stored in the database",
+              "Default": {
+                "Type": "int",
+                "Value": "0"
+              }
+            },
+            "client_ssl_certificate": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "SSL certificate to authenticate user connections",
+              "Default": {
+                "Type": "string"
+              }
+            },
+            "data_persistence": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Rate of database data persistence (in persistent storage)",
+              "Default": {
+                "Type": "string",
+                "Value": "none"
+              }
+            },
+            "db_id": {
+              "Type": "Int",
+              "Description": "Identifier of the database created",
+              "Computed": true
+            },
+            "external_endpoint_for_oss_cluster_api": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Should use the external endpoint for open-source (OSS) Cluster API",
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
+              }
+            },
+            "hashing_policy": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "List of regular expression rules to shard the database by. See the documentation on clustering for more information on the hashing policy - https://docs.redislabs.com/latest/rc/concepts/clustering/",
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "memory_limit_in_gb": {
+              "Type": "Float",
+              "Required": true,
+              "Description": "Maximum memory usage for this specific database"
+            },
+            "module": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "A module object",
+              "MaxItems": 1,
+              "MinItems": 1,
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "name": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "Name of the module to enable"
+                  }
+                }
+              }
+            },
+            "name": {
+              "Type": "String",
+              "Required": true,
+              "Description": "A meaningful name to identify the database"
+            },
+            "password": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Password used to access the database"
+            },
+            "periodic_backup_path": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Path that will be used to store database backup files",
+              "Default": {
+                "Type": "string"
+              }
+            },
+            "private_endpoint": {
+              "Type": "String",
+              "Description": "Private endpoint to access the database",
+              "Computed": true
+            },
+            "protocol": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The protocol that will be used to access the database, (either ‘redis’ or 'memcached’) "
+            },
+            "public_endpoint": {
+              "Type": "String",
+              "Description": "Public endpoint to access the database",
+              "Computed": true
+            },
+            "replica_of": {
+              "Type": "Set",
+              "Optional": true,
+              "Description": "Set of Redis database URIs, in the format `redis://user:password@host:port`, that this database will be a replica of. If the URI provided is Redis Labs Cloud instance, only host and port should be provided",
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "replication": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Databases replication",
+              "Default": {
+                "Type": "bool",
+                "Value": "true"
+              }
+            },
+            "source_ips": {
+              "Type": "Set",
+              "Optional": true,
+              "Description": "Set of CIDR addresses to allow access to the database",
+              "MinItems": 1,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "support_oss_cluster_api": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Support Redis open-source (OSS) Cluster API",
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
+              }
+            },
+            "throughput_measurement_by": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Throughput measurement method, (either ‘number-of-shards’ or ‘operations-per-second’)"
+            },
+            "throughput_measurement_value": {
+              "Type": "Int",
+              "Required": true,
+              "Description": "Throughput value (as applies to selected measurement method)"
+            }
+          }
+        }
+      },
+      "memory_storage": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Memory storage preference: either ‘ram’ or a combination of 'ram-and-flash’",
+        "Default": {
+          "Type": "string",
+          "Value": "ram"
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "A meaningful name to identify the subscription"
+      },
+      "payment_method_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "A valid payment method pre-defined in the current account"
+      },
+      "persistent_storage_encryption": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Encrypt data stored in persistent storage. Required for a GCP subscription",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      }
+    },
+    "rediscloud_subscription_peering": {
+      "__timeouts__": [
+        "create",
+        "read",
+        "delete"
+      ],
+      "aws_account_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "AWS account id that the VPC to be peered lives in",
+        "Computed": true
+      },
+      "aws_peering_id": {
+        "Type": "String",
+        "Description": "Identifier of the AWS cloud peering",
+        "Computed": true
+      },
+      "gcp_network_name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of the network to be peered",
+        "Computed": true
+      },
+      "gcp_peering_id": {
+        "Type": "String",
+        "Description": "Identifier of the cloud peering",
+        "Computed": true
+      },
+      "gcp_project_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "GCP project ID that the VPC to be peered lives in",
+        "Computed": true
+      },
+      "gcp_redis_network_name": {
+        "Type": "String",
+        "Description": "The name of the Redis Enterprise Cloud network to be peered",
+        "Computed": true
+      },
+      "gcp_redis_project_id": {
+        "Type": "String",
+        "Description": "Identifier of the Redis Enterprise Cloud GCP project to be peered",
+        "Computed": true
+      },
+      "provider_name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The cloud provider to use with the vpc peering, (either `AWS` or `GCP`)",
+        "Default": {
+          "Type": "string",
+          "Value": "AWS"
+        }
+      },
+      "region": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "AWS Region that the VPC to be peered lives in",
+        "Computed": true
+      },
+      "status": {
+        "Type": "String",
+        "Description": "Current status of the account - `initiating-request`, `pending-acceptance`, `active`, `inactive` or `failed`",
+        "Computed": true
+      },
+      "subscription_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "A valid subscription predefined in the current account"
+      },
+      "vpc_cidr": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "CIDR range of the VPC to be peered",
+        "Computed": true
+      },
+      "vpc_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Identifier of the VPC to be peered",
+        "Computed": true
+      }
+    }
+  },
+  "data-sources": {
+    "rediscloud_cloud_account": {
+      "access_key_id": {
+        "Type": "String",
+        "Description": "The access key ID associated with the cloud account",
+        "Computed": true
+      },
+      "exclude_internal_account": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether to exclude the Redis Labs internal cloud account.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "A meaningful name to identify the cloud account",
+        "Computed": true
+      },
+      "provider_type": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The cloud provider of the cloud account, (either `AWS` or `GCP`)",
+        "Computed": true
+      }
+    },
+    "rediscloud_data_persistence": {
+      "data_persistence": {
+        "Type": "Set",
+        "Description": "A list of data persistence option that can be applied to subscription databases",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "description": {
+              "Type": "String",
+              "Description": "A meaningful description of the data persistence option",
+              "Computed": true
+            },
+            "name": {
+              "Type": "String",
+              "Description": "The identifier of the data persistence option",
+              "Computed": true
+            }
+          }
+        }
+      }
+    },
+    "rediscloud_database": {
+      "alert": {
+        "Type": "Set",
+        "Description": "Set of alerts to enable on the database",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "name": {
+              "Type": "String",
+              "Description": "The alert name",
+              "Computed": true
+            },
+            "value": {
+              "Type": "Int",
+              "Description": "The alert value",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "data_persistence": {
+        "Type": "String",
+        "Description": "The rate of database data persistence (in persistent storage)",
+        "Computed": true
+      },
+      "hashing_policy": {
+        "Type": "List",
+        "Description": "The list of regular expression rules the database is sharded by",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "memory_limit_in_gb": {
+        "Type": "Float",
+        "Description": "The maximum memory usage for the database",
+        "Computed": true
+      },
+      "module": {
+        "Type": "Set",
+        "Description": "Redis modules that have been enabled on the database",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "name": {
+              "Type": "String",
+              "Description": "Name of the module",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of the database to filter returned databases",
+        "Computed": true
+      },
+      "password": {
+        "Type": "String",
+        "Description": "The password used to access the database - not present on `memcached` protocol databases",
+        "Computed": true
+      },
+      "private_endpoint": {
+        "Type": "String",
+        "Description": "Private endpoint to access the database",
+        "Computed": true
+      },
+      "protocol": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The protocol of the database to filter returned databases",
+        "Computed": true
+      },
+      "public_endpoint": {
+        "Type": "String",
+        "Description": "Public endpoint to access the database",
+        "Computed": true
+      },
+      "region": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The region of the database to filter returned databases",
+        "Computed": true
+      },
+      "replica_of": {
+        "Type": "Set",
+        "Description": "The set of Redis database URIs, in the format `redis://user:password@host:port`, that this database will be a replica of",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "replication": {
+        "Type": "Bool",
+        "Description": "Database replication",
+        "Computed": true
+      },
+      "subscription_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "ID of the subscription that the database belongs to"
+      },
+      "support_oss_cluster_api": {
+        "Type": "Bool",
+        "Description": "Supports the Redis open-source (OSS) Cluster API",
+        "Computed": true
+      },
+      "throughput_measurement_by": {
+        "Type": "String",
+        "Description": "The throughput measurement method",
+        "Computed": true
+      },
+      "throughput_measurement_value": {
+        "Type": "Int",
+        "Description": "The throughput value",
+        "Computed": true
+      }
+    },
+    "rediscloud_database_modules": {
+      "modules": {
+        "Type": "Set",
+        "Description": "A list of database modules",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "description": {
+              "Type": "String",
+              "Description": "A meaningful description of the database module",
+              "Computed": true
+            },
+            "name": {
+              "Type": "String",
+              "Description": "The identifier assigned by the database module",
+              "Computed": true
+            }
+          }
+        }
+      }
+    },
+    "rediscloud_payment_method": {
+      "card_type": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Type of card that the payment method should be, such as `Visa`",
+        "Computed": true
+      },
+      "exclude_expired": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether to exclude any expired cards or not",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "last_four_numbers": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Last four numbers of the card of the payment method",
+        "Computed": true
+      }
+    },
+    "rediscloud_regions": {
+      "provider_name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of the cloud provider to filter returned regions, (accepted values are `AWS` or `GCP`)."
+      },
+      "regions": {
+        "Type": "Set",
+        "Description": "A list of regions from either a single or multiple cloud providers",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "name": {
+              "Type": "String",
+              "Description": "The identifier assigned by the cloud provider, (for example `eu-west-1` for `AWS`)",
+              "Computed": true
+            },
+            "provider_name": {
+              "Type": "String",
+              "Description": "The identifier of the owning cloud provider, (either `AWS` or `GCP`)",
+              "Computed": true
+            }
+          }
+        }
+      }
+    },
+    "rediscloud_subscription": {
+      "cloud_provider": {
+        "Type": "List",
+        "Description": "A cloud provider object",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "cloud_account_id": {
+              "Type": "String",
+              "Description": "Cloud account identifier, (A Cloud Account Id = 1 implies using Redis Labs internal cloud account)",
+              "Computed": true
+            },
+            "provider": {
+              "Type": "String",
+              "Description": "The cloud provider to use with the subscription, (either `AWS` or `GCP`)",
+              "Computed": true
+            },
+            "region": {
+              "Type": "Set",
+              "Description": "Cloud networking details, per region (single region or multiple regions for Active-Active cluster only)",
+              "Computed": true,
+              "IsBlock": true,
+              "ConfigImplicitMode": "ComputedBlock",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "multiple_availability_zones": {
+                    "Type": "Bool",
+                    "Description": "Support deployment on multiple availability zones within the selected region",
+                    "Computed": true
+                  },
+                  "networking_vpc_id": {
+                    "Type": "String",
+                    "Description": "The ID of the VPC where the Redis Cloud subscription is deployed",
+                    "Computed": true
+                  },
+                  "networks": {
+                    "Type": "List",
+                    "Description": "List of networks used",
+                    "Computed": true,
+                    "IsBlock": true,
+                    "ConfigImplicitMode": "ComputedBlock",
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "networking_deployment_cidr": {
+                          "Type": "String",
+                          "Description": "Deployment CIDR mask",
+                          "Computed": true
+                        },
+                        "networking_subnet_id": {
+                          "Type": "String",
+                          "Description": "The subnet that the subscription deploys into",
+                          "Computed": true
+                        },
+                        "networking_vpc_id": {
+                          "Type": "String",
+                          "Description": "Either an existing VPC Id (already exists in the specific region) or create a new VPC (if no VPC is specified)",
+                          "Computed": true
+                        }
+                      }
+                    }
+                  },
+                  "preferred_availability_zones": {
+                    "Type": "List",
+                    "Description": "List of availability zones used",
+                    "Computed": true,
+                    "ConfigImplicitMode": "Attr",
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  },
+                  "region": {
+                    "Type": "String",
+                    "Description": "Deployment region as defined by cloud provider",
+                    "Computed": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "memory_storage": {
+        "Type": "String",
+        "Description": "Memory storage preference: either ‘ram’ or a combination of 'ram-and-flash’",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of the subscription to filter returned subscriptions",
+        "Computed": true
+      },
+      "number_of_databases": {
+        "Type": "Int",
+        "Description": "The number of databases that are linked to this subscription",
+        "Computed": true
+      },
+      "payment_method_id": {
+        "Type": "String",
+        "Description": "A valid payment method pre-defined in the current account",
+        "Computed": true
+      },
+      "persistent_storage_encryption": {
+        "Type": "Bool",
+        "Description": "Encrypt data stored in persistent storage. Required for a GCP subscription",
+        "Computed": true
+      },
+      "status": {
+        "Type": "String",
+        "Description": "Current status of the subscription",
+        "Computed": true
+      }
+    },
+    "rediscloud_subscription_peerings": {
+      "peerings": {
+        "Type": "Set",
+        "Description": "A list of VPC peerings from either a single or multiple cloud providers",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "aws_account_id": {
+              "Type": "String",
+              "Description": "AWS account id that the VPC to be peered lives in",
+              "Computed": true
+            },
+            "aws_peering_id": {
+              "Type": "String",
+              "Description": "Identifier of the AWS cloud peering",
+              "Computed": true
+            },
+            "gcp_network_name": {
+              "Type": "String",
+              "Description": "The name of the network to be peered",
+              "Computed": true
+            },
+            "gcp_peering_id": {
+              "Type": "String",
+              "Description": "Identifier of the cloud peering",
+              "Computed": true
+            },
+            "gcp_project_id": {
+              "Type": "String",
+              "Description": "GCP project ID that the VPC to be peered lives in",
+              "Computed": true
+            },
+            "gcp_redis_network_name": {
+              "Type": "String",
+              "Description": "The name of the Redis Enterprise Cloud network to be peered",
+              "Computed": true
+            },
+            "gcp_redis_project_id": {
+              "Type": "String",
+              "Description": "Identifier of the Redis Enterprise Cloud GCP project to be peered",
+              "Computed": true
+            },
+            "peering_id": {
+              "Type": "Int",
+              "Description": "The identifier of the peering",
+              "Computed": true
+            },
+            "provider_name": {
+              "Type": "String",
+              "Description": "The identifier of the owning cloud provider, (either `AWS` or `GCP`)",
+              "Computed": true
+            },
+            "status": {
+              "Type": "String",
+              "Description": "Current status of the account - `initiating-request`, `pending-acceptance`, `active`, `inactive` or `failed`",
+              "Computed": true
+            },
+            "vpc_cidr": {
+              "Type": "String",
+              "Description": "CIDR range of the VPC to be peered",
+              "Computed": true
+            },
+            "vpc_id": {
+              "Type": "String",
+              "Description": "Identifier of the VPC to be peered",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "status": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Current status of the account - `initiating-request`, `pending-acceptance`, `active`, `inactive` or `failed`"
+      },
+      "subscription_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "A valid subscription predefined in the current account"
+      }
+    }
+  }
+}

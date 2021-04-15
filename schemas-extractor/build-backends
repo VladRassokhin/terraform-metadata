@@ -1,0 +1,141 @@
+#!/usr/bin/env bash
+
+. common.sh
+
+config_data="$(cat $root_path/backends.json)"
+
+backend_out_path="$out_path/backends"
+failures="$out_path/backends-failure.txt"
+
+mkdir -p "$backend_out_path"
+rm -f "$failures"
+touch "$failures"
+
+function process_backend() {
+  name="$1"
+
+  skip_generation="$(jq_get "$name" 'skip_generation' "$config_data")"
+  if [[ $skip_generation == "true" ]]; then
+    return 0
+  fi
+
+  repository="$(jq_get "$name" 'repository' "$config_data")"
+  use_master="$(jq_get "$name" 'use_master' "$config_data")"
+  git_tag="$(jq_get "$name" 'git_tag' "$config_data")"
+
+  location="$base_location/$repository"
+
+  if [[ ! -d "$location" ]]; then
+    echo "$location doesn't exist, skipping"
+    return 1
+  fi
+
+  if output=$(git -C "$location" status --untracked-files=no --porcelain) && [[ -n "$output" ]]; then
+    if [[ -z "${RESET_REPOS:-}" ]]; then
+      mkdir -p "$logs"
+      echo "git working copy '$location' is not clear, cannot proceed" | tee "$logs_path/backend-$name.log"
+      echo "$name" >>"$failures"
+      return 2
+    else
+      git -C "$location" reset --hard
+      git -C "$location" clean -fdx
+    fi
+  fi
+
+  pushd "$location" >/dev/null || return
+
+  echo "Preparing $name"
+
+  if [[ "$use_master" == "true" ]]; then
+    echo "Using master"
+    latest="master"
+  else
+    # All tags:
+    echo "Repository newest tags:"
+    git tag -l --sort=-v:refname | head -n 5
+    latest=$(git tag -l --sort=-v:refname | head -n 1)
+
+    if [[ "$git_tag" != "git_tag" ]]; then
+      latest=$git_tag
+    fi
+
+    if [[ -z "$latest" ]]; then
+      echo "There's no tags in $name, will use current state"
+    else
+      echo "Will generate schema for tag '$latest'"
+    fi
+  fi
+
+  [[ -n "$latest" ]] && git checkout -q "$latest"
+
+  if ! git rev-parse HEAD &>/dev/null; then
+    echo "'git rev-parse HEAD' failed, skipping $name"
+    return
+  fi
+
+  revision="$(git describe --tags)"
+  if [[ -n "$latest" ]] && [[ "$revision" != "$latest" ]]; then
+    echo "WARN: 'git describe' and tag mismatch: '$revision' vs '$latest', will use '$latest'"
+    revision="$latest"
+  fi
+
+  if [ -f "$backend_out_path/$name.json" ] && command -v jq &>/dev/null; then
+    current="$(jq -r '.version' "$backend_out_path/$name.json")"
+    echo "Version in existing schema: $current"
+    if [[ "$current" == "$revision" ]]; then
+      echo "Version in existing schema is same as desired, skipping generation"
+      return
+    fi
+  fi
+
+  sdk="builtin"
+  base_file="backend/generate-schema-backend.go"
+  echo "Using sdk: $sdk"
+  echo "Using base file: $base_file"
+
+  sed \
+    -e "s~__REPOSITORY__~$repository~g" \
+    -e "s~__NAME__~${name}~g" \
+    -e "s~__REVISION__~$revision~g" \
+    -e "s~__SDK__~$sdk~g" \
+    -e "s~__OUT__~$backend_out_path~g" \
+    "$root_path/template/$base_file" \
+    >$name-backend-generate-schema.go
+
+  mkdir -p "$logs"
+  log_file="$logs/backend-$name.log"
+
+  set +e
+  eval go run $name-backend-generate-schema.go 2>&1 | tee "$log_file"
+  ec=$?
+  if [[ $ec -eq 0 ]]; then
+    rm "$log_file"
+  else
+    echo "$1" >>"$failures"
+  fi
+  echo "Completed building $1"
+  set -e
+
+  # Revert to previous state
+  [[ -n "$latest" ]] && git checkout --force -q '@{-1}'
+  popd >/dev/null || return
+}
+
+backends=( $(echo $config_data | jq -r 'keys[] | select(contains("__NAME__") | not)') )
+
+echo "*****************************************************************"
+echo "**"
+echo "** Building Backends"
+echo "** Backends to Build: ${#backends[@]}"
+echo "**"
+echo "*****************************************************************"
+
+completed_count=0
+for backend in "${backends[@]}"; do
+  process_backend "$backend" || true
+  completed_count=$((completed_count + 1))
+  echo "$completed_count of ${#backends[@]}" completed...
+  echo ""
+done
+
+echo $config_data | jq -r 'keys[] | select(contains("__NAME__") | not)' > $out_path/backends.list

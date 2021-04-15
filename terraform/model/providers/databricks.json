@@ -1,0 +1,3579 @@
+{
+  ".schema_version": "2",
+  ".sdk_type": "terraform-plugin-sdk-v2",
+  "name": "databricks",
+  "type": "provider",
+  "version": "v0.3.2",
+  "provider": {
+    "azure_client_id": {
+      "Type": "String",
+      "Optional": true,
+      "DefaultFunc": "MENV(DATABRICKS_AZURE_CLIENT_ID,ARM_CLIENT_ID)"
+    },
+    "azure_client_secret": {
+      "Type": "String",
+      "Optional": true,
+      "DefaultFunc": "MENV(DATABRICKS_AZURE_CLIENT_SECRET,ARM_CLIENT_SECRET)"
+    },
+    "azure_environment": {
+      "Type": "String",
+      "Optional": true,
+      "DefaultFunc": "ENV(ARM_ENVIRONMENT)"
+    },
+    "azure_pat_token_duration_seconds": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "Currently secret scopes are not accessible via AAD tokens so we will need to create a PAT token",
+      "Default": {
+        "Type": "string",
+        "Value": "3600"
+      }
+    },
+    "azure_resource_group": {
+      "Type": "String",
+      "Optional": true,
+      "DefaultFunc": "ENV(DATABRICKS_AZURE_RESOURCE_GROUP)"
+    },
+    "azure_subscription_id": {
+      "Type": "String",
+      "Optional": true,
+      "DefaultFunc": "MENV(DATABRICKS_AZURE_SUBSCRIPTION_ID,ARM_SUBSCRIPTION_ID)"
+    },
+    "azure_tenant_id": {
+      "Type": "String",
+      "Optional": true,
+      "DefaultFunc": "MENV(DATABRICKS_AZURE_TENANT_ID,ARM_TENANT_ID)"
+    },
+    "azure_use_pat_for_cli": {
+      "Type": "Bool",
+      "Optional": true,
+      "Description": "Create ephemeral PAT tokens also for AZ CLI authenticated requests",
+      "Default": {
+        "Type": "bool",
+        "Value": "false"
+      }
+    },
+    "azure_workspace_name": {
+      "Type": "String",
+      "Optional": true,
+      "DefaultFunc": "ENV(DATABRICKS_AZURE_WORKSPACE_NAME)",
+      "ConflictsWith": [
+        "azure_workspace_resource_id"
+      ]
+    },
+    "azure_workspace_resource_id": {
+      "Type": "String",
+      "Optional": true,
+      "DefaultFunc": "MENV(DATABRICKS_AZURE_WORKSPACE_RESOURCE_ID,AZURE_DATABRICKS_WORKSPACE_RESOURCE_ID)",
+      "ConflictsWith": [
+        "azure_workspace_name"
+      ]
+    },
+    "config_file": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "Location of the Databricks CLI credentials file, that is created\nby `databricks configure --token` command. By default, it is located\nin ~/.databrickscfg. Check  https://docs.databricks.com/dev-tools/cli/index.html#set-up-authentication for docs. Config\nfile credentials will only be used when host/token are not provided.",
+      "DefaultFunc": "ENV(DATABRICKS_CONFIG_FILE)",
+      "ConflictsWith": [
+        "token",
+        "host"
+      ]
+    },
+    "debug_headers": {
+      "Type": "Bool",
+      "Optional": true,
+      "Description": "Debug HTTP headers of requests made by the provider. Default is false. Visible only when TF_LOG=DEBUG is set",
+      "DefaultFunc": "ENV(DATABRICKS_DEBUG_HEADERS)"
+    },
+    "debug_truncate_bytes": {
+      "Type": "Int",
+      "Optional": true,
+      "Description": "Truncate JSON fields in JSON above this limit. Default is 96. Visible only when TF_LOG=DEBUG is set",
+      "DefaultFunc": "ENV(DATABRICKS_DEBUG_TRUNCATE_BYTES)"
+    },
+    "host": {
+      "Type": "String",
+      "Optional": true,
+      "DefaultFunc": "ENV(DATABRICKS_HOST)",
+      "ConflictsWith": [
+        "config_file"
+      ]
+    },
+    "password": {
+      "Type": "String",
+      "Optional": true,
+      "DefaultFunc": "ENV(DATABRICKS_PASSWORD)",
+      "ConflictsWith": [
+        "token"
+      ]
+    },
+    "profile": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "Connection profile specified within ~/.databrickscfg. Please check\nhttps://docs.databricks.com/dev-tools/cli/index.html#connection-profiles for documentation.",
+      "DefaultFunc": "ENV(DATABRICKS_CONFIG_PROFILE)",
+      "ConflictsWith": [
+        "token"
+      ]
+    },
+    "rate_limit": {
+      "Type": "Int",
+      "Optional": true,
+      "Description": "Maximum number of requests per second made to Databricks REST API by Terraform.",
+      "DefaultFunc": "ENV(DATABRICKS_RATE_LIMIT)"
+    },
+    "skip_verify": {
+      "Type": "Bool",
+      "Optional": true,
+      "Description": "Skip SSL certificate verification for HTTP calls. Use at your own risk.",
+      "Default": {
+        "Type": "bool",
+        "Value": "false"
+      }
+    },
+    "token": {
+      "Type": "String",
+      "Optional": true,
+      "DefaultFunc": "ENV(DATABRICKS_TOKEN)",
+      "ConflictsWith": [
+        "username",
+        "password",
+        "config_file",
+        "profile"
+      ]
+    },
+    "username": {
+      "Type": "String",
+      "Optional": true,
+      "DefaultFunc": "ENV(DATABRICKS_USERNAME)",
+      "ConflictsWith": [
+        "token"
+      ]
+    }
+  },
+  "resources": {
+    "databricks_aws_s3_mount": {
+      "cluster_id": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "instance_profile": {
+        "Type": "String",
+        "Optional": true
+      },
+      "mount_name": {
+        "Type": "String",
+        "Required": true
+      },
+      "s3_bucket_name": {
+        "Type": "String",
+        "Required": true
+      },
+      "source": {
+        "Type": "String",
+        "Computed": true
+      }
+    },
+    "databricks_azure_adls_gen1_mount": {
+      "client_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "client_secret_key": {
+        "Type": "String",
+        "Required": true
+      },
+      "client_secret_scope": {
+        "Type": "String",
+        "Required": true
+      },
+      "cluster_id": {
+        "Type": "String",
+        "Optional": true
+      },
+      "directory": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "mount_name": {
+        "Type": "String",
+        "Required": true
+      },
+      "source": {
+        "Type": "String",
+        "Computed": true
+      },
+      "spark_conf_prefix": {
+        "Type": "String",
+        "Optional": true,
+        "Default": {
+          "Type": "string",
+          "Value": "fs.adl"
+        }
+      },
+      "storage_resource_name": {
+        "Type": "String",
+        "Required": true
+      },
+      "tenant_id": {
+        "Type": "String",
+        "Required": true
+      }
+    },
+    "databricks_azure_adls_gen2_mount": {
+      "client_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "client_secret_key": {
+        "Type": "String",
+        "Required": true
+      },
+      "client_secret_scope": {
+        "Type": "String",
+        "Required": true
+      },
+      "cluster_id": {
+        "Type": "String",
+        "Optional": true
+      },
+      "container_name": {
+        "Type": "String",
+        "Required": true
+      },
+      "directory": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "initialize_file_system": {
+        "Type": "Bool",
+        "Required": true
+      },
+      "mount_name": {
+        "Type": "String",
+        "Required": true
+      },
+      "source": {
+        "Type": "String",
+        "Computed": true
+      },
+      "storage_account_name": {
+        "Type": "String",
+        "Required": true
+      },
+      "tenant_id": {
+        "Type": "String",
+        "Required": true
+      }
+    },
+    "databricks_azure_blob_mount": {
+      "auth_type": {
+        "Type": "String",
+        "Required": true
+      },
+      "cluster_id": {
+        "Type": "String",
+        "Optional": true
+      },
+      "container_name": {
+        "Type": "String",
+        "Required": true
+      },
+      "directory": {
+        "Type": "String",
+        "Optional": true,
+        "Default": {
+          "Type": "string",
+          "Value": "/"
+        }
+      },
+      "mount_name": {
+        "Type": "String",
+        "Required": true
+      },
+      "source": {
+        "Type": "String",
+        "Computed": true
+      },
+      "storage_account_name": {
+        "Type": "String",
+        "Required": true
+      },
+      "token_secret_key": {
+        "Type": "String",
+        "Required": true
+      },
+      "token_secret_scope": {
+        "Type": "String",
+        "Required": true
+      }
+    },
+    "databricks_cluster": {
+      "__timeouts__": [
+        "create",
+        "update",
+        "delete"
+      ],
+      "autoscale": {
+        "Type": "List",
+        "Optional": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "max_workers": {
+              "Type": "Int",
+              "Optional": true
+            },
+            "min_workers": {
+              "Type": "Int",
+              "Optional": true
+            }
+          }
+        }
+      },
+      "autotermination_minutes": {
+        "Type": "Int",
+        "Optional": true,
+        "Default": {
+          "Type": "int",
+          "Value": "60"
+        }
+      },
+      "aws_attributes": {
+        "Type": "List",
+        "Optional": true,
+        "MaxItems": 1,
+        "ConflictsWith": [
+          "azure_attributes",
+          "gcp_attributes"
+        ],
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "availability": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "ebs_volume_count": {
+              "Type": "Int",
+              "Optional": true,
+              "Computed": true
+            },
+            "ebs_volume_size": {
+              "Type": "Int",
+              "Optional": true,
+              "Computed": true
+            },
+            "ebs_volume_type": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "first_on_demand": {
+              "Type": "Int",
+              "Optional": true,
+              "Computed": true
+            },
+            "instance_profile_arn": {
+              "Type": "String",
+              "Optional": true
+            },
+            "spot_bid_price_percent": {
+              "Type": "Int",
+              "Optional": true,
+              "Computed": true
+            },
+            "zone_id": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            }
+          }
+        }
+      },
+      "azure_attributes": {
+        "Type": "List",
+        "Optional": true,
+        "MaxItems": 1,
+        "ConflictsWith": [
+          "aws_attributes",
+          "gcp_attributes"
+        ],
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "availability": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "first_on_demand": {
+              "Type": "Int",
+              "Optional": true,
+              "Computed": true
+            },
+            "spot_bid_max_price": {
+              "Type": "Float",
+              "Optional": true,
+              "Computed": true
+            }
+          }
+        }
+      },
+      "cluster_id": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "cluster_log_conf": {
+        "Type": "List",
+        "Optional": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "dbfs": {
+              "Type": "List",
+              "Optional": true,
+              "MaxItems": 1,
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "destination": {
+                    "Type": "String",
+                    "Required": true
+                  }
+                }
+              }
+            },
+            "s3": {
+              "Type": "List",
+              "Optional": true,
+              "MaxItems": 1,
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "canned_acl": {
+                    "Type": "String",
+                    "Optional": true
+                  },
+                  "destination": {
+                    "Type": "String",
+                    "Required": true
+                  },
+                  "enable_encryption": {
+                    "Type": "Bool",
+                    "Optional": true
+                  },
+                  "encryption_type": {
+                    "Type": "String",
+                    "Optional": true
+                  },
+                  "endpoint": {
+                    "Type": "String",
+                    "Optional": true
+                  },
+                  "kms_key": {
+                    "Type": "String",
+                    "Optional": true
+                  },
+                  "region": {
+                    "Type": "String",
+                    "Optional": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "cluster_name": {
+        "Type": "String",
+        "Optional": true
+      },
+      "custom_tags": {
+        "Type": "Map",
+        "Optional": true
+      },
+      "default_tags": {
+        "Type": "Map",
+        "Computed": true
+      },
+      "docker_image": {
+        "Type": "List",
+        "Optional": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "basic_auth": {
+              "Type": "List",
+              "Optional": true,
+              "MaxItems": 1,
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "password": {
+                    "Type": "String",
+                    "Required": true
+                  },
+                  "username": {
+                    "Type": "String",
+                    "Required": true
+                  }
+                }
+              }
+            },
+            "url": {
+              "Type": "String",
+              "Required": true
+            }
+          }
+        }
+      },
+      "driver_node_type_id": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "enable_elastic_disk": {
+        "Type": "Bool",
+        "Optional": true,
+        "Computed": true
+      },
+      "enable_local_disk_encryption": {
+        "Type": "Bool",
+        "Optional": true
+      },
+      "gcp_attributes": {
+        "Type": "List",
+        "Optional": true,
+        "MaxItems": 1,
+        "ConflictsWith": [
+          "aws_attributes",
+          "azure_attributes"
+        ],
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "google_service_account": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "use_preemptible_executors": {
+              "Type": "Bool",
+              "Optional": true,
+              "Computed": true
+            }
+          }
+        }
+      },
+      "idempotency_token": {
+        "Type": "String",
+        "Optional": true
+      },
+      "init_scripts": {
+        "Type": "List",
+        "Optional": true,
+        "MaxItems": 10,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "dbfs": {
+              "Type": "List",
+              "Optional": true,
+              "MaxItems": 1,
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "destination": {
+                    "Type": "String",
+                    "Required": true
+                  }
+                }
+              }
+            },
+            "file": {
+              "Type": "List",
+              "Optional": true,
+              "MaxItems": 1,
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "destination": {
+                    "Type": "String",
+                    "Optional": true
+                  }
+                }
+              }
+            },
+            "s3": {
+              "Type": "List",
+              "Optional": true,
+              "MaxItems": 1,
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "canned_acl": {
+                    "Type": "String",
+                    "Optional": true
+                  },
+                  "destination": {
+                    "Type": "String",
+                    "Required": true
+                  },
+                  "enable_encryption": {
+                    "Type": "Bool",
+                    "Optional": true
+                  },
+                  "encryption_type": {
+                    "Type": "String",
+                    "Optional": true
+                  },
+                  "endpoint": {
+                    "Type": "String",
+                    "Optional": true
+                  },
+                  "kms_key": {
+                    "Type": "String",
+                    "Optional": true
+                  },
+                  "region": {
+                    "Type": "String",
+                    "Optional": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "instance_pool_id": {
+        "Type": "String",
+        "Optional": true
+      },
+      "is_pinned": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "library": {
+        "Type": "Set",
+        "Optional": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "cran": {
+              "Type": "List",
+              "Optional": true,
+              "MaxItems": 1,
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "package": {
+                    "Type": "String",
+                    "Required": true
+                  },
+                  "repo": {
+                    "Type": "String",
+                    "Optional": true
+                  }
+                }
+              }
+            },
+            "egg": {
+              "Type": "String",
+              "Optional": true
+            },
+            "jar": {
+              "Type": "String",
+              "Optional": true
+            },
+            "maven": {
+              "Type": "List",
+              "Optional": true,
+              "MaxItems": 1,
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "coordinates": {
+                    "Type": "String",
+                    "Required": true
+                  },
+                  "exclusions": {
+                    "Type": "List",
+                    "Optional": true,
+                    "ConfigImplicitMode": "Attr",
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  },
+                  "repo": {
+                    "Type": "String",
+                    "Optional": true
+                  }
+                }
+              }
+            },
+            "pypi": {
+              "Type": "List",
+              "Optional": true,
+              "MaxItems": 1,
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "package": {
+                    "Type": "String",
+                    "Required": true
+                  },
+                  "repo": {
+                    "Type": "String",
+                    "Optional": true
+                  }
+                }
+              }
+            },
+            "whl": {
+              "Type": "String",
+              "Optional": true
+            }
+          }
+        }
+      },
+      "node_type_id": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "num_workers": {
+        "Type": "Int",
+        "Optional": true,
+        "Default": {
+          "Type": "int",
+          "Value": "0"
+        }
+      },
+      "policy_id": {
+        "Type": "String",
+        "Optional": true
+      },
+      "single_user_name": {
+        "Type": "String",
+        "Optional": true
+      },
+      "spark_conf": {
+        "Type": "Map",
+        "Optional": true
+      },
+      "spark_env_vars": {
+        "Type": "Map",
+        "Optional": true
+      },
+      "spark_version": {
+        "Type": "String",
+        "Required": true
+      },
+      "ssh_public_keys": {
+        "Type": "List",
+        "Optional": true,
+        "MaxItems": 10,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "state": {
+        "Type": "String",
+        "Computed": true
+      },
+      "url": {
+        "Type": "String",
+        "Computed": true
+      }
+    },
+    "databricks_cluster_policy": {
+      "definition": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Policy definition JSON document expressed in\nDatabricks Policy Definition Language."
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Cluster policy name. This must be unique.\nLength must be between 1 and 100 characters."
+      },
+      "policy_id": {
+        "Type": "String",
+        "Computed": true
+      }
+    },
+    "databricks_dbfs_file": {
+      "content_base64": {
+        "Type": "String",
+        "Optional": true,
+        "ConflictsWith": [
+          "source"
+        ]
+      },
+      "file_size": {
+        "Type": "Int",
+        "Computed": true
+      },
+      "md5": {
+        "Type": "String",
+        "Optional": true,
+        "Default": {
+          "Type": "string",
+          "Value": "different"
+        }
+      },
+      "path": {
+        "Type": "String",
+        "Required": true
+      },
+      "source": {
+        "Type": "String",
+        "Optional": true,
+        "ConflictsWith": [
+          "content_base64"
+        ]
+      }
+    },
+    "databricks_global_init_script": {
+      "content_base64": {
+        "Type": "String",
+        "Optional": true,
+        "ConflictsWith": [
+          "source"
+        ]
+      },
+      "enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "md5": {
+        "Type": "String",
+        "Optional": true,
+        "Default": {
+          "Type": "string",
+          "Value": "different"
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Required": true
+      },
+      "position": {
+        "Type": "Int",
+        "Optional": true,
+        "Computed": true
+      },
+      "source": {
+        "Type": "String",
+        "Optional": true,
+        "ConflictsWith": [
+          "content_base64"
+        ]
+      }
+    },
+    "databricks_group": {
+      "allow_cluster_create": {
+        "Type": "Bool",
+        "Optional": true
+      },
+      "allow_instance_pool_create": {
+        "Type": "Bool",
+        "Optional": true
+      },
+      "allow_sql_analytics_access": {
+        "Type": "Bool",
+        "Optional": true
+      },
+      "display_name": {
+        "Type": "String",
+        "Required": true
+      },
+      "url": {
+        "Type": "String",
+        "Computed": true
+      }
+    },
+    "databricks_group_instance_profile": {
+      "group_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "instance_profile_id": {
+        "Type": "String",
+        "Required": true
+      }
+    },
+    "databricks_group_member": {
+      "group_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "member_id": {
+        "Type": "String",
+        "Required": true
+      }
+    },
+    "databricks_instance_pool": {
+      "aws_attributes": {
+        "Type": "List",
+        "Optional": true,
+        "MaxItems": 1,
+        "ConflictsWith": [
+          "azure_attributes"
+        ],
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "availability": {
+              "Type": "String",
+              "Optional": true
+            },
+            "spot_bid_price_percent": {
+              "Type": "Int",
+              "Optional": true
+            },
+            "zone_id": {
+              "Type": "String",
+              "Required": true
+            }
+          }
+        }
+      },
+      "azure_attributes": {
+        "Type": "List",
+        "Optional": true,
+        "MaxItems": 1,
+        "ConflictsWith": [
+          "aws_attributes"
+        ],
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "availability": {
+              "Type": "String",
+              "Optional": true
+            },
+            "spot_bid_max_price": {
+              "Type": "Float",
+              "Optional": true,
+              "Computed": true
+            }
+          }
+        }
+      },
+      "custom_tags": {
+        "Type": "Map",
+        "Optional": true
+      },
+      "disk_spec": {
+        "Type": "List",
+        "Optional": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "disk_count": {
+              "Type": "Int",
+              "Optional": true
+            },
+            "disk_size": {
+              "Type": "Int",
+              "Optional": true
+            },
+            "disk_type": {
+              "Type": "List",
+              "Optional": true,
+              "MaxItems": 1,
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "azure_disk_volume_type": {
+                    "Type": "String",
+                    "Optional": true
+                  },
+                  "ebs_volume_type": {
+                    "Type": "String",
+                    "Optional": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "enable_elastic_disk": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "idle_instance_autotermination_minutes": {
+        "Type": "Int",
+        "Required": true
+      },
+      "instance_pool_id": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "instance_pool_name": {
+        "Type": "String",
+        "Required": true
+      },
+      "max_capacity": {
+        "Type": "Int",
+        "Optional": true
+      },
+      "min_idle_instances": {
+        "Type": "Int",
+        "Optional": true
+      },
+      "node_type_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "preloaded_spark_versions": {
+        "Type": "List",
+        "Optional": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      }
+    },
+    "databricks_instance_profile": {
+      "instance_profile_arn": {
+        "Type": "String",
+        "Required": true
+      }
+    },
+    "databricks_ip_access_list": {
+      "enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "ip_addresses": {
+        "Type": "List",
+        "Required": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "label": {
+        "Type": "String",
+        "Required": true
+      },
+      "list_type": {
+        "Type": "String",
+        "Required": true
+      }
+    },
+    "databricks_job": {
+      "email_notifications": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "An optional set of email addresses notified when runs of this job begin and complete and when this job is deleted. The default behavior is to not send any emails.",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "no_alert_for_skipped_runs": {
+              "Type": "Bool",
+              "Optional": true
+            },
+            "on_failure": {
+              "Type": "List",
+              "Optional": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "on_start": {
+              "Type": "List",
+              "Optional": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "on_success": {
+              "Type": "List",
+              "Optional": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
+      "existing_cluster_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "If existing_cluster_id, the ID of an existing cluster that will be used for all runs of this job. When running jobs on an existing cluster, you may need to manually restart the cluster if it stops responding. We strongly suggest to use `new_cluster` for greater reliability."
+      },
+      "library": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "An optional list of libraries to be installed on the cluster that will execute the job. The default value is an empty list.",
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "cran": {
+              "Type": "List",
+              "Optional": true,
+              "MaxItems": 1,
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "package": {
+                    "Type": "String",
+                    "Required": true
+                  },
+                  "repo": {
+                    "Type": "String",
+                    "Optional": true
+                  }
+                }
+              }
+            },
+            "egg": {
+              "Type": "String",
+              "Optional": true
+            },
+            "jar": {
+              "Type": "String",
+              "Optional": true
+            },
+            "maven": {
+              "Type": "List",
+              "Optional": true,
+              "MaxItems": 1,
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "coordinates": {
+                    "Type": "String",
+                    "Required": true
+                  },
+                  "exclusions": {
+                    "Type": "List",
+                    "Optional": true,
+                    "ConfigImplicitMode": "Attr",
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  },
+                  "repo": {
+                    "Type": "String",
+                    "Optional": true
+                  }
+                }
+              }
+            },
+            "pypi": {
+              "Type": "List",
+              "Optional": true,
+              "MaxItems": 1,
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "package": {
+                    "Type": "String",
+                    "Required": true
+                  },
+                  "repo": {
+                    "Type": "String",
+                    "Optional": true
+                  }
+                }
+              }
+            },
+            "whl": {
+              "Type": "String",
+              "Optional": true
+            }
+          }
+        }
+      },
+      "max_concurrent_runs": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "An optional maximum allowed number of concurrent runs of the job.",
+        "Default": {
+          "Type": "int",
+          "Value": "1"
+        }
+      },
+      "max_retries": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "An optional maximum number of times to retry an unsuccessful run. A run is considered to be unsuccessful if it completes with a FAILED result_state or INTERNAL_ERROR life_cycle_state. The value -1 means to retry indefinitely and the value 0 means to never retry. The default behavior is to never retry."
+      },
+      "min_retry_interval_millis": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "An optional minimal interval in milliseconds between the start of the failed run and the subsequent retry run. The default behavior is that unsuccessful runs are immediately retried."
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "An optional name for the job. The default value is Untitled.",
+        "Default": {
+          "Type": "string",
+          "Value": "Untitled"
+        }
+      },
+      "new_cluster": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Same set of parameters as for [databricks_cluster](cluster.md) resource.",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "autoscale": {
+              "Type": "List",
+              "Optional": true,
+              "MaxItems": 1,
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "max_workers": {
+                    "Type": "Int",
+                    "Optional": true
+                  },
+                  "min_workers": {
+                    "Type": "Int",
+                    "Optional": true
+                  }
+                }
+              }
+            },
+            "autotermination_minutes": {
+              "Type": "Int",
+              "Optional": true
+            },
+            "aws_attributes": {
+              "Type": "List",
+              "Optional": true,
+              "MaxItems": 1,
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "availability": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "ebs_volume_count": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "ebs_volume_size": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "ebs_volume_type": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "first_on_demand": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "instance_profile_arn": {
+                    "Type": "String",
+                    "Optional": true
+                  },
+                  "spot_bid_price_percent": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "zone_id": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  }
+                }
+              }
+            },
+            "azure_attributes": {
+              "Type": "List",
+              "Optional": true,
+              "MaxItems": 1,
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "availability": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "first_on_demand": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "spot_bid_max_price": {
+                    "Type": "Float",
+                    "Optional": true,
+                    "Computed": true
+                  }
+                }
+              }
+            },
+            "cluster_id": {
+              "Type": "String",
+              "Optional": true
+            },
+            "cluster_log_conf": {
+              "Type": "List",
+              "Optional": true,
+              "MaxItems": 1,
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "dbfs": {
+                    "Type": "List",
+                    "Optional": true,
+                    "MaxItems": 1,
+                    "IsBlock": true,
+                    "ConfigImplicitMode": "Block",
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "destination": {
+                          "Type": "String",
+                          "Required": true
+                        }
+                      }
+                    }
+                  },
+                  "s3": {
+                    "Type": "List",
+                    "Optional": true,
+                    "MaxItems": 1,
+                    "IsBlock": true,
+                    "ConfigImplicitMode": "Block",
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "canned_acl": {
+                          "Type": "String",
+                          "Optional": true
+                        },
+                        "destination": {
+                          "Type": "String",
+                          "Required": true
+                        },
+                        "enable_encryption": {
+                          "Type": "Bool",
+                          "Optional": true
+                        },
+                        "encryption_type": {
+                          "Type": "String",
+                          "Optional": true
+                        },
+                        "endpoint": {
+                          "Type": "String",
+                          "Optional": true
+                        },
+                        "kms_key": {
+                          "Type": "String",
+                          "Optional": true
+                        },
+                        "region": {
+                          "Type": "String",
+                          "Optional": true
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "cluster_name": {
+              "Type": "String",
+              "Optional": true
+            },
+            "custom_tags": {
+              "Type": "Map",
+              "Optional": true
+            },
+            "docker_image": {
+              "Type": "List",
+              "Optional": true,
+              "MaxItems": 1,
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "basic_auth": {
+                    "Type": "List",
+                    "Optional": true,
+                    "MaxItems": 1,
+                    "IsBlock": true,
+                    "ConfigImplicitMode": "Block",
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "password": {
+                          "Type": "String",
+                          "Required": true
+                        },
+                        "username": {
+                          "Type": "String",
+                          "Required": true
+                        }
+                      }
+                    }
+                  },
+                  "url": {
+                    "Type": "String",
+                    "Required": true
+                  }
+                }
+              }
+            },
+            "driver_node_type_id": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "enable_elastic_disk": {
+              "Type": "Bool",
+              "Optional": true,
+              "Computed": true
+            },
+            "enable_local_disk_encryption": {
+              "Type": "Bool",
+              "Optional": true
+            },
+            "gcp_attributes": {
+              "Type": "List",
+              "Optional": true,
+              "MaxItems": 1,
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "google_service_account": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "use_preemptible_executors": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Computed": true
+                  }
+                }
+              }
+            },
+            "idempotency_token": {
+              "Type": "String",
+              "Optional": true
+            },
+            "init_scripts": {
+              "Type": "List",
+              "Optional": true,
+              "MaxItems": 10,
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "dbfs": {
+                    "Type": "List",
+                    "Optional": true,
+                    "MaxItems": 1,
+                    "IsBlock": true,
+                    "ConfigImplicitMode": "Block",
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "destination": {
+                          "Type": "String",
+                          "Required": true
+                        }
+                      }
+                    }
+                  },
+                  "file": {
+                    "Type": "List",
+                    "Optional": true,
+                    "MaxItems": 1,
+                    "IsBlock": true,
+                    "ConfigImplicitMode": "Block",
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "destination": {
+                          "Type": "String",
+                          "Optional": true
+                        }
+                      }
+                    }
+                  },
+                  "s3": {
+                    "Type": "List",
+                    "Optional": true,
+                    "MaxItems": 1,
+                    "IsBlock": true,
+                    "ConfigImplicitMode": "Block",
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "canned_acl": {
+                          "Type": "String",
+                          "Optional": true
+                        },
+                        "destination": {
+                          "Type": "String",
+                          "Required": true
+                        },
+                        "enable_encryption": {
+                          "Type": "Bool",
+                          "Optional": true
+                        },
+                        "encryption_type": {
+                          "Type": "String",
+                          "Optional": true
+                        },
+                        "endpoint": {
+                          "Type": "String",
+                          "Optional": true
+                        },
+                        "kms_key": {
+                          "Type": "String",
+                          "Optional": true
+                        },
+                        "region": {
+                          "Type": "String",
+                          "Optional": true
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "instance_pool_id": {
+              "Type": "String",
+              "Optional": true
+            },
+            "node_type_id": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "num_workers": {
+              "Type": "Int",
+              "Optional": true,
+              "Default": {
+                "Type": "int",
+                "Value": "0"
+              }
+            },
+            "policy_id": {
+              "Type": "String",
+              "Optional": true
+            },
+            "single_user_name": {
+              "Type": "String",
+              "Optional": true
+            },
+            "spark_conf": {
+              "Type": "Map",
+              "Optional": true
+            },
+            "spark_env_vars": {
+              "Type": "Map",
+              "Optional": true
+            },
+            "spark_version": {
+              "Type": "String",
+              "Required": true
+            },
+            "ssh_public_keys": {
+              "Type": "List",
+              "Optional": true,
+              "MaxItems": 10,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
+      "notebook_task": {
+        "Type": "List",
+        "Optional": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "base_parameters": {
+              "Type": "Map",
+              "Optional": true
+            },
+            "notebook_path": {
+              "Type": "String",
+              "Required": true
+            }
+          }
+        }
+      },
+      "retry_on_timeout": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "An optional policy to specify whether to retry a job when it times out. The default behavior is to not retry on timeout."
+      },
+      "schedule": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "An optional periodic schedule for this job. The default behavior is that the job runs when triggered by clicking Run Now in the Jobs UI or sending an API request to runNow.",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "pause_status": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "quartz_cron_expression": {
+              "Type": "String",
+              "Required": true
+            },
+            "timezone_id": {
+              "Type": "String",
+              "Required": true
+            }
+          }
+        }
+      },
+      "spark_jar_task": {
+        "Type": "List",
+        "Optional": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "jar_uri": {
+              "Type": "String",
+              "Optional": true
+            },
+            "main_class_name": {
+              "Type": "String",
+              "Optional": true
+            },
+            "parameters": {
+              "Type": "List",
+              "Optional": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
+      "spark_python_task": {
+        "Type": "List",
+        "Optional": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "parameters": {
+              "Type": "List",
+              "Optional": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "python_file": {
+              "Type": "String",
+              "Required": true
+            }
+          }
+        }
+      },
+      "spark_submit_task": {
+        "Type": "List",
+        "Optional": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "parameters": {
+              "Type": "List",
+              "Optional": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
+      "timeout_seconds": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "An optional timeout applied to each run of this job. The default behavior is to have no timeout."
+      },
+      "url": {
+        "Type": "String",
+        "Computed": true
+      }
+    },
+    "databricks_mws_credentials": {
+      "account_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "creation_time": {
+        "Type": "Int",
+        "Computed": true
+      },
+      "credentials_id": {
+        "Type": "String",
+        "Computed": true
+      },
+      "credentials_name": {
+        "Type": "String",
+        "Required": true
+      },
+      "external_id": {
+        "Type": "String",
+        "Computed": true
+      },
+      "role_arn": {
+        "Type": "String",
+        "Required": true
+      }
+    },
+    "databricks_mws_customer_managed_keys": {
+      "account_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "aws_key_info": {
+        "Type": "List",
+        "Required": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "key_alias": {
+              "Type": "String",
+              "Required": true
+            },
+            "key_arn": {
+              "Type": "String",
+              "Required": true
+            },
+            "key_region": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            }
+          }
+        }
+      },
+      "creation_time": {
+        "Type": "Int",
+        "Optional": true,
+        "Computed": true
+      },
+      "customer_managed_key_id": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      }
+    },
+    "databricks_mws_log_delivery": {
+      "account_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "config_id": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "config_name": {
+        "Type": "String",
+        "Optional": true
+      },
+      "credentials_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "delivery_path_prefix": {
+        "Type": "String",
+        "Optional": true
+      },
+      "delivery_start_time": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "log_type": {
+        "Type": "String",
+        "Required": true
+      },
+      "output_format": {
+        "Type": "String",
+        "Required": true
+      },
+      "status": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "storage_configuration_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "workspace_ids_filter": {
+        "Type": "List",
+        "Optional": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      }
+    },
+    "databricks_mws_networks": {
+      "account_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "creation_time": {
+        "Type": "Int",
+        "Optional": true,
+        "Computed": true
+      },
+      "error_messages": {
+        "Type": "List",
+        "Optional": true,
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "error_message": {
+              "Type": "String",
+              "Optional": true
+            },
+            "error_type": {
+              "Type": "String",
+              "Optional": true
+            }
+          }
+        }
+      },
+      "network_id": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "network_name": {
+        "Type": "String",
+        "Required": true
+      },
+      "security_group_ids": {
+        "Type": "Set",
+        "Required": true,
+        "MaxItems": 5,
+        "MinItems": 1,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "subnet_ids": {
+        "Type": "Set",
+        "Required": true,
+        "MinItems": 2,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "vpc_endpoints": {
+        "Type": "List",
+        "Optional": true,
+        "Computed": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "dataplane_relay": {
+              "Type": "Set",
+              "Required": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "rest_api": {
+              "Type": "Set",
+              "Required": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
+      "vpc_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "vpc_status": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "workspace_id": {
+        "Type": "Int",
+        "Optional": true,
+        "Computed": true
+      }
+    },
+    "databricks_mws_private_access_settings": {
+      "account_id": {
+        "Type": "String",
+        "Optional": true
+      },
+      "private_access_settings_id": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "private_access_settings_name": {
+        "Type": "String",
+        "Required": true
+      },
+      "region": {
+        "Type": "String",
+        "Required": true
+      },
+      "status": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      }
+    },
+    "databricks_mws_storage_configurations": {
+      "account_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "bucket_name": {
+        "Type": "String",
+        "Required": true
+      },
+      "creation_time": {
+        "Type": "Int",
+        "Computed": true
+      },
+      "storage_configuration_id": {
+        "Type": "String",
+        "Computed": true
+      },
+      "storage_configuration_name": {
+        "Type": "String",
+        "Required": true
+      }
+    },
+    "databricks_mws_vpc_endpoint": {
+      "account_id": {
+        "Type": "String",
+        "Optional": true
+      },
+      "aws_account_id": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "aws_endpoint_service_id": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "aws_vpc_endpoint_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "region": {
+        "Type": "String",
+        "Required": true
+      },
+      "state": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "use_case": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "vpc_endpoint_id": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "vpc_endpoint_name": {
+        "Type": "String",
+        "Required": true
+      }
+    },
+    "databricks_mws_workspaces": {
+      "__timeouts__": [
+        "create",
+        "read",
+        "update"
+      ],
+      "account_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "aws_region": {
+        "Type": "String",
+        "Required": true
+      },
+      "creation_time": {
+        "Type": "Int",
+        "Optional": true,
+        "Computed": true
+      },
+      "credentials_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "customer_managed_key_id": {
+        "Type": "String",
+        "Optional": true
+      },
+      "deployment_name": {
+        "Type": "String",
+        "Required": true
+      },
+      "is_no_public_ip_enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "network_id": {
+        "Type": "String",
+        "Optional": true
+      },
+      "pricing_tier": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "private_access_settings_id": {
+        "Type": "String",
+        "Optional": true
+      },
+      "storage_configuration_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "workspace_id": {
+        "Type": "Int",
+        "Optional": true,
+        "Computed": true
+      },
+      "workspace_name": {
+        "Type": "String",
+        "Required": true
+      },
+      "workspace_status": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "workspace_status_message": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "workspace_url": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      }
+    },
+    "databricks_notebook": {
+      "content_base64": {
+        "Type": "String",
+        "Optional": true,
+        "ConflictsWith": [
+          "source"
+        ]
+      },
+      "language": {
+        "Type": "String",
+        "Optional": true
+      },
+      "md5": {
+        "Type": "String",
+        "Optional": true,
+        "Default": {
+          "Type": "string",
+          "Value": "different"
+        }
+      },
+      "object_id": {
+        "Type": "Int",
+        "Optional": true,
+        "Computed": true
+      },
+      "object_type": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "path": {
+        "Type": "String",
+        "Required": true
+      },
+      "source": {
+        "Type": "String",
+        "Optional": true,
+        "ConflictsWith": [
+          "content_base64"
+        ]
+      },
+      "url": {
+        "Type": "String",
+        "Computed": true
+      }
+    },
+    "databricks_permissions": {
+      "access_control": {
+        "Type": "Set",
+        "Required": true,
+        "MinItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "group_name": {
+              "Type": "String",
+              "Optional": true
+            },
+            "permission_level": {
+              "Type": "String",
+              "Required": true
+            },
+            "service_principal_name": {
+              "Type": "String",
+              "Optional": true
+            },
+            "user_name": {
+              "Type": "String",
+              "Optional": true
+            }
+          }
+        }
+      },
+      "authorization": {
+        "Type": "String",
+        "Optional": true,
+        "ConflictsWith": [
+          "cluster_policy_id",
+          "instance_pool_id",
+          "cluster_id",
+          "job_id",
+          "notebook_id",
+          "notebook_path",
+          "directory_id",
+          "directory_path",
+          "sql_endpoint_id",
+          "sql_dashboard_id",
+          "sql_alert_id",
+          "sql_query_id"
+        ]
+      },
+      "cluster_id": {
+        "Type": "String",
+        "Optional": true,
+        "ConflictsWith": [
+          "cluster_policy_id",
+          "instance_pool_id",
+          "job_id",
+          "notebook_id",
+          "notebook_path",
+          "directory_id",
+          "directory_path",
+          "authorization",
+          "authorization",
+          "sql_endpoint_id",
+          "sql_dashboard_id",
+          "sql_alert_id",
+          "sql_query_id"
+        ]
+      },
+      "cluster_policy_id": {
+        "Type": "String",
+        "Optional": true,
+        "ConflictsWith": [
+          "instance_pool_id",
+          "cluster_id",
+          "job_id",
+          "notebook_id",
+          "notebook_path",
+          "directory_id",
+          "directory_path",
+          "authorization",
+          "authorization",
+          "sql_endpoint_id",
+          "sql_dashboard_id",
+          "sql_alert_id",
+          "sql_query_id"
+        ]
+      },
+      "directory_id": {
+        "Type": "String",
+        "Optional": true,
+        "ConflictsWith": [
+          "cluster_policy_id",
+          "instance_pool_id",
+          "cluster_id",
+          "job_id",
+          "notebook_id",
+          "notebook_path",
+          "directory_path",
+          "authorization",
+          "authorization",
+          "sql_endpoint_id",
+          "sql_dashboard_id",
+          "sql_alert_id",
+          "sql_query_id"
+        ]
+      },
+      "directory_path": {
+        "Type": "String",
+        "Optional": true,
+        "ConflictsWith": [
+          "cluster_policy_id",
+          "instance_pool_id",
+          "cluster_id",
+          "job_id",
+          "notebook_id",
+          "notebook_path",
+          "directory_id",
+          "authorization",
+          "authorization",
+          "sql_endpoint_id",
+          "sql_dashboard_id",
+          "sql_alert_id",
+          "sql_query_id"
+        ]
+      },
+      "instance_pool_id": {
+        "Type": "String",
+        "Optional": true,
+        "ConflictsWith": [
+          "cluster_policy_id",
+          "cluster_id",
+          "job_id",
+          "notebook_id",
+          "notebook_path",
+          "directory_id",
+          "directory_path",
+          "authorization",
+          "authorization",
+          "sql_endpoint_id",
+          "sql_dashboard_id",
+          "sql_alert_id",
+          "sql_query_id"
+        ]
+      },
+      "job_id": {
+        "Type": "String",
+        "Optional": true,
+        "ConflictsWith": [
+          "cluster_policy_id",
+          "instance_pool_id",
+          "cluster_id",
+          "notebook_id",
+          "notebook_path",
+          "directory_id",
+          "directory_path",
+          "authorization",
+          "authorization",
+          "sql_endpoint_id",
+          "sql_dashboard_id",
+          "sql_alert_id",
+          "sql_query_id"
+        ]
+      },
+      "notebook_id": {
+        "Type": "String",
+        "Optional": true,
+        "ConflictsWith": [
+          "cluster_policy_id",
+          "instance_pool_id",
+          "cluster_id",
+          "job_id",
+          "notebook_path",
+          "directory_id",
+          "directory_path",
+          "authorization",
+          "authorization",
+          "sql_endpoint_id",
+          "sql_dashboard_id",
+          "sql_alert_id",
+          "sql_query_id"
+        ]
+      },
+      "notebook_path": {
+        "Type": "String",
+        "Optional": true,
+        "ConflictsWith": [
+          "cluster_policy_id",
+          "instance_pool_id",
+          "cluster_id",
+          "job_id",
+          "notebook_id",
+          "directory_id",
+          "directory_path",
+          "authorization",
+          "authorization",
+          "sql_endpoint_id",
+          "sql_dashboard_id",
+          "sql_alert_id",
+          "sql_query_id"
+        ]
+      },
+      "object_type": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "sql_alert_id": {
+        "Type": "String",
+        "Optional": true,
+        "ConflictsWith": [
+          "cluster_policy_id",
+          "instance_pool_id",
+          "cluster_id",
+          "job_id",
+          "notebook_id",
+          "notebook_path",
+          "directory_id",
+          "directory_path",
+          "authorization",
+          "authorization",
+          "sql_endpoint_id",
+          "sql_dashboard_id",
+          "sql_query_id"
+        ]
+      },
+      "sql_dashboard_id": {
+        "Type": "String",
+        "Optional": true,
+        "ConflictsWith": [
+          "cluster_policy_id",
+          "instance_pool_id",
+          "cluster_id",
+          "job_id",
+          "notebook_id",
+          "notebook_path",
+          "directory_id",
+          "directory_path",
+          "authorization",
+          "authorization",
+          "sql_endpoint_id",
+          "sql_alert_id",
+          "sql_query_id"
+        ]
+      },
+      "sql_endpoint_id": {
+        "Type": "String",
+        "Optional": true,
+        "ConflictsWith": [
+          "cluster_policy_id",
+          "instance_pool_id",
+          "cluster_id",
+          "job_id",
+          "notebook_id",
+          "notebook_path",
+          "directory_id",
+          "directory_path",
+          "authorization",
+          "authorization",
+          "sql_dashboard_id",
+          "sql_alert_id",
+          "sql_query_id"
+        ]
+      },
+      "sql_query_id": {
+        "Type": "String",
+        "Optional": true,
+        "ConflictsWith": [
+          "cluster_policy_id",
+          "instance_pool_id",
+          "cluster_id",
+          "job_id",
+          "notebook_id",
+          "notebook_path",
+          "directory_id",
+          "directory_path",
+          "authorization",
+          "authorization",
+          "sql_endpoint_id",
+          "sql_dashboard_id",
+          "sql_alert_id"
+        ]
+      }
+    },
+    "databricks_pipeline": {
+      "__timeouts__": [
+        "default"
+      ],
+      "allow_duplicate_names": {
+        "Type": "Bool",
+        "Optional": true
+      },
+      "clusters": {
+        "Type": "List",
+        "Optional": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "autoscale": {
+              "Type": "List",
+              "Optional": true,
+              "MaxItems": 1,
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "max_workers": {
+                    "Type": "Int",
+                    "Optional": true
+                  },
+                  "min_workers": {
+                    "Type": "Int",
+                    "Optional": true
+                  }
+                }
+              }
+            },
+            "aws_attributes": {
+              "Type": "List",
+              "Optional": true,
+              "MaxItems": 1,
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "instance_profile_arn": {
+                    "Type": "String",
+                    "Optional": true
+                  },
+                  "zone_id": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  }
+                }
+              }
+            },
+            "cluster_log_conf": {
+              "Type": "List",
+              "Optional": true,
+              "MaxItems": 1,
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "dbfs": {
+                    "Type": "List",
+                    "Optional": true,
+                    "MaxItems": 1,
+                    "IsBlock": true,
+                    "ConfigImplicitMode": "Block",
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "destination": {
+                          "Type": "String",
+                          "Required": true
+                        }
+                      }
+                    }
+                  },
+                  "s3": {
+                    "Type": "List",
+                    "Optional": true,
+                    "MaxItems": 1,
+                    "IsBlock": true,
+                    "ConfigImplicitMode": "Block",
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "canned_acl": {
+                          "Type": "String",
+                          "Optional": true
+                        },
+                        "destination": {
+                          "Type": "String",
+                          "Required": true
+                        },
+                        "enable_encryption": {
+                          "Type": "Bool",
+                          "Optional": true
+                        },
+                        "encryption_type": {
+                          "Type": "String",
+                          "Optional": true
+                        },
+                        "endpoint": {
+                          "Type": "String",
+                          "Optional": true
+                        },
+                        "kms_key": {
+                          "Type": "String",
+                          "Optional": true
+                        },
+                        "region": {
+                          "Type": "String",
+                          "Optional": true
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "custom_tags": {
+              "Type": "Map",
+              "Optional": true
+            },
+            "driver_node_type_id": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "init_scripts": {
+              "Type": "List",
+              "Optional": true,
+              "MaxItems": 10,
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "dbfs": {
+                    "Type": "List",
+                    "Optional": true,
+                    "MaxItems": 1,
+                    "IsBlock": true,
+                    "ConfigImplicitMode": "Block",
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "destination": {
+                          "Type": "String",
+                          "Required": true
+                        }
+                      }
+                    }
+                  },
+                  "file": {
+                    "Type": "List",
+                    "Optional": true,
+                    "MaxItems": 1,
+                    "IsBlock": true,
+                    "ConfigImplicitMode": "Block",
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "destination": {
+                          "Type": "String",
+                          "Optional": true
+                        }
+                      }
+                    }
+                  },
+                  "s3": {
+                    "Type": "List",
+                    "Optional": true,
+                    "MaxItems": 1,
+                    "IsBlock": true,
+                    "ConfigImplicitMode": "Block",
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "canned_acl": {
+                          "Type": "String",
+                          "Optional": true
+                        },
+                        "destination": {
+                          "Type": "String",
+                          "Required": true
+                        },
+                        "enable_encryption": {
+                          "Type": "Bool",
+                          "Optional": true
+                        },
+                        "encryption_type": {
+                          "Type": "String",
+                          "Optional": true
+                        },
+                        "endpoint": {
+                          "Type": "String",
+                          "Optional": true
+                        },
+                        "kms_key": {
+                          "Type": "String",
+                          "Optional": true
+                        },
+                        "region": {
+                          "Type": "String",
+                          "Optional": true
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "instance_pool_id": {
+              "Type": "String",
+              "Optional": true
+            },
+            "label": {
+              "Type": "String",
+              "Optional": true
+            },
+            "node_type_id": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "num_workers": {
+              "Type": "Int",
+              "Optional": true
+            },
+            "spark_conf": {
+              "Type": "Map",
+              "Optional": true
+            },
+            "spark_env_vars": {
+              "Type": "Map",
+              "Optional": true
+            },
+            "ssh_public_keys": {
+              "Type": "List",
+              "Optional": true,
+              "MaxItems": 10,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
+      "configuration": {
+        "Type": "Map",
+        "Optional": true
+      },
+      "continuous": {
+        "Type": "Bool",
+        "Optional": true
+      },
+      "filters": {
+        "Type": "List",
+        "Required": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "exclude": {
+              "Type": "List",
+              "Optional": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "include": {
+              "Type": "List",
+              "Optional": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
+      "id": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "libraries": {
+        "Type": "List",
+        "Optional": true,
+        "MinItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "jar": {
+              "Type": "String",
+              "Optional": true
+            },
+            "maven": {
+              "Type": "List",
+              "Optional": true,
+              "MaxItems": 1,
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "coordinates": {
+                    "Type": "String",
+                    "Required": true
+                  },
+                  "exclusions": {
+                    "Type": "List",
+                    "Optional": true,
+                    "ConfigImplicitMode": "Attr",
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  },
+                  "repo": {
+                    "Type": "String",
+                    "Optional": true
+                  }
+                }
+              }
+            },
+            "notebook": {
+              "Type": "List",
+              "Optional": true,
+              "MaxItems": 1,
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "path": {
+                    "Type": "String",
+                    "Required": true
+                  }
+                }
+              }
+            },
+            "whl": {
+              "Type": "String",
+              "Optional": true
+            }
+          }
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true
+      },
+      "storage": {
+        "Type": "String",
+        "Optional": true
+      }
+    },
+    "databricks_secret": {
+      "key": {
+        "Type": "String",
+        "Required": true
+      },
+      "last_updated_timestamp": {
+        "Type": "Int",
+        "Computed": true
+      },
+      "scope": {
+        "Type": "String",
+        "Required": true
+      },
+      "string_value": {
+        "Type": "String",
+        "Required": true
+      }
+    },
+    "databricks_secret_acl": {
+      "permission": {
+        "Type": "String",
+        "Required": true
+      },
+      "principal": {
+        "Type": "String",
+        "Required": true
+      },
+      "scope": {
+        "Type": "String",
+        "Required": true
+      }
+    },
+    "databricks_secret_scope": {
+      "backend_type": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "initial_manage_principal": {
+        "Type": "String",
+        "Optional": true
+      },
+      "keyvault_metadata": {
+        "Type": "List",
+        "Optional": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "dns_name": {
+              "Type": "String",
+              "Required": true
+            },
+            "resource_id": {
+              "Type": "String",
+              "Required": true
+            }
+          }
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Required": true
+      }
+    },
+    "databricks_service_principal": {
+      "active": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "allow_cluster_create": {
+        "Type": "Bool",
+        "Optional": true
+      },
+      "allow_instance_pool_create": {
+        "Type": "Bool",
+        "Optional": true
+      },
+      "application_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "display_name": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      }
+    },
+    "databricks_sql_endpoint": {
+      "auto_stop_mins": {
+        "Type": "Int",
+        "Optional": true
+      },
+      "cluster_size": {
+        "Type": "String",
+        "Required": true
+      },
+      "enable_photon": {
+        "Type": "Bool",
+        "Optional": true
+      },
+      "id": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "instance_profile_arn": {
+        "Type": "String",
+        "Optional": true
+      },
+      "jdbc_url": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "max_num_clusters": {
+        "Type": "Int",
+        "Optional": true,
+        "Default": {
+          "Type": "int",
+          "Value": "1"
+        }
+      },
+      "min_num_clusters": {
+        "Type": "Int",
+        "Optional": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true
+      },
+      "num_clusters": {
+        "Type": "Int",
+        "Optional": true
+      },
+      "odbc_params": {
+        "Type": "List",
+        "Optional": true,
+        "Computed": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "host": {
+              "Type": "String",
+              "Required": true
+            },
+            "path": {
+              "Type": "String",
+              "Required": true
+            },
+            "port": {
+              "Type": "Int",
+              "Required": true
+            },
+            "protocol": {
+              "Type": "String",
+              "Required": true
+            }
+          }
+        }
+      },
+      "state": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "tags": {
+        "Type": "List",
+        "Optional": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "custom_tags": {
+              "Type": "List",
+              "Required": true,
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "key": {
+                    "Type": "String",
+                    "Required": true
+                  },
+                  "value": {
+                    "Type": "String",
+                    "Required": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "databricks_token": {
+      "comment": {
+        "Type": "String",
+        "Optional": true
+      },
+      "creation_time": {
+        "Type": "Int",
+        "Optional": true,
+        "Computed": true
+      },
+      "expiry_time": {
+        "Type": "Int",
+        "Optional": true,
+        "Computed": true
+      },
+      "lifetime_seconds": {
+        "Type": "Int",
+        "Optional": true
+      },
+      "token_id": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "token_value": {
+        "Type": "String",
+        "Computed": true
+      }
+    },
+    "databricks_user": {
+      "active": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "allow_cluster_create": {
+        "Type": "Bool",
+        "Optional": true
+      },
+      "allow_instance_pool_create": {
+        "Type": "Bool",
+        "Optional": true
+      },
+      "allow_sql_analytics_access": {
+        "Type": "Bool",
+        "Optional": true
+      },
+      "display_name": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "user_name": {
+        "Type": "String",
+        "Required": true
+      }
+    },
+    "databricks_user_instance_profile": {
+      "instance_profile_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "user_id": {
+        "Type": "String",
+        "Required": true
+      }
+    },
+    "databricks_workspace_conf": {
+      "custom_config": {
+        "Type": "Map",
+        "Optional": true
+      }
+    }
+  },
+  "data-sources": {
+    "databricks_aws_assume_role_policy": {
+      "databricks_account_id": {
+        "Type": "String",
+        "Optional": true,
+        "Default": {
+          "Type": "string",
+          "Value": "414351767826"
+        }
+      },
+      "external_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "for_log_delivery": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Grant AssumeRole to Databricks SaasUsageDeliveryRole instead of root account",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "json": {
+        "Type": "String",
+        "Computed": true
+      }
+    },
+    "databricks_aws_bucket_policy": {
+      "bucket": {
+        "Type": "String",
+        "Required": true
+      },
+      "databricks_account_id": {
+        "Type": "String",
+        "Optional": true,
+        "Default": {
+          "Type": "string",
+          "Value": "414351767826"
+        }
+      },
+      "full_access_role": {
+        "Type": "String",
+        "Optional": true
+      },
+      "json": {
+        "Type": "String",
+        "Computed": true
+      }
+    },
+    "databricks_aws_crossaccount_policy": {
+      "json": {
+        "Type": "String",
+        "Computed": true
+      },
+      "pass_roles": {
+        "Type": "List",
+        "Optional": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      }
+    },
+    "databricks_current_user": {
+      "alphanumeric": {
+        "Type": "String",
+        "Computed": true
+      },
+      "home": {
+        "Type": "String",
+        "Computed": true
+      },
+      "user_name": {
+        "Type": "String",
+        "Computed": true
+      }
+    },
+    "databricks_dbfs_file": {
+      "content": {
+        "Type": "String",
+        "Computed": true
+      },
+      "file_size": {
+        "Type": "Int",
+        "Computed": true,
+        "Deprecated": "Rename to size?..."
+      },
+      "limit_file_size": {
+        "Type": "Bool",
+        "Required": true,
+        "Deprecated": "Would become client property"
+      },
+      "path": {
+        "Type": "String",
+        "Required": true
+      }
+    },
+    "databricks_dbfs_file_paths": {
+      "path": {
+        "Type": "String",
+        "Required": true
+      },
+      "path_list": {
+        "Type": "Set",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "file_size": {
+              "Type": "Int",
+              "Optional": true
+            },
+            "path": {
+              "Type": "String",
+              "Optional": true
+            }
+          }
+        }
+      },
+      "recursive": {
+        "Type": "Bool",
+        "Required": true
+      }
+    },
+    "databricks_group": {
+      "allow_cluster_create": {
+        "Type": "Bool",
+        "Optional": true,
+        "Computed": true
+      },
+      "allow_instance_pool_create": {
+        "Type": "Bool",
+        "Optional": true,
+        "Computed": true
+      },
+      "display_name": {
+        "Type": "String",
+        "Required": true
+      },
+      "groups": {
+        "Type": "Set",
+        "Optional": true,
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "instance_profiles": {
+        "Type": "Set",
+        "Optional": true,
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "members": {
+        "Type": "Set",
+        "Optional": true,
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "recursive": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      }
+    },
+    "databricks_node_type": {
+      "category": {
+        "Type": "String",
+        "Optional": true
+      },
+      "gb_per_core": {
+        "Type": "Int",
+        "Optional": true
+      },
+      "local_disk": {
+        "Type": "Bool",
+        "Optional": true
+      },
+      "min_cores": {
+        "Type": "Int",
+        "Optional": true
+      },
+      "min_gpus": {
+        "Type": "Int",
+        "Optional": true
+      },
+      "min_memory_gb": {
+        "Type": "Int",
+        "Optional": true
+      }
+    },
+    "databricks_notebook": {
+      "content": {
+        "Type": "String",
+        "Computed": true
+      },
+      "format": {
+        "Type": "String",
+        "Required": true
+      },
+      "language": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "object_id": {
+        "Type": "Int",
+        "Optional": true,
+        "Computed": true
+      },
+      "object_type": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "path": {
+        "Type": "String",
+        "Required": true
+      }
+    },
+    "databricks_notebook_paths": {
+      "notebook_path_list": {
+        "Type": "Set",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "language": {
+              "Type": "String",
+              "Optional": true
+            },
+            "path": {
+              "Type": "String",
+              "Optional": true
+            }
+          }
+        }
+      },
+      "path": {
+        "Type": "String",
+        "Required": true
+      },
+      "recursive": {
+        "Type": "Bool",
+        "Required": true
+      }
+    },
+    "databricks_spark_version": {
+      "beta": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "string",
+          "Value": "false"
+        }
+      },
+      "genomics": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "string",
+          "Value": "false"
+        }
+      },
+      "gpu": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "string",
+          "Value": "false"
+        }
+      },
+      "latest": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "string",
+          "Value": "true"
+        }
+      },
+      "long_term_support": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "string",
+          "Value": "false"
+        }
+      },
+      "ml": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "string",
+          "Value": "false"
+        }
+      },
+      "scala": {
+        "Type": "String",
+        "Optional": true,
+        "Default": {
+          "Type": "string",
+          "Value": "2.12"
+        }
+      },
+      "spark_version": {
+        "Type": "String",
+        "Optional": true,
+        "Default": {
+          "Type": "string"
+        }
+      }
+    },
+    "databricks_zones": {
+      "default_zone": {
+        "Type": "String",
+        "Computed": true
+      },
+      "zones": {
+        "Type": "List",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      }
+    }
+  }
+}

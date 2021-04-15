@@ -1,15 +1,20 @@
 {
   ".schema_version": "2",
-  ".sdk_type": "terraform-plugin-sdk-v1",
+  ".sdk_type": "terraform-plugin-sdk-v2",
   "name": "okta",
   "type": "provider",
-  "version": "v3.3.0",
+  "version": "v3.11.0",
   "provider": {
     "api_token": {
       "Type": "String",
-      "Required": true,
+      "Optional": true,
       "Description": "API Token granting privileges to Okta API.",
-      "DefaultFunc": "ENV(OKTA_API_TOKEN)"
+      "DefaultFunc": "ENV(OKTA_API_TOKEN)",
+      "ConflictsWith": [
+        "client_id",
+        "scopes",
+        "private_key"
+      ]
     },
     "backoff": {
       "Type": "Bool",
@@ -25,6 +30,24 @@
       "Optional": true,
       "Description": "The Okta url. (Use 'oktapreview.com' for Okta testing)",
       "DefaultFunc": "ENV(OKTA_BASE_URL)"
+    },
+    "client_id": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "API Token granting privileges to Okta API.",
+      "DefaultFunc": "ENV(OKTA_API_CLIENT_ID)",
+      "ConflictsWith": [
+        "api_token"
+      ]
+    },
+    "log_level": {
+      "Type": "Int",
+      "Optional": true,
+      "Description": "providers log level. Minimum is 1 (TRACE), and maximum is 5 (ERROR)",
+      "Default": {
+        "Type": "int",
+        "Value": "5"
+      }
     },
     "max_retries": {
       "Type": "Int",
@@ -55,7 +78,7 @@
     },
     "org_name": {
       "Type": "String",
-      "Required": true,
+      "Optional": true,
       "Description": "The organization to manage in Okta.",
       "DefaultFunc": "ENV(OKTA_ORG_NAME)"
     },
@@ -67,9 +90,84 @@
         "Type": "int",
         "Value": "1"
       }
+    },
+    "private_key": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "API Token granting privileges to Okta API.",
+      "DefaultFunc": "ENV(OKTA_API_PRIVATE_KEY)",
+      "ConflictsWith": [
+        "api_token"
+      ]
+    },
+    "request_timeout": {
+      "Type": "Int",
+      "Optional": true,
+      "Description": "Timeout for single request (in seconds) which is made to Okta, the default is `0` (means no limit is set). The maximum value can be `100`.",
+      "Default": {
+        "Type": "int",
+        "Value": "0"
+      }
+    },
+    "scopes": {
+      "Type": "Set",
+      "Optional": true,
+      "Description": "API Token granting privileges to Okta API.",
+      "DefaultFunc": "UNKNOWN",
+      "ConflictsWith": [
+        "api_token"
+      ],
+      "ConfigImplicitMode": "Attr",
+      "Elem": {
+        "Type": "SchemaElements",
+        "ElementsType": "String"
+      }
     }
   },
   "resources": {
+    "okta_admin_role_targets": {
+      "apps": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "List of app names (name represents set of app instances) or a combination of app name and app instance ID (like 'salesforce' or 'facebook.0oapsqQ6dv19pqyEo0g3')",
+        "ConflictsWith": [
+          "groups"
+        ],
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "groups": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "List of group IDs",
+        "ConflictsWith": [
+          "apps"
+        ],
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "role_id": {
+        "Type": "String",
+        "Description": "ID of a role",
+        "Computed": true
+      },
+      "role_type": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Type of the role that is assigned to the user and supports optional targets"
+      },
+      "user_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "User associated with the role"
+      }
+    },
     "okta_app_auto_login": {
       "accessibility_error_redirect_url": {
         "Type": "String",
@@ -191,13 +289,26 @@
       },
       "user_name_template": {
         "Type": "String",
+        "Optional": true,
         "Description": "Username template",
-        "Computed": true
+        "Default": {
+          "Type": "string",
+          "Value": "${source.login}"
+        }
+      },
+      "user_name_template_suffix": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Username template suffix"
       },
       "user_name_template_type": {
         "Type": "String",
+        "Optional": true,
         "Description": "Username template type",
-        "Computed": true
+        "Default": {
+          "Type": "string",
+          "Value": "BUILT_IN"
+        }
       },
       "users": {
         "Type": "Set",
@@ -235,7 +346,7 @@
     "okta_app_basic_auth": {
       "auth_url": {
         "Type": "String",
-        "Optional": true,
+        "Required": true,
         "Description": "Login button field"
       },
       "auto_submit_toolbar": {
@@ -301,7 +412,7 @@
       },
       "url": {
         "Type": "String",
-        "Optional": true,
+        "Required": true,
         "Description": "Login password field"
       },
       "users": {
@@ -461,10 +572,15 @@
       },
       "profile": {
         "Type": "String",
+        "Optional": true
+      },
+      "retain_assignment": {
+        "Type": "Bool",
         "Optional": true,
+        "Description": "Retain the group assignment on destroy. If set to true, the resource will be removed from state but not from the Okta app.",
         "Default": {
-          "Type": "string",
-          "Value": "{}"
+          "Type": "bool",
+          "Value": "false"
         }
       }
     },
@@ -511,7 +627,11 @@
       "consent_method": {
         "Type": "String",
         "Optional": true,
-        "Description": "*Early Access Property*. Indicates whether user consent is required or implicit. Valid values: REQUIRED, TRUSTED. Default value is TRUSTED"
+        "Description": "*Early Access Property*. Indicates whether user consent is required or implicit. Valid values: REQUIRED, TRUSTED. Default value is TRUSTED",
+        "Default": {
+          "Type": "string",
+          "Value": "TRUSTED"
+        }
       },
       "custom_client_id": {
         "Type": "String",
@@ -560,6 +680,15 @@
           "Value": "true"
         }
       },
+      "implicit_assignment": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "*Early Access Property*. Enable Federation Broker Mode.",
+        "ConflictsWith": [
+          "groups",
+          "users"
+        ]
+      },
       "issuer_mode": {
         "Type": "String",
         "Optional": true,
@@ -605,6 +734,25 @@
         "Required": true,
         "Description": "Pretty name of app."
       },
+      "login_mode": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The type of Idp-Initiated login that the client supports, if any",
+        "Default": {
+          "Type": "string",
+          "Value": "DISABLED"
+        }
+      },
+      "login_scopes": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "List of scopes to use for the request",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
       "login_uri": {
         "Type": "String",
         "Optional": true,
@@ -632,7 +780,7 @@
       "policy_uri": {
         "Type": "String",
         "Optional": true,
-        "Description": "*Early Access Property*. URI to web page providing client policy document."
+        "Description": "URI to web page providing client policy document."
       },
       "post_logout_redirect_uris": {
         "Type": "Set",
@@ -695,7 +843,7 @@
       "tos_uri": {
         "Type": "String",
         "Optional": true,
-        "Description": "*Early Access Property*. URI to web page providing client tos (terms of service)."
+        "Description": "URI to web page providing client tos (terms of service)."
       },
       "type": {
         "Type": "String",
@@ -735,6 +883,28 @@
         }
       }
     },
+    "okta_app_oauth_api_scope": {
+      "app_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "ID of the application."
+      },
+      "issuer": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The issuer of your Org Authorization Server, your Org URL."
+      },
+      "scopes": {
+        "Type": "List",
+        "Required": true,
+        "Description": "Scopes of the application for which consent is granted.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      }
+    },
     "okta_app_oauth_redirect_uri": {
       "app_id": {
         "Type": "String",
@@ -764,6 +934,16 @@
         "Default": {
           "Type": "bool",
           "Value": "false"
+        }
+      },
+      "acs_endpoints": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "List of ACS endpoints for this SAML application",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
         }
       },
       "app_settings_json": {
@@ -796,11 +976,13 @@
             },
             "name": {
               "Type": "String",
-              "Required": true
+              "Required": true,
+              "Description": "The reference name of the attribute statement"
             },
             "namespace": {
               "Type": "String",
               "Optional": true,
+              "Description": "The name format of the attribute",
               "Default": {
                 "Type": "string",
                 "Value": "urn:oasis:names:tc:SAML:2.0:attrname-format:unspecified"
@@ -809,6 +991,7 @@
             "type": {
               "Type": "String",
               "Optional": true,
+              "Description": "The type of attribute statements object",
               "Default": {
                 "Type": "string",
                 "Value": "EXPRESSION"
@@ -916,7 +1099,11 @@
       "honor_force_authn": {
         "Type": "Bool",
         "Optional": true,
-        "Description": "Prompt user to re-authenticate if SP asks for it"
+        "Description": "Prompt user to re-authenticate if SP asks for it",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
       },
       "http_post_binding": {
         "Type": "String",
@@ -946,11 +1133,7 @@
       "key_years_valid": {
         "Type": "Int",
         "Optional": true,
-        "Description": "Number of years the certificate is valid.",
-        "Default": {
-          "Type": "int",
-          "Value": "1"
-        }
+        "Description": "Number of years the certificate is valid."
       },
       "label": {
         "Type": "String",
@@ -960,6 +1143,11 @@
       "metadata": {
         "Type": "String",
         "Description": "SAML xml metadata payload",
+        "Computed": true
+      },
+      "metadata_url": {
+        "Type": "String",
+        "Description": "SAML xml metadata URL",
         "Computed": true
       },
       "name": {
@@ -996,6 +1184,21 @@
         "Type": "String",
         "Optional": true,
         "Description": "Signature algorithm used ot digitally sign the assertion and response"
+      },
+      "single_logout_certificate": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "x509 encoded certificate that the Service Provider uses to sign Single Logout requests"
+      },
+      "single_logout_issuer": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The issuer of the Service Provider that generates the Single Logout request"
+      },
+      "single_logout_url": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The location where the logout response is sent"
       },
       "sp_issuer": {
         "Type": "String",
@@ -1228,13 +1431,26 @@
       },
       "user_name_template": {
         "Type": "String",
+        "Optional": true,
         "Description": "Username template",
-        "Computed": true
+        "Default": {
+          "Type": "string",
+          "Value": "${source.login}"
+        }
+      },
+      "user_name_template_suffix": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Username template suffix"
       },
       "user_name_template_type": {
         "Type": "String",
+        "Optional": true,
         "Description": "Username template type",
-        "Computed": true
+        "Default": {
+          "Type": "string",
+          "Value": "BUILT_IN"
+        }
       },
       "username_field": {
         "Type": "String",
@@ -1377,13 +1593,26 @@
       },
       "user_name_template": {
         "Type": "String",
+        "Optional": true,
         "Description": "Username template",
-        "Computed": true
+        "Default": {
+          "Type": "string",
+          "Value": "${source.login}"
+        }
+      },
+      "user_name_template_suffix": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Username template suffix"
       },
       "user_name_template_type": {
         "Type": "String",
+        "Optional": true,
         "Description": "Username template type",
-        "Computed": true
+        "Default": {
+          "Type": "string",
+          "Value": "BUILT_IN"
+        }
       },
       "username_field": {
         "Type": "String",
@@ -1531,13 +1760,26 @@
       },
       "user_name_template": {
         "Type": "String",
+        "Optional": true,
         "Description": "Username template",
-        "Computed": true
+        "Default": {
+          "Type": "string",
+          "Value": "${source.login}"
+        }
+      },
+      "user_name_template_suffix": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Username template suffix"
       },
       "user_name_template_type": {
         "Type": "String",
+        "Optional": true,
         "Description": "Username template type",
-        "Computed": true
+        "Default": {
+          "Type": "string",
+          "Value": "BUILT_IN"
+        }
       },
       "username_selector": {
         "Type": "String",
@@ -1589,10 +1831,15 @@
       },
       "profile": {
         "Type": "String",
+        "Optional": true
+      },
+      "retain_assignment": {
+        "Type": "Bool",
         "Optional": true,
+        "Description": "Retain the user assignment on destroy. If set to true, the resource will be removed from state but not from the Okta app.",
         "Default": {
-          "Type": "string",
-          "Value": "{}"
+          "Type": "bool",
+          "Value": "false"
         }
       },
       "user_id": {
@@ -1618,7 +1865,16 @@
       "master": {
         "Type": "String",
         "Optional": true,
-        "Description": "SubSchema profile manager, if not set it will inherit its setting."
+        "Description": "SubSchema profile manager, if not set it will inherit its setting.",
+        "Default": {
+          "Type": "string",
+          "Value": "PROFILE_MASTER"
+        }
+      },
+      "pattern": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The validation pattern to use for the subschema. Must be in form of '.+', or '[\u003cpattern\u003e]+' if present.'"
       },
       "permissions": {
         "Type": "String",
@@ -1632,7 +1888,7 @@
       "required": {
         "Type": "Bool",
         "Optional": true,
-        "Description": "Whether the Subschema is required"
+        "Description": "Whether the subschema is required"
       },
       "title": {
         "Type": "String",
@@ -1643,6 +1899,15 @@
         "Type": "String",
         "Required": true,
         "Description": "Subschema type: string, boolean, number, integer, array, or object"
+      },
+      "user_type": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Custom subschema user type",
+        "Default": {
+          "Type": "string",
+          "Value": "default"
+        }
       }
     },
     "okta_app_user_schema": {
@@ -1710,6 +1975,11 @@
         "Optional": true,
         "Description": "Subschema external name"
       },
+      "external_namespace": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Subschema external namespace"
+      },
       "index": {
         "Type": "String",
         "Required": true,
@@ -1718,7 +1988,11 @@
       "master": {
         "Type": "String",
         "Optional": true,
-        "Description": "SubSchema profile manager, if not set it will inherit its setting."
+        "Description": "SubSchema profile manager, if not set it will inherit its setting.",
+        "Default": {
+          "Type": "string",
+          "Value": "PROFILE_MASTER"
+        }
       },
       "max_length": {
         "Type": "Int",
@@ -1755,6 +2029,11 @@
           }
         }
       },
+      "pattern": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The validation pattern to use for the subschema. Must be in form of '.+', or '[\u003cpattern\u003e]+' if present.'"
+      },
       "permissions": {
         "Type": "String",
         "Optional": true,
@@ -1767,7 +2046,7 @@
       "required": {
         "Type": "Bool",
         "Optional": true,
-        "Description": "Whether the Subschema is required"
+        "Description": "Whether the subschema is required"
       },
       "scope": {
         "Type": "String",
@@ -1787,6 +2066,18 @@
         "Required": true,
         "Description": "Subschema type: string, boolean, number, integer, array, or object"
       },
+      "union": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Allows to assign attribute's group priority",
+        "ConflictsWith": [
+          "enum"
+        ],
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
       "unique": {
         "Type": "String",
         "Optional": true,
@@ -1796,6 +2087,15 @@
           "enum",
           "array_type"
         ]
+      },
+      "user_type": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Custom subschema user type",
+        "Default": {
+          "Type": "string",
+          "Value": "default"
+        }
       }
     },
     "okta_auth_server": {
@@ -1832,13 +2132,13 @@
       },
       "issuer": {
         "Type": "String",
-        "Description": "EA Feature: allows you to use a custom issuer URL",
+        "Description": "allows you to use a custom issuer URL",
         "Computed": true
       },
       "issuer_mode": {
         "Type": "String",
         "Optional": true,
-        "Description": "EA Feature: allows you to use a custom issuer URL",
+        "Description": "*Early Access Property*. Indicates which value is specified in the issuer of the tokens that a Custom Authorization Server returns: the original Okta org domain URL or a custom domain URL",
         "Default": {
           "Type": "string",
           "Value": "ORG_URL"
@@ -1920,6 +2220,107 @@
         }
       }
     },
+    "okta_auth_server_claim_default": {
+      "always_include_in_token": {
+        "Type": "Bool",
+        "Computed": true
+      },
+      "auth_server_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Auth server ID"
+      },
+      "claim_type": {
+        "Type": "String",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Default auth server claim name"
+      },
+      "scopes": {
+        "Type": "Set",
+        "Description": "Auth server claim list of scopes",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "status": {
+        "Type": "String",
+        "Computed": true
+      },
+      "value": {
+        "Type": "String",
+        "Optional": true
+      },
+      "value_type": {
+        "Type": "String",
+        "Computed": true
+      }
+    },
+    "okta_auth_server_default": {
+      "audiences": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Currently Okta only supports a single value here",
+        "DefaultFunc": "UNKNOWN",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "credentials_last_rotated": {
+        "Type": "String",
+        "Computed": true
+      },
+      "credentials_next_rotation": {
+        "Type": "String",
+        "Computed": true
+      },
+      "credentials_rotation_mode": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Credential rotation mode, in many cases you cannot set this to MANUAL, the API will ignore the value and you will get a perpetual diff. This should rarely be used.",
+        "Default": {
+          "Type": "string",
+          "Value": "MANUAL"
+        }
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Default": {
+          "Type": "string",
+          "Value": "Default Authorization Server for your Applications"
+        }
+      },
+      "issuer": {
+        "Type": "String",
+        "Description": "allows you to use a custom issuer URL",
+        "Computed": true
+      },
+      "kid": {
+        "Type": "String",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true
+      },
+      "status": {
+        "Type": "String",
+        "Optional": true,
+        "Default": {
+          "Type": "string",
+          "Value": "ACTIVE"
+        }
+      }
+    },
     "okta_auth_server_policy": {
       "auth_server_id": {
         "Type": "String",
@@ -1960,6 +2361,7 @@
         "Type": "String",
         "Optional": true,
         "Description": "Auth server policy type, unlikely this will be anything other then the default",
+        "Deprecated": "Policy type can only be of value 'OAUTH_AUTHORIZATION_POLICY', so this will be removed in the future, or set as 'Computed' value",
         "Default": {
           "Type": "string",
           "Value": "OAUTH_AUTHORIZATION_POLICY"
@@ -1983,7 +2385,7 @@
       "grant_type_whitelist": {
         "Type": "Set",
         "Required": true,
-        "Description": "Accepted grant type values: authorization_code, implicit, password.",
+        "Description": "Accepted grant type values: authorization_code, implicit, password, client_credentials",
         "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
@@ -2248,13 +2650,26 @@
       },
       "user_name_template": {
         "Type": "String",
+        "Optional": true,
         "Description": "Username template",
-        "Computed": true
+        "Default": {
+          "Type": "string",
+          "Value": "${source.login}"
+        }
+      },
+      "user_name_template_suffix": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Username template suffix"
       },
       "user_name_template_type": {
         "Type": "String",
+        "Optional": true,
         "Description": "Username template type",
-        "Computed": true
+        "Default": {
+          "Type": "string",
+          "Value": "BUILT_IN"
+        }
       },
       "users": {
         "Type": "Set",
@@ -2396,6 +2811,66 @@
         }
       }
     },
+    "okta_event_hook": {
+      "auth": {
+        "Type": "Map",
+        "Optional": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "channel": {
+        "Type": "Map",
+        "Required": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "events": {
+        "Type": "Set",
+        "Required": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "headers": {
+        "Type": "Set",
+        "Optional": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "key": {
+              "Type": "String",
+              "Optional": true
+            },
+            "value": {
+              "Type": "String",
+              "Optional": true
+            }
+          }
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Required": true
+      },
+      "status": {
+        "Type": "String",
+        "Optional": true,
+        "Default": {
+          "Type": "string",
+          "Value": "ACTIVE"
+        }
+      }
+    },
     "okta_factor": {
       "active": {
         "Type": "Bool",
@@ -2427,6 +2902,50 @@
         "Type": "Set",
         "Optional": true,
         "Description": "Users associated with the group. This can also be done per user.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      }
+    },
+    "okta_group_membership": {
+      "group_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "ID of a Okta Group"
+      },
+      "user_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "ID of a Okta User"
+      }
+    },
+    "okta_group_role": {
+      "group_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "ID of group to attach admin roles to"
+      },
+      "role_type": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Type of Role to assign"
+      },
+      "target_app_list": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "List of apps ids for the targets of the admin role.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "target_group_list": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "List of groups ids for the targets of the admin role.",
         "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
@@ -2477,6 +2996,11 @@
         "Type": "String",
         "Required": true
       },
+      "remove_assigned_users": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Remove users added by this rule from the assigned group after deleting this resource"
+      },
       "status": {
         "Type": "String",
         "Optional": true,
@@ -2502,18 +3026,6 @@
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
-        }
-      },
-      "acs_binding": {
-        "Type": "String",
-        "Required": true
-      },
-      "acs_type": {
-        "Type": "String",
-        "Optional": true,
-        "Default": {
-          "Type": "string",
-          "Value": "INSTANCE"
         }
       },
       "authorization_binding": {
@@ -2730,18 +3242,6 @@
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
-        }
-      },
-      "acs_binding": {
-        "Type": "String",
-        "Required": true
-      },
-      "acs_type": {
-        "Type": "String",
-        "Optional": true,
-        "Default": {
-          "Type": "string",
-          "Value": "INSTANCE"
         }
       },
       "authorization_binding": {
@@ -2962,7 +3462,8 @@
       },
       "acs_binding": {
         "Type": "String",
-        "Required": true
+        "Optional": true,
+        "Deprecated": "This property will be removed in the future, as it can only be set to 'HTTP-POST'"
       },
       "acs_type": {
         "Type": "String",
@@ -3030,6 +3531,10 @@
       "kid": {
         "Type": "String",
         "Required": true
+      },
+      "max_clock_skew": {
+        "Type": "Int",
+        "Optional": true
       },
       "name": {
         "Type": "String",
@@ -3400,6 +3905,7 @@
       "auth": {
         "Type": "Map",
         "Optional": true,
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -3407,7 +3913,8 @@
       },
       "channel": {
         "Type": "Map",
-        "Optional": true,
+        "Required": true,
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -3462,6 +3969,7 @@
       "duo": {
         "Type": "Map",
         "Optional": true,
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -3470,6 +3978,7 @@
       "fido_u2f": {
         "Type": "Map",
         "Optional": true,
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -3478,6 +3987,7 @@
       "fido_webauthn": {
         "Type": "Map",
         "Optional": true,
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -3486,6 +3996,7 @@
       "google_otp": {
         "Type": "Map",
         "Optional": true,
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -3501,6 +4012,15 @@
           "ElementsType": "String"
         }
       },
+      "hotp": {
+        "Type": "Map",
+        "Optional": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
       "name": {
         "Type": "String",
         "Required": true,
@@ -3509,6 +4029,16 @@
       "okta_call": {
         "Type": "Map",
         "Optional": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "okta_email": {
+        "Type": "Map",
+        "Optional": true,
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -3517,6 +4047,7 @@
       "okta_otp": {
         "Type": "Map",
         "Optional": true,
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -3525,6 +4056,7 @@
       "okta_password": {
         "Type": "Map",
         "Optional": true,
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -3533,6 +4065,7 @@
       "okta_push": {
         "Type": "Map",
         "Optional": true,
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -3541,6 +4074,7 @@
       "okta_question": {
         "Type": "Map",
         "Optional": true,
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -3549,6 +4083,7 @@
       "okta_sms": {
         "Type": "Map",
         "Optional": true,
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -3557,11 +4092,12 @@
       "priority": {
         "Type": "Int",
         "Optional": true,
-        "Description": "Policy Priority, this attribute can be set to a valid priority. To avoid endless diff situation we error if an invalid priority is provided. API defaults it to the last/lowest if not there."
+        "Description": "Policy Priority, this attribute can be set to a valid priority. To avoid endless diff situation we error if an invalid priority is provided. API defaults it to the last (lowest) if not there."
       },
       "rsa_token": {
         "Type": "Map",
         "Optional": true,
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -3579,6 +4115,7 @@
       "symantec_vip": {
         "Type": "Map",
         "Optional": true,
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -3587,6 +4124,7 @@
       "yubikey_token": {
         "Type": "Map",
         "Optional": true,
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -3597,7 +4135,7 @@
       "enroll": {
         "Type": "String",
         "Optional": true,
-        "Description": "Should the user be enrolled the first time they LOGIN, the next time they are CHALLENGEd, or NEVER?",
+        "Description": "Should the user be enrolled the first time they LOGIN, the next time they are CHALLENGED, or NEVER?",
         "Default": {
           "Type": "string",
           "Value": "CHALLENGE"
@@ -3651,7 +4189,7 @@
       "priority": {
         "Type": "Int",
         "Optional": true,
-        "Description": "Policy Rule Priority, this attribute can be set to a valid priority. To avoid endless diff situation we error if an invalid priority is provided. API defaults it to the last/lowest if not there."
+        "Description": "Policy Rule Priority, this attribute can be set to a valid priority. To avoid endless diff situation we error if an invalid priority is provided. API defaults it to the last (lowest) if not there."
       },
       "status": {
         "Type": "String",
@@ -3713,6 +4251,15 @@
         "Type": "String",
         "Required": true,
         "Description": "Type of the Network Zone - can either be IP or DYNAMIC only"
+      },
+      "usage": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Zone's purpose: POLICY or BLOCKLIST",
+        "Default": {
+          "Type": "string",
+          "Value": "POLICY"
+        }
       }
     },
     "okta_oauth_app": {
@@ -3758,7 +4305,11 @@
       "consent_method": {
         "Type": "String",
         "Optional": true,
-        "Description": "*Early Access Property*. Indicates whether user consent is required or implicit. Valid values: REQUIRED, TRUSTED. Default value is TRUSTED"
+        "Description": "*Early Access Property*. Indicates whether user consent is required or implicit. Valid values: REQUIRED, TRUSTED. Default value is TRUSTED",
+        "Default": {
+          "Type": "string",
+          "Value": "TRUSTED"
+        }
       },
       "custom_client_id": {
         "Type": "String",
@@ -3807,6 +4358,15 @@
           "Value": "true"
         }
       },
+      "implicit_assignment": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "*Early Access Property*. Enable Federation Broker Mode.",
+        "ConflictsWith": [
+          "groups",
+          "users"
+        ]
+      },
       "issuer_mode": {
         "Type": "String",
         "Optional": true,
@@ -3852,6 +4412,25 @@
         "Required": true,
         "Description": "Pretty name of app."
       },
+      "login_mode": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The type of Idp-Initiated login that the client supports, if any",
+        "Default": {
+          "Type": "string",
+          "Value": "DISABLED"
+        }
+      },
+      "login_scopes": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "List of scopes to use for the request",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
       "login_uri": {
         "Type": "String",
         "Optional": true,
@@ -3879,7 +4458,7 @@
       "policy_uri": {
         "Type": "String",
         "Optional": true,
-        "Description": "*Early Access Property*. URI to web page providing client policy document."
+        "Description": "URI to web page providing client policy document."
       },
       "post_logout_redirect_uris": {
         "Type": "Set",
@@ -3942,7 +4521,7 @@
       "tos_uri": {
         "Type": "String",
         "Optional": true,
-        "Description": "*Early Access Property*. URI to web page providing client tos (terms of service)."
+        "Description": "URI to web page providing client tos (terms of service)."
       },
       "type": {
         "Type": "String",
@@ -4001,6 +4580,15 @@
         "Default": {
           "Type": "string",
           "Value": "OKTA"
+        }
+      },
+      "call_recovery": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Enable or disable voice call recovery: ACTIVE or INACTIVE.",
+        "Default": {
+          "Type": "string",
+          "Value": "INACTIVE"
         }
       },
       "description": {
@@ -4181,7 +4769,7 @@
       "priority": {
         "Type": "Int",
         "Optional": true,
-        "Description": "Policy Priority, this attribute can be set to a valid priority. To avoid endless diff situation we error if an invalid priority is provided. API defaults it to the last/lowest if not there."
+        "Description": "Policy Priority, this attribute can be set to a valid priority. To avoid endless diff situation we error if an invalid priority is provided. API defaults it to the last (lowest) if not there."
       },
       "question_min_length": {
         "Type": "Int",
@@ -4314,7 +4902,7 @@
       "priority": {
         "Type": "Int",
         "Optional": true,
-        "Description": "Policy Rule Priority, this attribute can be set to a valid priority. To avoid endless diff situation we error if an invalid priority is provided. API defaults it to the last/lowest if not there."
+        "Description": "Policy Rule Priority, this attribute can be set to a valid priority. To avoid endless diff situation we error if an invalid priority is provided. API defaults it to the last (lowest) if not there."
       },
       "status": {
         "Type": "String",
@@ -4345,6 +4933,7 @@
       "duo": {
         "Type": "Map",
         "Optional": true,
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -4353,6 +4942,7 @@
       "fido_u2f": {
         "Type": "Map",
         "Optional": true,
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -4361,6 +4951,7 @@
       "fido_webauthn": {
         "Type": "Map",
         "Optional": true,
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -4369,6 +4960,7 @@
       "google_otp": {
         "Type": "Map",
         "Optional": true,
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -4384,6 +4976,15 @@
           "ElementsType": "String"
         }
       },
+      "hotp": {
+        "Type": "Map",
+        "Optional": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
       "name": {
         "Type": "String",
         "Required": true,
@@ -4392,6 +4993,16 @@
       "okta_call": {
         "Type": "Map",
         "Optional": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "okta_email": {
+        "Type": "Map",
+        "Optional": true,
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -4400,6 +5011,7 @@
       "okta_otp": {
         "Type": "Map",
         "Optional": true,
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -4408,6 +5020,7 @@
       "okta_password": {
         "Type": "Map",
         "Optional": true,
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -4416,6 +5029,7 @@
       "okta_push": {
         "Type": "Map",
         "Optional": true,
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -4424,6 +5038,7 @@
       "okta_question": {
         "Type": "Map",
         "Optional": true,
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -4432,6 +5047,7 @@
       "okta_sms": {
         "Type": "Map",
         "Optional": true,
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -4440,11 +5056,12 @@
       "priority": {
         "Type": "Int",
         "Optional": true,
-        "Description": "Policy Priority, this attribute can be set to a valid priority. To avoid endless diff situation we error if an invalid priority is provided. API defaults it to the last/lowest if not there."
+        "Description": "Policy Priority, this attribute can be set to a valid priority. To avoid endless diff situation we error if an invalid priority is provided. API defaults it to the last (lowest) if not there."
       },
       "rsa_token": {
         "Type": "Map",
         "Optional": true,
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -4462,6 +5079,7 @@
       "symantec_vip": {
         "Type": "Map",
         "Optional": true,
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -4470,6 +5088,169 @@
       "yubikey_token": {
         "Type": "Map",
         "Optional": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      }
+    },
+    "okta_policy_mfa_default": {
+      "default_included_group_id": {
+        "Type": "String",
+        "Description": "Default group ID (always included)",
+        "Computed": true
+      },
+      "description": {
+        "Type": "String",
+        "Description": "Default policy description",
+        "Computed": true
+      },
+      "duo": {
+        "Type": "Map",
+        "Optional": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "fido_u2f": {
+        "Type": "Map",
+        "Optional": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "fido_webauthn": {
+        "Type": "Map",
+        "Optional": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "google_otp": {
+        "Type": "Map",
+        "Optional": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "hotp": {
+        "Type": "Map",
+        "Optional": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Description": "Default policy name",
+        "Computed": true
+      },
+      "okta_call": {
+        "Type": "Map",
+        "Optional": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "okta_email": {
+        "Type": "Map",
+        "Optional": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "okta_otp": {
+        "Type": "Map",
+        "Optional": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "okta_password": {
+        "Type": "Map",
+        "Optional": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "okta_push": {
+        "Type": "Map",
+        "Optional": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "okta_question": {
+        "Type": "Map",
+        "Optional": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "okta_sms": {
+        "Type": "Map",
+        "Optional": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "priority": {
+        "Type": "Int",
+        "Description": "Default policy priority",
+        "Computed": true
+      },
+      "rsa_token": {
+        "Type": "Map",
+        "Optional": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "status": {
+        "Type": "String",
+        "Description": "Default policy status",
+        "Computed": true
+      },
+      "symantec_vip": {
+        "Type": "Map",
+        "Optional": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "yubikey_token": {
+        "Type": "Map",
+        "Optional": true,
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -4484,6 +5265,15 @@
         "Default": {
           "Type": "string",
           "Value": "OKTA"
+        }
+      },
+      "call_recovery": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Enable or disable voice call recovery: ACTIVE or INACTIVE.",
+        "Default": {
+          "Type": "string",
+          "Value": "INACTIVE"
         }
       },
       "description": {
@@ -4664,7 +5454,7 @@
       "priority": {
         "Type": "Int",
         "Optional": true,
-        "Description": "Policy Priority, this attribute can be set to a valid priority. To avoid endless diff situation we error if an invalid priority is provided. API defaults it to the last/lowest if not there."
+        "Description": "Policy Priority, this attribute can be set to a valid priority. To avoid endless diff situation we error if an invalid priority is provided. API defaults it to the last (lowest) if not there."
       },
       "question_min_length": {
         "Type": "Int",
@@ -4721,6 +5511,247 @@
         }
       }
     },
+    "okta_policy_password_default": {
+      "call_recovery": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Enable or disable voice call recovery: ACTIVE or INACTIVE.",
+        "Default": {
+          "Type": "string",
+          "Value": "INACTIVE"
+        }
+      },
+      "default_auth_provider": {
+        "Type": "String",
+        "Description": "Default Authentication Provider",
+        "Computed": true
+      },
+      "default_included_group_id": {
+        "Type": "String",
+        "Description": "Default group ID (always included)",
+        "Computed": true
+      },
+      "description": {
+        "Type": "String",
+        "Description": "Default policy description",
+        "Computed": true
+      },
+      "email_recovery": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Enable or disable email password recovery: ACTIVE or INACTIVE.",
+        "Default": {
+          "Type": "string",
+          "Value": "ACTIVE"
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Description": "Default policy name",
+        "Computed": true
+      },
+      "password_auto_unlock_minutes": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Number of minutes before a locked account is unlocked: 0 = no limit.",
+        "Default": {
+          "Type": "int",
+          "Value": "0"
+        }
+      },
+      "password_dictionary_lookup": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Check Passwords Against Common Password Dictionary.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "password_exclude_first_name": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "User firstName attribute must be excluded from the password"
+      },
+      "password_exclude_last_name": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "User lastName attribute must be excluded from the password"
+      },
+      "password_exclude_username": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "If the user name must be excluded from the password.",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "password_expire_warn_days": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Length in days a user will be warned before password expiry: 0 = no warning.",
+        "Default": {
+          "Type": "int",
+          "Value": "0"
+        }
+      },
+      "password_history_count": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Number of distinct passwords that must be created before they can be reused: 0 = none.",
+        "Default": {
+          "Type": "int",
+          "Value": "0"
+        }
+      },
+      "password_lockout_notification_channels": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Notification channels to use to notify a user when their account has been locked.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "password_max_age_days": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Length in days a password is valid before expiry: 0 = no limit.",
+        "Default": {
+          "Type": "int",
+          "Value": "0"
+        }
+      },
+      "password_max_lockout_attempts": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Number of unsuccessful login attempts allowed before lockout: 0 = no limit.",
+        "Default": {
+          "Type": "int",
+          "Value": "10"
+        }
+      },
+      "password_min_age_minutes": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Minimum time interval in minutes between password changes: 0 = no limit.",
+        "Default": {
+          "Type": "int",
+          "Value": "0"
+        }
+      },
+      "password_min_length": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Minimum password length.",
+        "Default": {
+          "Type": "int",
+          "Value": "8"
+        }
+      },
+      "password_min_lowercase": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "If a password must contain at least one lower case letter: 0 = no, 1 = yes. Default = 1",
+        "Default": {
+          "Type": "int",
+          "Value": "1"
+        }
+      },
+      "password_min_number": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "If a password must contain at least one number: 0 = no, 1 = yes. Default = 1",
+        "Default": {
+          "Type": "int",
+          "Value": "1"
+        }
+      },
+      "password_min_symbol": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "If a password must contain at least one symbol (!@#$%^\u0026*): 0 = no, 1 = yes. Default = 1",
+        "Default": {
+          "Type": "int",
+          "Value": "0"
+        }
+      },
+      "password_min_uppercase": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "If a password must contain at least one upper case letter: 0 = no, 1 = yes. Default = 1",
+        "Default": {
+          "Type": "int",
+          "Value": "1"
+        }
+      },
+      "password_show_lockout_failures": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "If a user should be informed when their account is locked.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "priority": {
+        "Type": "Int",
+        "Description": "Default policy priority",
+        "Computed": true
+      },
+      "question_min_length": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Min length of the password recovery question answer.",
+        "Default": {
+          "Type": "int",
+          "Value": "4"
+        }
+      },
+      "question_recovery": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Enable or disable security question password recovery: ACTIVE or INACTIVE.",
+        "Default": {
+          "Type": "string",
+          "Value": "ACTIVE"
+        }
+      },
+      "recovery_email_token": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Lifetime in minutes of the recovery email token.",
+        "Default": {
+          "Type": "int",
+          "Value": "60"
+        }
+      },
+      "skip_unlock": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "When an Active Directory user is locked out of Okta, the Okta unlock operation should also attempt to unlock the user's Windows account.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "sms_recovery": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Enable or disable SMS password recovery: ACTIVE or INACTIVE.",
+        "Default": {
+          "Type": "string",
+          "Value": "INACTIVE"
+        }
+      },
+      "status": {
+        "Type": "String",
+        "Description": "Default policy status",
+        "Computed": true
+      }
+    },
     "okta_policy_rule_idp_discovery": {
       "app_exclude": {
         "Type": "Set",
@@ -4741,7 +5772,7 @@
             },
             "type": {
               "Type": "String",
-              "Optional": true
+              "Required": true
             }
           }
         }
@@ -4765,7 +5796,7 @@
             },
             "type": {
               "Type": "String",
-              "Optional": true
+              "Required": true
             }
           }
         }
@@ -4862,7 +5893,7 @@
       "priority": {
         "Type": "Int",
         "Optional": true,
-        "Description": "Policy Rule Priority, this attribute can be set to a valid priority. To avoid endless diff situation we error if an invalid priority is provided. API defaults it to the last/lowest if not there."
+        "Description": "Policy Rule Priority, this attribute can be set to a valid priority. To avoid endless diff situation we error if an invalid priority is provided. API defaults it to the last (lowest) if not there."
       },
       "status": {
         "Type": "String",
@@ -4905,7 +5936,7 @@
       "enroll": {
         "Type": "String",
         "Optional": true,
-        "Description": "Should the user be enrolled the first time they LOGIN, the next time they are CHALLENGEd, or NEVER?",
+        "Description": "Should the user be enrolled the first time they LOGIN, the next time they are CHALLENGED, or NEVER?",
         "Default": {
           "Type": "string",
           "Value": "CHALLENGE"
@@ -4959,7 +5990,7 @@
       "priority": {
         "Type": "Int",
         "Optional": true,
-        "Description": "Policy Rule Priority, this attribute can be set to a valid priority. To avoid endless diff situation we error if an invalid priority is provided. API defaults it to the last/lowest if not there."
+        "Description": "Policy Rule Priority, this attribute can be set to a valid priority. To avoid endless diff situation we error if an invalid priority is provided. API defaults it to the last (lowest) if not there."
       },
       "status": {
         "Type": "String",
@@ -5057,7 +6088,7 @@
       "priority": {
         "Type": "Int",
         "Optional": true,
-        "Description": "Policy Rule Priority, this attribute can be set to a valid priority. To avoid endless diff situation we error if an invalid priority is provided. API defaults it to the last/lowest if not there."
+        "Description": "Policy Rule Priority, this attribute can be set to a valid priority. To avoid endless diff situation we error if an invalid priority is provided. API defaults it to the last (lowest) if not there."
       },
       "status": {
         "Type": "String",
@@ -5106,7 +6137,7 @@
       "mfa_prompt": {
         "Type": "String",
         "Optional": true,
-        "Description": "Prompt for MFA based on the device used, a factor session lifetime, or every sign on attempt: DEVICE, SESSION or ALWAYS"
+        "Description": "Prompt for MFA based on the device used, a factor session lifetime, or every sign-on attempt: DEVICE, SESSION or ALWAYS"
       },
       "mfa_remember_device": {
         "Type": "Bool",
@@ -5174,7 +6205,7 @@
       "priority": {
         "Type": "Int",
         "Optional": true,
-        "Description": "Policy Rule Priority, this attribute can be set to a valid priority. To avoid endless diff situation we error if an invalid priority is provided. API defaults it to the last/lowest if not there."
+        "Description": "Policy Rule Priority, this attribute can be set to a valid priority. To avoid endless diff situation we error if an invalid priority is provided. API defaults it to the last (lowest) if not there."
       },
       "session_idle": {
         "Type": "Int",
@@ -5247,7 +6278,7 @@
       "priority": {
         "Type": "Int",
         "Optional": true,
-        "Description": "Policy Priority, this attribute can be set to a valid priority. To avoid endless diff situation we error if an invalid priority is provided. API defaults it to the last/lowest if not there."
+        "Description": "Policy Priority, this attribute can be set to a valid priority. To avoid endless diff situation we error if an invalid priority is provided. API defaults it to the last (lowest) if not there."
       },
       "status": {
         "Type": "String",
@@ -5340,6 +6371,16 @@
           "Value": "false"
         }
       },
+      "acs_endpoints": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "List of ACS endpoints for this SAML application",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
       "app_settings_json": {
         "Type": "String",
         "Optional": true,
@@ -5370,11 +6411,13 @@
             },
             "name": {
               "Type": "String",
-              "Required": true
+              "Required": true,
+              "Description": "The reference name of the attribute statement"
             },
             "namespace": {
               "Type": "String",
               "Optional": true,
+              "Description": "The name format of the attribute",
               "Default": {
                 "Type": "string",
                 "Value": "urn:oasis:names:tc:SAML:2.0:attrname-format:unspecified"
@@ -5383,6 +6426,7 @@
             "type": {
               "Type": "String",
               "Optional": true,
+              "Description": "The type of attribute statements object",
               "Default": {
                 "Type": "string",
                 "Value": "EXPRESSION"
@@ -5490,7 +6534,11 @@
       "honor_force_authn": {
         "Type": "Bool",
         "Optional": true,
-        "Description": "Prompt user to re-authenticate if SP asks for it"
+        "Description": "Prompt user to re-authenticate if SP asks for it",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
       },
       "http_post_binding": {
         "Type": "String",
@@ -5520,11 +6568,7 @@
       "key_years_valid": {
         "Type": "Int",
         "Optional": true,
-        "Description": "Number of years the certificate is valid.",
-        "Default": {
-          "Type": "int",
-          "Value": "1"
-        }
+        "Description": "Number of years the certificate is valid."
       },
       "label": {
         "Type": "String",
@@ -5534,6 +6578,11 @@
       "metadata": {
         "Type": "String",
         "Description": "SAML xml metadata payload",
+        "Computed": true
+      },
+      "metadata_url": {
+        "Type": "String",
+        "Description": "SAML xml metadata URL",
         "Computed": true
       },
       "name": {
@@ -5570,6 +6619,21 @@
         "Type": "String",
         "Optional": true,
         "Description": "Signature algorithm used ot digitally sign the assertion and response"
+      },
+      "single_logout_certificate": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "x509 encoded certificate that the Service Provider uses to sign Single Logout requests"
+      },
+      "single_logout_issuer": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The issuer of the Service Provider that generates the Single Logout request"
+      },
+      "single_logout_url": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The location where the logout response is sent"
       },
       "sp_issuer": {
         "Type": "String",
@@ -5676,7 +6740,8 @@
       },
       "acs_binding": {
         "Type": "String",
-        "Required": true
+        "Optional": true,
+        "Deprecated": "This property will be removed in the future, as it can only be set to 'HTTP-POST'"
       },
       "acs_type": {
         "Type": "String",
@@ -5744,6 +6809,10 @@
       "kid": {
         "Type": "String",
         "Required": true
+      },
+      "max_clock_skew": {
+        "Type": "Int",
+        "Optional": true
       },
       "name": {
         "Type": "String",
@@ -6050,13 +7119,26 @@
       },
       "user_name_template": {
         "Type": "String",
+        "Optional": true,
         "Description": "Username template",
-        "Computed": true
+        "Default": {
+          "Type": "string",
+          "Value": "${source.login}"
+        }
+      },
+      "user_name_template_suffix": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Username template suffix"
       },
       "user_name_template_type": {
         "Type": "String",
+        "Optional": true,
         "Description": "Username template type",
-        "Computed": true
+        "Default": {
+          "Type": "string",
+          "Value": "BUILT_IN"
+        }
       },
       "username_field": {
         "Type": "String",
@@ -6120,7 +7202,7 @@
       "priority": {
         "Type": "Int",
         "Optional": true,
-        "Description": "Policy Priority, this attribute can be set to a valid priority. To avoid endless diff situation we error if an invalid priority is provided. API defaults it to the last/lowest if not there."
+        "Description": "Policy Priority, this attribute can be set to a valid priority. To avoid endless diff situation we error if an invalid priority is provided. API defaults it to the last (lowest) if not there."
       },
       "status": {
         "Type": "String",
@@ -6159,7 +7241,7 @@
       "mfa_prompt": {
         "Type": "String",
         "Optional": true,
-        "Description": "Prompt for MFA based on the device used, a factor session lifetime, or every sign on attempt: DEVICE, SESSION or ALWAYS"
+        "Description": "Prompt for MFA based on the device used, a factor session lifetime, or every sign-on attempt: DEVICE, SESSION or ALWAYS"
       },
       "mfa_remember_device": {
         "Type": "Bool",
@@ -6227,7 +7309,7 @@
       "priority": {
         "Type": "Int",
         "Optional": true,
-        "Description": "Policy Rule Priority, this attribute can be set to a valid priority. To avoid endless diff situation we error if an invalid priority is provided. API defaults it to the last/lowest if not there."
+        "Description": "Policy Rule Priority, this attribute can be set to a valid priority. To avoid endless diff situation we error if an invalid priority is provided. API defaults it to the last (lowest) if not there."
       },
       "session_idle": {
         "Type": "Int",
@@ -6585,13 +7667,26 @@
       },
       "user_name_template": {
         "Type": "String",
+        "Optional": true,
         "Description": "Username template",
-        "Computed": true
+        "Default": {
+          "Type": "string",
+          "Value": "${source.login}"
+        }
+      },
+      "user_name_template_suffix": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Username template suffix"
       },
       "user_name_template_type": {
         "Type": "String",
+        "Optional": true,
         "Description": "Username template type",
-        "Computed": true
+        "Default": {
+          "Type": "string",
+          "Value": "BUILT_IN"
+        }
       },
       "username_field": {
         "Type": "String",
@@ -6808,13 +7903,26 @@
       },
       "user_name_template": {
         "Type": "String",
+        "Optional": true,
         "Description": "Username template",
-        "Computed": true
+        "Default": {
+          "Type": "string",
+          "Value": "${source.login}"
+        }
+      },
+      "user_name_template_suffix": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Username template suffix"
       },
       "user_name_template_type": {
         "Type": "String",
+        "Optional": true,
         "Description": "Username template type",
-        "Computed": true
+        "Default": {
+          "Type": "string",
+          "Value": "BUILT_IN"
+        }
       },
       "username_selector": {
         "Type": "String",
@@ -6867,12 +7975,12 @@
       "name": {
         "Type": "String",
         "Required": true,
-        "Description": "Name of the Trusted Origin Resource"
+        "Description": "Unique name for this trusted origin"
       },
       "origin": {
         "Type": "String",
         "Required": true,
-        "Description": "The origin to trust"
+        "Description": "Unique origin URL for this trusted origin"
       },
       "scopes": {
         "Type": "List",
@@ -6914,11 +8022,7 @@
       "custom_profile_attributes": {
         "Type": "String",
         "Optional": true,
-        "Description": "JSON formatted custom attributes for a user. It must be JSON due to various types Okta allows.",
-        "Default": {
-          "Type": "string",
-          "Value": "{}"
-        }
+        "Description": "JSON formatted custom attributes for a user. It must be JSON due to various types Okta allows."
       },
       "department": {
         "Type": "String",
@@ -7109,7 +8213,16 @@
       "master": {
         "Type": "String",
         "Optional": true,
-        "Description": "SubSchema profile manager, if not set it will inherit its setting."
+        "Description": "SubSchema profile manager, if not set it will inherit its setting.",
+        "Default": {
+          "Type": "string",
+          "Value": "PROFILE_MASTER"
+        }
+      },
+      "pattern": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The validation pattern to use for the subschema. Must be in form of '.+', or '[\u003cpattern\u003e]+' if present.'"
       },
       "permissions": {
         "Type": "String",
@@ -7123,7 +8236,7 @@
       "required": {
         "Type": "Bool",
         "Optional": true,
-        "Description": "Whether the Subschema is required"
+        "Description": "Whether the subschema is required"
       },
       "title": {
         "Type": "String",
@@ -7134,6 +8247,15 @@
         "Type": "String",
         "Required": true,
         "Description": "Subschema type: string, boolean, number, integer, array, or object"
+      },
+      "user_type": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Custom subschema user type",
+        "Default": {
+          "Type": "string",
+          "Value": "default"
+        }
       }
     },
     "okta_user_schema": {
@@ -7197,6 +8319,11 @@
         "Optional": true,
         "Description": "Subschema external name"
       },
+      "external_namespace": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Subschema external namespace"
+      },
       "index": {
         "Type": "String",
         "Required": true,
@@ -7205,7 +8332,34 @@
       "master": {
         "Type": "String",
         "Optional": true,
-        "Description": "SubSchema profile manager, if not set it will inherit its setting."
+        "Description": "SubSchema profile manager, if not set it will inherit its setting.",
+        "Default": {
+          "Type": "string",
+          "Value": "PROFILE_MASTER"
+        }
+      },
+      "master_override_priority": {
+        "Type": "List",
+        "Optional": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "type": {
+              "Type": "String",
+              "Optional": true,
+              "Default": {
+                "Type": "string",
+                "Value": "APP"
+              }
+            },
+            "value": {
+              "Type": "String",
+              "Required": true
+            }
+          }
+        }
       },
       "max_length": {
         "Type": "Int",
@@ -7242,6 +8396,11 @@
           }
         }
       },
+      "pattern": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The validation pattern to use for the subschema. Must be in form of '.+', or '[\u003cpattern\u003e]+' if present.'"
+      },
       "permissions": {
         "Type": "String",
         "Optional": true,
@@ -7254,7 +8413,7 @@
       "required": {
         "Type": "Bool",
         "Optional": true,
-        "Description": "Whether the Subschema is required"
+        "Description": "Whether the subschema is required"
       },
       "scope": {
         "Type": "String",
@@ -7283,6 +8442,32 @@
           "enum",
           "array_type"
         ]
+      },
+      "user_type": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Custom subschema user type",
+        "Default": {
+          "Type": "string",
+          "Value": "default"
+        }
+      }
+    },
+    "okta_user_type": {
+      "description": {
+        "Type": "String",
+        "Required": true,
+        "Description": "A human-readable description of the type"
+      },
+      "display_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The display name for the type\t"
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The display name for the type"
       }
     }
   },
@@ -7297,9 +8482,15 @@
           "Value": "true"
         }
       },
-      "description": {
-        "Type": "String",
-        "Computed": true
+      "groups": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Groups associated with the application",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       },
       "id": {
         "Type": "String",
@@ -7325,6 +8516,11 @@
           "label"
         ]
       },
+      "links": {
+        "Type": "String",
+        "Description": "Discoverable resources related to the app",
+        "Computed": true
+      },
       "name": {
         "Type": "String",
         "Computed": true
@@ -7332,6 +8528,16 @@
       "status": {
         "Type": "String",
         "Computed": true
+      },
+      "users": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Users associated with the application",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       }
     },
     "okta_app_metadata_saml": {
@@ -7360,7 +8566,7 @@
       },
       "key_id": {
         "Type": "String",
-        "Required": true
+        "Optional": true
       },
       "metadata": {
         "Type": "String",
@@ -7369,6 +8575,173 @@
       "want_authn_requests_signed": {
         "Type": "Bool",
         "Computed": true
+      }
+    },
+    "okta_app_oauth": {
+      "active_only": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Search only ACTIVE applications.",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "auto_submit_toolbar": {
+        "Type": "Bool",
+        "Description": "Display auto submit toolbar",
+        "Computed": true
+      },
+      "client_id": {
+        "Type": "String",
+        "Description": "OAuth client ID",
+        "Computed": true
+      },
+      "client_uri": {
+        "Type": "String",
+        "Description": "URI to a web page providing information about the client.",
+        "Computed": true
+      },
+      "grant_types": {
+        "Type": "Set",
+        "Description": "List of OAuth 2.0 grant types",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "groups": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Groups associated with the application",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "hide_ios": {
+        "Type": "Bool",
+        "Description": "Do not display application icon on mobile app",
+        "Computed": true
+      },
+      "hide_web": {
+        "Type": "Bool",
+        "Description": "Do not display application icon to users",
+        "Computed": true
+      },
+      "id": {
+        "Type": "String",
+        "Optional": true,
+        "ConflictsWith": [
+          "label",
+          "label_prefix"
+        ]
+      },
+      "label": {
+        "Type": "String",
+        "Optional": true,
+        "ConflictsWith": [
+          "id",
+          "label_prefix"
+        ]
+      },
+      "label_prefix": {
+        "Type": "String",
+        "Optional": true,
+        "ConflictsWith": [
+          "id",
+          "label"
+        ]
+      },
+      "links": {
+        "Type": "String",
+        "Description": "Discoverable resources related to the app",
+        "Computed": true
+      },
+      "login_mode": {
+        "Type": "String",
+        "Description": "The type of Idp-Initiated login that the client supports, if any",
+        "Computed": true
+      },
+      "login_scopes": {
+        "Type": "Set",
+        "Description": "List of scopes to use for the request when 'login_mode' == OKTA",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "login_uri": {
+        "Type": "String",
+        "Description": "URI that initiates login.",
+        "Computed": true
+      },
+      "logo_uri": {
+        "Type": "String",
+        "Description": "URI that references a logo for the client.",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Computed": true
+      },
+      "policy_uri": {
+        "Type": "String",
+        "Description": "URI to web page providing client policy document.",
+        "Computed": true
+      },
+      "post_logout_redirect_uris": {
+        "Type": "Set",
+        "Description": "List of URIs for redirection after logout",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "redirect_uris": {
+        "Type": "Set",
+        "Description": "List of URIs for use in the redirect-based flow.",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "response_types": {
+        "Type": "Set",
+        "Description": "List of OAuth 2.0 response type strings.",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "status": {
+        "Type": "String",
+        "Computed": true
+      },
+      "type": {
+        "Type": "String",
+        "Computed": true
+      },
+      "users": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Users associated with the application",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       }
     },
     "okta_app_saml": {
@@ -7389,6 +8762,16 @@
         "Default": {
           "Type": "bool",
           "Value": "false"
+        }
+      },
+      "acs_endpoints": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "List of ACS endpoints for this SAML application",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
         }
       },
       "active_only": {
@@ -7420,37 +8803,32 @@
           "Info": {
             "filter_type": {
               "Type": "String",
-              "Optional": true,
-              "Description": "Type of group attribute filter"
+              "Description": "Type of group attribute filter",
+              "Computed": true
             },
             "filter_value": {
               "Type": "String",
-              "Optional": true,
-              "Description": "Filter value to use"
+              "Description": "Filter value to use",
+              "Computed": true
             },
             "name": {
               "Type": "String",
-              "Required": true
+              "Description": "The reference name of the attribute statement",
+              "Computed": true
             },
             "namespace": {
               "Type": "String",
-              "Optional": true,
-              "Default": {
-                "Type": "string",
-                "Value": "urn:oasis:names:tc:SAML:2.0:attrname-format:unspecified"
-              }
+              "Description": "The name format of the attribute",
+              "Computed": true
             },
             "type": {
               "Type": "String",
-              "Optional": true,
-              "Default": {
-                "Type": "string",
-                "Value": "EXPRESSION"
-              }
+              "Description": "The type of attribute statements object",
+              "Computed": true
             },
             "values": {
               "Type": "List",
-              "Optional": true,
+              "Computed": true,
               "ConfigImplicitMode": "Attr",
               "Elem": {
                 "Type": "SchemaElements",
@@ -7484,10 +8862,6 @@
         "Optional": true,
         "Description": "Identifies a specific application resource in an IDP initiated SSO scenario."
       },
-      "description": {
-        "Type": "String",
-        "Computed": true
-      },
       "destination": {
         "Type": "String",
         "Optional": true,
@@ -7502,6 +8876,16 @@
         "Type": "Set",
         "Optional": true,
         "Description": "features to enable",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "groups": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Groups associated with the application",
         "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
@@ -7565,6 +8949,11 @@
           "label"
         ]
       },
+      "links": {
+        "Type": "String",
+        "Description": "Discoverable resources related to the app",
+        "Computed": true
+      },
       "name": {
         "Type": "String",
         "Computed": true
@@ -7588,6 +8977,21 @@
         "Type": "String",
         "Optional": true,
         "Description": "Signature algorithm used ot digitally sign the assertion and response"
+      },
+      "single_logout_certificate": {
+        "Type": "String",
+        "Description": "x509 encoded certificate that the Service Provider uses to sign Single Logout requests",
+        "Computed": true
+      },
+      "single_logout_issuer": {
+        "Type": "String",
+        "Description": "The issuer of the Service Provider that generates the Single Logout request",
+        "Computed": true
+      },
+      "single_logout_url": {
+        "Type": "String",
+        "Description": "The location where the logout response is sent",
+        "Computed": true
       },
       "sp_issuer": {
         "Type": "String",
@@ -7635,6 +9039,16 @@
           "Type": "string",
           "Value": "BUILT_IN"
         }
+      },
+      "users": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Users associated with the application",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       }
     },
     "okta_auth_server": {
@@ -7663,6 +9077,14 @@
         "Type": "String",
         "Computed": true
       },
+      "issuer": {
+        "Type": "String",
+        "Computed": true
+      },
+      "issuer_mode": {
+        "Type": "String",
+        "Computed": true
+      },
       "kid": {
         "Type": "String",
         "Computed": true
@@ -7676,21 +9098,96 @@
         "Computed": true
       }
     },
+    "okta_auth_server_policy": {
+      "assigned_clients": {
+        "Type": "Set",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "auth_server_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Auth server ID"
+      },
+      "description": {
+        "Type": "String",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the policy"
+      }
+    },
+    "okta_auth_server_scopes": {
+      "auth_server_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Auth server ID"
+      },
+      "scopes": {
+        "Type": "List",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "consent": {
+              "Type": "String",
+              "Computed": true
+            },
+            "default": {
+              "Type": "Bool",
+              "Computed": true
+            },
+            "description": {
+              "Type": "String",
+              "Computed": true
+            },
+            "id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "metadata_publish": {
+              "Type": "String",
+              "Computed": true
+            },
+            "name": {
+              "Type": "String",
+              "Computed": true
+            },
+            "system": {
+              "Type": "Bool",
+              "Computed": true
+            }
+          }
+        }
+      }
+    },
     "okta_default_policies": {
       "type": {
         "Type": "String",
         "Required": true,
-        "Description": "Policy type: OKTA_SIGN_ON, PASSWORD, MFA_ENROLL, or OAUTH_AUTHORIZATION_POLICY"
+        "Description": "Policy type: OKTA_SIGN_ON, PASSWORD, MFA_ENROLL, or IDP_DISCOVERY"
       }
     },
     "okta_default_policy": {
       "type": {
         "Type": "String",
         "Required": true,
-        "Description": "Policy type: OKTA_SIGN_ON, PASSWORD, MFA_ENROLL, or OAUTH_AUTHORIZATION_POLICY"
+        "Description": "Policy type: OKTA_SIGN_ON, PASSWORD, MFA_ENROLL, or IDP_DISCOVERY"
       }
     },
     "okta_everyone_group": {
+      "description": {
+        "Type": "String",
+        "Computed": true
+      },
       "include_users": {
         "Type": "Bool",
         "Optional": true,
@@ -7706,6 +9203,14 @@
         "Type": "String",
         "Computed": true
       },
+      "id": {
+        "Type": "String",
+        "Optional": true,
+        "ConflictsWith": [
+          "name",
+          "type"
+        ]
+      },
       "include_users": {
         "Type": "Bool",
         "Optional": true,
@@ -7717,7 +9222,12 @@
       },
       "name": {
         "Type": "String",
-        "Required": true
+        "Optional": true
+      },
+      "type": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Type of the group. When specified in the terraform resource, will act as a filter when searching for the group"
       },
       "users": {
         "Type": "Set",
@@ -7728,6 +9238,50 @@
           "Type": "SchemaElements",
           "ElementsType": "String"
         }
+      }
+    },
+    "okta_groups": {
+      "groups": {
+        "Type": "List",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "description": {
+              "Type": "String",
+              "Computed": true
+            },
+            "id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "name": {
+              "Type": "String",
+              "Computed": true
+            },
+            "type": {
+              "Type": "String",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "q": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Searches the name property of groups for matching value"
+      },
+      "search": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Searches for groups with a supported filtering expression for all attributes except for '_embedded', '_links', and 'objectClass'"
+      },
+      "type": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Type of the group. When specified in the terraform resource, will act as a filter when searching for the groups"
       }
     },
     "okta_idp_metadata_saml": {
@@ -7767,6 +9321,91 @@
         "Computed": true
       },
       "signing_certificate": {
+        "Type": "String",
+        "Computed": true
+      }
+    },
+    "okta_idp_oidc": {
+      "authorization_binding": {
+        "Type": "String",
+        "Computed": true
+      },
+      "authorization_url": {
+        "Type": "String",
+        "Computed": true
+      },
+      "client_id": {
+        "Type": "String",
+        "Computed": true
+      },
+      "client_secret": {
+        "Type": "String",
+        "Computed": true
+      },
+      "id": {
+        "Type": "String",
+        "Optional": true,
+        "ConflictsWith": [
+          "name"
+        ]
+      },
+      "issuer_mode": {
+        "Type": "String",
+        "Computed": true
+      },
+      "issuer_url": {
+        "Type": "String",
+        "Computed": true
+      },
+      "jwks_binding": {
+        "Type": "String",
+        "Computed": true
+      },
+      "jwks_url": {
+        "Type": "String",
+        "Computed": true
+      },
+      "max_clock_skew": {
+        "Type": "Int",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "ConflictsWith": [
+          "id"
+        ]
+      },
+      "protocol_type": {
+        "Type": "String",
+        "Computed": true
+      },
+      "scopes": {
+        "Type": "Set",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "token_binding": {
+        "Type": "String",
+        "Computed": true
+      },
+      "token_url": {
+        "Type": "String",
+        "Computed": true
+      },
+      "type": {
+        "Type": "String",
+        "Computed": true
+      },
+      "user_info_binding": {
+        "Type": "String",
+        "Computed": true
+      },
+      "user_info_url": {
         "Type": "String",
         "Computed": true
       }
@@ -7840,16 +9479,154 @@
         "Computed": true
       }
     },
+    "okta_idp_social": {
+      "account_link_action": {
+        "Type": "String",
+        "Computed": true
+      },
+      "account_link_group_include": {
+        "Type": "Set",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "authorization_binding": {
+        "Type": "String",
+        "Computed": true
+      },
+      "authorization_url": {
+        "Type": "String",
+        "Computed": true
+      },
+      "client_id": {
+        "Type": "String",
+        "Computed": true
+      },
+      "client_secret": {
+        "Type": "String",
+        "Computed": true
+      },
+      "deprovisioned_action": {
+        "Type": "String",
+        "Computed": true
+      },
+      "groups_action": {
+        "Type": "String",
+        "Computed": true
+      },
+      "groups_assignment": {
+        "Type": "Set",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "groups_attribute": {
+        "Type": "String",
+        "Computed": true
+      },
+      "groups_filter": {
+        "Type": "Set",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "ID of the IdP",
+        "ConflictsWith": [
+          "name"
+        ]
+      },
+      "issuer_mode": {
+        "Type": "String",
+        "Computed": true
+      },
+      "max_clock_skew": {
+        "Type": "Int",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "name of the IdP",
+        "ConflictsWith": [
+          "id"
+        ]
+      },
+      "profile_master": {
+        "Type": "Bool",
+        "Computed": true
+      },
+      "protocol_type": {
+        "Type": "String",
+        "Computed": true
+      },
+      "provisioning_action": {
+        "Type": "String",
+        "Computed": true
+      },
+      "scopes": {
+        "Type": "Set",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "status": {
+        "Type": "String",
+        "Computed": true
+      },
+      "subject_match_attribute": {
+        "Type": "String",
+        "Computed": true
+      },
+      "subject_match_type": {
+        "Type": "String",
+        "Computed": true
+      },
+      "suspended_action": {
+        "Type": "String",
+        "Computed": true
+      },
+      "token_binding": {
+        "Type": "String",
+        "Computed": true
+      },
+      "token_url": {
+        "Type": "String",
+        "Computed": true
+      },
+      "type": {
+        "Type": "String",
+        "Computed": true
+      },
+      "username_template": {
+        "Type": "String",
+        "Computed": true
+      }
+    },
     "okta_policy": {
       "name": {
         "Type": "String",
         "Required": true,
-        "Description": "name of policy"
+        "Description": "Name of policy"
       },
       "type": {
         "Type": "String",
         "Required": true,
-        "Description": "Policy type: OKTA_SIGN_ON, PASSWORD, MFA_ENROLL, IDP_DISCOVERY, or OAUTH_AUTHORIZATION_POLICY"
+        "Description": "Policy type: OKTA_SIGN_ON, PASSWORD, MFA_ENROLL, or IDP_DISCOVERY"
       }
     },
     "okta_user": {
@@ -8039,6 +9816,11 @@
       }
     },
     "okta_user_profile_mapping_source": {
+      "id": {
+        "Type": "String",
+        "Description": "ID of the source",
+        "Computed": true
+      },
       "name": {
         "Type": "String",
         "Computed": true
@@ -8046,6 +9828,24 @@
       "type": {
         "Type": "String",
         "Computed": true
+      }
+    },
+    "okta_user_type": {
+      "description": {
+        "Type": "String",
+        "Optional": true
+      },
+      "display_name": {
+        "Type": "String",
+        "Optional": true
+      },
+      "id": {
+        "Type": "String",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true
       }
     },
     "okta_users": {
@@ -8149,6 +9949,10 @@
               "Computed": true
             },
             "honorific_suffix": {
+              "Type": "String",
+              "Computed": true
+            },
+            "id": {
               "Type": "String",
               "Computed": true
             },

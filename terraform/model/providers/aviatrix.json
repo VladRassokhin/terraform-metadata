@@ -1,9 +1,9 @@
 {
   ".schema_version": "2",
-  ".sdk_type": "terraform-plugin-sdk-v1",
+  ".sdk_type": "terraform-plugin-sdk-v2",
   "name": "aviatrix",
   "type": "provider",
-  "version": "v2.15.1",
+  "version": "v2.18.2",
   "provider": {
     "controller_ip": {
       "Type": "String",
@@ -151,7 +151,7 @@
       "username": {
         "Type": "String",
         "Required": true,
-        "Description": "Name of account user to be created."
+        "Description": "Name of account user to be created. It can only include alphanumeric characters(lower case only), hyphens, dots or underscores. 1 to 80 in length. No spaces are allowed."
       }
     },
     "aviatrix_arm_peer": {
@@ -204,6 +204,28 @@
         "Type": "String",
         "Required": true,
         "Description": "Region of Azure cloud."
+      }
+    },
+    "aviatrix_aws_guard_duty": {
+      "account_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Account name"
+      },
+      "excluded_ips": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Excluded IPs.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "region": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Region."
       }
     },
     "aviatrix_aws_peer": {
@@ -288,6 +310,7 @@
         "Type": "List",
         "Optional": true,
         "Description": "A list of Names of Aviatrix Transit Gateway to attach to one of the three default domains.",
+        "Deprecated": "Please set `manage_transit_gateway_attachment` to false, and use the standalone aviatrix_aws_tgw_transit_gateway_attachment resource instead.",
         "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
@@ -299,9 +322,38 @@
         "Required": true,
         "Description": "BGP Local ASN (Autonomous System Number), Integer between 1-4294967294."
       },
+      "cidrs": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "TGW CIDRs.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "cloud_type": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Type of cloud service provider, requires an integer value. Supported for AWS (1) and AWS GOV (256). Default value: 1.",
+        "Default": {
+          "Type": "int",
+          "Value": "1"
+        }
+      },
+      "enable_multicast": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enable Multicast.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
       "manage_transit_gateway_attachment": {
         "Type": "Bool",
         "Optional": true,
+        "Description": "This parameter is a switch used to determine whether or not to manage transit gateway attachments to the TGW using the aviatrix_aws_tgw resource. If this is set to false, attachment of transit gateways must be done using the aviatrix_aws_tgw_transit_gateway_attachment resource. Valid values: true, false. Default value: true.",
         "Default": {
           "Type": "bool",
           "Value": "true"
@@ -310,6 +362,7 @@
       "manage_vpc_attachment": {
         "Type": "Bool",
         "Optional": true,
+        "Description": "This parameter is a switch used to determine whether or not to manage VPC attachments to the TGW using the aviatrix_aws_tgw resource. If this is set to false, attachment of VPCs must be done using the aviatrix_aws_tgw_vpc_attachment resource. Valid values: true, false. Default value: true.",
         "Default": {
           "Type": "bool",
           "Value": "true"
@@ -333,6 +386,7 @@
               "Type": "List",
               "Optional": true,
               "Description": "A list of VPCs attached to the domain.",
+              "Deprecated": "Please set `manage_vpc_attachment` to false, and use the standalone aviatrix_aws_tgw_vpc_attachment resource instead.",
               "IsBlock": true,
               "ConfigImplicitMode": "Block",
               "Elem": {
@@ -446,6 +500,90 @@
         "Type": "String",
         "Required": true,
         "Description": "Name of the AWS TGW which is going to be created."
+      }
+    },
+    "aviatrix_aws_tgw_connect": {
+      "connect_attachment_id": {
+        "Type": "String",
+        "Description": "Connect Attachment ID.",
+        "Computed": true
+      },
+      "connection_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Connection Name."
+      },
+      "security_domain_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Security Domain Name."
+      },
+      "tgw_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "AWS TGW Name."
+      },
+      "transport_attachment_id": {
+        "Type": "String",
+        "Description": "Transport Attachment ID.",
+        "Computed": true
+      },
+      "transport_vpc_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Transport Attachment VPC ID."
+      }
+    },
+    "aviatrix_aws_tgw_connect_peer": {
+      "bgp_inside_cidrs": {
+        "Type": "Set",
+        "Required": true,
+        "Description": "Set of BGP Inside CIDR Blocks.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "connect_attachment_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Connect Attachment ID."
+      },
+      "connect_peer_id": {
+        "Type": "String",
+        "Description": "Connect Peer ID.",
+        "Computed": true
+      },
+      "connect_peer_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Connect Peer Name."
+      },
+      "connection_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "AWS TGW Connect connection name."
+      },
+      "peer_as_number": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Peer AS Number."
+      },
+      "peer_gre_address": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Peer GRE IP Address."
+      },
+      "tgw_gre_address": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "AWS TGW GRE IP Address."
+      },
+      "tgw_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "AWS TGW Name."
       }
     },
     "aviatrix_aws_tgw_directconnect": {
@@ -570,6 +708,11 @@
           "Type": "bool",
           "Value": "false"
         }
+      },
+      "edge_attachment": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Edge attachment ID. To allow access to the private IP of the MGMT interface of the Firewalls, set this attribute to enable Management Access From Onprem. This feature advertises the Firewalls private MGMT subnet to your Edge domain."
       },
       "region": {
         "Type": "String",
@@ -758,7 +901,79 @@
         "Description": "Name of an azure transit gateway with transit firenet enabled."
       }
     },
+    "aviatrix_azure_vng_conn": {
+      "attached": {
+        "Type": "Bool",
+        "Description": "VNG attached or not",
+        "Computed": true
+      },
+      "connection_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Connection name"
+      },
+      "primary_gateway_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Primary gateway name"
+      },
+      "vng_name": {
+        "Type": "String",
+        "Description": "VNG name",
+        "Computed": true
+      },
+      "vpc_id": {
+        "Type": "String",
+        "Description": "VPC ID",
+        "Computed": true
+      }
+    },
+    "aviatrix_cloudwatch_agent": {
+      "cloudwatch_role_arn": {
+        "Type": "String",
+        "Required": true,
+        "Description": "CloudWatch role ARN."
+      },
+      "excluded_gateways": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "List of excluded gateways.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "log_group_name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Log group name.",
+        "Default": {
+          "Type": "string",
+          "Value": "AVIATRIX-CLOUDWATCH-LOG"
+        }
+      },
+      "region": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of AWS region."
+      },
+      "status": {
+        "Type": "String",
+        "Description": "Enabled or not.",
+        "Computed": true
+      }
+    },
     "aviatrix_controller_config": {
+      "aws_guard_duty_scanning_interval": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Scanning Interval for AWS Guard Duty.",
+        "Default": {
+          "Type": "int",
+          "Value": "60"
+        }
+      },
       "backup_account_name": {
         "Type": "String",
         "Optional": true,
@@ -770,7 +985,7 @@
       "backup_bucket_name": {
         "Type": "String",
         "Optional": true,
-        "Description": "S3 Bucket Name for AWS.",
+        "Description": "Bucket name. Required for AWS, AWSGOV, GCP and OCI.",
         "Default": {
           "Type": "string"
         }
@@ -788,6 +1003,44 @@
         "Type": "Bool",
         "Optional": true,
         "Description": "Switch to enable/disable controller cloudn backup config.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "backup_container_name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Container name. Required for Azure.",
+        "Default": {
+          "Type": "string"
+        }
+      },
+      "backup_region": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Name of region. Required for Azure and OCI.",
+        "Default": {
+          "Type": "string"
+        }
+      },
+      "backup_storage_name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Storage name. Required for Azure.",
+        "Default": {
+          "Type": "string"
+        }
+      },
+      "ca_certificate_file_path": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "File path to the CA Certificate."
+      },
+      "enable_vpc_dns_server": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enable VPC/VNET DNS Server.",
         "Default": {
           "Type": "bool",
           "Value": "false"
@@ -829,6 +1082,16 @@
           "Value": "false"
         }
       },
+      "server_private_key_file_path": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "File path to server private key."
+      },
+      "server_public_certificate_file_path": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "File path to the Server public certificate."
+      },
       "sg_management_account_name": {
         "Type": "String",
         "Optional": true,
@@ -845,6 +1108,397 @@
         "Computed": true
       }
     },
+    "aviatrix_controller_private_oob": {
+      "enable_private_oob": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Switch to enable/disable Aviatrix controller private OOB.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      }
+    },
+    "aviatrix_datadog_agent": {
+      "api_key": {
+        "Type": "String",
+        "Required": true,
+        "Description": "API key."
+      },
+      "excluded_gateways": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "List of excluded gateways.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "metrics_only": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Only export metrics without exporting logs.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "site": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Site preference.",
+        "Default": {
+          "Type": "string",
+          "Value": "datadoghq.com"
+        }
+      },
+      "status": {
+        "Type": "String",
+        "Description": "Enabled or not.",
+        "Computed": true
+      }
+    },
+    "aviatrix_device_aws_tgw_attachment": {
+      "aws_tgw_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "AWS TGW name."
+      },
+      "connection_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Connection name."
+      },
+      "device_bgp_asn": {
+        "Type": "Int",
+        "Required": true,
+        "Description": "Device BGP AS Number."
+      },
+      "device_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Device name."
+      },
+      "security_domain_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Security domain name."
+      }
+    },
+    "aviatrix_device_interface_config": {
+      "device_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of device."
+      },
+      "wan_primary_interface": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Primary WAN interface of the device. For example, 'GigabitEthernet1'."
+      },
+      "wan_primary_interface_public_ip": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Primary WAN interface public IP address."
+      }
+    },
+    "aviatrix_device_registration": {
+      "address_1": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Address line 1."
+      },
+      "address_2": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Address line 2."
+      },
+      "city": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "City"
+      },
+      "country": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "ISO two-letter country code."
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Description."
+      },
+      "host_os": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Device host OS. Default value is 'ios'. Only valid value is 'ios'.",
+        "Default": {
+          "Type": "string",
+          "Value": "ios"
+        }
+      },
+      "key_file": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Path to private key file."
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the device."
+      },
+      "password": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Password to connect to the device. This attribute can also be set via environment variable 'AVIATRIX_DEVICE_PASSWORD'. If both are set the value in the config file will be used.",
+        "DefaultFunc": "UNKNOWN"
+      },
+      "public_ip": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Public IP address of the device."
+      },
+      "ssh_port": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "SSH port to use to connect to the device. Defaults to 22 if not set.",
+        "Default": {
+          "Type": "int",
+          "Value": "22"
+        }
+      },
+      "state": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "State"
+      },
+      "username": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Username to use to connect to the device."
+      },
+      "zip_code": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Zip code."
+      }
+    },
+    "aviatrix_device_tag": {
+      "config": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Config to apply to devices that are attached to the tag."
+      },
+      "device_names": {
+        "Type": "List",
+        "Required": true,
+        "Description": "List of device names to attach to this tag.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the tag."
+      }
+    },
+    "aviatrix_device_transit_gateway_attachment": {
+      "connection_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Connection name."
+      },
+      "device_bgp_asn": {
+        "Type": "Int",
+        "Required": true,
+        "Description": "BGP AS Number for the device."
+      },
+      "device_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Device name."
+      },
+      "enable_global_accelerator": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enable AWS Global Accelerator",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "enable_learned_cidrs_approval": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enable learned CIDR approval for the connection. Requires the transit_gateway's 'learned_cidrs_approval_mode' attribute be set to 'connection'. Valid values: true, false. Default value: false. Available as of provider version R2.18+.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "local_tunnel_ip": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Local tunnel IP"
+      },
+      "manual_bgp_advertised_cidrs": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Configure manual BGP advertised CIDRs for this connection. Available as of provider version R2.18+.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "phase1_authentication": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Phase 1 authentication algorithm.",
+        "Default": {
+          "Type": "string",
+          "Value": "SHA-256"
+        }
+      },
+      "phase1_dh_groups": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Phase 1 Diffie-Hellman groups.",
+        "Default": {
+          "Type": "string",
+          "Value": "14"
+        }
+      },
+      "phase1_encryption": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Phase 1 encryption algorithm.",
+        "Default": {
+          "Type": "string",
+          "Value": "AES-256-CBC"
+        }
+      },
+      "phase2_authentication": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Phase 2 authentication algorithm.",
+        "Default": {
+          "Type": "string",
+          "Value": "HMAC-SHA-256"
+        }
+      },
+      "phase2_dh_groups": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Phase 2 Diffie-Hellman groups.",
+        "Default": {
+          "Type": "string",
+          "Value": "14"
+        }
+      },
+      "phase2_encryption": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Phase 2 encryption algorithm.",
+        "Default": {
+          "Type": "string",
+          "Value": "AES-256-CBC"
+        }
+      },
+      "pre_shared_key": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Pre-shared Key."
+      },
+      "remote_tunnel_ip": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Remote tunnel IP"
+      },
+      "transit_gateway_bgp_asn": {
+        "Type": "Int",
+        "Required": true,
+        "Description": "BGP AS Number for transit gateway."
+      },
+      "transit_gateway_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Aviatrix Transit Gateway name."
+      }
+    },
+    "aviatrix_device_virtual_wan_attachment": {
+      "account_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Azure access account name."
+      },
+      "connection_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Connection name."
+      },
+      "device_bgp_asn": {
+        "Type": "Int",
+        "Required": true,
+        "Description": "Device AS Number."
+      },
+      "device_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Device name."
+      },
+      "hub_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Virtual WAN vhub name."
+      },
+      "resource_group": {
+        "Type": "String",
+        "Required": true,
+        "Description": "ARM resource group name."
+      }
+    },
+    "aviatrix_filebeat_forwarder": {
+      "config_file": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Configuration file."
+      },
+      "excluded_gateways": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "List of excluded gateways.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "port": {
+        "Type": "Int",
+        "Required": true,
+        "Description": "Port number."
+      },
+      "server": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Server IP."
+      },
+      "status": {
+        "Type": "String",
+        "Description": "Enabled or not.",
+        "Computed": true
+      },
+      "trusted_ca_file": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Trusted CA file."
+      }
+    },
     "aviatrix_firenet": {
       "egress_enabled": {
         "Type": "Bool",
@@ -859,6 +1513,7 @@
         "Type": "List",
         "Optional": true,
         "Description": "List of firewall instances to be associated with fireNet.",
+        "Deprecated": "Please set `manage_firewall_instance_association` to false, and use the standalone aviatrix_firewall_instance_association resource instead.",
         "IsBlock": true,
         "ConfigImplicitMode": "Block",
         "Elem": {
@@ -927,10 +1582,37 @@
           }
         }
       },
+      "hashing_algorithm": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Hashing algorithm to load balance traffic across the firewall.",
+        "Default": {
+          "Type": "string",
+          "Value": "5-Tuple"
+        }
+      },
       "inspection_enabled": {
         "Type": "Bool",
         "Optional": true,
         "Description": "Enable/Disable traffic inspection.",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "keep_alive_via_lan_interface_enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enable Keep Alive via Firewall LAN Interface.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "manage_firewall_instance_association": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enable this to manage firewall_instance_associations in-line. If this is false, associations must be managed via standalone aviatrix_firewall_instance_association resources. Type: boolean, Default: true, Valid values: true/false.",
         "Default": {
           "Type": "bool",
           "Value": "true"
@@ -966,10 +1648,20 @@
         "Required": true,
         "Description": "The name of gateway."
       },
+      "manage_firewall_policies": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enable to manage firewall policies via in-line rules. If false, policies must be managed using `aviatrix_firewall_policy` resources.",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
       "policy": {
         "Type": "List",
         "Optional": true,
         "Description": "New access policy for the gateway.",
+        "Deprecated": "Please set `manage_firewall_policies` to false, and use the standalone aviatrix_firewall_policy resource instead.",
         "IsBlock": true,
         "ConfigImplicitMode": "Block",
         "Elem": {
@@ -1029,7 +1721,22 @@
       "bootstrap_bucket_name": {
         "Type": "String",
         "Optional": true,
-        "Description": "Bootstrap bucket name."
+        "Description": "Advanced option. Bootstrap bucket name. Only available for AWS."
+      },
+      "bootstrap_storage_name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Advanced option. Bootstrap storage name. Applicable to Azure and Palo Alto Networks VM-Series/Fortinet Series deployment only."
+      },
+      "cloud_type": {
+        "Type": "Int",
+        "Description": "Cloud Type",
+        "Computed": true
+      },
+      "container_folder": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Advanced option. Bootstrap storage name. Applicable to Azure and Fortinet Series deployment only."
       },
       "egress_interface": {
         "Type": "String",
@@ -1041,9 +1748,19 @@
         "Required": true,
         "Description": "Egress Interface Subnet."
       },
+      "egress_vpc_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Egress VPC ID. Required for GCP."
+      },
+      "file_share_folder": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Advanced option. File share folder. Applicable to Azure and Palo Alto Networks VM-Series deployment only."
+      },
       "firenet_gw_name": {
         "Type": "String",
-        "Required": true,
+        "Optional": true,
         "Description": "Name of the primary FireNet gateway."
       },
       "firewall_image": {
@@ -1067,10 +1784,15 @@
         "Required": true,
         "Description": "Instance size of the firewall."
       },
+      "gcp_vpc_id": {
+        "Type": "String",
+        "Description": "GCP VPC ID",
+        "Computed": true
+      },
       "iam_role": {
         "Type": "String",
         "Optional": true,
-        "Description": "IAM role."
+        "Description": "Advanced option. IAM role. Only available for AWS."
       },
       "instance_id": {
         "Type": "String",
@@ -1094,18 +1816,68 @@
       },
       "management_subnet": {
         "Type": "String",
-        "Required": true,
-        "Description": "Management Interface Subnet."
+        "Optional": true,
+        "Description": "Management Interface Subnet. Required for Palo Alto Networks VM-Series, and required to be empty for Check Point or Fortinet series."
+      },
+      "management_vpc_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Management VPC ID. Required for GCP."
       },
       "password": {
         "Type": "String",
         "Optional": true,
-        "Description": "Applicable to Azure deployment only."
+        "Description": "Authentication method. Applicable to Azure deployment only."
       },
       "public_ip": {
         "Type": "String",
         "Description": "Management Public IP.",
         "Computed": true
+      },
+      "sas_url_config": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Advanced option. Bootstrap storage name. Applicable to Azure and Fortinet Series deployment only."
+      },
+      "sas_url_license": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Advanced option. Bootstrap storage name. Applicable to Azure and Fortinet Series deployment only."
+      },
+      "share_directory": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Advanced option. Share directory. Applicable to Azure and Palo Alto Networks VM-Series deployment only."
+      },
+      "sic_key": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Advanced option. Bic key. Applicable to Azure and Check Point Series deployment only."
+      },
+      "ssh_public_key": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Authentication method. Applicable to Azure deployment only."
+      },
+      "storage_access_key": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Advanced option. Storage access key. Applicable to Azure and Palo Alto Networks VM-Series deployment only."
+      },
+      "tags": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "A map of tags to assign to the firewall instance.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "user_data": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Advanced option. Bootstrap storage name. Applicable to Check Point Series and Fortinet Series deployment only."
       },
       "username": {
         "Type": "String",
@@ -1116,6 +1888,79 @@
         "Type": "String",
         "Required": true,
         "Description": "ID of the Security VPC."
+      },
+      "zone": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Availability Zone. Only available for AWS, GCP and AZURE.",
+        "Computed": true
+      }
+    },
+    "aviatrix_firewall_instance_association": {
+      "attached": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Switch to attach/detach firewall instance to/from fireNet.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "egress_interface": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Egress interface ID, required if it is a firewall instance.",
+        "Default": {
+          "Type": "string"
+        }
+      },
+      "firenet_gw_name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Name of the gateway to launch the firewall instance."
+      },
+      "firewall_name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Firewall instance name, or FQDN Gateway's gw_name, required if it is a AWS or AZURE firewall instance. Not allowed for GCP",
+        "Default": {
+          "Type": "string"
+        }
+      },
+      "instance_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "ID of Firewall instance, or FQDN Gateway's gw_name."
+      },
+      "lan_interface": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Lan interface ID, required if it is a firewall instance.",
+        "Default": {
+          "Type": "string"
+        }
+      },
+      "management_interface": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Management interface ID, required if it is a firewall instance.",
+        "Default": {
+          "Type": "string"
+        }
+      },
+      "vendor_type": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Indication it is a firewall instance or FQDN gateway to be associated to fireNet. Valid values: 'Generic', 'fqdn_gateway'. Value 'fqdn_gateway' is required for FQDN gateway.",
+        "Default": {
+          "Type": "string",
+          "Value": "Generic"
+        }
+      },
+      "vpc_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "VPC ID."
       }
     },
     "aviatrix_firewall_management_access": {
@@ -1128,6 +1973,59 @@
         "Type": "String",
         "Required": true,
         "Description": "Name of the transit firenet gateway."
+      }
+    },
+    "aviatrix_firewall_policy": {
+      "action": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Valid values: 'allow', 'deny' or 'force-drop'(in stateful firewall rule to allow immediate packet dropping on established sessions)."
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Description of this firewall policy.",
+        "Default": {
+          "Type": "string"
+        }
+      },
+      "dst_ip": {
+        "Type": "String",
+        "Required": true,
+        "Description": "CIDRs separated by comma or tag names such 'HR' or 'marketing' etc."
+      },
+      "gw_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The name of gateway."
+      },
+      "log_enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Valid values: true or false.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "port": {
+        "Type": "String",
+        "Required": true,
+        "Description": "A single port or a range of port numbers."
+      },
+      "protocol": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "'all', 'tcp', 'udp', 'icmp', 'sctp', 'rdp', 'dccp'.",
+        "Default": {
+          "Type": "string",
+          "Value": "all"
+        }
+      },
+      "src_ip": {
+        "Type": "String",
+        "Required": true,
+        "Description": "CIDRs separated by comma or tag names such 'HR' or 'marketing' etc."
       }
     },
     "aviatrix_firewall_tag": {
@@ -1164,6 +2062,7 @@
         "Type": "List",
         "Optional": true,
         "Description": "A list of one or more domain names.",
+        "Deprecated": "Please set `manage_domain_names` to false, and use the standalone aviatrix_fqdn_tag_rule resource instead.",
         "IsBlock": true,
         "ConfigImplicitMode": "Block",
         "Elem": {
@@ -1237,6 +2136,64 @@
             }
           }
         }
+      },
+      "manage_domain_names": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enable to manage domain name rules in-line. If false, domain name rules must be managed using `aviatrix_fqdn_tag_rule` resources.",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      }
+    },
+    "aviatrix_fqdn_pass_through": {
+      "gw_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Gateway to apply FQDN pass-through rules to."
+      },
+      "pass_through_cidrs": {
+        "Type": "Set",
+        "Required": true,
+        "Description": "CIDRs to allow originating requests to ignore FQDN filtering rules.",
+        "MinItems": 1,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      }
+    },
+    "aviatrix_fqdn_tag_rule": {
+      "action": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "What action should happen to matching requests. Possible values are: 'Base Policy', 'Allow' or 'Deny'. Defaults to 'Base Policy' if no value is provided.",
+        "Default": {
+          "Type": "string",
+          "Value": "Base Policy"
+        }
+      },
+      "fqdn": {
+        "Type": "String",
+        "Required": true,
+        "Description": "FQDN."
+      },
+      "fqdn_tag_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "FQDN Filter Tag Name to attach this domain."
+      },
+      "port": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Port."
+      },
+      "protocol": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Protocol."
       }
     },
     "aviatrix_gateway": {
@@ -1337,7 +2294,7 @@
       "enable_designated_gateway": {
         "Type": "Bool",
         "Optional": true,
-        "Description": "Enable 'designated_gateway' feature for Gateway. Only supports AWS. Valid values: true, false.",
+        "Description": "Enable 'designated_gateway' feature for Gateway. Only supports AWS and AWSGOV. Valid values: true, false.",
         "Default": {
           "Type": "bool",
           "Value": "false"
@@ -1361,10 +2318,83 @@
           "Value": "false"
         }
       },
+      "enable_jumbo_frame": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enable jumbo frame support for Gateway. Valid values: true or false. Default value: true.",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
       "enable_ldap": {
         "Type": "Bool",
         "Optional": true,
         "Description": "Specify whether to enable LDAP or not. Supported values: 'yes' and 'no'.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "enable_monitor_gateway_subnets": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enable monitor gateway subnets. Valid values: true, false. Default value: false.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "enable_public_subnet_filtering": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Create a [Public Subnet Filtering gateway](https://docs.aviatrix.com/HowTos/public_subnet_filtering_faq.html).",
+        "ConflictsWith": [
+          "additional_cidrs",
+          "additional_cidrs_designated_gateway",
+          "allocate_new_eip",
+          "customer_managed_keys",
+          "duo_api_hostname",
+          "duo_integration_key",
+          "duo_push_mode",
+          "duo_secret_key",
+          "eip",
+          "elb_name",
+          "enable_designated_gateway",
+          "enable_elb",
+          "enable_ldap",
+          "enable_monitor_gateway_subnets",
+          "enable_vpc_dns_server",
+          "enable_vpn_nat",
+          "fqdn_lan_cidr",
+          "fqdn_lan_vpc_id",
+          "idle_timeout",
+          "insane_mode",
+          "insane_mode_az",
+          "ldap_base_dn",
+          "ldap_bind_dn",
+          "ldap_password",
+          "ldap_server",
+          "ldap_username_attribute",
+          "max_vpn_conn",
+          "monitor_exclude_list",
+          "name_servers",
+          "okta_token",
+          "okta_url",
+          "okta_username_suffix",
+          "otp_mode",
+          "peering_ha_eip",
+          "peering_ha_insane_mode_az",
+          "renegotiation_interval",
+          "saml_enabled",
+          "search_domains",
+          "single_ip_snat",
+          "split_tunnel",
+          "vpn_access",
+          "vpn_cidr",
+          "vpn_protocol",
+          "enable_jumbo_frame"
+        ],
         "Default": {
           "Type": "bool",
           "Value": "false"
@@ -1388,6 +2418,24 @@
           "Value": "true"
         }
       },
+      "fqdn_lan_cidr": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "FQDN gateway lan interface cidr.",
+        "Default": {
+          "Type": "string"
+        }
+      },
+      "fqdn_lan_interface": {
+        "Type": "String",
+        "Description": "FQDN gateway lan interface id.",
+        "Computed": true
+      },
+      "fqdn_lan_vpc_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "LAN VPC ID. Only used for GCP FQDN Gateway."
+      },
       "gw_name": {
         "Type": "String",
         "Required": true,
@@ -1397,6 +2445,15 @@
         "Type": "String",
         "Required": true,
         "Description": "Size of Gateway Instance."
+      },
+      "idle_timeout": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Typed value when modifying idle_timeout. If it's -1, this feature is disabled.",
+        "Default": {
+          "Type": "int",
+          "Value": "-1"
+        }
       },
       "insane_mode": {
         "Type": "Bool",
@@ -1461,6 +2518,16 @@
         "Description": "Maximum connection of VPN access.",
         "Default": {
           "Type": "string"
+        }
+      },
+      "monitor_exclude_list": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "A set of monitored instance ids. Only valid when 'enable_monitor_gateway_subnets' = true.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
         }
       },
       "name_servers": {
@@ -1548,7 +2615,7 @@
       "peering_ha_zone": {
         "Type": "String",
         "Optional": true,
-        "Description": "Zone information for creating Peering HA Gateway. Required to create peering ha gateway if cloud_type = 4 (GCP)",
+        "Description": "Zone information for creating Peering HA Gateway. Required to create peering ha gateway if cloud_type = 4 (GCP). Optional for cloud_type = 8 (AZURE).",
         "Default": {
           "Type": "string"
         }
@@ -1562,6 +2629,44 @@
         "Type": "String",
         "Description": "NS server used by the gateway.",
         "Computed": true
+      },
+      "public_subnet_filtering_guard_duty_enforced": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether to enforce Guard Duty IP blocking. Required when `enable_public_subnet_filtering` attribute is true. Valid values: true or false. Default value: true.",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "public_subnet_filtering_ha_route_tables": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Route tables whose associated public subnets are protected for the HA PSF gateway. Required when enable_public_subnet_filtering and peering_ha_subnet are set.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "public_subnet_filtering_route_tables": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Route tables whose associated public subnets are protected. Required when `enable_public_subnet_filtering` attribute is true.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "renegotiation_interval": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Typed value when modifying renegotiation_interval. If it's -1, this feature is disabled.",
+        "Default": {
+          "Type": "int",
+          "Value": "-1"
+        }
       },
       "saml_enabled": {
         "Type": "Bool",
@@ -1659,6 +2764,23 @@
         "Optional": true,
         "Description": "Elb protocol for VPN gateway with elb enabled. Only supports AWS provider. Valid values: 'TCP', 'UDP'. If not specified, 'TCP'' will be used.",
         "Computed": true
+      },
+      "zone": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Availability Zone. Only available for Azure and Public Subnet Filtering gateway"
+      }
+    },
+    "aviatrix_gateway_certificate_config": {
+      "ca_certificate": {
+        "Type": "String",
+        "Required": true,
+        "Description": "CA Certificate."
+      },
+      "ca_private_key": {
+        "Type": "String",
+        "Required": true,
+        "Description": "CA Private Key."
       }
     },
     "aviatrix_gateway_dnat": {
@@ -1737,6 +2859,15 @@
         "Type": "String",
         "Required": true,
         "Description": "Name of the gateway."
+      },
+      "sync_to_ha": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether to sync the policies to the HA gateway.",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
       }
     },
     "aviatrix_gateway_snat": {
@@ -1828,6 +2959,15 @@
             }
           }
         }
+      },
+      "sync_to_ha": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether to sync the policies to the HA gateway.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
       }
     },
     "aviatrix_geo_vpn": {
@@ -1862,11 +3002,90 @@
         "Description": "The hostname that users will connect to. A DNS record will be created for this name in the specified domain name."
       }
     },
+    "aviatrix_netflow_agent": {
+      "excluded_gateways": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "List of excluded gateways.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "port": {
+        "Type": "Int",
+        "Required": true,
+        "Description": "Netflow server port."
+      },
+      "server_ip": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Netflow server IP address."
+      },
+      "status": {
+        "Type": "String",
+        "Description": "Enabled or not.",
+        "Computed": true
+      },
+      "version": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Netflow version.",
+        "Default": {
+          "Type": "int",
+          "Value": "5"
+        }
+      }
+    },
+    "aviatrix_periodic_ping": {
+      "gw_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of gateway."
+      },
+      "interval": {
+        "Type": "Int",
+        "Required": true,
+        "Description": "Interval between pings in seconds."
+      },
+      "ip_address": {
+        "Type": "String",
+        "Required": true,
+        "Description": "IP Address to ping."
+      }
+    },
+    "aviatrix_proxy_config": {
+      "http_proxy": {
+        "Type": "String",
+        "Required": true,
+        "Description": "http proxy URL."
+      },
+      "https_proxy": {
+        "Type": "String",
+        "Required": true,
+        "Description": "https proxy URL."
+      },
+      "proxy_ca_certificate": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Server CA Certificate file."
+      }
+    },
     "aviatrix_rbac_group": {
       "group_name": {
         "Type": "String",
         "Required": true,
         "Description": "RBAC permission group name."
+      },
+      "local_login": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether to allow members of an RBAC group to bypass LDAP/MFA for Duo login",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
       }
     },
     "aviatrix_rbac_group_access_account_attachment": {
@@ -1903,6 +3122,76 @@
         "Type": "String",
         "Required": true,
         "Description": "Account user name."
+      }
+    },
+    "aviatrix_remote_syslog": {
+      "ca_certificate_file": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "CA certificate file."
+      },
+      "excluded_gateways": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "List of excluded gateways.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "index": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "A total of 10 profiles from index 0 to 9 are supported for remote syslog, while index 9 is reserved for CoPilot.",
+        "Default": {
+          "Type": "int",
+          "Value": "0"
+        }
+      },
+      "notls": {
+        "Type": "Bool",
+        "Description": "True if not protected by TLS.",
+        "Computed": true
+      },
+      "port": {
+        "Type": "Int",
+        "Required": true,
+        "Description": "Listening port of the remote syslog server."
+      },
+      "private_key_file": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Private key of the controller that pairs with the public certificate."
+      },
+      "protocol": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "TCP or UDP (TCP by default).",
+        "Default": {
+          "Type": "string",
+          "Value": "TCP"
+        }
+      },
+      "public_certificate_file": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Public certificate of the controller signed by the same CA."
+      },
+      "server": {
+        "Type": "String",
+        "Required": true,
+        "Description": "FQDN or IP address of the remote syslog server."
+      },
+      "status": {
+        "Type": "String",
+        "Description": "Enabled or not.",
+        "Computed": true
+      },
+      "template": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Useful when forwarding to 3rd party servers like Datadog or Sumo"
       }
     },
     "aviatrix_saml_endpoint": {
@@ -1947,13 +3236,27 @@
       },
       "idp_metadata": {
         "Type": "String",
-        "Required": true,
-        "Description": "IDP Metadata."
+        "Optional": true,
+        "Description": "IDP Metadata.",
+        "Default": {
+          "Type": "string"
+        }
       },
       "idp_metadata_type": {
         "Type": "String",
         "Required": true,
         "Description": "Type of IDP Metadata."
+      },
+      "idp_metadata_url": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "IDP Metadata.",
+        "ConflictsWith": [
+          "idp_metadata"
+        ],
+        "Default": {
+          "Type": "string"
+        }
       },
       "rbac_groups": {
         "Type": "List",
@@ -1964,6 +3267,51 @@
           "Type": "SchemaElements",
           "ElementsType": "String"
         }
+      },
+      "sign_authn_requests": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether to sign SAML AuthnRequests",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      }
+    },
+    "aviatrix_segmentation_security_domain": {
+      "domain_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Security domain name."
+      }
+    },
+    "aviatrix_segmentation_security_domain_association": {
+      "attachment_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Attachment name, either Spoke or Edge."
+      },
+      "security_domain_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Security Domain name."
+      },
+      "transit_gateway_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Transit Gateway name."
+      }
+    },
+    "aviatrix_segmentation_security_domain_connection_policy": {
+      "domain_name_1": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of security domain that will be connected to domain 2."
+      },
+      "domain_name_2": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of security domain that will be connected to domain 1."
       }
     },
     "aviatrix_site2cloud": {
@@ -2011,6 +3359,15 @@
           "Value": "false"
         }
       },
+      "custom_mapped": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enable custom mapped.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
       "enable_active_active": {
         "Type": "Bool",
         "Optional": true,
@@ -2038,6 +3395,15 @@
           "Value": "false"
         }
       },
+      "forward_traffic_to_transit": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enable spoke gateway with mapped site2cloud configurations to forward traffic from site2cloud connection to Aviatrix Transit Gateway.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
       "ha_enabled": {
         "Type": "Bool",
         "Optional": true,
@@ -2045,6 +3411,46 @@
         "Default": {
           "Type": "bool",
           "Value": "false"
+        }
+      },
+      "local_destination_real_cidrs": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Local Initiated Traffic Destination Real CIDRs.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "local_destination_virtual_cidrs": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Local Initiated Traffic Destination Virtual CIDRs.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "local_source_real_cidrs": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Local Initiated Traffic Source Real CIDRs.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "local_source_virtual_cidrs": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Local Initiated Traffic Source Virtual CIDRs.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
         }
       },
       "local_subnet_cidr": {
@@ -2066,7 +3472,7 @@
       "phase_1_dh_groups": {
         "Type": "String",
         "Optional": true,
-        "Description": "Phase one DH Groups. Valid values: '1', '2', '5', '14', '15', '16', '17' and '18'."
+        "Description": "Phase one DH Groups. Valid values: '1', '2', '5', '14', '15', '16', '17', '18', '19', '20' and '21'."
       },
       "phase_1_encryption": {
         "Type": "String",
@@ -2081,12 +3487,12 @@
       "phase_2_dh_groups": {
         "Type": "String",
         "Optional": true,
-        "Description": "Phase two DH Groups. Valid values: '1', '2', '5', '14', '15', '16', '17' and '18'."
+        "Description": "Phase two DH Groups. Valid values: '1', '2', '5', '14', '15', '16', '17', '18', '19', '20' and '21'."
       },
       "phase_2_encryption": {
         "Type": "String",
         "Optional": true,
-        "Description": "Phase two Encryption. Valid values: '3DES', 'AES-128-CBC', 'AES-192-CBC', 'AES-256-CBC', 'AES-128-GCM-64', 'AES-128-GCM-96' and 'AES-128-GCM-128'."
+        "Description": "Phase two Encryption. Valid values: '3DES', 'AES-128-CBC', 'AES-192-CBC', 'AES-256-CBC', 'AES-128-GCM-64', 'AES-128-GCM-96', 'AES-128-GCM-128', and 'NULL-ENCR'."
       },
       "pre_shared_key": {
         "Type": "String",
@@ -2105,6 +3511,26 @@
         "Default": {
           "Type": "bool",
           "Value": "false"
+        }
+      },
+      "remote_destination_real_cidrs": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Remote Initiated Traffic Destination Real CIDRs.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "remote_destination_virtual_cidrs": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Remote Initiated Traffic Destination Virtual CIDRs.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
         }
       },
       "remote_gateway_ip": {
@@ -2127,9 +3553,29 @@
         "Required": true,
         "Description": "Remote gateway type. Valid values: 'generic', 'avx', 'aws', 'azure', 'sonicwall' and 'oracle'."
       },
+      "remote_source_real_cidrs": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Remote Initiated Traffic Source Real CIDRs.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "remote_source_virtual_cidrs": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Remote Initiated Traffic Source Virtual CIDRs.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
       "remote_subnet_cidr": {
         "Type": "String",
-        "Required": true,
+        "Optional": true,
         "Description": "Remote Subnet CIDR."
       },
       "remote_subnet_virtual": {
@@ -2161,6 +3607,43 @@
         "Type": "String",
         "Required": true,
         "Description": "VPC Id of the cloud gateway."
+      }
+    },
+    "aviatrix_splunk_logging": {
+      "custom_input_config": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Custom configuration."
+      },
+      "custom_output_config_file": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Configuration file. Use the filebase64 function to read from a file."
+      },
+      "excluded_gateways": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "List of excluded gateways.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "port": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Port number."
+      },
+      "server": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Server IP."
+      },
+      "status": {
+        "Type": "String",
+        "Description": "Enabled or not.",
+        "Computed": true
       }
     },
     "aviatrix_spoke_gateway": {
@@ -2196,7 +3679,7 @@
       "customized_spoke_vpc_routes": {
         "Type": "String",
         "Optional": true,
-        "Description": "A list of comma separated CIDRs to be customized for the spoke VPC routes. When configured, it will replace all learned routes in VPC routing tables, including RFC1918 and non-RFC1918 CIDRs. It applies to this spoke gateway only​.",
+        "Description": "A list of comma separated CIDRs to be customized for the spoke VPC routes. When configured, it will replace all learned routes in VPC routing tables, including RFC1918 and non-RFC1918 CIDRs. It applies to this spoke gateway only.",
         "Default": {
           "Type": "string"
         }
@@ -2220,6 +3703,33 @@
         "Type": "Bool",
         "Optional": true,
         "Description": "Enable encrypt gateway EBS volume. Only supported for AWS provider. Valid values: true, false. Default value: false.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "enable_jumbo_frame": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enable jumbo frame support for spoke gateway. Valid values: true or false. Default value: true.",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "enable_monitor_gateway_subnets": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enable [monitor gateway subnets](https://docs.aviatrix.com/HowTos/gateway.html#monitor-gateway-subnet). Only valid for cloud_type = 1 (AWS) or 256 (AWSGOV). Valid values: true, false. Default value: false.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "enable_private_oob": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enable private OOB.",
         "Default": {
           "Type": "bool",
           "Value": "false"
@@ -2279,10 +3789,20 @@
       "ha_insane_mode_az": {
         "Type": "String",
         "Optional": true,
-        "Description": "AZ of subnet being created for Insane Mode Spoke HA Gateway. Required if insane_mode is true and ha_subnet is set.",
+        "Description": "AZ of subnet being created for Insane Mode Spoke HA Gateway. Required for AWS if insane_mode is true and ha_subnet is set.",
         "Default": {
           "Type": "string"
         }
+      },
+      "ha_oob_availability_zone": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "OOB HA availability zone."
+      },
+      "ha_oob_management_subnet": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "OOB HA management subnet."
       },
       "ha_private_ip": {
         "Type": "String",
@@ -2297,7 +3817,7 @@
       "ha_zone": {
         "Type": "String",
         "Optional": true,
-        "Description": "HA Zone. Required if enabling HA for GCP.",
+        "Description": "HA Zone. Required if enabling HA for GCP. Optional for Azure.",
         "Default": {
           "Type": "string"
         }
@@ -2305,7 +3825,7 @@
       "included_advertised_spoke_routes": {
         "Type": "String",
         "Optional": true,
-        "Description": "A list of comma separated CIDRs to be advertised to on-prem as 'Included CIDR List'. When configured, it will replace all advertised routes from this VPC.​",
+        "Description": "A list of comma separated CIDRs to be advertised to on-prem as 'Included CIDR List'. When configured, it will replace all advertised routes from this VPC.",
         "Default": {
           "Type": "string"
         }
@@ -2313,7 +3833,7 @@
       "insane_mode": {
         "Type": "Bool",
         "Optional": true,
-        "Description": "Enable Insane Mode for Spoke Gateway. Valid values: true, false. If insane mode is enabled, gateway size has to at least be c5 size.",
+        "Description": "Enable Insane Mode for Spoke Gateway. Valid values: true, false. If insane mode is enabled, gateway size has to at least be c5 size for AWS and Standard_D3_v2 size for AZURE.",
         "Default": {
           "Type": "bool",
           "Value": "false"
@@ -2322,10 +3842,39 @@
       "insane_mode_az": {
         "Type": "String",
         "Optional": true,
-        "Description": "AZ of subnet being created for Insane Mode Spoke Gateway. Required if insane_mode is enabled for aws cloud.",
+        "Description": "AZ of subnet being created for Insane Mode Spoke Gateway. Required if insane_mode is enabled for AWS cloud.",
         "Default": {
           "Type": "string"
         }
+      },
+      "manage_transit_gateway_attachment": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "This parameter is a switch used to determine whether or not to manage attaching this spoke gateway to transit gateways using the aviatrix_spoke_gateway resource. If this is set to false, attaching this spoke gateway to transit gateways must be done using the aviatrix_spoke_transit_attachment resource. Valid values: true, false. Default value: true.",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "monitor_exclude_list": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "A set of monitored instance ids. Only valid when 'enable_monitor_gateway_subnets' = true.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "oob_availability_zone": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "OOB subnet availability zone."
+      },
+      "oob_management_subnet": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "OOB management subnet."
       },
       "private_ip": {
         "Type": "String",
@@ -2373,7 +3922,8 @@
       "transit_gw": {
         "Type": "String",
         "Optional": true,
-        "Description": "Specify the transit Gateway.",
+        "Description": "Specify the transit Gateways to attach to this spoke. Format is a comma-separated list of transit gateway names. For example, 'transit-gw1,transit-gw2'.",
+        "Deprecated": "Please set `manage_transit_gateway_attachment` to false, and use the standalone aviatrix_spoke_transit_attachment resource instead.",
         "Default": {
           "Type": "string"
         }
@@ -2387,6 +3937,33 @@
         "Type": "String",
         "Required": true,
         "Description": "Region of cloud provider."
+      },
+      "zone": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Availability Zone. Only available for cloud_type = 8 (AZURE). Must be in the form 'az-n', for example, 'az-2'."
+      }
+    },
+    "aviatrix_spoke_transit_attachment": {
+      "route_tables": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Learned routes will be propagated to these route tables.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "spoke_gw_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the spoke gateway to attach to transit network."
+      },
+      "transit_gw_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the transit gateway to attach the spoke gateway to."
       }
     },
     "aviatrix_spoke_vpc": {
@@ -2491,6 +4068,47 @@
         "Description": "Size of the gateway instance."
       }
     },
+    "aviatrix_sumologic_forwarder": {
+      "access_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Access ID."
+      },
+      "access_key": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Access key."
+      },
+      "custom_configuration": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Custom configuration."
+      },
+      "excluded_gateways": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "List of excluded gateways.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "source_category": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Source category.",
+        "Default": {
+          "Type": "string",
+          "Value": "Aviatrix_syslog"
+        }
+      },
+      "status": {
+        "Type": "String",
+        "Description": "Enabled or not.",
+        "Computed": true
+      }
+    },
     "aviatrix_trans_peer": {
       "nexthop": {
         "Type": "String",
@@ -2526,6 +4144,12 @@
           "Value": "false"
         }
       },
+      "backup_local_lan_ip": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Backup Local LAN IP.",
+        "Computed": true
+      },
       "backup_local_tunnel_cidr": {
         "Type": "String",
         "Optional": true,
@@ -2547,6 +4171,11 @@
         "Default": {
           "Type": "string"
         }
+      },
+      "backup_remote_lan_ip": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Backup Remote LAN IP."
       },
       "backup_remote_tunnel_cidr": {
         "Type": "String",
@@ -2572,7 +4201,7 @@
       "connection_type": {
         "Type": "String",
         "Optional": true,
-        "Description": "Connection type. Valid values: 'bpg', 'static'. Default value: 'bgp'.",
+        "Description": "Connection type. Valid values: 'bgp', 'static'. Default value: 'bgp'.",
         "Default": {
           "Type": "string",
           "Value": "bgp"
@@ -2605,6 +4234,24 @@
           "Value": "false"
         }
       },
+      "enable_ikev2": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Set as true if use IKEv2.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "enable_learned_cidrs_approval": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enable learned CIDR approval for the connection. Only valid with 'connection_type' = 'bgp'. Requires the transit_gateway's 'learned_cidrs_approval_mode' attribute be set to 'connection'. Valid values: true, false. Default value: false. Available as of provider version R2.18+.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
       "gw_name": {
         "Type": "String",
         "Required": true,
@@ -2619,11 +4266,27 @@
           "Value": "false"
         }
       },
+      "local_lan_ip": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Local LAN IP.",
+        "Computed": true
+      },
       "local_tunnel_cidr": {
         "Type": "String",
         "Optional": true,
         "Description": "Source CIDR for the tunnel from the Aviatrix transit gateway.",
         "Computed": true
+      },
+      "manual_bgp_advertised_cidrs": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Configure manual BGP advertised CIDRs for this connection. Only valid with 'connection_type' = 'bgp'. Available as of provider version R2.18+.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       },
       "phase_1_authentication": {
         "Type": "String",
@@ -2633,7 +4296,7 @@
       "phase_1_dh_groups": {
         "Type": "String",
         "Optional": true,
-        "Description": "Phase one DH Groups. Valid values: '1', '2', '5', '14', '15', '16', '17' and '18'."
+        "Description": "Phase one DH Groups. Valid values: '1', '2', '5', '14', '15', '16', '17', '18', '19', '20' and '21'."
       },
       "phase_1_encryption": {
         "Type": "String",
@@ -2648,7 +4311,7 @@
       "phase_2_dh_groups": {
         "Type": "String",
         "Optional": true,
-        "Description": "Phase two DH Groups. Valid values: '1', '2', '5', '14', '15', '16', '17' and '18'."
+        "Description": "Phase two DH Groups. Valid values: '1', '2', '5', '14', '15', '16', '17', '18', '19', '20' and '21'."
       },
       "phase_2_encryption": {
         "Type": "String",
@@ -2662,8 +4325,13 @@
       },
       "remote_gateway_ip": {
         "Type": "String",
-        "Required": true,
+        "Optional": true,
         "Description": "Remote Gateway IP."
+      },
+      "remote_lan_ip": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Remote LAN IP."
       },
       "remote_subnet": {
         "Type": "String",
@@ -2675,6 +4343,29 @@
         "Optional": true,
         "Description": "Destination CIDR for the tunnel to the external device.",
         "Computed": true
+      },
+      "remote_vpc_name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Name of the remote VPC for a LAN BGP connection. Only valid when 'connection_type' = 'bgp' and tunnel_protocol' = 'LAN' with an Azure transit gateway. Must be in the form \"\u003cVNET-name\u003e:\u003cresource-group-name\u003e\". Available as of provider version R2.18+."
+      },
+      "switch_to_ha_standby_gateway": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Only valid for Transit Gateway's with Active-Standby Mode enabled. Valid values: true, false. Default: false.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "tunnel_protocol": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Tunnel Protocol. Valid values: 'IPsec', 'GRE' or 'LAN'. Default value: 'IPsec'.",
+        "Default": {
+          "Type": "string",
+          "Value": "IPsec"
+        }
       },
       "vpc_id": {
         "Type": "String",
@@ -2709,12 +4400,30 @@
           "Value": "true"
         }
       },
+      "bgp_ecmp": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enable Equal Cost Multi Path (ECMP) routing for the next hop.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
       "bgp_manual_spoke_advertise_cidrs": {
         "Type": "String",
         "Optional": true,
         "Description": "Intended CIDR list to advertise to VGW.",
         "Default": {
           "Type": "string"
+        }
+      },
+      "bgp_polling_time": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "BGP route polling time. Unit is in seconds. Valid values are between 10 and 50.",
+        "Default": {
+          "Type": "string",
+          "Value": "50"
         }
       },
       "cloud_instance_id": {
@@ -2749,6 +4458,16 @@
           "Type": "string"
         }
       },
+      "customized_transit_vpc_routes": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "A list of CIDRs to be customized for the transit VPC routes. When configured, it will replace all learned routes in VPC routing tables, including RFC1918 and non-RFC1918 CIDRs.To be effective, `enable_advertise_transit_cidr` or firewall management access for a transit firenet gateway must be enabled.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
       "eip": {
         "Type": "String",
         "Optional": true,
@@ -2764,6 +4483,15 @@
           "Value": "false"
         }
       },
+      "enable_active_standby": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enables Active-Standby Mode, available only with Active Mesh Mode and HA enabled.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
       "enable_advertise_transit_cidr": {
         "Type": "Bool",
         "Optional": true,
@@ -2773,10 +4501,28 @@
           "Value": "false"
         }
       },
+      "enable_bgp_over_lan": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Pre-allocate a network interface(eth4) for \"BGP over LAN\" functionality. Only valid for cloud_type = 8 (AZURE). Valid values: true or false. Default value: false. Available as of provider version R2.18+",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "enable_egress_transit_firenet": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Specify whether to enable egress transit firenet interfaces or not.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
       "enable_encrypt_volume": {
         "Type": "Bool",
         "Optional": true,
-        "Description": "Enable encrypt gateway EBS volume. Only supported for AWS provider. Valid values: true, false. Default value: false.",
+        "Description": "Enable encrypt gateway EBS volume. Only supported for AWS and AWSGOV providers. Valid values: true, false. Default value: false.",
         "Default": {
           "Type": "bool",
           "Value": "false"
@@ -2791,6 +4537,15 @@
           "Value": "false"
         }
       },
+      "enable_gateway_load_balancer": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enable firenet interfaces with AWS Gateway Load Balancer. Only valid when `enable_firenet` or `enable_transit_firenet` are set to true and `cloud_type` = 1 (AWS). Currently AWS Gateway Load Balancer is only supported in AWS regions us-west-2 and us-east-1. Valid values: true or false. Default value: false.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
       "enable_hybrid_connection": {
         "Type": "Bool",
         "Optional": true,
@@ -2800,10 +4555,46 @@
           "Value": "false"
         }
       },
+      "enable_jumbo_frame": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enable jumbo frame support for transit gateway. Valid values: true or false. Default value: true.",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
       "enable_learned_cidrs_approval": {
         "Type": "Bool",
         "Optional": true,
         "Description": "Switch to enable/disable encrypted transit approval for transit Gateway. Valid values: true, false.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "enable_monitor_gateway_subnets": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enable [monitor gateway subnets](https://docs.aviatrix.com/HowTos/gateway.html#monitor-gateway-subnet). Only valid for cloud_type = 1 (AWS) or 256 (AWSGOV). Valid values: true, false. Default value: false.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "enable_private_oob": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enable private OOB.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "enable_segmentation": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enable segmentation to allow association of transit gateway to security domains.",
         "Default": {
           "Type": "bool",
           "Value": "false"
@@ -2818,10 +4609,19 @@
           "Value": "false"
         }
       },
+      "enable_transit_summarize_cidr_to_tgw": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enable summarize CIDR to TGW.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
       "enable_vpc_dns_server": {
         "Type": "Bool",
         "Optional": true,
-        "Description": "Enable vpc_dns_server for Gateway. Only supports AWS. Valid values: true, false.",
+        "Description": "Enable vpc_dns_server for Gateway. Only supports AWS/AWSGOV. Valid values: true, false.",
         "Default": {
           "Type": "bool",
           "Value": "false"
@@ -2880,10 +4680,25 @@
       "ha_insane_mode_az": {
         "Type": "String",
         "Optional": true,
-        "Description": "AZ of subnet being created for Insane Mode Transit HA Gateway. Required if insane_mode is enabled and ha_subnet is set.",
+        "Description": "AZ of subnet being created for Insane Mode Transit HA Gateway. Required for AWS if insane_mode is enabled and ha_subnet is set.",
         "Default": {
           "Type": "string"
         }
+      },
+      "ha_lan_interface_cidr": {
+        "Type": "String",
+        "Description": "Transit gateway lan interface cidr for the HA gateway.",
+        "Computed": true
+      },
+      "ha_oob_availability_zone": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "OOB HA availability zone."
+      },
+      "ha_oob_management_subnet": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "OOB HA management subnet."
       },
       "ha_private_ip": {
         "Type": "String",
@@ -2893,12 +4708,12 @@
       "ha_subnet": {
         "Type": "String",
         "Optional": true,
-        "Description": "HA Subnet. Required for enabling HA for AWS/AZURE gateway. Optional for enabling HA for GCP gateway."
+        "Description": "HA Subnet. Required for enabling HA for AWS/AZURE/AWSGOV gateway. Optional for enabling HA for GCP gateway."
       },
       "ha_zone": {
         "Type": "String",
         "Optional": true,
-        "Description": "HA Zone. Required if enabling HA for GCP.",
+        "Description": "HA Zone. Required if enabling HA for GCP. Optional for AZURE.",
         "Default": {
           "Type": "string"
         }
@@ -2906,7 +4721,7 @@
       "insane_mode": {
         "Type": "Bool",
         "Optional": true,
-        "Description": "Enable Insane Mode for Transit. Valid values: true, false. If insane mode is enabled, gateway size has to at least be c5 size.",
+        "Description": "Enable Insane Mode for Transit. Valid values: true, false. If insane mode is enabled, gateway size has to at least be c5 size for AWS and Standard_D3_v2 size for AZURE.",
         "Default": {
           "Type": "bool",
           "Value": "false"
@@ -2915,9 +4730,69 @@
       "insane_mode_az": {
         "Type": "String",
         "Optional": true,
-        "Description": "AZ of subnet being created for Insane Mode Transit Gateway. Required if insane_mode is enabled.",
+        "Description": "AZ of subnet being created for Insane Mode Transit Gateway. Required for AWS if insane_mode is enabled.",
         "Default": {
           "Type": "string"
+        }
+      },
+      "lan_interface_cidr": {
+        "Type": "String",
+        "Description": "Transit gateway lan interface cidr.",
+        "Computed": true
+      },
+      "lan_private_subnet": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "LAN Private Subnet. Only used for GCP Transit FireNet."
+      },
+      "lan_vpc_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "LAN VPC ID. Only used for GCP Transit FireNet."
+      },
+      "learned_cidrs_approval_mode": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Set the learned CIDRs approval mode. Only valid when 'enable_learned_cidrs_approval' is set to true. If set to 'gateway', learned CIDR approval applies to ALL connections. If set to 'connection', learned CIDR approval is configured on a per connection basis. When configuring per connection, use the enable_learned_cidrs_approval attribute within the connection resource to toggle learned CIDR approval. Valid values: 'gateway' or 'connection'. Default value: 'gateway'.",
+        "Default": {
+          "Type": "string",
+          "Value": "gateway"
+        }
+      },
+      "local_as_number": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Changes the Aviatrix Transit Gateway ASN number before you setup Aviatrix Transit Gateway connection configurations.",
+        "Computed": true
+      },
+      "monitor_exclude_list": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "A set of monitored instance ids. Only valid when 'enable_monitor_gateway_subnets' = true.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "oob_availability_zone": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "OOB subnet availability zone."
+      },
+      "oob_management_subnet": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "OOB management subnet."
+      },
+      "prepend_as_path": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "List of AS numbers to populate BGP AP_PATH field when it advertises to VGW or peer devices.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
         }
       },
       "private_ip": {
@@ -2972,9 +4847,92 @@
         "Type": "String",
         "Required": true,
         "Description": "Region of cloud provider."
+      },
+      "zone": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Availability Zone. Only available for cloud_type = 8 (AZURE). Must be in the form 'az-n', for example, 'az-2'."
       }
     },
     "aviatrix_transit_gateway_peering": {
+      "enable_peering_over_private_network": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "(Optional) Enable peering over private network. Insane mode is required on both transit gateways. Available as of provider version R2.17.1",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "enable_single_tunnel_mode": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enable peering with Single-Tunnel mode.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "gateway1_excluded_network_cidrs": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "List of excluded network CIDRs for the first transit gateway.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "gateway1_excluded_tgw_connections": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "List of excluded TGW connections for the first transit gateway.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "gateway2_excluded_network_cidrs": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "List of excluded network CIDRs for the second transit gateway.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "gateway2_excluded_tgw_connections": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "List of excluded TGW connections for the second transit gateway.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "prepend_as_path1": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "AS Path Prepend customized by specifying AS PATH for a BGP connection. Applies on transit_gateway_name1.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "prepend_as_path2": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "AS Path Prepend customized by specifying AS PATH for a BGP connection. Applies on transit_gateway_name2.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
       "transit_gateway_name1": {
         "Type": "String",
         "Required": true,
@@ -3172,10 +5130,29 @@
         "Required": true,
         "Description": "The name of the VGW connection which is going to be created."
       },
+      "enable_learned_cidrs_approval": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enable learned CIDR approval for the connection. Requires the transit_gateway's 'learned_cidrs_approval_mode' attribute be set to 'connection'. Valid values: true, false. Default value: false. Available as of provider version R2.18+.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
       "gw_name": {
         "Type": "String",
         "Required": true,
         "Description": "Name of the Transit Gateway."
+      },
+      "manual_bgp_advertised_cidrs": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Configure manual BGP advertised CIDRs for this connection. Available as of provider version R2.18+.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       },
       "vpc_id": {
         "Type": "String",
@@ -3207,6 +5184,11 @@
           "Value": "false"
         }
       },
+      "azure_vnet_resource_id": {
+        "Type": "String",
+        "Description": "Azure vnet resource ID.",
+        "Computed": true
+      },
       "cidr": {
         "Type": "String",
         "Optional": true,
@@ -3217,20 +5199,117 @@
         "Required": true,
         "Description": "Type of cloud service provider."
       },
+      "enable_native_gwlb": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enable Native AWS GWLB for FireNet Function. Only valid with cloud_type = 1 (AWS). Valid values: true or false. Default value: false. Available as of provider version R2.18+.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "enable_private_oob_subnet": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Switch to enable private oob subnet. Only supported for AWS/AWSGOV provider. Valid values: true, false. Default value: false.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
       "name": {
         "Type": "String",
         "Required": true,
         "Description": "Name of the VPC to be created."
+      },
+      "num_of_subnet_pairs": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Number of public subnet and private subnet pair to be created."
+      },
+      "private_subnets": {
+        "Type": "List",
+        "Description": "List of private subnet of the VPC to be created.",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "cidr": {
+              "Type": "String",
+              "Description": "Subnet cidr.",
+              "Computed": true
+            },
+            "name": {
+              "Type": "String",
+              "Description": "Subnet name.",
+              "Computed": true
+            },
+            "subnet_id": {
+              "Type": "String",
+              "Description": "Subnet ID.",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "public_subnets": {
+        "Type": "List",
+        "Description": "List of public subnet of the VPC to be created.",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "cidr": {
+              "Type": "String",
+              "Description": "Subnet cidr.",
+              "Computed": true
+            },
+            "name": {
+              "Type": "String",
+              "Description": "Subnet name.",
+              "Computed": true
+            },
+            "subnet_id": {
+              "Type": "String",
+              "Description": "Subnet ID.",
+              "Computed": true
+            }
+          }
+        }
       },
       "region": {
         "Type": "String",
         "Optional": true,
         "Description": "Region of cloud provider. Required to be empty for GCP provider, and non-empty for other providers."
       },
+      "resource_group": {
+        "Type": "String",
+        "Description": "Resource group of the Azure VPC created.",
+        "Computed": true
+      },
+      "route_tables": {
+        "Type": "List",
+        "Description": "List of route table ids associated with this VPC.",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "subnet_size": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Subnet size."
+      },
       "subnets": {
         "Type": "List",
         "Optional": true,
-        "Description": "List of subnets of the VPC to be created. Required to be non-empty for GCP provider, and empty for other providers.",
+        "Description": "List of subnet of the VPC to be created. Required to be non-empty for GCP provider, and empty for other providers.",
         "Computed": true,
         "IsBlock": true,
         "ConfigImplicitMode": "Block",
@@ -3264,6 +5343,27 @@
         "Type": "String",
         "Description": "ID of the VPC created.",
         "Computed": true
+      }
+    },
+    "aviatrix_vpn_cert_download": {
+      "download_enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether the VPN Certificate download is enabled. Supported Values: \"true\", \"false\"",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "saml_endpoints": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "List of SAML endpoint names for which the downloading should be enabled . Currently, only a single endpoint is supported. Example: [\"saml_endpoint_1\"].",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       }
     },
     "aviatrix_vpn_profile": {
@@ -3487,9 +5587,19 @@
           }
         }
       },
+      "hashing_algorithm": {
+        "Type": "String",
+        "Description": "Hashing algorithm to load balance traffic across the firewall.",
+        "Computed": true
+      },
       "inspection_enabled": {
         "Type": "Bool",
         "Description": "Enable/Disable traffic inspection.",
+        "Computed": true
+      },
+      "keep_alive_via_lan_interface_enabled": {
+        "Type": "Bool",
+        "Description": "Enable Keep Alive via Firewall LAN Interface.",
         "Computed": true
       },
       "vpc_id": {
@@ -3940,7 +6050,7 @@
       },
       "customized_spoke_vpc_routes": {
         "Type": "String",
-        "Description": "A list of comma separated CIDRs to be customized for the spoke VPC routes. When configured, it will replace all learned routes in VPC routing tables, including RFC1918 and non-RFC1918 CIDRs. It applies to this spoke gateway only​.",
+        "Description": "A list of comma separated CIDRs to be customized for the spoke VPC routes. When configured, it will replace all learned routes in VPC routing tables, including RFC1918 and non-RFC1918 CIDRs. It applies to this spoke gateway only.",
         "Computed": true
       },
       "enable_active_mesh": {
@@ -3951,6 +6061,11 @@
       "enable_encrypt_volume": {
         "Type": "Bool",
         "Description": "Enable encrypt gateway EBS volume. Only supported for AWS provider. Valid values: true, false. Default value: false.",
+        "Computed": true
+      },
+      "enable_private_oob": {
+        "Type": "Bool",
+        "Description": "Enable private OOB.",
         "Computed": true
       },
       "enable_vpc_dns_server": {
@@ -3993,6 +6108,16 @@
         "Description": "AZ of subnet being created for Insane Mode Spoke HA Gateway. Required if insane_mode is true and ha_subnet is set.",
         "Computed": true
       },
+      "ha_oob_availability_zone": {
+        "Type": "String",
+        "Description": "OOB HA availability zone.",
+        "Computed": true
+      },
+      "ha_oob_management_subnet": {
+        "Type": "String",
+        "Description": "OOB HA management subnet.",
+        "Computed": true
+      },
       "ha_private_ip": {
         "Type": "String",
         "Description": "Private IP address of HA spoke gateway.",
@@ -4015,7 +6140,7 @@
       },
       "included_advertised_spoke_routes": {
         "Type": "String",
-        "Description": "A list of comma separated CIDRs to be advertised to on-prem as 'Included CIDR List'. When configured, it will replace all advertised routes from this VPC.​",
+        "Description": "A list of comma separated CIDRs to be advertised to on-prem as 'Included CIDR List'. When configured, it will replace all advertised routes from this VPC.",
         "Computed": true
       },
       "insane_mode": {
@@ -4026,6 +6151,16 @@
       "insane_mode_az": {
         "Type": "String",
         "Description": "AZ of subnet being created for Insane Mode Spoke Gateway. Required if insane_mode is enabled for aws cloud.",
+        "Computed": true
+      },
+      "oob_availability_zone": {
+        "Type": "String",
+        "Description": "OOB subnet availability zone.",
+        "Computed": true
+      },
+      "oob_management_subnet": {
+        "Type": "String",
+        "Description": "OOB management subnet.",
         "Computed": true
       },
       "private_ip": {
@@ -4070,7 +6205,7 @@
       },
       "transit_gw": {
         "Type": "String",
-        "Description": "Specify the transit Gateway.",
+        "Description": "Transit Gateways this spoke has joined.",
         "Computed": true
       },
       "vpc_id": {
@@ -4117,8 +6252,18 @@
       },
       "customized_spoke_vpc_routes": {
         "Type": "String",
-        "Description": "A list of comma separated CIDRs to be customized for the spoke VPC routes. When configured, it will replace all learned routes in VPC routing tables, including RFC1918 and non-RFC1918 CIDRs. It applies to this spoke gateway only​.",
+        "Description": "A list of comma separated CIDRs to be customized for the spoke VPC routes. When configured, it will replace all learned routes in VPC routing tables, including RFC1918 and non-RFC1918 CIDRs. It applies to this spoke gateway only.",
         "Computed": true
+      },
+      "customized_transit_vpc_routes": {
+        "Type": "Set",
+        "Description": "A list of CIDRs to be customized for the transit VPC routes. When configured, it will replace all learned routes in VPC routing tables, including RFC1918 and non-RFC1918 CIDRs.To be effective, `enable_advertise_transit_cidr` or firewall management access for a transit firenet gateway must be enabled.",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       },
       "enable_active_mesh": {
         "Type": "Bool",
@@ -4128,6 +6273,11 @@
       "enable_advertise_transit_cidr": {
         "Type": "Bool",
         "Description": "Enable/Disable advertise transit VPC network CIDR.",
+        "Computed": true
+      },
+      "enable_egress_transit_firenet": {
+        "Type": "Bool",
+        "Description": "Specify whether to enable egress transit firenet interfaces or not.",
         "Computed": true
       },
       "enable_encrypt_volume": {
@@ -4150,6 +6300,11 @@
         "Description": "Switch to enable/disable encrypted transit approval for transit gateway.",
         "Computed": true
       },
+      "enable_private_oob": {
+        "Type": "Bool",
+        "Description": "Enable private OOB.",
+        "Computed": true
+      },
       "enable_transit_firenet": {
         "Type": "Bool",
         "Description": "Switch to enable/disable transit firenet interfaces for transit gateway.",
@@ -4162,7 +6317,7 @@
       },
       "excluded_advertised_spoke_routes": {
         "Type": "String",
-        "Description": "A list of comma separated CIDRs to be advertised to on-prem as 'Excluded CIDR List'. When configured, it inspects all the advertised CIDRs from its spoke gateways and remove those included in the 'Excluded CIDR List'.​",
+        "Description": "A list of comma separated CIDRs to be advertised to on-prem as 'Excluded CIDR List'. When configured, it inspects all the advertised CIDRs from its spoke gateways and remove those included in the 'Excluded CIDR List'.",
         "Computed": true
       },
       "filtered_spoke_vpc_routes": {
@@ -4200,6 +6355,16 @@
         "Description": "AZ of subnet being created for Insane Mode Transit HA Gateway. Required if insane_mode is enabled and ha_subnet is set.",
         "Computed": true
       },
+      "ha_oob_availability_zone": {
+        "Type": "String",
+        "Description": "OOB HA availability zone.",
+        "Computed": true
+      },
+      "ha_oob_management_subnet": {
+        "Type": "String",
+        "Description": "OOB HA management subnet.",
+        "Computed": true
+      },
       "ha_private_ip": {
         "Type": "String",
         "Description": "Private IP address of HA transit gateway.",
@@ -4228,6 +6393,16 @@
       "insane_mode_az": {
         "Type": "String",
         "Description": "AZ of subnet being created for Insane Mode Spoke Gateway. Required if insane_mode is enabled for aws cloud.",
+        "Computed": true
+      },
+      "oob_availability_zone": {
+        "Type": "String",
+        "Description": "OOB subnet availability zone.",
+        "Computed": true
+      },
+      "oob_management_subnet": {
+        "Type": "String",
+        "Description": "OOB management subnet.",
         "Computed": true
       },
       "private_ip": {
@@ -4297,6 +6472,11 @@
         "Description": "Switch if the VPC created is an Aviatrix Transit VPC or not.",
         "Computed": true
       },
+      "azure_vnet_resource_id": {
+        "Type": "String",
+        "Description": "Azure vnet resource ID.",
+        "Computed": true
+      },
       "cidr": {
         "Type": "String",
         "Description": "Subnet of the VPC created.",
@@ -4311,6 +6491,11 @@
         "Type": "String",
         "Required": true,
         "Description": "Name of the VPC created."
+      },
+      "num_of_subnet_pairs": {
+        "Type": "Int",
+        "Description": "Number of public subnet and private subnet pair created.",
+        "Computed": true
       },
       "private_subnets": {
         "Type": "List",
@@ -4371,9 +6556,14 @@
         "Description": "Region of the VPC created.",
         "Computed": true
       },
+      "resource_group": {
+        "Type": "String",
+        "Description": "Resource group of the Azure VPC created.",
+        "Computed": true
+      },
       "route_tables": {
         "Type": "List",
-        "Description": "List of AWS route table ids associated with this VPC. Only populated for AWS vpc.",
+        "Description": "List of AWS route table ids associated with this VPC. Only populated for AWS, AWSGOV and Azure vpc.",
         "Computed": true,
         "ConfigImplicitMode": "Attr",
         "Elem": {
@@ -4385,6 +6575,11 @@
         "Type": "String",
         "Optional": true,
         "Description": "Filters the route_tables list to contain only public or private route tables. Valid values are 'private' or 'public'. If not set then route_tables are not filtered."
+      },
+      "subnet_size": {
+        "Type": "Int",
+        "Description": "Subnet size.",
+        "Computed": true
       },
       "subnets": {
         "Type": "List",
