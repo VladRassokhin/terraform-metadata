@@ -1,15 +1,34 @@
 {
   ".schema_version": "2",
-  ".sdk_type": "terraform-plugin-sdk-v1",
+  ".sdk_type": "terraform-plugin-sdk-v2",
   "name": "helm",
   "type": "provider",
-  "version": "v1.2.3",
+  "version": "v2.1.2",
   "provider": {
     "debug": {
       "Type": "Bool",
       "Optional": true,
       "Description": "Debug indicates whether or not Helm is running in Debug mode.",
       "DefaultFunc": "ENV(HELM_DEBUG)"
+    },
+    "experiments": {
+      "Type": "List",
+      "Optional": true,
+      "Description": "Enable and disable experimental features.",
+      "MaxItems": 1,
+      "IsBlock": true,
+      "ConfigImplicitMode": "Block",
+      "Elem": {
+        "Type": "SchemaInfo",
+        "Info": {
+          "manifest": {
+            "Type": "Bool",
+            "Optional": true,
+            "Description": "Enable full diff by storing the rendered manifest in the state.",
+            "DefaultFunc": "UNKNOWN"
+          }
+        }
+      }
     },
     "helm_driver": {
       "Type": "String",
@@ -63,8 +82,21 @@
           "config_path": {
             "Type": "String",
             "Optional": true,
-            "Description": "Path to the kube config file, defaults to ~/.kube/config",
-            "DefaultFunc": "MENV(KUBE_CONFIG,KUBECONFIG)"
+            "Description": "Path to the kube config file. Can be set with KUBE_CONFIG_PATH.",
+            "DefaultFunc": "ENV(KUBE_CONFIG_PATH)",
+            "ConflictsWith": [
+              "kubernetes.0.config_paths"
+            ]
+          },
+          "config_paths": {
+            "Type": "List",
+            "Optional": true,
+            "Description": "A list of paths to kube config files. Can be set with KUBE_CONFIG_PATHS environment variable.",
+            "ConfigImplicitMode": "Attr",
+            "Elem": {
+              "Type": "SchemaElements",
+              "ElementsType": "String"
+            }
           },
           "exec": {
             "Type": "List",
@@ -115,12 +147,6 @@
             "Optional": true,
             "Description": "Whether server should be accessed without verifying the TLS certificate.",
             "DefaultFunc": "ENV(KUBE_INSECURE)"
-          },
-          "load_config_file": {
-            "Type": "Bool",
-            "Optional": true,
-            "Description": "Load local kubeconfig.",
-            "DefaultFunc": "ENV(KUBE_LOAD_CONFIG_FILE)"
           },
           "password": {
             "Type": "String",
@@ -263,7 +289,7 @@
         "Description": "Location of public keys used for verification. Used only if `verify` is true",
         "Default": {
           "Type": "string",
-          "Value": "/home/builduser/.gnupg/pubring.gpg"
+          "Value": "/home/cageyv/.gnupg/pubring.gpg"
         }
       },
       "lint": {
@@ -274,6 +300,11 @@
           "Type": "bool",
           "Value": "false"
         }
+      },
+      "manifest": {
+        "Type": "String",
+        "Description": "The rendered manifest as JSON.",
+        "Computed": true
       },
       "max_history": {
         "Type": "Int",
@@ -288,12 +319,16 @@
         "Type": "List",
         "Description": "Status of the deployed release.",
         "Computed": true,
-        "MaxItems": 1,
         "IsBlock": true,
         "ConfigImplicitMode": "ComputedBlock",
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
+            "app_version": {
+              "Type": "String",
+              "Description": "The version number of the application being deployed.",
+              "Computed": true
+            },
             "chart": {
               "Type": "String",
               "Description": "The name of the chart.",
@@ -479,27 +514,6 @@
           }
         }
       },
-      "set_string": {
-        "Type": "Set",
-        "Optional": true,
-        "Description": "Custom string values to be merged with the values.",
-        "Deprecated": "This argument is deprecated and will be removed in the next major version. Use `set` argument with `type` equals to `string`",
-        "IsBlock": true,
-        "ConfigImplicitMode": "Block",
-        "Elem": {
-          "Type": "SchemaInfo",
-          "Info": {
-            "name": {
-              "Type": "String",
-              "Required": true
-            },
-            "value": {
-              "Type": "String",
-              "Required": true
-            }
-          }
-        }
-      },
       "skip_crds": {
         "Type": "Bool",
         "Optional": true,
@@ -556,127 +570,17 @@
           "Type": "bool",
           "Value": "true"
         }
-      }
-    },
-    "helm_repository": {
-      "ca_file": {
-        "Type": "String",
-        "Optional": true,
-        "Description": "Verify certificates of HTTPS-enabled servers using this CA bundle"
       },
-      "cert_file": {
-        "Type": "String",
+      "wait_for_jobs": {
+        "Type": "Bool",
         "Optional": true,
-        "Description": "Identify HTTPS client using this SSL certificate file"
-      },
-      "key_file": {
-        "Type": "String",
-        "Optional": true,
-        "Description": "Identify HTTPS client using this SSL key file"
-      },
-      "metadata": {
-        "Type": "List",
-        "Description": "Status of the deployed release",
-        "Computed": true,
-        "IsBlock": true,
-        "ConfigImplicitMode": "ComputedBlock",
-        "Elem": {
-          "Type": "SchemaInfo",
-          "Info": {
-            "name": {
-              "Type": "String",
-              "Description": "Name of the repository read from the home",
-              "Computed": true
-            },
-            "url": {
-              "Type": "String",
-              "Description": "URL of the repository read from the home",
-              "Computed": true
-            }
-          }
+        "Description": "If wait is enabled, will wait until all Jobs have been completed before marking the release as successful.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
         }
-      },
-      "name": {
-        "Type": "String",
-        "Required": true,
-        "Description": "Chart repository name"
-      },
-      "password": {
-        "Type": "String",
-        "Optional": true,
-        "Description": "Password for HTTP basic authentication"
-      },
-      "url": {
-        "Type": "String",
-        "Required": true,
-        "Description": "Chart repository URL"
-      },
-      "username": {
-        "Type": "String",
-        "Optional": true,
-        "Description": "Username for HTTP basic authentication"
       }
     }
   },
-  "data-sources": {
-    "helm_repository": {
-      "ca_file": {
-        "Type": "String",
-        "Optional": true,
-        "Description": "Verify certificates of HTTPS-enabled servers using this CA bundle"
-      },
-      "cert_file": {
-        "Type": "String",
-        "Optional": true,
-        "Description": "Identify HTTPS client using this SSL certificate file"
-      },
-      "key_file": {
-        "Type": "String",
-        "Optional": true,
-        "Description": "Identify HTTPS client using this SSL key file"
-      },
-      "metadata": {
-        "Type": "List",
-        "Description": "Status of the deployed release",
-        "Computed": true,
-        "IsBlock": true,
-        "ConfigImplicitMode": "ComputedBlock",
-        "Elem": {
-          "Type": "SchemaInfo",
-          "Info": {
-            "name": {
-              "Type": "String",
-              "Description": "Name of the repository read from the home",
-              "Computed": true
-            },
-            "url": {
-              "Type": "String",
-              "Description": "URL of the repository read from the home",
-              "Computed": true
-            }
-          }
-        }
-      },
-      "name": {
-        "Type": "String",
-        "Required": true,
-        "Description": "Chart repository name"
-      },
-      "password": {
-        "Type": "String",
-        "Optional": true,
-        "Description": "Password for HTTP basic authentication"
-      },
-      "url": {
-        "Type": "String",
-        "Required": true,
-        "Description": "Chart repository URL"
-      },
-      "username": {
-        "Type": "String",
-        "Optional": true,
-        "Description": "Username for HTTP basic authentication"
-      }
-    }
-  }
+  "data-sources": {}
 }

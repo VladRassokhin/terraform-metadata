@@ -1,15 +1,21 @@
 {
   ".schema_version": "2",
-  ".sdk_type": "terraform-plugin-sdk-v1",
+  ".sdk_type": "terraform-plugin-sdk-v2",
   "name": "tfe",
   "type": "provider",
-  "version": "v0.19.0",
+  "version": "v0.25.2",
   "provider": {
     "hostname": {
       "Type": "String",
       "Optional": true,
       "Description": "The Terraform Enterprise hostname to connect to. Defaults to app.terraform.io.",
       "DefaultFunc": "ENV(TFE_HOSTNAME)"
+    },
+    "ssl_skip_verify": {
+      "Type": "Bool",
+      "Optional": true,
+      "Description": "Whether or not to skip certificate verifications.",
+      "DefaultFunc": "ENV(TFE_SSL_SKIP_VERIFY)"
     },
     "token": {
       "Type": "String",
@@ -19,10 +25,62 @@
     }
   },
   "resources": {
+    "tfe_agent_pool": {
+      "name": {
+        "Type": "String",
+        "Required": true
+      },
+      "organization": {
+        "Type": "String",
+        "Required": true
+      }
+    },
+    "tfe_agent_token": {
+      "agent_pool_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "description": {
+        "Type": "String",
+        "Required": true
+      },
+      "token": {
+        "Type": "String",
+        "Computed": true
+      }
+    },
     "tfe_notification_configuration": {
       "destination_type": {
         "Type": "String",
         "Required": true
+      },
+      "email_addresses": {
+        "Type": "Set",
+        "Optional": true,
+        "Computed": true,
+        "ConflictsWith": [
+          "token",
+          "url"
+        ],
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "email_user_ids": {
+        "Type": "Set",
+        "Optional": true,
+        "Computed": true,
+        "ConflictsWith": [
+          "token",
+          "url"
+        ],
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       },
       "enabled": {
         "Type": "Bool",
@@ -51,24 +109,15 @@
       },
       "url": {
         "Type": "String",
-        "Required": true
-      },
-      "workspace_external_id": {
-        "Type": "String",
         "Optional": true,
-        "Computed": true,
         "ConflictsWith": [
-          "workspace_id"
-        ],
-        "Deprecated": "Use workspace_id instead. The workspace_external_id attribute will be removed in the future. See the CHANGELOG to learn more: https://github.com/terraform-providers/terraform-provider-tfe/blob/v0.18.0/CHANGELOG.md"
+          "email_addresses",
+          "email_user_ids"
+        ]
       },
       "workspace_id": {
         "Type": "String",
-        "Optional": true,
-        "Computed": true,
-        "ConflictsWith": [
-          "workspace_external_id"
-        ]
+        "Required": true
       }
     },
     "tfe_oauth_client": {
@@ -110,6 +159,11 @@
           "Value": "password"
         }
       },
+      "cost_estimation_enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Computed": true
+      },
       "email": {
         "Type": "String",
         "Required": true
@@ -139,6 +193,10 @@
       "organization": {
         "Type": "String",
         "Required": true
+      },
+      "user_id": {
+        "Type": "String",
+        "Computed": true
       }
     },
     "tfe_organization_token": {
@@ -165,7 +223,7 @@
         "Type": "Bool",
         "Optional": true,
         "ConflictsWith": [
-          "workspace_external_ids"
+          "workspace_ids"
         ],
         "Default": {
           "Type": "bool",
@@ -236,28 +294,11 @@
           }
         }
       },
-      "workspace_external_ids": {
-        "Type": "Set",
-        "Optional": true,
-        "Computed": true,
-        "ConflictsWith": [
-          "global",
-          "workspace_ids"
-        ],
-        "Deprecated": "Use workspace_ids instead. The workspace_external_ids attribute will be removed in the future. See the CHANGELOG to learn more: https://github.com/terraform-providers/terraform-provider-tfe/blob/v0.18.0/CHANGELOG.md",
-        "ConfigImplicitMode": "Attr",
-        "Elem": {
-          "Type": "SchemaElements",
-          "ElementsType": "String"
-        }
-      },
       "workspace_ids": {
         "Type": "Set",
         "Optional": true,
-        "Computed": true,
         "ConflictsWith": [
-          "global",
-          "workspace_external_ids"
+          "global"
         ],
         "ConfigImplicitMode": "Attr",
         "Elem": {
@@ -291,27 +332,53 @@
         }
       }
     },
+    "tfe_registry_module": {
+      "module_provider": {
+        "Type": "String",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Computed": true
+      },
+      "organization": {
+        "Type": "String",
+        "Computed": true
+      },
+      "vcs_repo": {
+        "Type": "List",
+        "Required": true,
+        "MaxItems": 1,
+        "MinItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "display_identifier": {
+              "Type": "String",
+              "Required": true
+            },
+            "identifier": {
+              "Type": "String",
+              "Required": true
+            },
+            "oauth_token_id": {
+              "Type": "String",
+              "Required": true
+            }
+          }
+        }
+      }
+    },
     "tfe_run_trigger": {
       "sourceable_id": {
         "Type": "String",
         "Required": true
       },
-      "workspace_external_id": {
-        "Type": "String",
-        "Optional": true,
-        "Computed": true,
-        "ConflictsWith": [
-          "workspace_id"
-        ],
-        "Deprecated": "Use workspace_id instead. The workspace_external_id attribute will be removed in the future. See the CHANGELOG to learn more: https://github.com/terraform-providers/terraform-provider-tfe/blob/v0.18.0/CHANGELOG.md"
-      },
       "workspace_id": {
         "Type": "String",
-        "Optional": true,
-        "Computed": true,
-        "ConflictsWith": [
-          "workspace_external_id"
-        ]
+        "Required": true
       }
     },
     "tfe_sentinel_policy": {
@@ -382,6 +449,14 @@
                 "Value": "false"
               }
             },
+            "manage_policy_overrides": {
+              "Type": "Bool",
+              "Optional": true,
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
+              }
+            },
             "manage_vcs_settings": {
               "Type": "Bool",
               "Optional": true,
@@ -420,7 +495,6 @@
         "Type": "List",
         "Optional": true,
         "Computed": true,
-        "MaxItems": 1,
         "IsBlock": true,
         "ConfigImplicitMode": "Block",
         "Elem": {
@@ -552,6 +626,21 @@
       }
     },
     "tfe_workspace": {
+      "agent_pool_id": {
+        "Type": "String",
+        "Optional": true,
+        "ConflictsWith": [
+          "operations"
+        ]
+      },
+      "allow_destroy_plan": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
       "auto_apply": {
         "Type": "Bool",
         "Optional": true,
@@ -560,9 +649,17 @@
           "Value": "false"
         }
       },
-      "external_id": {
+      "description": {
         "Type": "String",
-        "Computed": true
+        "Optional": true
+      },
+      "execution_mode": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true,
+        "ConflictsWith": [
+          "operations"
+        ]
       },
       "file_triggers_enabled": {
         "Type": "Bool",
@@ -572,6 +669,11 @@
           "Value": "true"
         }
       },
+      "global_remote_state": {
+        "Type": "Bool",
+        "Optional": true,
+        "Computed": true
+      },
       "name": {
         "Type": "String",
         "Required": true
@@ -579,16 +681,34 @@
       "operations": {
         "Type": "Bool",
         "Optional": true,
-        "Default": {
-          "Type": "bool",
-          "Value": "true"
-        }
+        "Computed": true,
+        "ConflictsWith": [
+          "execution_mode",
+          "agent_pool_id"
+        ]
       },
       "organization": {
         "Type": "String",
         "Required": true
       },
       "queue_all_runs": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "remote_state_consumer_ids": {
+        "Type": "Set",
+        "Optional": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "speculative_enabled": {
         "Type": "Bool",
         "Optional": true,
         "Default": {
@@ -660,6 +780,86 @@
     }
   },
   "data-sources": {
+    "tfe_agent_pool": {
+      "name": {
+        "Type": "String",
+        "Required": true
+      },
+      "organization": {
+        "Type": "String",
+        "Required": true
+      }
+    },
+    "tfe_ip_ranges": {
+      "api": {
+        "Type": "List",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "notifications": {
+        "Type": "List",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "sentinel": {
+        "Type": "List",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "vcs": {
+        "Type": "List",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      }
+    },
+    "tfe_oauth_client": {
+      "api_url": {
+        "Type": "String",
+        "Computed": true
+      },
+      "http_url": {
+        "Type": "String",
+        "Computed": true
+      },
+      "oauth_client_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "oauth_token_id": {
+        "Type": "String",
+        "Computed": true
+      }
+    },
+    "tfe_organization_membership": {
+      "email": {
+        "Type": "String",
+        "Required": true
+      },
+      "organization": {
+        "Type": "String",
+        "Required": true
+      },
+      "user_id": {
+        "Type": "String",
+        "Computed": true
+      }
+    },
     "tfe_ssh_key": {
       "name": {
         "Type": "String",
@@ -688,7 +888,6 @@
       "permissions": {
         "Type": "List",
         "Computed": true,
-        "MaxItems": 1,
         "IsBlock": true,
         "ConfigImplicitMode": "ComputedBlock",
         "Elem": {
@@ -727,15 +926,23 @@
       }
     },
     "tfe_workspace": {
+      "allow_destroy_plan": {
+        "Type": "Bool",
+        "Computed": true
+      },
       "auto_apply": {
         "Type": "Bool",
         "Computed": true
       },
-      "external_id": {
+      "description": {
         "Type": "String",
         "Computed": true
       },
       "file_triggers_enabled": {
+        "Type": "Bool",
+        "Computed": true
+      },
+      "global_remote_state": {
         "Type": "Bool",
         "Computed": true
       },
@@ -751,7 +958,36 @@
         "Type": "String",
         "Required": true
       },
+      "policy_check_failures": {
+        "Type": "Int",
+        "Computed": true
+      },
       "queue_all_runs": {
+        "Type": "Bool",
+        "Computed": true
+      },
+      "remote_state_consumer_ids": {
+        "Type": "Set",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "resource_count": {
+        "Type": "Int",
+        "Computed": true
+      },
+      "run_failures": {
+        "Type": "Int",
+        "Computed": true
+      },
+      "runs_count": {
+        "Type": "Int",
+        "Computed": true
+      },
+      "speculative_enabled": {
         "Type": "Bool",
         "Computed": true
       },
@@ -780,6 +1016,10 @@
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
+            "branch": {
+              "Type": "String",
+              "Computed": true
+            },
             "identifier": {
               "Type": "String",
               "Computed": true
@@ -801,18 +1041,13 @@
       }
     },
     "tfe_workspace_ids": {
-      "external_ids": {
-        "Type": "Map",
-        "Computed": true
-      },
       "full_names": {
         "Type": "Map",
         "Computed": true
       },
       "ids": {
         "Type": "Map",
-        "Computed": true,
-        "Deprecated": "Use full_names instead. The ids attribute will be removed in the future."
+        "Computed": true
       },
       "names": {
         "Type": "List",

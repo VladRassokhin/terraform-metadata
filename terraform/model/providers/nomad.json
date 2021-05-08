@@ -3,7 +3,7 @@
   ".sdk_type": "terraform-plugin-sdk-v1",
   "name": "nomad",
   "type": "provider",
-  "version": "v1.4.8",
+  "version": "v1.4.14",
   "provider": {
     "address": {
       "Type": "String",
@@ -15,19 +15,86 @@
       "Type": "String",
       "Optional": true,
       "Description": "A path to a PEM-encoded certificate authority used to verify the remote agent's certificate.",
-      "DefaultFunc": "ENV(NOMAD_CACERT)"
+      "DefaultFunc": "ENV(NOMAD_CACERT)",
+      "ConflictsWith": [
+        "ca_pem"
+      ]
+    },
+    "ca_pem": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "PEM-encoded certificate authority used to verify the remote agent's certificate.",
+      "ConflictsWith": [
+        "ca_file"
+      ]
     },
     "cert_file": {
       "Type": "String",
       "Optional": true,
-      "Description": "A path to a PEM-encoded certificate provided to the remote agent; requires use of key_file.",
-      "DefaultFunc": "ENV(NOMAD_CLIENT_CERT)"
+      "Description": "A path to a PEM-encoded certificate provided to the remote agent; requires use of key_file or key_pem.",
+      "DefaultFunc": "ENV(NOMAD_CLIENT_CERT)",
+      "ConflictsWith": [
+        "cert_pem"
+      ]
+    },
+    "cert_pem": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "PEM-encoded certificate provided to the remote agent; requires use of key_file or key_pem.",
+      "ConflictsWith": [
+        "cert_file"
+      ]
+    },
+    "consul_token": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "Consul token to validate Consul Connect Service Identity policies specified in the job file.",
+      "DefaultFunc": "ENV(CONSUL_HTTP_TOKEN)"
+    },
+    "headers": {
+      "Type": "List",
+      "Optional": true,
+      "Description": "The headers to send with each Nomad request.",
+      "IsBlock": true,
+      "ConfigImplicitMode": "Block",
+      "Elem": {
+        "Type": "SchemaInfo",
+        "Info": {
+          "name": {
+            "Type": "String",
+            "Required": true,
+            "Description": "The header name"
+          },
+          "value": {
+            "Type": "String",
+            "Required": true,
+            "Description": "The header value"
+          }
+        }
+      }
+    },
+    "http_auth": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "HTTP basic auth configuration.",
+      "DefaultFunc": "ENV(NOMAD_HTTP_AUTH)"
     },
     "key_file": {
       "Type": "String",
       "Optional": true,
-      "Description": "A path to a PEM-encoded private key, required if cert_file is specified.",
-      "DefaultFunc": "ENV(NOMAD_CLIENT_KEY)"
+      "Description": "A path to a PEM-encoded private key, required if cert_file or cert_pem is specified.",
+      "DefaultFunc": "ENV(NOMAD_CLIENT_KEY)",
+      "ConflictsWith": [
+        "key_pem"
+      ]
+    },
+    "key_pem": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "PEM-encoded private key, required if cert_file or cert_pem is specified.",
+      "ConflictsWith": [
+        "key_file"
+      ]
     },
     "region": {
       "Type": "String",
@@ -170,6 +237,42 @@
           "Value": "true"
         }
       },
+      "hcl2": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Configuration for the HCL2 jobspec parser.",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "allow_fs": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "If true, HCL2 file system functions will be enabled when parsing the `jobspec`.",
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
+              }
+            },
+            "enabled": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "If true, the `jobspec` will be parsed as HCL2 instead of HCL.",
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
+              }
+            },
+            "vars": {
+              "Type": "Map",
+              "Optional": true,
+              "Description": "Additional variables to use when templating the job with HCL2"
+            }
+          }
+        }
+      },
       "jobspec": {
         "Type": "String",
         "Required": true,
@@ -199,6 +302,11 @@
         "Type": "Bool",
         "Optional": true,
         "Description": "Override any soft-mandatory Sentinel policies that fail."
+      },
+      "purge_on_destroy": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether to purge the job when the resource is destroyed."
       },
       "region": {
         "Type": "String",
@@ -374,6 +482,32 @@
         "Description": "Unique name for this quota specification."
       }
     },
+    "nomad_scheduler_config": {
+      "preemption_config": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "Options to enable preemption for various schedulers.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "Bool"
+        }
+      },
+      "scheduler_algorithm": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Specifies whether scheduler binpacks or spreads allocations on available nodes.",
+        "ConfigImplicitMode": "Attr",
+        "Default": {
+          "Type": "string",
+          "Value": "binpack"
+        },
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      }
+    },
     "nomad_sentinel_policy": {
       "description": {
         "Type": "String",
@@ -458,6 +592,34 @@
         "Required": true,
         "Description": "The ID of the physical volume from the storage provider."
       },
+      "mount_options": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Options for mounting 'block-device' volumes without a pre-formatted file system.",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "fs_type": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The file system type."
+            },
+            "mount_flags": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "The flags passed to mount.",
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
       "name": {
         "Type": "String",
         "Required": true,
@@ -539,6 +701,35 @@
     }
   },
   "data-sources": {
+    "nomad_acl_policies": {
+      "policies": {
+        "Type": "List",
+        "Description": "ACL Policies",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "description": {
+              "Type": "String",
+              "Description": "ACL Policy Description",
+              "Computed": true
+            },
+            "name": {
+              "Type": "String",
+              "Description": "ACL Policy Name",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "prefix": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "ACL Policy Name Prefix"
+      }
+    },
     "nomad_acl_policy": {
       "description": {
         "Type": "String",
@@ -596,6 +787,78 @@
         "Type": "String",
         "Description": "The type of the token.",
         "Computed": true
+      }
+    },
+    "nomad_acl_tokens": {
+      "acl_tokens": {
+        "Type": "List",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "accessor_id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "create_time": {
+              "Type": "String",
+              "Computed": true
+            },
+            "global": {
+              "Type": "Bool",
+              "Computed": true
+            },
+            "name": {
+              "Type": "String",
+              "Computed": true
+            },
+            "policies": {
+              "Type": "List",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "type": {
+              "Type": "String",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "prefix": {
+        "Type": "String",
+        "Optional": true
+      }
+    },
+    "nomad_datacenters": {
+      "datacenters": {
+        "Type": "List",
+        "Description": "The list of datacenters.",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "ignore_down_nodes": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "If enabled, this flag will ignore nodes that are down when listing datacenters.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "prefix": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Prefix value used for filtering results."
       }
     },
     "nomad_deployments": {
@@ -758,67 +1021,95 @@
       },
       "task_groups": {
         "Type": "List",
-        "Description": "Job Task Groups",
         "Computed": true,
         "IsBlock": true,
         "ConfigImplicitMode": "ComputedBlock",
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
-            "constraints": {
-              "Type": "Map",
-              "Computed": true,
-              "Elem": {
-                "Type": "SchemaElements",
-                "ElementsType": "String"
-              }
-            },
             "count": {
               "Type": "Int",
               "Computed": true
             },
-            "ephemeral_disk": {
+            "meta": {
               "Type": "Map",
-              "Computed": true,
-              "Elem": {
-                "Type": "SchemaElements",
-                "ElementsType": "String"
-              }
-            },
-            "migrate_strategy": {
-              "Type": "Map",
-              "Computed": true,
-              "Elem": {
-                "Type": "SchemaElements",
-                "ElementsType": "String"
-              }
+              "Computed": true
             },
             "name": {
               "Type": "String",
               "Computed": true
             },
-            "reschedule_policy": {
-              "Type": "Map",
+            "task": {
+              "Type": "List",
               "Computed": true,
+              "IsBlock": true,
+              "ConfigImplicitMode": "ComputedBlock",
               "Elem": {
-                "Type": "SchemaElements",
-                "ElementsType": "String"
+                "Type": "SchemaInfo",
+                "Info": {
+                  "driver": {
+                    "Type": "String",
+                    "Computed": true
+                  },
+                  "meta": {
+                    "Type": "Map",
+                    "Computed": true
+                  },
+                  "name": {
+                    "Type": "String",
+                    "Computed": true
+                  },
+                  "volume_mounts": {
+                    "Type": "List",
+                    "Computed": true,
+                    "IsBlock": true,
+                    "ConfigImplicitMode": "ComputedBlock",
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "destination": {
+                          "Type": "String",
+                          "Computed": true
+                        },
+                        "read_only": {
+                          "Type": "Bool",
+                          "Computed": true
+                        },
+                        "volume": {
+                          "Type": "String",
+                          "Computed": true
+                        }
+                      }
+                    }
+                  }
+                }
               }
             },
-            "restart_policy": {
-              "Type": "Map",
+            "volumes": {
+              "Type": "List",
               "Computed": true,
+              "IsBlock": true,
+              "ConfigImplicitMode": "ComputedBlock",
               "Elem": {
-                "Type": "SchemaElements",
-                "ElementsType": "String"
-              }
-            },
-            "update_strategy": {
-              "Type": "Map",
-              "Computed": true,
-              "Elem": {
-                "Type": "SchemaElements",
-                "ElementsType": "String"
+                "Type": "SchemaInfo",
+                "Info": {
+                  "name": {
+                    "Type": "String",
+                    "Computed": true
+                  },
+                  "read_only": {
+                    "Type": "Bool",
+                    "Computed": true
+                  },
+                  "source": {
+                    "Type": "String",
+                    "Computed": true
+                  },
+                  "type": {
+                    "Type": "String",
+                    "Computed": true
+                  }
+                }
               }
             }
           }
@@ -829,49 +1120,44 @@
         "Description": "Job Type",
         "Computed": true
       },
-      "update_strategy": {
-        "Type": "List",
-        "Description": "Job Update Policy",
-        "Computed": true,
-        "IsBlock": true,
-        "ConfigImplicitMode": "ComputedBlock",
-        "Elem": {
-          "Type": "SchemaInfo",
-          "Info": {
-            "auto_revert": {
-              "Type": "Bool",
-              "Computed": true
-            },
-            "canary": {
-              "Type": "Int",
-              "Computed": true
-            },
-            "health_check": {
-              "Type": "String",
-              "Computed": true
-            },
-            "healthy_deadline": {
-              "Type": "String",
-              "Computed": true
-            },
-            "max_parallel": {
-              "Type": "Int",
-              "Computed": true
-            },
-            "min_healthy_time": {
-              "Type": "String",
-              "Computed": true
-            },
-            "stagger": {
-              "Type": "String",
-              "Computed": true
-            }
-          }
-        }
-      },
       "version": {
         "Type": "Int",
         "Description": "Job Version",
+        "Computed": true
+      }
+    },
+    "nomad_job_parser": {
+      "canonicalize": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Flag to enable setting any unset fields to their default values.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "hcl": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Specifies the HCL definition of the job encoded in a JSON string."
+      },
+      "json": {
+        "Type": "String",
+        "Description": "The parsed job as JSON string.",
+        "Computed": true
+      }
+    },
+    "nomad_namespace": {
+      "description": {
+        "Type": "String",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true
+      },
+      "quota": {
+        "Type": "String",
         "Computed": true
       }
     },
@@ -998,6 +1284,104 @@
           "Type": "SchemaElements",
           "ElementsType": "String"
         }
+      }
+    },
+    "nomad_scaling_policies": {
+      "job_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Job ID to use to filter scaling policies."
+      },
+      "policies": {
+        "Type": "List",
+        "Description": "The list of policies that match the search criteria.",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "enabled": {
+              "Type": "Bool",
+              "Description": "Whether or not the scaling policy is enabled.",
+              "Computed": true
+            },
+            "id": {
+              "Type": "String",
+              "Description": "The scaling policy ID.",
+              "Computed": true
+            },
+            "target": {
+              "Type": "Map",
+              "Description": "The scaling policy target.",
+              "Computed": true
+            },
+            "type": {
+              "Type": "String",
+              "Description": "The scaling policy type.",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "type": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Scaling policy type used to filter scaling policies."
+      }
+    },
+    "nomad_scaling_policy": {
+      "enabled": {
+        "Type": "Bool",
+        "Description": "Whether or not the scaling policy is enabled.",
+        "Computed": true
+      },
+      "id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The scaling policy ID."
+      },
+      "max": {
+        "Type": "Int",
+        "Description": "The maximum value defined in the scaling policy.",
+        "Computed": true
+      },
+      "min": {
+        "Type": "Int",
+        "Description": "The minimum value defined in the scaling policy.",
+        "Computed": true
+      },
+      "policy": {
+        "Type": "String",
+        "Description": "The policy defined in the scaling policy as a JSON string.",
+        "Computed": true
+      },
+      "target": {
+        "Type": "Map",
+        "Description": "The scaling policy target.",
+        "Computed": true
+      },
+      "type": {
+        "Type": "String",
+        "Description": "The scaling policy type.",
+        "Computed": true
+      }
+    },
+    "nomad_scheduler_config": {
+      "preemption_config": {
+        "Type": "Map",
+        "Description": "Options to enable preemption for various schedulers.",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "Bool"
+        }
+      },
+      "scheduler_algorithm": {
+        "Type": "String",
+        "Description": "Specifies whether scheduler binpacks or spreads allocations on available nodes.",
+        "Computed": true
       }
     },
     "nomad_volumes": {
