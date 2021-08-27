@@ -22,14 +22,9 @@ Plugin may read it from `$HOME/.terraform.d/metadata-repo` (Linux, macOS) or `%A
 Just clone this repositry there:
 ```bash
 mkdir -p "$HOME/.terraform.d/metadata-repo"
-git clone "https://github.com/alekc/terraform-metadata" "$HOME/.terraform.d/metadata-repo"
+git clone "https://github.com/cageyv/terraform-metadata" "$HOME/.terraform.d/metadata-repo"
 ```
 And then update it regularly using `git pull`
-
-#### As Maven artifact
-
-This metadata is published as [maven artifact](https://bintray.com/vladrassokhin/maven/terraform-metadata) 
-to [custom Bintray repository](https://bintray.com/vladrassokhin/maven/).
 
 ### Update
 Follow instructions at schemas-extractor/ReadMe.md
