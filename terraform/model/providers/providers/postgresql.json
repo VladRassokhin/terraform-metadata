@@ -1,0 +1,547 @@
+{
+  ".schema_version": "2",
+  ".sdk_type": "terraform-plugin-sdk-v1",
+  "name": "postgresql",
+  "type": "provider",
+  "version": "v1.7.1",
+  "provider": {
+    "clientcert": {
+      "Type": "List",
+      "Optional": true,
+      "Description": "SSL client certificate if required by the database.",
+      "MaxItems": 1,
+      "IsBlock": true,
+      "ConfigImplicitMode": "Block",
+      "Elem": {
+        "Type": "SchemaInfo",
+        "Info": {
+          "cert": {
+            "Type": "String",
+            "Required": true,
+            "Description": "The SSL client certificate file path. The file must contain PEM encoded data."
+          },
+          "key": {
+            "Type": "String",
+            "Required": true,
+            "Description": "The SSL client certificate private key file path. The file must contain PEM encoded data."
+          }
+        }
+      }
+    },
+    "connect_timeout": {
+      "Type": "Int",
+      "Optional": true,
+      "Description": "Maximum wait for connection, in seconds. Zero or not specified means wait indefinitely.",
+      "DefaultFunc": "ENV(PGCONNECT_TIMEOUT)"
+    },
+    "database": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "The name of the database to connect to in order to conenct to (defaults to `postgres`).",
+      "DefaultFunc": "ENV(PGDATABASE)"
+    },
+    "database_username": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "Database username associated to the connected user (for user name maps)"
+    },
+    "expected_version": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "Specify the expected version of PostgreSQL.",
+      "Default": {
+        "Type": "string",
+        "Value": "9.0.0"
+      }
+    },
+    "host": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "Name of PostgreSQL server address to connect to",
+      "DefaultFunc": "ENV(PGHOST)"
+    },
+    "max_connections": {
+      "Type": "Int",
+      "Optional": true,
+      "Description": "Maximum number of connections to establish to the database. Zero means unlimited.",
+      "Default": {
+        "Type": "int",
+        "Value": "20"
+      }
+    },
+    "password": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "Password to be used if the PostgreSQL server demands password authentication",
+      "DefaultFunc": "ENV(PGPASSWORD)"
+    },
+    "port": {
+      "Type": "Int",
+      "Optional": true,
+      "Description": "The PostgreSQL port number to connect to at the server host, or socket file name extension for Unix-domain connections",
+      "DefaultFunc": "ENV(PGPORT)"
+    },
+    "ssl_mode": {
+      "Type": "String",
+      "Optional": true,
+      "Deprecated": "Rename PostgreSQL provider `ssl_mode` attribute to `sslmode`"
+    },
+    "sslmode": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "This option determines whether or with what priority a secure SSL TCP/IP connection will be negotiated with the PostgreSQL server",
+      "DefaultFunc": "ENV(PGSSLMODE)"
+    },
+    "sslrootcert": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "The SSL server root certificate file path. The file must contain PEM encoded data."
+    },
+    "superuser": {
+      "Type": "Bool",
+      "Optional": true,
+      "Description": "Specify if the user to connect as is a Postgres superuser or not.If not, some feature might be disabled (e.g.: Refreshing state password from Postgres)",
+      "DefaultFunc": "ENV(PGSUPERUSER)"
+    },
+    "username": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "PostgreSQL user name to connect as",
+      "DefaultFunc": "ENV(PGUSER)"
+    }
+  },
+  "resources": {
+    "postgresql_database": {
+      "allow_connections": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "If false then no one can connect to this database",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "connection_limit": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "How many concurrent connections can be made to this database",
+        "Default": {
+          "Type": "int",
+          "Value": "-1"
+        }
+      },
+      "encoding": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Character set encoding to use in the new database",
+        "Computed": true
+      },
+      "is_template": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "If true, then this database can be cloned by any user with CREATEDB privileges",
+        "Computed": true
+      },
+      "lc_collate": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Collation order (LC_COLLATE) to use in the new database",
+        "Computed": true
+      },
+      "lc_ctype": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Character classification (LC_CTYPE) to use in the new database",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The PostgreSQL database name to connect to"
+      },
+      "owner": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The ROLE which owns the database",
+        "Computed": true
+      },
+      "tablespace_name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of the tablespace that will be associated with the new database",
+        "Computed": true
+      },
+      "template": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of the template from which to create the new database",
+        "Computed": true
+      }
+    },
+    "postgresql_default_privileges": {
+      "database": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The database to grant default privileges for this role"
+      },
+      "object_type": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The PostgreSQL object type to set the default privileges on (one of: table, sequence, function, type)"
+      },
+      "owner": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Target role for which to alter default privileges."
+      },
+      "privileges": {
+        "Type": "Set",
+        "Required": true,
+        "Description": "The list of privileges to apply as default privileges",
+        "MinItems": 1,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "role": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The name of the role to which grant default privileges on"
+      },
+      "schema": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The database schema to set default privileges for this role"
+      }
+    },
+    "postgresql_extension": {
+      "database": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Sets the database to add the extension to",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true
+      },
+      "schema": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Sets the schema of an extension",
+        "Computed": true
+      },
+      "version": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Sets the version number of the extension",
+        "Computed": true
+      }
+    },
+    "postgresql_grant": {
+      "database": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The database to grant privileges on for this role"
+      },
+      "object_type": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The PostgreSQL object type to grant the privileges on (one of: database, table, sequence, function)"
+      },
+      "privileges": {
+        "Type": "Set",
+        "Required": true,
+        "Description": "The list of privileges to grant",
+        "MinItems": 1,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "role": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The name of the role to grant privileges on"
+      },
+      "schema": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The database schema to grant privileges on for this role"
+      },
+      "with_grant_option": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Permit the grant recipient to grant it to others",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      }
+    },
+    "postgresql_role": {
+      "bypass_row_level_security": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Determine whether a role bypasses every row-level security (RLS) policy",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "connection_limit": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "How many concurrent connections can be made with this role",
+        "Default": {
+          "Type": "int",
+          "Value": "-1"
+        }
+      },
+      "create_database": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Define a role's ability to create databases",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "create_role": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Determine whether this role will be permitted to create new roles",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "encrypted": {
+        "Type": "String",
+        "Optional": true,
+        "Deprecated": "Rename PostgreSQL role resource attribute \"encrypted\" to \"encrypted_password\""
+      },
+      "encrypted_password": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Control whether the password is stored encrypted in the system catalogs",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "inherit": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Determine whether a role \"inherits\" the privileges of roles it is a member of",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "login": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Determine whether a role is allowed to log in",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The name of the role"
+      },
+      "password": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Sets the role's password"
+      },
+      "replication": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Determine whether a role is allowed to initiate streaming replication or put the system in and out of backup mode",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "roles": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Role(s) to grant to this new role",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "search_path": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Sets the role's search path",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "skip_drop_role": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Skip actually running the DROP ROLE command when removing a ROLE from PostgreSQL",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "skip_reassign_owned": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Skip actually running the REASSIGN OWNED command when removing a role from PostgreSQL",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "statement_timeout": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Abort any statement that takes more than the specified number of milliseconds"
+      },
+      "superuser": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Determine whether the new role is a \"superuser\"",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "valid_until": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Sets a date and time after which the role's password is no longer valid",
+        "Default": {
+          "Type": "string",
+          "Value": "infinity"
+        }
+      }
+    },
+    "postgresql_schema": {
+      "database": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The database name to alter schema",
+        "Computed": true
+      },
+      "drop_cascade": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "When true, will also drop all the objects that are contained in the schema",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "if_not_exists": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "When true, use the existing schema if it exists",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The name of the schema"
+      },
+      "owner": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The ROLE name who owns the schema",
+        "Computed": true
+      },
+      "policy": {
+        "Type": "Set",
+        "Optional": true,
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "create": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "If true, allow the specified ROLEs to CREATE new objects within the schema(s)",
+              "ConflictsWith": [
+                "policy.create_with_grant"
+              ],
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
+              }
+            },
+            "create_with_grant": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "If true, allow the specified ROLEs to CREATE new objects within the schema(s) and GRANT the same CREATE privilege to different ROLEs",
+              "ConflictsWith": [
+                "policy.create"
+              ],
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
+              }
+            },
+            "role": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "ROLE who will receive this policy (default: PUBLIC)",
+              "ConfigImplicitMode": "Attr",
+              "Default": {
+                "Type": "string"
+              },
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "usage": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "If true, allow the specified ROLEs to use objects within the schema(s)",
+              "ConflictsWith": [
+                "policy.usage_with_grant"
+              ],
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
+              }
+            },
+            "usage_with_grant": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "If true, allow the specified ROLEs to use objects within the schema(s) and GRANT the same USAGE privilege to different ROLEs",
+              "ConflictsWith": [
+                "policy.usage"
+              ],
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "data-sources": {}
+}
