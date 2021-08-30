@@ -1,58 +1,187 @@
 {
   ".schema_version": "2",
-  ".sdk_type": "terraform-plugin-sdk-v1",
+  ".sdk_type": "terraform-plugin-sdk-v2",
   "name": "azuread",
   "type": "provider",
-  "version": "v0.11.0",
+  "version": "v2.0.1",
   "provider": {
+    "client_certificate": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "Base64 encoded PKCS#12 certificate bundle to use when authenticating as a Service Principal using a Client Certificate",
+      "DefaultFunc": "ENV(ARM_CLIENT_CERTIFICATE)"
+    },
     "client_certificate_password": {
       "Type": "String",
       "Optional": true,
+      "Description": "The password to decrypt the Client Certificate. For use when authenticating as a Service Principal using a Client Certificate",
       "DefaultFunc": "ENV(ARM_CLIENT_CERTIFICATE_PASSWORD)"
     },
     "client_certificate_path": {
       "Type": "String",
       "Optional": true,
+      "Description": "The path to the Client Certificate associated with the Service Principal for use when authenticating as a Service Principal using a Client Certificate",
       "DefaultFunc": "ENV(ARM_CLIENT_CERTIFICATE_PATH)"
     },
     "client_id": {
       "Type": "String",
       "Optional": true,
+      "Description": "The Client ID which should be used for service principal authentication",
       "DefaultFunc": "ENV(ARM_CLIENT_ID)"
     },
     "client_secret": {
       "Type": "String",
       "Optional": true,
+      "Description": "The application password to use when authenticating as a Service Principal using a Client Secret",
       "DefaultFunc": "ENV(ARM_CLIENT_SECRET)"
+    },
+    "disable_terraform_partner_id": {
+      "Type": "Bool",
+      "Optional": true,
+      "Description": "Disable the Terraform Partner ID, which is used if a custom `partner_id` isn't specified",
+      "DefaultFunc": "ENV(ARM_DISABLE_TERRAFORM_PARTNER_ID)"
     },
     "environment": {
       "Type": "String",
       "Required": true,
+      "Description": "The cloud environment which should be used. Possible values are `global` (formerly `public`), `usgovernment`, `dod`, `germany`, and `china`. Defaults to `global`",
       "DefaultFunc": "ENV(ARM_ENVIRONMENT)"
     },
     "msi_endpoint": {
       "Type": "String",
       "Optional": true,
+      "Description": "The path to a custom endpoint for Managed Identity - in most circumstances this should be detected automatically",
       "DefaultFunc": "ENV(ARM_MSI_ENDPOINT)"
     },
-    "subscription_id": {
+    "partner_id": {
       "Type": "String",
       "Optional": true,
-      "DefaultFunc": "ENV(ARM_SUBSCRIPTION_ID)"
+      "Description": "A GUID/UUID that is registered with Microsoft to facilitate partner resource usage attribution",
+      "DefaultFunc": "ENV(ARM_PARTNER_ID)"
     },
     "tenant_id": {
       "Type": "String",
       "Optional": true,
+      "Description": "The Tenant ID which should be used. Works with all authentication methods except Managed Identity",
       "DefaultFunc": "ENV(ARM_TENANT_ID)"
+    },
+    "use_cli": {
+      "Type": "Bool",
+      "Optional": true,
+      "Description": "Allow Azure CLI to be used for Authentication",
+      "DefaultFunc": "ENV(ARM_USE_CLI)"
     },
     "use_msi": {
       "Type": "Bool",
       "Optional": true,
+      "Description": "Allow Managed Identity to be used for Authentication",
       "DefaultFunc": "ENV(ARM_USE_MSI)"
     }
   },
   "resources": {
     "azuread_application": {
+      "__timeouts__": [
+        "create",
+        "read",
+        "update",
+        "delete"
+      ],
+      "api": {
+        "Type": "List",
+        "Optional": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "known_client_applications": {
+              "Type": "Set",
+              "Optional": true,
+              "Description": "Used for bundling consent if you have a solution that contains two parts: a client app and a custom web API app",
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "mapped_claims_enabled": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Allows an application to use claims mapping without specifying a custom signing key"
+            },
+            "oauth2_permission_scope": {
+              "Type": "Set",
+              "Optional": true,
+              "Description": "One or more `oauth2_permission_scope` blocks to describe delegated permissions exposed by the web API represented by this application",
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "admin_consent_description": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Delegated permission description that appears in all tenant-wide admin consent experiences, intended to be read by an administrator granting the permission on behalf of all users"
+                  },
+                  "admin_consent_display_name": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Display name for the delegated permission, intended to be read by an administrator granting the permission on behalf of all users"
+                  },
+                  "enabled": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Description": "Determines if the permission scope is enabled",
+                    "Default": {
+                      "Type": "bool",
+                      "Value": "true"
+                    }
+                  },
+                  "id": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "The unique identifier of the delegated permission"
+                  },
+                  "type": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Whether this delegated permission should be considered safe for non-admin users to consent to on behalf of themselves, or whether an administrator should be required for consent to the permissions",
+                    "Default": {
+                      "Type": "string",
+                      "Value": "User"
+                    }
+                  },
+                  "user_consent_description": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Delegated permission description that appears in the end user consent experience, intended to be read by a user consenting on their own behalf"
+                  },
+                  "user_consent_display_name": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Display name for the delegated permission that appears in the end user consent experience"
+                  },
+                  "value": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "The value that is used for the `scp` claim in OAuth 2.0 access tokens"
+                  }
+                }
+              }
+            },
+            "requested_access_token_version": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "The access token version expected by this resource",
+              "Default": {
+                "Type": "int",
+                "Value": "1"
+              }
+            }
+          }
+        }
+      },
       "app_role": {
         "Type": "Set",
         "Optional": true,
@@ -64,6 +193,7 @@
             "allowed_member_types": {
               "Type": "Set",
               "Required": true,
+              "Description": "Specifies whether this app role definition can be assigned to users and groups by setting to `User`, or to other applications (that are accessing this application in a standalone scenario) by setting to `Application`, or to both",
               "MinItems": 1,
               "ConfigImplicitMode": "Attr",
               "Elem": {
@@ -73,51 +203,39 @@
             },
             "description": {
               "Type": "String",
-              "Required": true
+              "Required": true,
+              "Description": "Description of the app role that appears when the role is being assigned and, if the role functions as an application permissions, during the consent experiences"
             },
             "display_name": {
               "Type": "String",
-              "Required": true
+              "Required": true,
+              "Description": "Display name for the app role that appears during app role assignment and in consent experiences"
             },
-            "id": {
-              "Type": "String",
-              "Computed": true
-            },
-            "is_enabled": {
+            "enabled": {
               "Type": "Bool",
               "Optional": true,
+              "Description": "Determines if the app role is enabled",
               "Default": {
                 "Type": "bool",
                 "Value": "true"
               }
             },
+            "id": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The unique identifier of the app role"
+            },
             "value": {
               "Type": "String",
-              "Optional": true
+              "Optional": true,
+              "Description": "The value that is used for the `roles` claim in ID tokens and OAuth 2.0 access tokens that are authenticating an assigned service or user principal"
             }
           }
         }
       },
-      "application_id": {
-        "Type": "String",
-        "Computed": true
-      },
-      "available_to_other_tenants": {
-        "Type": "Bool",
-        "Optional": true
-      },
-      "group_membership_claims": {
-        "Type": "String",
-        "Optional": true
-      },
-      "homepage": {
-        "Type": "String",
-        "Optional": true,
-        "Computed": true
-      },
-      "identifier_uris": {
-        "Type": "List",
-        "Optional": true,
+      "app_role_ids": {
+        "Type": "Map",
+        "Description": "Mapping of app role names to UUIDs",
         "Computed": true,
         "ConfigImplicitMode": "Attr",
         "Elem": {
@@ -125,70 +243,79 @@
           "ElementsType": "String"
         }
       },
-      "logout_url": {
+      "application_id": {
         "Type": "String",
-        "Optional": true
+        "Description": "The Application ID (also called Client ID)",
+        "Computed": true
       },
-      "name": {
-        "Type": "String",
-        "Required": true
-      },
-      "oauth2_allow_implicit_flow": {
+      "device_only_auth_enabled": {
         "Type": "Bool",
-        "Optional": true
+        "Optional": true,
+        "Description": "Specifies whether this application supports device authentication without a user."
       },
-      "oauth2_permissions": {
+      "disabled_by_microsoft": {
+        "Type": "String",
+        "Description": "Whether Microsoft has disabled the registered application",
+        "Computed": true
+      },
+      "display_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The display name for the application"
+      },
+      "fallback_public_client_enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Specifies whether the application is a public client. Appropriate for apps using token grant flows that don't use a redirect URI"
+      },
+      "group_membership_claims": {
         "Type": "Set",
         "Optional": true,
-        "Computed": true,
-        "ConfigExplicitMode": "Attr",
+        "Description": "Configures the `groups` claim issued in a user or OAuth 2.0 access token that the app expects",
+        "ConfigImplicitMode": "Attr",
         "Elem": {
-          "Type": "SchemaInfo",
-          "Info": {
-            "admin_consent_description": {
-              "Type": "String",
-              "Optional": true,
-              "Computed": true
-            },
-            "admin_consent_display_name": {
-              "Type": "String",
-              "Optional": true,
-              "Computed": true
-            },
-            "id": {
-              "Type": "String",
-              "Computed": true
-            },
-            "is_enabled": {
-              "Type": "Bool",
-              "Optional": true,
-              "Computed": true
-            },
-            "type": {
-              "Type": "String",
-              "Optional": true,
-              "Computed": true
-            },
-            "user_consent_description": {
-              "Type": "String",
-              "Optional": true,
-              "Computed": true
-            },
-            "user_consent_display_name": {
-              "Type": "String",
-              "Optional": true,
-              "Computed": true
-            },
-            "value": {
-              "Type": "String",
-              "Optional": true,
-              "Computed": true
-            }
-          }
+          "Type": "SchemaElements",
+          "ElementsType": "String"
         }
+      },
+      "identifier_uris": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "The user-defined URI(s) that uniquely identify an application within its Azure AD tenant, or within a verified custom domain if the application is multi-tenant",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "logo_url": {
+        "Type": "String",
+        "Description": "CDN URL to the application's logo",
+        "Computed": true
+      },
+      "marketing_url": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "URL of the application's marketing page"
+      },
+      "oauth2_permission_scope_ids": {
+        "Type": "Map",
+        "Description": "Mapping of OAuth2.0 permission scope names to UUIDs",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "oauth2_post_response_required": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Specifies whether, as part of OAuth 2.0 token requests, Azure AD allows POST requests, as opposed to GET requests."
       },
       "object_id": {
         "Type": "String",
+        "Description": "The application's object ID",
         "Computed": true
       },
       "optional_claims": {
@@ -211,6 +338,7 @@
                   "additional_properties": {
                     "Type": "List",
                     "Optional": true,
+                    "Description": "List of additional properties of the claim. If a property exists in this list, it modifies the behaviour of the optional claim",
                     "ConfigImplicitMode": "Attr",
                     "Elem": {
                       "Type": "SchemaElements",
@@ -220,6 +348,7 @@
                   "essential": {
                     "Type": "Bool",
                     "Optional": true,
+                    "Description": "Whether the claim specified by the client is necessary to ensure a smooth authorization experience",
                     "Default": {
                       "Type": "bool",
                       "Value": "false"
@@ -227,11 +356,13 @@
                   },
                   "name": {
                     "Type": "String",
-                    "Required": true
+                    "Required": true,
+                    "Description": "The name of the optional claim"
                   },
                   "source": {
                     "Type": "String",
-                    "Optional": true
+                    "Optional": true,
+                    "Description": "The source of the claim. If `source` is absent, the claim is a predefined optional claim. If `source` is `user`, the value of `name` is the extension property from the user object"
                   }
                 }
               }
@@ -247,6 +378,7 @@
                   "additional_properties": {
                     "Type": "List",
                     "Optional": true,
+                    "Description": "List of additional properties of the claim. If a property exists in this list, it modifies the behaviour of the optional claim",
                     "ConfigImplicitMode": "Attr",
                     "Elem": {
                       "Type": "SchemaElements",
@@ -256,6 +388,7 @@
                   "essential": {
                     "Type": "Bool",
                     "Optional": true,
+                    "Description": "Whether the claim specified by the client is necessary to ensure a smooth authorization experience",
                     "Default": {
                       "Type": "bool",
                       "Value": "false"
@@ -263,11 +396,53 @@
                   },
                   "name": {
                     "Type": "String",
-                    "Required": true
+                    "Required": true,
+                    "Description": "The name of the optional claim"
                   },
                   "source": {
                     "Type": "String",
-                    "Optional": true
+                    "Optional": true,
+                    "Description": "The source of the claim. If `source` is absent, the claim is a predefined optional claim. If `source` is `user`, the value of `name` is the extension property from the user object"
+                  }
+                }
+              }
+            },
+            "saml2_token": {
+              "Type": "List",
+              "Optional": true,
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "additional_properties": {
+                    "Type": "List",
+                    "Optional": true,
+                    "Description": "List of additional properties of the claim. If a property exists in this list, it modifies the behaviour of the optional claim",
+                    "ConfigImplicitMode": "Attr",
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  },
+                  "essential": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Description": "Whether the claim specified by the client is necessary to ensure a smooth authorization experience",
+                    "Default": {
+                      "Type": "bool",
+                      "Value": "false"
+                    }
+                  },
+                  "name": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "The name of the optional claim"
+                  },
+                  "source": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "The source of the claim. If `source` is absent, the claim is a predefined optional claim. If `source` is `user`, the value of `name` is the extension property from the user object"
                   }
                 }
               }
@@ -278,8 +453,8 @@
       "owners": {
         "Type": "Set",
         "Optional": true,
-        "Computed": true,
-        "MinItems": 1,
+        "Description": "A list of object IDs of principals that will be granted ownership of the application",
+        "MaxItems": 100,
         "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
@@ -289,25 +464,44 @@
       "prevent_duplicate_names": {
         "Type": "Bool",
         "Optional": true,
+        "Description": "If `true`, will return an error if an existing application is found with the same name",
         "Default": {
           "Type": "bool",
           "Value": "false"
         }
       },
-      "public_client": {
-        "Type": "Bool",
+      "privacy_statement_url": {
+        "Type": "String",
         "Optional": true,
-        "Computed": true
+        "Description": "URL of the application's privacy statement"
       },
-      "reply_urls": {
-        "Type": "Set",
+      "public_client": {
+        "Type": "List",
         "Optional": true,
-        "Computed": true,
-        "ConfigImplicitMode": "Attr",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
         "Elem": {
-          "Type": "SchemaElements",
-          "ElementsType": "String"
+          "Type": "SchemaInfo",
+          "Info": {
+            "redirect_uris": {
+              "Type": "Set",
+              "Optional": true,
+              "Description": "The URLs where user tokens are sent for sign-in, or the redirect URIs where OAuth 2.0 authorization codes and access tokens are sent",
+              "MaxItems": 256,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
         }
+      },
+      "publisher_domain": {
+        "Type": "String",
+        "Description": "The verified publisher domain for the application",
+        "Computed": true
       },
       "required_resource_access": {
         "Type": "Set",
@@ -343,222 +537,129 @@
           }
         }
       },
-      "type": {
+      "sign_in_audience": {
         "Type": "String",
         "Optional": true,
+        "Description": "The Microsoft account types that are supported for the current application",
         "Default": {
           "Type": "string",
-          "Value": "webapp/api"
-        }
-      }
-    },
-    "azuread_application_certificate": {
-      "application_object_id": {
-        "Type": "String",
-        "Required": true
-      },
-      "end_date": {
-        "Type": "String",
-        "Optional": true,
-        "Computed": true,
-        "ConflictsWith": [
-          "end_date_relative"
-        ]
-      },
-      "end_date_relative": {
-        "Type": "String",
-        "Optional": true,
-        "ConflictsWith": [
-          "end_date"
-        ]
-      },
-      "key_id": {
-        "Type": "String",
-        "Optional": true,
-        "Computed": true
-      },
-      "start_date": {
-        "Type": "String",
-        "Optional": true,
-        "Computed": true
-      },
-      "type": {
-        "Type": "String",
-        "Optional": true
-      },
-      "value": {
-        "Type": "String",
-        "Required": true
-      }
-    },
-    "azuread_application_password": {
-      "application_id": {
-        "Type": "String",
-        "Optional": true,
-        "Computed": true,
-        "Deprecated": "Deprecated in favour of `application_object_id` to prevent confusion"
-      },
-      "application_object_id": {
-        "Type": "String",
-        "Optional": true,
-        "Computed": true
-      },
-      "description": {
-        "Type": "String",
-        "Optional": true,
-        "Computed": true
-      },
-      "end_date": {
-        "Type": "String",
-        "Optional": true,
-        "Computed": true
-      },
-      "end_date_relative": {
-        "Type": "String",
-        "Optional": true
-      },
-      "key_id": {
-        "Type": "String",
-        "Optional": true,
-        "Computed": true
-      },
-      "start_date": {
-        "Type": "String",
-        "Optional": true,
-        "Computed": true
-      },
-      "value": {
-        "Type": "String",
-        "Required": true
-      }
-    },
-    "azuread_group": {
-      "description": {
-        "Type": "String",
-        "Optional": true
-      },
-      "members": {
-        "Type": "Set",
-        "Optional": true,
-        "Computed": true,
-        "ConfigImplicitMode": "Attr",
-        "Elem": {
-          "Type": "SchemaElements",
-          "ElementsType": "String"
+          "Value": "AzureADMyOrg"
         }
       },
-      "name": {
-        "Type": "String",
-        "Required": true
-      },
-      "object_id": {
-        "Type": "String",
-        "Computed": true
-      },
-      "owners": {
-        "Type": "Set",
-        "Optional": true,
-        "Computed": true,
-        "ConfigImplicitMode": "Attr",
-        "Elem": {
-          "Type": "SchemaElements",
-          "ElementsType": "String"
-        }
-      },
-      "prevent_duplicate_names": {
-        "Type": "Bool",
-        "Optional": true,
-        "Default": {
-          "Type": "bool",
-          "Value": "false"
-        }
-      }
-    },
-    "azuread_group_member": {
-      "group_object_id": {
-        "Type": "String",
-        "Required": true
-      },
-      "member_object_id": {
-        "Type": "String",
-        "Required": true
-      }
-    },
-    "azuread_service_principal": {
-      "app_role_assignment_required": {
-        "Type": "Bool",
-        "Optional": true
-      },
-      "application_id": {
-        "Type": "String",
-        "Required": true
-      },
-      "display_name": {
-        "Type": "String",
-        "Computed": true
-      },
-      "oauth2_permissions": {
+      "single_page_application": {
         "Type": "List",
         "Optional": true,
-        "Computed": true,
+        "MaxItems": 1,
         "IsBlock": true,
         "ConfigImplicitMode": "Block",
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
-            "admin_consent_description": {
-              "Type": "String",
-              "Computed": true
-            },
-            "admin_consent_display_name": {
-              "Type": "String",
-              "Computed": true
-            },
-            "id": {
-              "Type": "String",
-              "Computed": true
-            },
-            "is_enabled": {
-              "Type": "Bool",
-              "Computed": true
-            },
-            "type": {
-              "Type": "String",
-              "Computed": true
-            },
-            "user_consent_description": {
-              "Type": "String",
-              "Computed": true
-            },
-            "user_consent_display_name": {
-              "Type": "String",
-              "Computed": true
-            },
-            "value": {
-              "Type": "String",
-              "Computed": true
+            "redirect_uris": {
+              "Type": "Set",
+              "Optional": true,
+              "Description": "The URLs where user tokens are sent for sign-in, or the redirect URIs where OAuth 2.0 authorization codes and access tokens are sent",
+              "MaxItems": 256,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
             }
           }
         }
       },
-      "object_id": {
+      "support_url": {
         "Type": "String",
-        "Computed": true
-      },
-      "tags": {
-        "Type": "Set",
         "Optional": true,
-        "ConfigImplicitMode": "Attr",
+        "Description": "URL of the application's support page"
+      },
+      "terms_of_service_url": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "URL of the application's terms of service statement"
+      },
+      "web": {
+        "Type": "List",
+        "Optional": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
         "Elem": {
-          "Type": "SchemaElements",
-          "ElementsType": "String"
+          "Type": "SchemaInfo",
+          "Info": {
+            "homepage_url": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Home page or landing page of the application"
+            },
+            "implicit_grant": {
+              "Type": "List",
+              "Optional": true,
+              "MaxItems": 1,
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "access_token_issuance_enabled": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Description": "Whether this web application can request an access token using OAuth 2.0 implicit flow"
+                  },
+                  "id_token_issuance_enabled": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Description": "Whether this web application can request an ID token using OAuth 2.0 implicit flow"
+                  }
+                }
+              }
+            },
+            "logout_url": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The URL that will be used by Microsoft's authorization service to sign out a user using front-channel, back-channel or SAML logout protocols"
+            },
+            "redirect_uris": {
+              "Type": "Set",
+              "Optional": true,
+              "Description": "The URLs where user tokens are sent for sign-in, or the redirect URIs where OAuth 2.0 authorization codes and access tokens are sent",
+              "MaxItems": 256,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
         }
       }
     },
-    "azuread_service_principal_certificate": {
+    "azuread_application_certificate": {
+      "__timeouts__": [
+        "create",
+        "read",
+        "update",
+        "delete"
+      ],
+      "application_object_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The object ID of the application for which this certificate should be created"
+      },
+      "encoding": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Specifies the encoding used for the supplied certificate data",
+        "Default": {
+          "Type": "string",
+          "Value": "pem"
+        }
+      },
       "end_date": {
         "Type": "String",
         "Optional": true,
+        "Description": "The end date until which the certificate is valid, formatted as an RFC3339 date string (e.g. `2018-01-01T01:02:03Z`). If omitted, the API will decide a suitable expiry date, which is typically around 2 years from the start date",
         "Computed": true,
         "ConflictsWith": [
           "end_date_relative"
@@ -567,6 +668,7 @@
       "end_date_relative": {
         "Type": "String",
         "Optional": true,
+        "Description": "A relative duration for which the certificate is valid until, for example `240h` (10 days) or `2400h30m`",
         "ConflictsWith": [
           "end_date"
         ]
@@ -574,126 +676,338 @@
       "key_id": {
         "Type": "String",
         "Optional": true,
+        "Description": "A UUID used to uniquely identify this certificate. If omitted, a random UUID will be automatically generated",
         "Computed": true
-      },
-      "service_principal_id": {
-        "Type": "String",
-        "Required": true
       },
       "start_date": {
         "Type": "String",
         "Optional": true,
+        "Description": "The start date from which the certificate is valid, formatted as an RFC3339 date string (e.g. `2018-01-01T01:02:03Z`). If this isn't specified, the current date and time are use",
         "Computed": true
       },
       "type": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Description": "The type of key/certificate"
       },
       "value": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "The certificate data, which can be PEM encoded, base64 encoded DER or hexadecimal encoded DER. See also the `encoding` argumen"
       }
     },
-    "azuread_service_principal_password": {
-      "description": {
+    "azuread_application_password": {
+      "__timeouts__": [
+        "create",
+        "read",
+        "update",
+        "delete"
+      ],
+      "application_object_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The object ID of the application for which this password should be created"
+      },
+      "display_name": {
         "Type": "String",
         "Optional": true,
+        "Description": "A display name for the password",
         "Computed": true
       },
       "end_date": {
         "Type": "String",
         "Optional": true,
-        "Computed": true
+        "Description": "The end date until which the password is valid, formatted as an RFC3339 date string (e.g. `2018-01-01T01:02:03Z`)",
+        "Computed": true,
+        "ConflictsWith": [
+          "end_date_relative"
+        ]
       },
       "end_date_relative": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Description": "A relative duration for which the password is valid until, for example `240h` (10 days) or `2400h30m`. Changing this field forces a new resource to be created",
+        "ConflictsWith": [
+          "end_date"
+        ]
+      },
+      "keepers": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "Arbitrary map of values that, when changed, will trigger rotation of the password",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       },
       "key_id": {
         "Type": "String",
-        "Optional": true,
+        "Description": "A UUID used to uniquely identify this password credential",
         "Computed": true
-      },
-      "service_principal_id": {
-        "Type": "String",
-        "Required": true
       },
       "start_date": {
         "Type": "String",
         "Optional": true,
+        "Description": "The start date from which the password is valid, formatted as an RFC3339 date string (e.g. `2018-01-01T01:02:03Z`). If this isn't specified, the current date is used",
         "Computed": true
       },
       "value": {
         "Type": "String",
-        "Required": true
+        "Description": "The password for this application, which is generated by Azure Active Directory",
+        "Computed": true
       }
     },
-    "azuread_user": {
-      "account_enabled": {
+    "azuread_application_pre_authorized": {
+      "__timeouts__": [
+        "create",
+        "read",
+        "update",
+        "delete"
+      ],
+      "application_object_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The object ID of the application to which this pre-authorized application should be added"
+      },
+      "authorized_app_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The application ID of the pre-authorized application"
+      },
+      "permission_ids": {
+        "Type": "Set",
+        "Required": true,
+        "Description": "The IDs of the permission scopes required by the pre-authorized application",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      }
+    },
+    "azuread_group": {
+      "__timeouts__": [
+        "create",
+        "read",
+        "update",
+        "delete"
+      ],
+      "assignable_to_role": {
         "Type": "Bool",
         "Optional": true,
-        "Default": {
-          "Type": "bool",
-          "Value": "true"
+        "Description": "Indicates whether this group can be assigned to an Azure Active Directory role. This property can only be `true` for security-enabled groups."
+      },
+      "behaviors": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "The group behaviours for a Microsoft 365 group",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
         }
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The description for the group"
       },
       "display_name": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "The display name for the group"
       },
-      "force_password_change": {
+      "mail": {
+        "Type": "String",
+        "Description": "The SMTP address for the group",
+        "Computed": true
+      },
+      "mail_enabled": {
         "Type": "Bool",
         "Optional": true,
+        "Description": "Whether the group is a mail enabled, with a shared group mailbox. At least one of `mail_enabled` or `security_enabled` must be specified. A group can be mail enabled _and_ security enabled"
+      },
+      "mail_nickname": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The mail alias for the group, unique in the organisation",
+        "Computed": true
+      },
+      "members": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "A set of members who should be present in this group. Supported object types are Users, Groups or Service Principals",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "object_id": {
+        "Type": "String",
+        "Description": "The object ID of the group",
+        "Computed": true
+      },
+      "onpremises_domain_name": {
+        "Type": "String",
+        "Description": "The on-premises FQDN, also called dnsDomainName, synchronized from the on-premises directory when Azure AD Connect is used",
+        "Computed": true
+      },
+      "onpremises_netbios_name": {
+        "Type": "String",
+        "Description": "The on-premises NetBIOS name, synchronized from the on-premises directory when Azure AD Connect is used",
+        "Computed": true
+      },
+      "onpremises_sam_account_name": {
+        "Type": "String",
+        "Description": "The on-premises SAM account name, synchronized from the on-premises directory when Azure AD Connect is used",
+        "Computed": true
+      },
+      "onpremises_security_identifier": {
+        "Type": "String",
+        "Description": "The on-premises security identifier (SID), synchronized from the on-premises directory when Azure AD Connect is used",
+        "Computed": true
+      },
+      "onpremises_sync_enabled": {
+        "Type": "Bool",
+        "Description": "Whether this group is synchronized from an on-premises directory (true), no longer synchronized (false), or has never been synchronized (null)",
+        "Computed": true
+      },
+      "owners": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "A set of owners who own this group. Supported object types are Users or Service Principals",
+        "Computed": true,
+        "MaxItems": 100,
+        "MinItems": 1,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "preferred_language": {
+        "Type": "String",
+        "Description": "The preferred language for a Microsoft 365 group, in ISO 639-1 notation",
+        "Computed": true
+      },
+      "prevent_duplicate_names": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "If `true`, will return an error if an existing group is found with the same name",
         "Default": {
           "Type": "bool",
           "Value": "false"
         }
       },
-      "immutable_id": {
+      "provisioning_options": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "The group provisioning options for a Microsoft 365 group",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "proxy_addresses": {
+        "Type": "List",
+        "Description": "Email addresses for the group that direct to the same group mailbox",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "security_enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether the group is a security group for controlling access to in-app resources. At least one of `security_enabled` or `mail_enabled` must be specified. A group can be security enabled _and_ mail enabled"
+      },
+      "theme": {
         "Type": "String",
         "Optional": true,
-        "Description": "This must be specified if you are using a federated domain for the user's userPrincipalName (UPN) property when creating a new user account. It is used to associate an on-premises Active Directory user account with their Azure AD user object.",
-        "Computed": true
+        "Description": "The colour theme for a Microsoft 365 group"
       },
-      "mail": {
-        "Type": "String",
-        "Computed": true
+      "types": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "A set of group types to configure for the group. The only supported type is `Unified`, which specifies a Microsoft 365 group. Required when `mail_enabled` is true",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       },
-      "mail_nickname": {
+      "visibility": {
         "Type": "String",
         "Optional": true,
+        "Description": "Specifies the group join policy and group content visibility",
         "Computed": true
-      },
-      "object_id": {
-        "Type": "String",
-        "Computed": true
-      },
-      "onpremises_sam_account_name": {
-        "Type": "String",
-        "Computed": true
-      },
-      "onpremises_user_principal_name": {
-        "Type": "String",
-        "Computed": true
-      },
-      "password": {
-        "Type": "String",
-        "Required": true
-      },
-      "usage_location": {
-        "Type": "String",
-        "Optional": true,
-        "Description": "A two letter country code (ISO standard 3166). Required for users that will be assigned licenses due to legal requirement to check for availability of services in countries. Examples include: `NO`, `JP`, and `GB`. Not nullable.",
-        "Computed": true
-      },
-      "user_principal_name": {
-        "Type": "String",
-        "Required": true
       }
-    }
-  },
-  "data-sources": {
-    "azuread_application": {
+    },
+    "azuread_group_member": {
+      "__timeouts__": [
+        "create",
+        "read",
+        "update",
+        "delete"
+      ],
+      "group_object_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The object ID of the group you want to add the member to"
+      },
+      "member_object_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The object ID of the principal you want to add as a member to the group. Supported object types are Users, Groups or Service Principals"
+      }
+    },
+    "azuread_service_principal": {
+      "__timeouts__": [
+        "create",
+        "read",
+        "update",
+        "delete"
+      ],
+      "account_enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether or not the service principal account is enabled",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "alternative_names": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "A list of alternative names, used to retrieve service principals by subscription, identify resource group and full resource ids for managed identities",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "app_role_assignment_required": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether this service principal requires an app role assignment to a user or group before Azure AD will issue a user or access token to the application"
+      },
+      "app_role_ids": {
+        "Type": "Map",
+        "Description": "Mapping of app role names to UUIDs",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
       "app_roles": {
         "Type": "List",
         "Computed": true,
@@ -703,7 +1017,8 @@
           "Type": "SchemaInfo",
           "Info": {
             "allowed_member_types": {
-              "Type": "Set",
+              "Type": "List",
+              "Description": "Specifies whether this app role definition can be assigned to users and groups, or to other applications (that are accessing this application in a standalone scenario). Possible values are `User` or `Application`, or both",
               "Computed": true,
               "ConfigImplicitMode": "Attr",
               "Elem": {
@@ -713,22 +1028,719 @@
             },
             "description": {
               "Type": "String",
+              "Description": "Description of the app role that appears when the role is being assigned and, if the role functions as an application permissions, during the consent experiences",
               "Computed": true
             },
             "display_name": {
               "Type": "String",
+              "Description": "Display name for the app role that appears during app role assignment and in consent experiences",
+              "Computed": true
+            },
+            "enabled": {
+              "Type": "Bool",
+              "Description": "The unique identifier of the app role",
               "Computed": true
             },
             "id": {
               "Type": "String",
-              "Computed": true
-            },
-            "is_enabled": {
-              "Type": "Bool",
+              "Description": "The unique identifier of the app role",
               "Computed": true
             },
             "value": {
               "Type": "String",
+              "Description": "The value that is used for the `roles` claim in ID tokens and OAuth 2.0 access tokens that are authenticating an assigned service or user principal",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "application_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The application ID (client ID) of the application for which to create a service principal"
+      },
+      "application_tenant_id": {
+        "Type": "String",
+        "Description": "The tenant ID where the associated application is registered",
+        "Computed": true
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Description of the service principal provided for internal end-users"
+      },
+      "display_name": {
+        "Type": "String",
+        "Description": "The display name of the application associated with this service principal",
+        "Computed": true
+      },
+      "homepage_url": {
+        "Type": "String",
+        "Description": "Home page or landing page of the application",
+        "Computed": true
+      },
+      "login_url": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The URL where the service provider redirects the user to Azure AD to authenticate. Azure AD uses the URL to launch the application from Microsoft 365 or the Azure AD My Apps. When blank, Azure AD performs IdP-initiated sign-on for applications configured with SAML-based single sign-on"
+      },
+      "logout_url": {
+        "Type": "String",
+        "Description": "The URL that will be used by Microsoft's authorization service to sign out a user using front-channel, back-channel or SAML logout protocols",
+        "Computed": true
+      },
+      "notes": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Free text field to capture information about the service principal, typically used for operational purposes"
+      },
+      "notification_email_addresses": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "List of email addresses where Azure AD sends a notification when the active certificate is near the expiration date. This is only for the certificates used to sign the SAML token issued for Azure AD Gallery applications",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "oauth2_permission_scope_ids": {
+        "Type": "Map",
+        "Description": "Mapping of OAuth2.0 permission scope names to UUIDs",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "oauth2_permission_scopes": {
+        "Type": "List",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "admin_consent_description": {
+              "Type": "String",
+              "Description": "Delegated permission description that appears in all tenant-wide admin consent experiences, intended to be read by an administrator granting the permission on behalf of all users",
+              "Computed": true
+            },
+            "admin_consent_display_name": {
+              "Type": "String",
+              "Description": "Display name for the delegated permission, intended to be read by an administrator granting the permission on behalf of all users",
+              "Computed": true
+            },
+            "enabled": {
+              "Type": "Bool",
+              "Description": "Determines if the permission scope is enabled",
+              "Computed": true
+            },
+            "id": {
+              "Type": "String",
+              "Description": "The unique identifier of the delegated permission. Must be a valid UUID",
+              "Computed": true
+            },
+            "type": {
+              "Type": "String",
+              "Description": "Whether this delegated permission should be considered safe for non-admin users to consent to on behalf of themselves, or whether an administrator should be required for consent to the permissions. Possible values are `User` or `Admin`",
+              "Computed": true
+            },
+            "user_consent_description": {
+              "Type": "String",
+              "Description": "Delegated permission description that appears in the end user consent experience, intended to be read by a user consenting on their own behalf",
+              "Computed": true
+            },
+            "user_consent_display_name": {
+              "Type": "String",
+              "Description": "Display name for the delegated permission that appears in the end user consent experience",
+              "Computed": true
+            },
+            "value": {
+              "Type": "String",
+              "Description": "The value that is used for the `scp` claim in OAuth 2.0 access tokens",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "object_id": {
+        "Type": "String",
+        "Description": "The object ID of the service principal",
+        "Computed": true
+      },
+      "owners": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "A list of object IDs of principals that will be granted ownership of the service principal",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "preferred_single_sign_on_mode": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The single sign-on mode configured for this application. Azure AD uses the preferred single sign-on mode to launch the application from Microsoft 365 or the Azure AD My Apps"
+      },
+      "redirect_uris": {
+        "Type": "List",
+        "Description": "The URLs where user tokens are sent for sign-in with the associated application, or the redirect URIs where OAuth 2.0 authorization codes and access tokens are sent for the associated application",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "saml_metadata_url": {
+        "Type": "String",
+        "Description": "The URL where the service exposes SAML metadata for federation",
+        "Computed": true
+      },
+      "service_principal_names": {
+        "Type": "List",
+        "Description": "A list of identifier URI(s), copied over from the associated application",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "sign_in_audience": {
+        "Type": "String",
+        "Description": "The Microsoft account types that are supported for the associated application",
+        "Computed": true
+      },
+      "tags": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "A set of tags to apply to the service principal",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "type": {
+        "Type": "String",
+        "Description": "Identifies whether the service principal represents an application or a managed identity",
+        "Computed": true
+      },
+      "use_existing": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "When true, the resource will return an existing service principal instead of failing with an error"
+      }
+    },
+    "azuread_service_principal_certificate": {
+      "__timeouts__": [
+        "create",
+        "read",
+        "update",
+        "delete"
+      ],
+      "encoding": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Specifies the encoding used for the supplied certificate data",
+        "Default": {
+          "Type": "string",
+          "Value": "pem"
+        }
+      },
+      "end_date": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The end date until which the certificate is valid, formatted as an RFC3339 date string (e.g. `2018-01-01T01:02:03Z`)",
+        "Computed": true,
+        "ConflictsWith": [
+          "end_date_relative"
+        ]
+      },
+      "end_date_relative": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "A relative duration for which the certificate is valid until, for example `240h` (10 days) or `2400h30m`. Valid time units are \"ns\", \"us\" (or \"µs\"), \"ms\", \"s\", \"m\", \"h\"",
+        "ConflictsWith": [
+          "end_date"
+        ]
+      },
+      "key_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "A UUID used to uniquely identify this certificate. If not specified a UUID will be automatically generated",
+        "Computed": true
+      },
+      "service_principal_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The object ID of the service principal for which this certificate should be created"
+      },
+      "start_date": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The start date from which the certificate is valid, formatted as an RFC3339 date string (e.g. `2018-01-01T01:02:03Z`). If this isn't specified, the current date is used",
+        "Computed": true
+      },
+      "type": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The type of key/certificate"
+      },
+      "value": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The certificate data, which can be PEM encoded, base64 encoded DER or hexadecimal encoded DER"
+      }
+    },
+    "azuread_service_principal_password": {
+      "__timeouts__": [
+        "create",
+        "read",
+        "update",
+        "delete"
+      ],
+      "display_name": {
+        "Type": "String",
+        "Description": "The display name for the password",
+        "Computed": true
+      },
+      "end_date": {
+        "Type": "String",
+        "Description": "The end date until which the password is valid, formatted as an RFC3339 date string (e.g. `2018-01-01T01:02:03Z`)",
+        "Computed": true
+      },
+      "keepers": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "Arbitrary map of values that, when changed, will trigger rotation of the password",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "key_id": {
+        "Type": "String",
+        "Description": "A UUID used to uniquely identify this password credential",
+        "Computed": true
+      },
+      "service_principal_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The object ID of the service principal for which this password should be created"
+      },
+      "start_date": {
+        "Type": "String",
+        "Description": "The start date from which the password is valid, formatted as an RFC3339 date string (e.g. `2018-01-01T01:02:03Z`)",
+        "Computed": true
+      },
+      "value": {
+        "Type": "String",
+        "Description": "The password for this service principal, which is generated by Azure Active Directory",
+        "Computed": true
+      }
+    },
+    "azuread_user": {
+      "__timeouts__": [
+        "create",
+        "read",
+        "update",
+        "delete"
+      ],
+      "about_me": {
+        "Type": "String",
+        "Description": "A freeform field for the user to describe themselves",
+        "Computed": true
+      },
+      "account_enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether or not the account should be enabled",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "age_group": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The age group of the user"
+      },
+      "business_phones": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "The telephone numbers for the user. Only one number can be set for this property. Read-only for users synced with Azure AD Connect",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "city": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The city in which the user is located"
+      },
+      "company_name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The company name which the user is associated. This property can be useful for describing the company that an external user comes from"
+      },
+      "consent_provided_for_minor": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Whether consent has been obtained for minors"
+      },
+      "country": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The country/region in which the user is located, e.g. `US` or `UK`"
+      },
+      "creation_type": {
+        "Type": "String",
+        "Description": "Indicates whether the user account was created as a regular school or work account (`null`), an external account (`Invitation`), a local account for an Azure Active Directory B2C tenant (`LocalAccount`) or self-service sign-up using email verification (`EmailVerified`)",
+        "Computed": true
+      },
+      "department": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name for the department in which the user works"
+      },
+      "display_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The name to display in the address book for the user"
+      },
+      "employee_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The employee identifier assigned to the user by the organisation"
+      },
+      "external_user_state": {
+        "Type": "String",
+        "Description": "For an external user invited to the tenant, this property represents the invited user's invitation status",
+        "Computed": true
+      },
+      "fax_number": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The fax number of the user"
+      },
+      "force_password_change": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether the user is forced to change the password during the next sign-in. Only takes effect when also changing the password",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "given_name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The given name (first name) of the user"
+      },
+      "im_addresses": {
+        "Type": "List",
+        "Description": "The instant message voice over IP (VOIP) session initiation protocol (SIP) addresses for the user",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "job_title": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The user’s job title"
+      },
+      "mail": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The SMTP address for the user. Cannot be unset.",
+        "Computed": true
+      },
+      "mail_nickname": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The mail alias for the user. Defaults to the user name part of the user principal name (UPN)",
+        "Computed": true
+      },
+      "mobile_phone": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The primary cellular telephone number for the user"
+      },
+      "object_id": {
+        "Type": "String",
+        "Description": "The object ID of the user",
+        "Computed": true
+      },
+      "office_location": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The office location in the user's place of business"
+      },
+      "onpremises_distinguished_name": {
+        "Type": "String",
+        "Description": "The on-premise Active Directory distinguished name (DN) of the user",
+        "Computed": true
+      },
+      "onpremises_domain_name": {
+        "Type": "String",
+        "Description": "The on-premise FQDN (i.e. dnsDomainName) of the user",
+        "Computed": true
+      },
+      "onpremises_immutable_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The value used to associate an on-premise Active Directory user account with their Azure AD user object. This must be specified if you are using a federated domain for the user's `user_principal_name` property when creating a new user account",
+        "Computed": true
+      },
+      "onpremises_sam_account_name": {
+        "Type": "String",
+        "Description": "The on-premise SAM account name of the user",
+        "Computed": true
+      },
+      "onpremises_security_identifier": {
+        "Type": "String",
+        "Description": "The on-premise security identifier (SID) of the user",
+        "Computed": true
+      },
+      "onpremises_sync_enabled": {
+        "Type": "Bool",
+        "Description": "Whether this user is synchronized from an on-premises directory (true), no longer synchronized (false), or has never been synchronized (null)",
+        "Computed": true
+      },
+      "onpremises_user_principal_name": {
+        "Type": "String",
+        "Description": "The on-premise user principal name of the user",
+        "Computed": true
+      },
+      "other_mails": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Additional email addresses for the user",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "password": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The password for the user. The password must satisfy minimum requirements as specified by the password policy. The maximum length is 256 characters. This property is required when creating a new user",
+        "Computed": true
+      },
+      "postal_code": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The postal code for the user's postal address. The postal code is specific to the user's country/region. In the United States of America, this attribute contains the ZIP code"
+      },
+      "preferred_language": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The user's preferred language, in ISO 639-1 notation"
+      },
+      "proxy_addresses": {
+        "Type": "List",
+        "Description": "Email addresses for the user that direct to the same mailbox",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "show_in_address_list": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether or not the Outlook global address list should include this user",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "state": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The state or province in the user's address"
+      },
+      "street_address": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The street address of the user's place of business"
+      },
+      "surname": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The user's surname (family name or last name)"
+      },
+      "usage_location": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The usage location of the user. Required for users that will be assigned licenses due to legal requirement to check for availability of services in countries. The usage location is a two letter country code (ISO standard 3166). Examples include: `NO`, `JP`, and `GB`. Cannot be reset to null once set"
+      },
+      "user_principal_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The user principal name (UPN) of the user"
+      },
+      "user_type": {
+        "Type": "String",
+        "Description": "The user type in the directory. Possible values are `Guest` or `Member`",
+        "Computed": true
+      }
+    }
+  },
+  "data-sources": {
+    "azuread_application": {
+      "__timeouts__": [
+        "read"
+      ],
+      "api": {
+        "Type": "List",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "known_client_applications": {
+              "Type": "List",
+              "Description": "Used for bundling consent if you have a solution that contains two parts: a client app and a custom web API app",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "mapped_claims_enabled": {
+              "Type": "Bool",
+              "Description": "Allows an application to use claims mapping without specifying a custom signing key",
+              "Computed": true
+            },
+            "oauth2_permission_scopes": {
+              "Type": "List",
+              "Description": "List of OAuth2 permission scopes published by the application",
+              "Computed": true,
+              "IsBlock": true,
+              "ConfigImplicitMode": "ComputedBlock",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "admin_consent_description": {
+                    "Type": "String",
+                    "Description": "Delegated permission description that appears in all tenant-wide admin consent experiences, intended to be read by an administrator granting the permission on behalf of all users",
+                    "Computed": true
+                  },
+                  "admin_consent_display_name": {
+                    "Type": "String",
+                    "Description": "Display name for the delegated permission, intended to be read by an administrator granting the permission on behalf of all users",
+                    "Computed": true
+                  },
+                  "enabled": {
+                    "Type": "Bool",
+                    "Description": "Determines if the permission scope is enabled",
+                    "Computed": true
+                  },
+                  "id": {
+                    "Type": "String",
+                    "Description": "The unique identifier of the delegated permission. Must be a valid UUID",
+                    "Computed": true
+                  },
+                  "type": {
+                    "Type": "String",
+                    "Description": "Whether this delegated permission should be considered safe for non-admin users to consent to on behalf of themselves, or whether an administrator should be required for consent to the permissions. Possible values are `User` or `Admin`",
+                    "Computed": true
+                  },
+                  "user_consent_description": {
+                    "Type": "String",
+                    "Description": "Delegated permission description that appears in the end user consent experience, intended to be read by a user consenting on their own behalf",
+                    "Computed": true
+                  },
+                  "user_consent_display_name": {
+                    "Type": "String",
+                    "Description": "Display name for the delegated permission that appears in the end user consent experience",
+                    "Computed": true
+                  },
+                  "value": {
+                    "Type": "String",
+                    "Description": "The value that is used for the `scp` claim in OAuth 2.0 access tokens",
+                    "Computed": true
+                  }
+                }
+              }
+            },
+            "requested_access_token_version": {
+              "Type": "Int",
+              "Description": "Specifies the access token version expected by this resource",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "app_role_ids": {
+        "Type": "Map",
+        "Description": "Mapping of app role names to UUIDs",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "app_roles": {
+        "Type": "List",
+        "Description": "List of app roles published by the application",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "allowed_member_types": {
+              "Type": "List",
+              "Description": "Specifies whether this app role definition can be assigned to users and groups, or to other applications (that are accessing this application in a standalone scenario). Possible values are `User` or `Application`, or both",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "description": {
+              "Type": "String",
+              "Description": "Description of the app role that appears when the role is being assigned and, if the role functions as an application permissions, during the consent experiences",
+              "Computed": true
+            },
+            "display_name": {
+              "Type": "String",
+              "Description": "Display name for the app role that appears during app role assignment and in consent experiences",
+              "Computed": true
+            },
+            "enabled": {
+              "Type": "Bool",
+              "Description": "The unique identifier of the app role",
+              "Computed": true
+            },
+            "id": {
+              "Type": "String",
+              "Description": "The unique identifier of the app role",
+              "Computed": true
+            },
+            "value": {
+              "Type": "String",
+              "Description": "The value that is used for the `roles` claim in ID tokens and OAuth 2.0 access tokens that are authenticating an assigned service or user principal",
               "Computed": true
             }
           }
@@ -737,22 +1749,33 @@
       "application_id": {
         "Type": "String",
         "Optional": true,
+        "Description": "The Application ID (also called Client ID)",
         "Computed": true
       },
-      "available_to_other_tenants": {
+      "device_only_auth_enabled": {
         "Type": "Bool",
+        "Description": "Specifies whether this application supports device authentication without a user.",
+        "Computed": true
+      },
+      "disabled_by_microsoft": {
+        "Type": "String",
+        "Description": "Whether Microsoft has disabled the registered application",
+        "Computed": true
+      },
+      "display_name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The display name for the application",
+        "Computed": true
+      },
+      "fallback_public_client_enabled": {
+        "Type": "Bool",
+        "Description": "The fallback application type as public client, such as an installed application running on a mobile device",
         "Computed": true
       },
       "group_membership_claims": {
-        "Type": "String",
-        "Computed": true
-      },
-      "homepage": {
-        "Type": "String",
-        "Computed": true
-      },
-      "identifier_uris": {
         "Type": "List",
+        "Description": "The `groups` claim issued in a user or OAuth 2.0 access token that the app expects",
         "Computed": true,
         "ConfigImplicitMode": "Attr",
         "Elem": {
@@ -760,74 +1783,52 @@
           "ElementsType": "String"
         }
       },
-      "logout_url": {
-        "Type": "String",
-        "Computed": true
-      },
-      "name": {
-        "Type": "String",
-        "Optional": true,
-        "Computed": true
-      },
-      "oauth2_allow_implicit_flow": {
-        "Type": "Bool",
-        "Computed": true
-      },
-      "oauth2_permissions": {
+      "identifier_uris": {
         "Type": "List",
-        "Optional": true,
+        "Description": "A list of user-defined URI(s) that uniquely identify a Web application within it's Azure AD tenant, or within a verified custom domain if the application is multi-tenant",
         "Computed": true,
-        "IsBlock": true,
-        "ConfigImplicitMode": "Block",
+        "ConfigImplicitMode": "Attr",
         "Elem": {
-          "Type": "SchemaInfo",
-          "Info": {
-            "admin_consent_description": {
-              "Type": "String",
-              "Computed": true
-            },
-            "admin_consent_display_name": {
-              "Type": "String",
-              "Computed": true
-            },
-            "id": {
-              "Type": "String",
-              "Computed": true
-            },
-            "is_enabled": {
-              "Type": "Bool",
-              "Computed": true
-            },
-            "type": {
-              "Type": "String",
-              "Computed": true
-            },
-            "user_consent_description": {
-              "Type": "String",
-              "Computed": true
-            },
-            "user_consent_display_name": {
-              "Type": "String",
-              "Computed": true
-            },
-            "value": {
-              "Type": "String",
-              "Computed": true
-            }
-          }
+          "Type": "SchemaElements",
+          "ElementsType": "String"
         }
+      },
+      "logo_url": {
+        "Type": "String",
+        "Description": "CDN URL to the application's logo",
+        "Computed": true
+      },
+      "marketing_url": {
+        "Type": "String",
+        "Description": "URL of the application's marketing page",
+        "Computed": true
+      },
+      "oauth2_permission_scope_ids": {
+        "Type": "Map",
+        "Description": "Mapping of OAuth2.0 permission scope names to UUIDs",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "oauth2_post_response_required": {
+        "Type": "Bool",
+        "Description": "Specifies whether, as part of OAuth 2.0 token requests, Azure AD allows POST requests, as opposed to GET requests.",
+        "Computed": true
       },
       "object_id": {
         "Type": "String",
         "Optional": true,
+        "Description": "The application's object ID",
         "Computed": true
       },
       "optional_claims": {
         "Type": "List",
-        "Optional": true,
-        "MaxItems": 1,
+        "Computed": true,
         "IsBlock": true,
-        "ConfigImplicitMode": "Block",
+        "ConfigImplicitMode": "ComputedBlock",
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
@@ -842,6 +1843,7 @@
                   "additional_properties": {
                     "Type": "List",
                     "Optional": true,
+                    "Description": "List of additional properties of the claim. If a property exists in this list, it modifies the behaviour of the optional claim",
                     "ConfigImplicitMode": "Attr",
                     "Elem": {
                       "Type": "SchemaElements",
@@ -851,6 +1853,7 @@
                   "essential": {
                     "Type": "Bool",
                     "Optional": true,
+                    "Description": "Whether the claim specified by the client is necessary to ensure a smooth authorization experience",
                     "Default": {
                       "Type": "bool",
                       "Value": "false"
@@ -858,11 +1861,13 @@
                   },
                   "name": {
                     "Type": "String",
-                    "Required": true
+                    "Required": true,
+                    "Description": "The name of the optional claim"
                   },
                   "source": {
                     "Type": "String",
-                    "Optional": true
+                    "Optional": true,
+                    "Description": "The source of the claim. If `source` is absent, the claim is a predefined optional claim. If `source` is `user`, the value of `name` is the extension property from the user object"
                   }
                 }
               }
@@ -878,6 +1883,7 @@
                   "additional_properties": {
                     "Type": "List",
                     "Optional": true,
+                    "Description": "List of additional properties of the claim. If a property exists in this list, it modifies the behaviour of the optional claim",
                     "ConfigImplicitMode": "Attr",
                     "Elem": {
                       "Type": "SchemaElements",
@@ -887,6 +1893,7 @@
                   "essential": {
                     "Type": "Bool",
                     "Optional": true,
+                    "Description": "Whether the claim specified by the client is necessary to ensure a smooth authorization experience",
                     "Default": {
                       "Type": "bool",
                       "Value": "false"
@@ -894,11 +1901,53 @@
                   },
                   "name": {
                     "Type": "String",
-                    "Required": true
+                    "Required": true,
+                    "Description": "The name of the optional claim"
                   },
                   "source": {
                     "Type": "String",
-                    "Optional": true
+                    "Optional": true,
+                    "Description": "The source of the claim. If `source` is absent, the claim is a predefined optional claim. If `source` is `user`, the value of `name` is the extension property from the user object"
+                  }
+                }
+              }
+            },
+            "saml2_token": {
+              "Type": "List",
+              "Optional": true,
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "additional_properties": {
+                    "Type": "List",
+                    "Optional": true,
+                    "Description": "List of additional properties of the claim. If a property exists in this list, it modifies the behaviour of the optional claim",
+                    "ConfigImplicitMode": "Attr",
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  },
+                  "essential": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Description": "Whether the claim specified by the client is necessary to ensure a smooth authorization experience",
+                    "Default": {
+                      "Type": "bool",
+                      "Value": "false"
+                    }
+                  },
+                  "name": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "The name of the optional claim"
+                  },
+                  "source": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "The source of the claim. If `source` is absent, the claim is a predefined optional claim. If `source` is `user`, the value of `name` is the extension property from the user object"
                   }
                 }
               }
@@ -908,6 +1957,7 @@
       },
       "owners": {
         "Type": "List",
+        "Description": "A list of object IDs of principals that are assigned ownership of the application",
         "Computed": true,
         "ConfigImplicitMode": "Attr",
         "Elem": {
@@ -915,14 +1965,36 @@
           "ElementsType": "String"
         }
       },
-      "reply_urls": {
+      "privacy_statement_url": {
+        "Type": "String",
+        "Description": "URL of the application's privacy statement",
+        "Computed": true
+      },
+      "public_client": {
         "Type": "List",
         "Computed": true,
-        "ConfigImplicitMode": "Attr",
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
         "Elem": {
-          "Type": "SchemaElements",
-          "ElementsType": "String"
+          "Type": "SchemaInfo",
+          "Info": {
+            "redirect_uris": {
+              "Type": "List",
+              "Description": "The URLs where user tokens are sent for sign-in, or the redirect URIs where OAuth 2.0 authorization codes and access tokens are sent",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
         }
+      },
+      "publisher_domain": {
+        "Type": "String",
+        "Description": "The verified publisher domain for the application",
+        "Computed": true
       },
       "required_resource_access": {
         "Type": "List",
@@ -934,6 +2006,7 @@
           "Info": {
             "resource_access": {
               "Type": "List",
+              "Description": "A collection of `resource_access` blocks describing OAuth2.0 permission scopes and app roles that the application requires from the specified resource",
               "Computed": true,
               "IsBlock": true,
               "ConfigImplicitMode": "ComputedBlock",
@@ -942,10 +2015,12 @@
                 "Info": {
                   "id": {
                     "Type": "String",
+                    "Description": "The unique identifier for an app role or OAuth2 permission scope published by the resource application",
                     "Computed": true
                   },
                   "type": {
                     "Type": "String",
+                    "Description": "Specifies whether the `id` property references an app role or an OAuth2 permission scope. Possible values are `Role` or `Scope`",
                     "Computed": true
                   }
                 }
@@ -953,14 +2028,114 @@
             },
             "resource_app_id": {
               "Type": "String",
+              "Description": "The unique identifier for the resource that the application requires access to. This is the Application ID of the target application",
               "Computed": true
             }
           }
         }
       },
-      "type": {
+      "sign_in_audience": {
         "Type": "String",
+        "Description": "The Microsoft account types that are supported for the current application",
         "Computed": true
+      },
+      "single_page_application": {
+        "Type": "List",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "redirect_uris": {
+              "Type": "List",
+              "Description": "The URLs where user tokens are sent for sign-in, or the redirect URIs where OAuth 2.0 authorization codes and access tokens are sent",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
+      "support_url": {
+        "Type": "String",
+        "Description": "URL of the application's support page",
+        "Computed": true
+      },
+      "terms_of_service_url": {
+        "Type": "String",
+        "Description": "URL of the application's terms of service statement",
+        "Computed": true
+      },
+      "web": {
+        "Type": "List",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "homepage_url": {
+              "Type": "String",
+              "Description": "Home page or landing page of the application",
+              "Computed": true
+            },
+            "implicit_grant": {
+              "Type": "List",
+              "Computed": true,
+              "IsBlock": true,
+              "ConfigImplicitMode": "ComputedBlock",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "access_token_issuance_enabled": {
+                    "Type": "Bool",
+                    "Description": "Whether this web application can request an access token using OAuth 2.0 implicit flow",
+                    "Computed": true
+                  },
+                  "id_token_issuance_enabled": {
+                    "Type": "Bool",
+                    "Description": "Whether this web application can request an ID token using OAuth 2.0 implicit flow",
+                    "Computed": true
+                  }
+                }
+              }
+            },
+            "logout_url": {
+              "Type": "String",
+              "Description": "The URL that will be used by Microsoft's authorization service to sign out a user using front-channel, back-channel or SAML logout protocols",
+              "Computed": true
+            },
+            "redirect_uris": {
+              "Type": "List",
+              "Description": "A list of URLs where user tokens are sent for sign-in, or the redirect URIs where OAuth 2.0 authorization codes and access tokens are sent",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      }
+    },
+    "azuread_application_published_app_ids": {
+      "__timeouts__": [
+        "read"
+      ],
+      "result": {
+        "Type": "Map",
+        "Description": "A mapping of application names and application IDs",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       }
     },
     "azuread_client_config": {
@@ -969,49 +2144,81 @@
       ],
       "client_id": {
         "Type": "String",
+        "Description": "The client ID (application ID) linked to the authenticated principal, or the application used for delegated authentication",
         "Computed": true
       },
       "object_id": {
         "Type": "String",
+        "Description": "The object ID of the authenticated principal",
         "Computed": true
-      },
-      "subscription_id": {
-        "Type": "String",
-        "Computed": true,
-        "Deprecated": "The \"subscription_id\" attribute will be removed in version 1.0 of the provider. If you are using this attribute, you should instead use the \"azurerm_client_config\" data source from the AzureRM provider"
       },
       "tenant_id": {
         "Type": "String",
+        "Description": "The tenant ID of the authenticated principal",
         "Computed": true
       }
     },
     "azuread_domains": {
+      "__timeouts__": [
+        "read"
+      ],
+      "admin_managed": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Set to `true` to only return domains whose DNS is managed by Microsoft 365"
+      },
       "domains": {
         "Type": "List",
+        "Description": "A list of tenant domains",
         "Computed": true,
         "IsBlock": true,
         "ConfigImplicitMode": "ComputedBlock",
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
+            "admin_managed": {
+              "Type": "Bool",
+              "Description": "Whether the DNS for the domain is managed by Microsoft 365",
+              "Computed": true
+            },
             "authentication_type": {
               "Type": "String",
+              "Description": "The authentication type of the domain. Possible values include `Managed` or `Federated`",
+              "Computed": true
+            },
+            "default": {
+              "Type": "Bool",
+              "Description": "Whether this is the default domain that is used for user creation",
               "Computed": true
             },
             "domain_name": {
               "Type": "String",
+              "Description": "The name of the domain",
               "Computed": true
             },
-            "is_default": {
+            "initial": {
               "Type": "Bool",
+              "Description": "Whether this is the initial domain created by Azure Active Directory",
               "Computed": true
             },
-            "is_initial": {
+            "root": {
               "Type": "Bool",
+              "Description": "Whether the domain is a verified root domain (not a subdomain)",
               "Computed": true
             },
-            "is_verified": {
+            "supported_services": {
+              "Type": "List",
+              "Description": "A list of capabilities / services supported by the domain. Possible values include `Email`, `Sharepoint`, `EmailInternalRelayOnly`, `OfficeCommunicationsOnline`, `SharePointDefaultDomain`, `FullRedelegation`, `SharePointPublic`, `OrgIdAuthentication`, `Yammer` and `Intune`",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "verified": {
               "Type": "Bool",
+              "Description": "Whether the domain has completed domain ownership verification",
               "Computed": true
             }
           }
@@ -1020,6 +2227,7 @@
       "include_unverified": {
         "Type": "Bool",
         "Optional": true,
+        "Description": "Set to `true` if unverified Azure AD domains should be included",
         "ConflictsWith": [
           "only_default",
           "only_initial"
@@ -1028,66 +2236,199 @@
       "only_default": {
         "Type": "Bool",
         "Optional": true,
+        "Description": "Set to `true` to only return the default domain",
         "ConflictsWith": [
-          "only_initial"
+          "only_initial",
+          "only_root"
         ]
       },
       "only_initial": {
         "Type": "Bool",
         "Optional": true,
+        "Description": "Set to `true` to only return the initial domain, which is your primary Azure Active Directory tenant domain",
         "ConflictsWith": [
-          "only_default"
+          "only_default",
+          "only_root"
         ]
+      },
+      "only_root": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Set to `true` to only return verified root domains. Excludes subdomains and unverified domains",
+        "ConflictsWith": [
+          "only_default",
+          "only_initial"
+        ]
+      },
+      "supports_services": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "A list of supported services that must be supported by a domain",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       }
     },
     "azuread_group": {
+      "__timeouts__": [
+        "read"
+      ],
+      "assignable_to_role": {
+        "Type": "Bool",
+        "Description": "Indicates whether this group can be assigned to an Azure Active Directory role",
+        "Computed": true
+      },
+      "behaviors": {
+        "Type": "List",
+        "Description": "The group behaviors for a Microsoft 365 group",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
       "description": {
         "Type": "String",
+        "Description": "The optional description of the group",
+        "Computed": true
+      },
+      "display_name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The display name for the group",
+        "Computed": true
+      },
+      "mail": {
+        "Type": "String",
+        "Description": "The SMTP address for the group",
+        "Computed": true
+      },
+      "mail_enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether the group is mail-enabled",
+        "Computed": true
+      },
+      "mail_nickname": {
+        "Type": "String",
+        "Description": "The mail alias for the group, unique in the organisation",
         "Computed": true
       },
       "members": {
         "Type": "List",
+        "Description": "The object IDs of the group members",
         "Computed": true,
         "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
         }
-      },
-      "name": {
-        "Type": "String",
-        "Optional": true,
-        "Computed": true,
-        "ConflictsWith": [
-          "object_id"
-        ]
       },
       "object_id": {
         "Type": "String",
         "Optional": true,
-        "Computed": true,
-        "ConflictsWith": [
-          "name"
-        ]
+        "Description": "The object ID of the group",
+        "Computed": true
+      },
+      "onpremises_domain_name": {
+        "Type": "String",
+        "Description": "The on-premises FQDN, also called dnsDomainName, synchronized from the on-premises directory when Azure AD Connect is used",
+        "Computed": true
+      },
+      "onpremises_netbios_name": {
+        "Type": "String",
+        "Description": "The on-premises NetBIOS name, synchronized from the on-premises directory when Azure AD Connect is used",
+        "Computed": true
+      },
+      "onpremises_sam_account_name": {
+        "Type": "String",
+        "Description": "The on-premises SAM account name, synchronized from the on-premises directory when Azure AD Connect is used",
+        "Computed": true
+      },
+      "onpremises_security_identifier": {
+        "Type": "String",
+        "Description": "The on-premises security identifier (SID), synchronized from the on-premises directory when Azure AD Connect is used",
+        "Computed": true
+      },
+      "onpremises_sync_enabled": {
+        "Type": "Bool",
+        "Description": "Whether this group is synchronized from an on-premises directory (true), no longer synchronized (false), or has never been synchronized (null)",
+        "Computed": true
       },
       "owners": {
         "Type": "List",
+        "Description": "The object IDs of the group owners",
         "Computed": true,
         "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
         }
+      },
+      "preferred_language": {
+        "Type": "String",
+        "Description": "The preferred language for a Microsoft 365 group, in ISO 639-1 notation",
+        "Computed": true
+      },
+      "provisioning_options": {
+        "Type": "List",
+        "Description": "The group provisioning options for a Microsoft 365 group",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "proxy_addresses": {
+        "Type": "List",
+        "Description": "Email addresses for the group that direct to the same group mailbox",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "security_enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether the group is a security group",
+        "Computed": true
+      },
+      "theme": {
+        "Type": "String",
+        "Description": "The colour theme for a Microsoft 365 group",
+        "Computed": true
+      },
+      "types": {
+        "Type": "List",
+        "Description": "A list of group types configured for the group. The only supported type is `Unified`, which specifies a Microsoft 365 group",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "visibility": {
+        "Type": "String",
+        "Description": "Specifies the group join policy and group content visibility",
+        "Computed": true
       }
     },
     "azuread_groups": {
-      "names": {
+      "__timeouts__": [
+        "read"
+      ],
+      "display_names": {
         "Type": "List",
         "Optional": true,
+        "Description": "The display names of the groups",
         "Computed": true,
-        "ConflictsWith": [
-          "object_ids"
-        ],
         "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
@@ -1097,10 +2438,8 @@
       "object_ids": {
         "Type": "List",
         "Optional": true,
+        "Description": "The object IDs of the groups",
         "Computed": true,
-        "ConflictsWith": [
-          "names"
-        ],
         "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
@@ -1109,6 +2448,39 @@
       }
     },
     "azuread_service_principal": {
+      "__timeouts__": [
+        "read"
+      ],
+      "account_enabled": {
+        "Type": "Bool",
+        "Description": "Whether or not the service principal account is enabled",
+        "Computed": true
+      },
+      "alternative_names": {
+        "Type": "List",
+        "Description": "A list of alternative names, used to retrieve service principals by subscription, identify resource group and full resource ids for managed identities",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "app_role_assignment_required": {
+        "Type": "Bool",
+        "Description": "Whether this service principal requires an app role assignment to a user or group before Azure AD will issue a user or access token to the application",
+        "Computed": true
+      },
+      "app_role_ids": {
+        "Type": "Map",
+        "Description": "Mapping of app role names to UUIDs",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
       "app_roles": {
         "Type": "List",
         "Computed": true,
@@ -1118,7 +2490,8 @@
           "Type": "SchemaInfo",
           "Info": {
             "allowed_member_types": {
-              "Type": "Set",
+              "Type": "List",
+              "Description": "Specifies whether this app role definition can be assigned to users and groups, or to other applications (that are accessing this application in a standalone scenario). Possible values are `User` or `Application`, or both",
               "Computed": true,
               "ConfigImplicitMode": "Attr",
               "Elem": {
@@ -1128,22 +2501,27 @@
             },
             "description": {
               "Type": "String",
+              "Description": "Description of the app role that appears when the role is being assigned and, if the role functions as an application permissions, during the consent experiences",
               "Computed": true
             },
             "display_name": {
               "Type": "String",
+              "Description": "Display name for the app role that appears during app role assignment and in consent experiences",
+              "Computed": true
+            },
+            "enabled": {
+              "Type": "Bool",
+              "Description": "The unique identifier of the app role",
               "Computed": true
             },
             "id": {
               "Type": "String",
-              "Computed": true
-            },
-            "is_enabled": {
-              "Type": "Bool",
+              "Description": "The unique identifier of the app role",
               "Computed": true
             },
             "value": {
               "Type": "String",
+              "Description": "The value that is used for the `roles` claim in ID tokens and OAuth 2.0 access tokens that are authenticating an assigned service or user principal",
               "Computed": true
             }
           }
@@ -1152,60 +2530,111 @@
       "application_id": {
         "Type": "String",
         "Optional": true,
-        "Computed": true,
-        "ConflictsWith": [
-          "object_id",
-          "display_name"
-        ]
+        "Description": "The application ID (client ID) of the application associated with this service principal",
+        "Computed": true
+      },
+      "application_tenant_id": {
+        "Type": "String",
+        "Description": "The tenant ID where the associated application is registered",
+        "Computed": true
+      },
+      "description": {
+        "Type": "String",
+        "Description": "Description of the service principal provided for internal end-users",
+        "Computed": true
       },
       "display_name": {
         "Type": "String",
         "Optional": true,
-        "Computed": true,
-        "ConflictsWith": [
-          "object_id",
-          "application_id"
-        ]
+        "Description": "The display name of the application associated with this service principal",
+        "Computed": true
       },
-      "oauth2_permissions": {
+      "homepage_url": {
+        "Type": "String",
+        "Description": "Home page or landing page of the application",
+        "Computed": true
+      },
+      "login_url": {
+        "Type": "String",
+        "Description": "The URL where the service provider redirects the user to Azure AD to authenticate. Azure AD uses the URL to launch the application from Microsoft 365 or the Azure AD My Apps",
+        "Computed": true
+      },
+      "logout_url": {
+        "Type": "String",
+        "Description": "The URL that will be used by Microsoft's authorization service to sign out a user using front-channel, back-channel or SAML logout protocols",
+        "Computed": true
+      },
+      "notes": {
+        "Type": "String",
+        "Description": "Free text field to capture information about the service principal, typically used for operational purposes",
+        "Computed": true
+      },
+      "notification_email_addresses": {
         "Type": "List",
-        "Optional": true,
+        "Description": "List of email addresses where Azure AD sends a notification when the active certificate is near the expiration date. This is only for the certificates used to sign the SAML token issued for Azure AD Gallery applications",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "oauth2_permission_scope_ids": {
+        "Type": "Map",
+        "Description": "Mapping of OAuth2.0 permission scope names to UUIDs",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "oauth2_permission_scopes": {
+        "Type": "List",
         "Computed": true,
         "IsBlock": true,
-        "ConfigImplicitMode": "Block",
+        "ConfigImplicitMode": "ComputedBlock",
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
             "admin_consent_description": {
               "Type": "String",
+              "Description": "Delegated permission description that appears in all tenant-wide admin consent experiences, intended to be read by an administrator granting the permission on behalf of all users",
               "Computed": true
             },
             "admin_consent_display_name": {
               "Type": "String",
+              "Description": "Display name for the delegated permission, intended to be read by an administrator granting the permission on behalf of all users",
+              "Computed": true
+            },
+            "enabled": {
+              "Type": "Bool",
+              "Description": "Determines if the permission scope is enabled",
               "Computed": true
             },
             "id": {
               "Type": "String",
-              "Computed": true
-            },
-            "is_enabled": {
-              "Type": "Bool",
+              "Description": "The unique identifier of the delegated permission. Must be a valid UUID",
               "Computed": true
             },
             "type": {
               "Type": "String",
+              "Description": "Whether this delegated permission should be considered safe for non-admin users to consent to on behalf of themselves, or whether an administrator should be required for consent to the permissions. Possible values are `User` or `Admin`",
               "Computed": true
             },
             "user_consent_description": {
               "Type": "String",
+              "Description": "Delegated permission description that appears in the end user consent experience, intended to be read by a user consenting on their own behalf",
               "Computed": true
             },
             "user_consent_display_name": {
               "Type": "String",
+              "Description": "Display name for the delegated permission that appears in the end user consent experience",
               "Computed": true
             },
             "value": {
               "Type": "String",
+              "Description": "The value that is used for the `scp` claim in OAuth 2.0 access tokens",
               "Computed": true
             }
           }
@@ -1214,72 +2643,291 @@
       "object_id": {
         "Type": "String",
         "Optional": true,
+        "Description": "The object ID of the service principal",
+        "Computed": true
+      },
+      "preferred_single_sign_on_mode": {
+        "Type": "String",
+        "Description": "The single sign-on mode configured for this application. Azure AD uses the preferred single sign-on mode to launch the application from Microsoft 365 or the Azure AD My Apps",
+        "Computed": true
+      },
+      "redirect_uris": {
+        "Type": "List",
+        "Description": "The URLs where user tokens are sent for sign-in with the associated application, or the redirect URIs where OAuth 2.0 authorization codes and access tokens are sent for the associated application",
         "Computed": true,
-        "ConflictsWith": [
-          "display_name",
-          "application_id"
-        ]
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "saml_metadata_url": {
+        "Type": "String",
+        "Description": "The URL where the service exposes SAML metadata for federation",
+        "Computed": true
+      },
+      "service_principal_names": {
+        "Type": "List",
+        "Description": "A list of identifier URI(s), copied over from the associated application",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "sign_in_audience": {
+        "Type": "String",
+        "Description": "The Microsoft account types that are supported for the associated application",
+        "Computed": true
+      },
+      "tags": {
+        "Type": "List",
+        "Description": "A set of tags to apply to the service principal",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "type": {
+        "Type": "String",
+        "Description": "Identifies whether the service principal represents an application or a managed identity",
+        "Computed": true
       }
     },
     "azuread_user": {
+      "__timeouts__": [
+        "read"
+      ],
       "account_enabled": {
         "Type": "Bool",
+        "Description": "Whether or not the account is enabled",
+        "Computed": true
+      },
+      "age_group": {
+        "Type": "String",
+        "Description": "The age group of the user",
+        "Computed": true
+      },
+      "business_phones": {
+        "Type": "List",
+        "Description": "The telephone numbers for the user",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "city": {
+        "Type": "String",
+        "Description": "The city in which the user is located",
+        "Computed": true
+      },
+      "company_name": {
+        "Type": "String",
+        "Description": "The company name which the user is associated. This property can be useful for describing the company that an external user comes from",
+        "Computed": true
+      },
+      "consent_provided_for_minor": {
+        "Type": "String",
+        "Description": "Whether consent has been obtained for minors",
+        "Computed": true
+      },
+      "country": {
+        "Type": "String",
+        "Description": "The country/region in which the user is located, e.g. `US` or `UK`",
+        "Computed": true
+      },
+      "creation_type": {
+        "Type": "String",
+        "Description": "Indicates whether the user account was created as a regular school or work account (`null`), an external account (`Invitation`), a local account for an Azure Active Directory B2C tenant (`LocalAccount`) or self-service sign-up using email verification (`EmailVerified`)",
+        "Computed": true
+      },
+      "department": {
+        "Type": "String",
+        "Description": "The name for the department in which the user works",
         "Computed": true
       },
       "display_name": {
         "Type": "String",
+        "Description": "The display name of the user",
         "Computed": true
       },
-      "immutable_id": {
+      "employee_id": {
         "Type": "String",
+        "Description": "The employee identifier assigned to the user by the organisation",
+        "Computed": true
+      },
+      "external_user_state": {
+        "Type": "String",
+        "Description": "For an external user invited to the tenant, this property represents the invited user's invitation status",
+        "Computed": true
+      },
+      "fax_number": {
+        "Type": "String",
+        "Description": "The fax number of the user",
+        "Computed": true
+      },
+      "given_name": {
+        "Type": "String",
+        "Description": "The given name (first name) of the user",
+        "Computed": true
+      },
+      "im_addresses": {
+        "Type": "List",
+        "Description": "The instant message voice over IP (VOIP) session initiation protocol (SIP) addresses for the user",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "job_title": {
+        "Type": "String",
+        "Description": "The user’s job title",
         "Computed": true
       },
       "mail": {
         "Type": "String",
+        "Description": "The SMTP address for the user",
         "Computed": true
       },
       "mail_nickname": {
         "Type": "String",
         "Optional": true,
-        "Computed": true,
-        "ConflictsWith": [
-          "object_id",
-          "user_principal_name"
-        ]
+        "Description": "The email alias of the user",
+        "Computed": true
+      },
+      "mobile_phone": {
+        "Type": "String",
+        "Description": "The primary cellular telephone number for the user",
+        "Computed": true
       },
       "object_id": {
         "Type": "String",
         "Optional": true,
-        "Computed": true,
-        "ConflictsWith": [
-          "user_principal_name"
-        ]
+        "Description": "The object ID of the user",
+        "Computed": true
+      },
+      "office_location": {
+        "Type": "String",
+        "Description": "The office location in the user's place of business",
+        "Computed": true
+      },
+      "onpremises_distinguished_name": {
+        "Type": "String",
+        "Description": "The on-premise Active Directory distinguished name (DN) of the user",
+        "Computed": true
+      },
+      "onpremises_domain_name": {
+        "Type": "String",
+        "Description": "The on-premise FQDN (i.e. dnsDomainName) of the user",
+        "Computed": true
+      },
+      "onpremises_immutable_id": {
+        "Type": "String",
+        "Description": "The value used to associate an on-premise Active Directory user account with their Azure AD user object",
+        "Computed": true
       },
       "onpremises_sam_account_name": {
         "Type": "String",
+        "Description": "The on-premise SAM account name of the user",
+        "Computed": true
+      },
+      "onpremises_security_identifier": {
+        "Type": "String",
+        "Description": "The on-premise security identifier (SID) of the user",
+        "Computed": true
+      },
+      "onpremises_sync_enabled": {
+        "Type": "Bool",
+        "Description": "Whether this user is synchronized from an on-premises directory (true), no longer synchronized (false), or has never been synchronized (null)",
         "Computed": true
       },
       "onpremises_user_principal_name": {
         "Type": "String",
+        "Description": "The on-premise user principal name of the user",
+        "Computed": true
+      },
+      "other_mails": {
+        "Type": "List",
+        "Description": "Additional email addresses for the user",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "postal_code": {
+        "Type": "String",
+        "Description": "The postal code for the user's postal address. The postal code is specific to the user's country/region. In the United States of America, this attribute contains the ZIP code",
+        "Computed": true
+      },
+      "preferred_language": {
+        "Type": "String",
+        "Description": "The user's preferred language, in ISO 639-1 notation",
+        "Computed": true
+      },
+      "proxy_addresses": {
+        "Type": "List",
+        "Description": "Email addresses for the user that direct to the same mailbox",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "show_in_address_list": {
+        "Type": "Bool",
+        "Description": "Whether or not the Outlook global address list should include this user",
+        "Computed": true
+      },
+      "state": {
+        "Type": "String",
+        "Description": "The state or province in the user's address",
+        "Computed": true
+      },
+      "street_address": {
+        "Type": "String",
+        "Description": "The street address of the user's place of business",
+        "Computed": true
+      },
+      "surname": {
+        "Type": "String",
+        "Description": "The user's surname (family name or last name)",
         "Computed": true
       },
       "usage_location": {
         "Type": "String",
+        "Description": "The usage location of the user",
         "Computed": true
       },
       "user_principal_name": {
         "Type": "String",
         "Optional": true,
-        "Computed": true,
-        "ConflictsWith": [
-          "object_id"
-        ]
+        "Description": "The user principal name (UPN) of the user",
+        "Computed": true
+      },
+      "user_type": {
+        "Type": "String",
+        "Description": "The user type in the directory. Possible values are `Guest` or `Member`",
+        "Computed": true
       }
     },
     "azuread_users": {
+      "__timeouts__": [
+        "read"
+      ],
       "ignore_missing": {
         "Type": "Bool",
         "Optional": true,
+        "Description": "Ignore missing users and return users that were found. The data source will still fail if no users are found",
         "Default": {
           "Type": "bool",
           "Value": "false"
@@ -1288,6 +2936,7 @@
       "mail_nicknames": {
         "Type": "List",
         "Optional": true,
+        "Description": "The email aliases of the users",
         "Computed": true,
         "ConfigImplicitMode": "Attr",
         "Elem": {
@@ -1298,6 +2947,7 @@
       "object_ids": {
         "Type": "List",
         "Optional": true,
+        "Description": "The object IDs of the users",
         "Computed": true,
         "ConfigImplicitMode": "Attr",
         "Elem": {
@@ -1308,6 +2958,7 @@
       "user_principal_names": {
         "Type": "List",
         "Optional": true,
+        "Description": "The user principal names (UPNs) of the users",
         "Computed": true,
         "ConfigImplicitMode": "Attr",
         "Elem": {
@@ -1317,6 +2968,7 @@
       },
       "users": {
         "Type": "List",
+        "Description": "A list of users",
         "Computed": true,
         "IsBlock": true,
         "ConfigImplicitMode": "ComputedBlock",
@@ -1325,42 +2977,52 @@
           "Info": {
             "account_enabled": {
               "Type": "Bool",
+              "Description": "Whether or not the account is enabled",
               "Computed": true
             },
             "display_name": {
               "Type": "String",
-              "Computed": true
-            },
-            "immutable_id": {
-              "Type": "String",
+              "Description": "The display name of the user",
               "Computed": true
             },
             "mail": {
               "Type": "String",
+              "Description": "The primary email address of the user",
               "Computed": true
             },
             "mail_nickname": {
               "Type": "String",
+              "Description": "The email alias of the user",
               "Computed": true
             },
             "object_id": {
               "Type": "String",
+              "Description": "The object ID of the user",
+              "Computed": true
+            },
+            "onpremises_immutable_id": {
+              "Type": "String",
+              "Description": "The value used to associate an on-premises Active Directory user account with their Azure AD user object",
               "Computed": true
             },
             "onpremises_sam_account_name": {
               "Type": "String",
+              "Description": "The on-premise SAM account name of the user",
               "Computed": true
             },
             "onpremises_user_principal_name": {
               "Type": "String",
+              "Description": "The on-premise user principal name of the user",
               "Computed": true
             },
             "usage_location": {
               "Type": "String",
+              "Description": "The usage location of the user",
               "Computed": true
             },
             "user_principal_name": {
               "Type": "String",
+              "Description": "The user principal name (UPN) of the user",
               "Computed": true
             }
           }
