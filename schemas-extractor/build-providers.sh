@@ -32,6 +32,7 @@ function process_provider() {
   repository="$(jq_get "$name" 'repository')"
   pkg_name="$(jq_get "$name" 'pkg_name')"
   provider_args="$(jq_get "$name" 'provider_args')"
+  provider_func_name="$(jq_get "$name" 'provider_func_name')"
   use_master="$(jq_get "$name" 'use_master')"
   go_envs="$(jq_get "$name" 'go_envs')"
   go_args=""
@@ -141,6 +142,7 @@ EOF
     -e "s~__PKG_NAME__~${pkg_name}~g" \
     -e "s~__REVISION__~$revision~g" \
     -e "s~__PROVIDER_ARGS__~$provider_args~g" \
+    -e "s~__PROVIDER_FUNC_NAME__~$provider_func_name~g" \
     -e "s~__SDK__~$sdk~g" \
     -e "s~__OUT__~$out~g" \
     "$CUR/template/$base_file" \
