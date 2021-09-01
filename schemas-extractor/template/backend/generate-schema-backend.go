@@ -3,10 +3,10 @@ package main
 //noinspection GoUnresolvedReference
 import (
 	"github.com/hashicorp/hcl/v2/ext/customdecode"
-	"github.com/hashicorp/terraform/backend"
-	binit "github.com/hashicorp/terraform/backend/init"
-	"github.com/hashicorp/terraform/configs/configschema"
-	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform/internal/backend"
+	binit "github.com/hashicorp/terraform/internal/backend/init"
+	"github.com/hashicorp/terraform/internal/configs/configschema"
+	"github.com/hashicorp/terraform/internal/legacy/helper/schema"
 	"github.com/zclconf/go-cty/cty"
 
 	"encoding/json"
