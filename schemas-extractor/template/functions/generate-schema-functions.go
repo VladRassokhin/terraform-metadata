@@ -7,7 +7,7 @@ import (
 	"github.com/hashicorp/hcl/v2/ext/customdecode"
 	"github.com/hashicorp/hil"
 	"github.com/hashicorp/hil/ast"
-	"github.com/hashicorp/terraform/lang"
+	"github.com/hashicorp/terraform/internal/lang"
 	"github.com/zclconf/go-cty/cty"
 	"github.com/zclconf/go-cty/cty/function"
 	"os"
@@ -60,6 +60,12 @@ func getInterpolationFunctions() map[string]FunctionInfo {
 	}
 	functions := scope.Functions()
 	for name, f := range functions {
+		if name == "map" {
+			continue
+		}
+		if name == "list" {
+			continue
+		}
 		params := f.Params()
 		args := make([]ParameterInfo, len(params))
 		types := make([]cty.Type, len(params))
