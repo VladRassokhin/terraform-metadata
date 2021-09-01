@@ -6,8 +6,13 @@ clean:
 
 build: schemas
 
-schemas: providers.json
+providers-old: providers.json
 	@sh -c "'$(CURDIR)/build-providers.sh'"
+
+providers-new: providers.json
+	@sh -c "'$(CURDIR)/build-providers-new.sh'"
+
+schemas: providers.json providers-old
 	@sh -c "'$(CURDIR)/build-provisioners.sh'"
 	@sh -c "'$(CURDIR)/build-backends.sh'"
 	@sh -c "'$(CURDIR)/build-functions.sh'"
