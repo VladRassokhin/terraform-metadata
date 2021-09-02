@@ -1,15 +1,34 @@
 {
   ".schema_version": "2",
-  ".sdk_type": "terraform-plugin-sdk-v1",
+  ".sdk_type": "terraform-plugin-sdk-v2",
   "name": "helm",
   "type": "provider",
-  "version": "v1.2.3",
+  "version": "v2.3.0",
   "provider": {
     "debug": {
       "Type": "Bool",
       "Optional": true,
       "Description": "Debug indicates whether or not Helm is running in Debug mode.",
       "DefaultFunc": "ENV(HELM_DEBUG)"
+    },
+    "experiments": {
+      "Type": "List",
+      "Optional": true,
+      "Description": "Enable and disable experimental features.",
+      "MaxItems": 1,
+      "IsBlock": true,
+      "ConfigImplicitMode": "Block",
+      "Elem": {
+        "Type": "SchemaInfo",
+        "Info": {
+          "manifest": {
+            "Type": "Bool",
+            "Optional": true,
+            "Description": "Enable full diff by storing the rendered manifest in the state.",
+            "DefaultFunc": "UNKNOWN"
+          }
+        }
+      }
     },
     "helm_driver": {
       "Type": "String",
@@ -63,8 +82,21 @@
           "config_path": {
             "Type": "String",
             "Optional": true,
-            "Description": "Path to the kube config file, defaults to ~/.kube/config",
-            "DefaultFunc": "MENV(KUBE_CONFIG,KUBECONFIG)"
+            "Description": "Path to the kube config file. Can be set with KUBE_CONFIG_PATH.",
+            "DefaultFunc": "ENV(KUBE_CONFIG_PATH)",
+            "ConflictsWith": [
+              "kubernetes.0.config_paths"
+            ]
+          },
+          "config_paths": {
+            "Type": "List",
+            "Optional": true,
+            "Description": "A list of paths to kube config files. Can be set with KUBE_CONFIG_PATHS environment variable.",
+            "ConfigImplicitMode": "Attr",
+            "Elem": {
+              "Type": "SchemaElements",
+              "ElementsType": "String"
+            }
           },
           "exec": {
             "Type": "List",
@@ -115,12 +147,6 @@
             "Optional": true,
             "Description": "Whether server should be accessed without verifying the TLS certificate.",
             "DefaultFunc": "ENV(KUBE_INSECURE)"
-          },
-          "load_config_file": {
-            "Type": "Bool",
-            "Optional": true,
-            "Description": "Load local kubeconfig.",
-            "DefaultFunc": "ENV(KUBE_LOAD_CONFIG_FILE)"
           },
           "password": {
             "Type": "String",
@@ -263,7 +289,7 @@
         "Description": "Location of public keys used for verification. Used only if `verify` is true",
         "Default": {
           "Type": "string",
-          "Value": "/home/builduser/.gnupg/pubring.gpg"
+          "Value": "/home/ubuntu/.gnupg/pubring.gpg"
         }
       },
       "lint": {
@@ -274,6 +300,11 @@
           "Type": "bool",
           "Value": "false"
         }
+      },
+      "manifest": {
+        "Type": "String",
+        "Description": "The rendered manifest as JSON.",
+        "Computed": true
       },
       "max_history": {
         "Type": "Int",
@@ -288,12 +319,16 @@
         "Type": "List",
         "Description": "Status of the deployed release.",
         "Computed": true,
-        "MaxItems": 1,
         "IsBlock": true,
         "ConfigImplicitMode": "ComputedBlock",
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
+            "app_version": {
+              "Type": "String",
+              "Description": "The version number of the application being deployed.",
+              "Computed": true
+            },
             "chart": {
               "Type": "String",
               "Description": "The name of the chart.",
@@ -479,27 +514,6 @@
           }
         }
       },
-      "set_string": {
-        "Type": "Set",
-        "Optional": true,
-        "Description": "Custom string values to be merged with the values.",
-        "Deprecated": "This argument is deprecated and will be removed in the next major version. Use `set` argument with `type` equals to `string`",
-        "IsBlock": true,
-        "ConfigImplicitMode": "Block",
-        "Elem": {
-          "Type": "SchemaInfo",
-          "Info": {
-            "name": {
-              "Type": "String",
-              "Required": true
-            },
-            "value": {
-              "Type": "String",
-              "Required": true
-            }
-          }
-        }
-      },
       "skip_crds": {
         "Type": "Bool",
         "Optional": true,
@@ -556,126 +570,379 @@
           "Type": "bool",
           "Value": "true"
         }
-      }
-    },
-    "helm_repository": {
-      "ca_file": {
-        "Type": "String",
-        "Optional": true,
-        "Description": "Verify certificates of HTTPS-enabled servers using this CA bundle"
       },
-      "cert_file": {
-        "Type": "String",
+      "wait_for_jobs": {
+        "Type": "Bool",
         "Optional": true,
-        "Description": "Identify HTTPS client using this SSL certificate file"
-      },
-      "key_file": {
-        "Type": "String",
-        "Optional": true,
-        "Description": "Identify HTTPS client using this SSL key file"
-      },
-      "metadata": {
-        "Type": "List",
-        "Description": "Status of the deployed release",
-        "Computed": true,
-        "IsBlock": true,
-        "ConfigImplicitMode": "ComputedBlock",
-        "Elem": {
-          "Type": "SchemaInfo",
-          "Info": {
-            "name": {
-              "Type": "String",
-              "Description": "Name of the repository read from the home",
-              "Computed": true
-            },
-            "url": {
-              "Type": "String",
-              "Description": "URL of the repository read from the home",
-              "Computed": true
-            }
-          }
+        "Description": "If wait is enabled, will wait until all Jobs have been completed before marking the release as successful.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
         }
-      },
-      "name": {
-        "Type": "String",
-        "Required": true,
-        "Description": "Chart repository name"
-      },
-      "password": {
-        "Type": "String",
-        "Optional": true,
-        "Description": "Password for HTTP basic authentication"
-      },
-      "url": {
-        "Type": "String",
-        "Required": true,
-        "Description": "Chart repository URL"
-      },
-      "username": {
-        "Type": "String",
-        "Optional": true,
-        "Description": "Username for HTTP basic authentication"
       }
     }
   },
   "data-sources": {
-    "helm_repository": {
-      "ca_file": {
-        "Type": "String",
-        "Optional": true,
-        "Description": "Verify certificates of HTTPS-enabled servers using this CA bundle"
-      },
-      "cert_file": {
-        "Type": "String",
-        "Optional": true,
-        "Description": "Identify HTTPS client using this SSL certificate file"
-      },
-      "key_file": {
-        "Type": "String",
-        "Optional": true,
-        "Description": "Identify HTTPS client using this SSL key file"
-      },
-      "metadata": {
+    "helm_template": {
+      "api_versions": {
         "Type": "List",
-        "Description": "Status of the deployed release",
-        "Computed": true,
-        "IsBlock": true,
-        "ConfigImplicitMode": "ComputedBlock",
+        "Optional": true,
+        "Description": "Kubernetes api versions used for Capabilities.APIVersions",
+        "ConfigImplicitMode": "Attr",
         "Elem": {
-          "Type": "SchemaInfo",
-          "Info": {
-            "name": {
-              "Type": "String",
-              "Description": "Name of the repository read from the home",
-              "Computed": true
-            },
-            "url": {
-              "Type": "String",
-              "Description": "URL of the repository read from the home",
-              "Computed": true
-            }
-          }
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "atomic": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "If set, installation process purges chart on fail. The wait flag will be set automatically if atomic is used",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "chart": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Chart name to be installed. A path may be used."
+      },
+      "create_namespace": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Create the namespace if it does not exist",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "dependency_update": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Run helm dependency update before installing the chart",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Add a custom description"
+      },
+      "devel": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Use chart development versions, too. Equivalent to version '\u003e0.0.0-0'. If `version` is set, this is ignored"
+      },
+      "disable_openapi_validation": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "If set, the installation process will not validate rendered templates against the Kubernetes OpenAPI Schema",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "disable_webhooks": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Prevent hooks from running.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "include_crds": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Include CRDs in the templated output",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "is_upgrade": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Set .Release.IsUpgrade instead of .Release.IsInstall",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "keyring": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Location of public keys used for verification. Used only if `verify` is true",
+        "Default": {
+          "Type": "string",
+          "Value": "/home/ubuntu/.gnupg/pubring.gpg"
+        }
+      },
+      "manifest": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Concatenated rendered chart templates. This corresponds to the output of the `helm template` command.",
+        "Computed": true
+      },
+      "manifests": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "Map of rendered chart templates indexed by the template name.",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
         }
       },
       "name": {
         "Type": "String",
         "Required": true,
-        "Description": "Chart repository name"
+        "Description": "Release name."
       },
-      "password": {
+      "namespace": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Namespace to install the release into.",
+        "DefaultFunc": "ENV(HELM_NAMESPACE)"
+      },
+      "notes": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Rendered notes if the chart contains a `NOTES.txt`.",
+        "Computed": true
+      },
+      "postrender": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Postrender command configuration.",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "binary_path": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The command binary path."
+            }
+          }
+        }
+      },
+      "render_subchart_notes": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "If set, render subchart notes along with the parent",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "replace": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Re-use the given name, even if that name is already used. This is unsafe in production",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "repository": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Repository where to locate the requested chart. If is a URL the chart is installed without installing the repository."
+      },
+      "repository_ca_file": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The Repositories CA File"
+      },
+      "repository_cert_file": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The repositories cert file"
+      },
+      "repository_key_file": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The repositories cert key file"
+      },
+      "repository_password": {
         "Type": "String",
         "Optional": true,
         "Description": "Password for HTTP basic authentication"
       },
-      "url": {
-        "Type": "String",
-        "Required": true,
-        "Description": "Chart repository URL"
-      },
-      "username": {
+      "repository_username": {
         "Type": "String",
         "Optional": true,
         "Description": "Username for HTTP basic authentication"
+      },
+      "reset_values": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "When upgrading, reset the values to the ones built into the chart",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "reuse_values": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "When upgrading, reuse the last release's values and merge in any overrides. If 'reset_values' is specified, this is ignored",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "set": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Custom values to be merged with the values.",
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "name": {
+              "Type": "String",
+              "Required": true
+            },
+            "type": {
+              "Type": "String",
+              "Optional": true
+            },
+            "value": {
+              "Type": "String",
+              "Required": true
+            }
+          }
+        }
+      },
+      "set_sensitive": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Custom sensitive values to be merged with the values.",
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "name": {
+              "Type": "String",
+              "Required": true
+            },
+            "type": {
+              "Type": "String",
+              "Optional": true
+            },
+            "value": {
+              "Type": "String",
+              "Required": true
+            }
+          }
+        }
+      },
+      "set_string": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Custom string values to be merged with the values.",
+        "Deprecated": "This argument is deprecated and will be removed in the next major version. Use `set` argument with `type` equals to `string`",
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "name": {
+              "Type": "String",
+              "Required": true
+            },
+            "value": {
+              "Type": "String",
+              "Required": true
+            }
+          }
+        }
+      },
+      "show_only": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Only show manifests rendered from the given templates",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "skip_crds": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "If set, no CRDs will be installed. By default, CRDs are installed if not already present",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "skip_tests": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "If set, tests will not be rendered. By default, tests are rendered"
+      },
+      "timeout": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Time in seconds to wait for any individual kubernetes operation.",
+        "Default": {
+          "Type": "int",
+          "Value": "300"
+        }
+      },
+      "validate": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Validate your manifests against the Kubernetes cluster you are currently pointing at. This is the same validation performed on an install",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "values": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "List of values in raw yaml format to pass to helm.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "verify": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Verify the package before installing it.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "version": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Specify the exact chart version to install. If this is not specified, the latest version is installed.",
+        "Computed": true
+      },
+      "wait": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Will wait until all resources are in a ready state before marking the release as successful.",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
       }
     }
   }
