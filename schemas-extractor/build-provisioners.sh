@@ -62,8 +62,8 @@ function process_provisioner() {
   else
     # All tags:
     echo "Repository newest tags:"
-    git tag -l --sort=-v:refname | head -n 5
-    latest=$(git tag -l --sort=-v:refname | head -n 1)
+    git tag -l --sort=-v:refname | grep -v alpha| head -n 5
+    latest=$(git tag -l --sort=-v:refname | grep -v alpha| head -n 1)
     if [[ -z "$latest" ]]; then
       echo "There's no tags in $name, will use current state"
     else
@@ -111,13 +111,16 @@ function process_provisioner() {
     "$CUR/template/$base_file" \
     >generate-schema/generate-schema.go
 
+  GO111MODULE=on go get github.com/hashicorp/hcl/v2/ext/customdecode
+  GO111MODULE=on go get github.com/zclconf/go-cty/cty
+
   echo "Generating schema for $name"
   if [[ "${GENERATE_PARALLEL:-}" == "1" ]]; then
     (
-      generate_one "$name" GO111MODULE=off
+      generate_one "$name" GO111MODULE=on
     ) &
   else
-    generate_one "$name" GO111MODULE=off
+    generate_one "$name" GO111MODULE=on
   fi
 
   # Revert to previous state
