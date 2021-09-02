@@ -11,7 +11,7 @@ out="$CUR/schemas/providers"
 mkdir -p "$out"
 rm -f "$failures"
 
-update_all
+update_all "$@"
 
 echo
 echo "========================================"
@@ -30,11 +30,13 @@ function process_provider() {
     return 0
   fi
   repository="$(jq_get "$name" 'repository')"
+  pkg_prefix="$(jq_get "$name" 'pkg_prefix')"
   pkg_name="$(jq_get "$name" 'pkg_name')"
+  provider_constr="$(jq_get "$name" 'provider_constr')"
   provider_args="$(jq_get "$name" 'provider_args')"
   use_master="$(jq_get "$name" 'use_master')"
   go_envs="$(jq_get "$name" 'go_envs')"
-  go_args=""
+  go_args="$(jq_get "$name" 'go_args')"
   location="$GOPATH/src/$repository"
 
   if [[ ! -d "$location" ]]; then
@@ -56,7 +58,7 @@ function process_provider() {
 
   pushd "$location" >/dev/null || return
 
-  echo "Preparing $name"
+  echo "Preparing $name at $location" | tee -a "$logs/$name.log"
 
   if [[ "$use_master" == "true" ]]; then
     echo "Using master"
@@ -64,8 +66,8 @@ function process_provider() {
   else
     # All tags:
     echo "Repository newest tags:"
-    git tag -l --sort=-v:refname | head -n 5
-    latest=$(git tag -l --sort=-v:refname | head -n 1)
+    git tag -l --sort=-v:refname | grep -v alpha | head -n 5
+    latest=$(git tag -l --sort=-v:refname | grep -v alpha | head -n 1)
     if [[ -z "$latest" ]]; then
       echo "There's no tags in $name, will use current state"
     else
@@ -103,6 +105,13 @@ function process_provider() {
     GO111MODULE=on go get github.com/hashicorp/hcl/v2/ext/customdecode
     GO111MODULE=on go get github.com/hashicorp/hcl/v2
     GO111MODULE=on go get github.com/zclconf/go-cty/cty/json
+  elif [ -f "go.mod" ] && [ -d 'tfplugin6' ]; then
+    sdk="terraform-tfplugin6"
+    go_envs="GO111MODULE=on"
+    go_args="-mod=mod"
+    GO111MODULE=on go get github.com/hashicorp/hcl/v2/ext/customdecode
+    GO111MODULE=on go get github.com/hashicorp/hcl/v2
+    GO111MODULE=on go get github.com/zclconf/go-cty/cty/json
   elif [ -f "go.mod" ] && grep -q 'github.com/hashicorp/terraform-plugin-sdk/v2' "go.mod"; then
     sdk="terraform-plugin-sdk-v2"
   elif grep -q 'github.com/hashicorp/terraform-plugin-sdk/v2' -r "$pkg_name"; then
@@ -118,9 +127,9 @@ function process_provider() {
   fi
   # TODO: Detect and use terraform-plugin-sdk-v2 when needed
   base_file="provider/$sdk/generate-schema.go"
-  echo "Using sdk: $sdk"
-  echo "Using base file: $base_file"
-  echo "Using go_envs: $go_envs"
+  echo "Using sdk: $sdk" | tee -a "$logs/$name.log"
+  echo "Using base file: $base_file" | tee -a "$logs/$name.log"
+  echo "Using go_envs: $go_envs" | tee -a "$logs/$name.log"
 
   [ -f 'go.mod' ] && cat >>'go.mod' <<'EOF'
 replace github.com/go-critic/go-critic v0.0.0-20181204210945-1df300866540 => github.com/go-critic/go-critic v0.3.5-0.20190526074819-1df300866540
@@ -136,10 +145,12 @@ EOF
   rm -rf generate-schema
   mkdir generate-schema
   sed \
+    -e "s~__PKG_PREFIX__~$pkg_prefix~g" \
     -e "s~__REPOSITORY__~$repository~g" \
     -e "s~__NAME__~${name}~g" \
     -e "s~__PKG_NAME__~${pkg_name}~g" \
     -e "s~__REVISION__~$revision~g" \
+    -e "s~__PROVIDER_CONSTR__~$provider_constr~g" \
     -e "s~__PROVIDER_ARGS__~$provider_args~g" \
     -e "s~__SDK__~$sdk~g" \
     -e "s~__OUT__~$out~g" \
@@ -160,9 +171,13 @@ EOF
   popd >/dev/null || return
 }
 
+if [[ $# -gt 0 ]]; then
+  process_provider "$1" | tee -a "$logs/$1.log" || true
+else
 while IFS= read -r p; do
-  process_provider "$p" || true
+  process_provider "$p" | tee -a "$logs/$p.log" || true
 done < <(jq -r 'keys[]' <"$CUR/$config_file")
+fi
 
 echo
 echo "========================================"

@@ -3,6 +3,12 @@
 set -euo pipefail
 IFS=$'\n\t'
 
+if [[ -n "${CHECK_SKIP:-}" ]]; then
+  echo "providers.base.json check skipped"
+  exit 0
+fi
+
+
 pushd "$(dirname "$0")" >/dev/null
 
 echo "Checking providers.base.json..."
