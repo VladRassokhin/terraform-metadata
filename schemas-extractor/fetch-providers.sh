@@ -18,7 +18,7 @@ get_repos() {
 rm -f repositories.list.full
 get_repos "terraform-providers" repositories.list.full
 get_repos "hashicorp" repositories.list.full
-echo "Filtering terrform providers repos..."
+echo "Filtering terraform providers repos..."
 grep -- '^terraform-provider-' repositories.list.full | awk '{print substr($0, 20)}' | sort >providers.list
 
 echo "Done"
