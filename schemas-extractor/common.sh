@@ -48,6 +48,14 @@ function update_all() {
       if [[ "$p" == "__NAME__" ]]; then
         continue
       fi
+
+      # If a list is provided via make, then only update specific repos
+      if [ ! -z ${ONLY+x} ]; then 
+        if [[ " ${CHECK_LIST[*]} " != *"${p}"* ]]; then
+          continue
+        fi
+      fi
+
       skip_generation="$(jq_get "$p" 'skip_generation')"
       if [[ $skip_generation == "true" ]]; then
         continue
@@ -55,17 +63,21 @@ function update_all() {
       repository="$(jq_get "$p" 'repository')"
       repositories+=("$repository")
     done < <(jq -r 'keys[]' <"$CUR/$config_file")
-    mapfile -t uniq < <(sort -u <<<"${repositories[*]}")
-    for repo in "${uniq[@]}"; do
-      repo=$(trim "$repo")
-      if [[ "${UPDATE_PARALLEL:-}" == "1" ]]; then
-        (
+    if [ ! ${#repositories[@]} -eq 0 ]; then
+      mapfile -t uniq < <(sort -u <<<"${repositories[*]}")
+      for repo in "${uniq[@]}"; do
+        repo=$(trim "$repo")
+        if [[ "${UPDATE_PARALLEL:-}" == "1" ]]; then
+          (
+            update_or_clone "$repo"
+          ) &
+        else
           update_or_clone "$repo"
-        ) &
-      else
-        update_or_clone "$repo"
-      fi
-    done
+        fi
+      done
+    else
+      echo "No matching repos found. Provided list: ${CHECK_LIST[*]}"
+    fi
   fi
 }
 

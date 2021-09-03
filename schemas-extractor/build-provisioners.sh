@@ -11,6 +11,11 @@ out="$CUR/schemas/provisioners"
 mkdir -p "$out"
 rm -f "$failures"
 
+if [ ! -z ${ONLY+x} ]; then 
+  echo "Provisioner list found. Only passed in provisioners will be processed."
+  IFS=' ' read -r -a CHECK_LIST <<< $ONLY
+fi
+
 update_all
 
 echo
@@ -126,7 +131,13 @@ function process_provisioner() {
 }
 
 while IFS= read -r p; do
-  process_provisioner "$p" || true
+  if [ ! -z ${ONLY+x} ]; then 
+    if [[ " ${CHECK_LIST[*]} " =~ " ${p} " ]]; then
+      process_provisioner "$p" || true
+    fi
+  else
+    process_provisioner "$p" || true
+  fi
 done < <(jq -r 'keys[]' <"$CUR/$config_file")
 
 echo

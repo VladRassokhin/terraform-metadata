@@ -11,6 +11,11 @@ out="$CUR/schemas/providers"
 mkdir -p "$out"
 rm -f "$failures"
 
+if [ ! -z ${ONLY+x} ]; then 
+  echo "Provider list found. Only passed in providers will be processed."
+  IFS=' ' read -r -a CHECK_LIST <<< $ONLY
+fi
+
 update_all
 
 echo
@@ -163,7 +168,13 @@ EOF
 }
 
 while IFS= read -r p; do
-  process_provider "$p" || true
+  if [ ! -z ${ONLY+x} ]; then 
+    if [[ " ${CHECK_LIST[*]} " =~ " ${p} " ]]; then
+      process_provider "$p" || true
+    fi
+  else
+    process_provider "$p" || true
+  fi
 done < <(jq -r 'keys[]' <"$CUR/$config_file")
 
 echo

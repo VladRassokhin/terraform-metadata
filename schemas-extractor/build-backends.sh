@@ -11,6 +11,11 @@ out="$CUR/schemas/backends"
 mkdir -p "$out"
 rm -f "$failures"
 
+if [ ! -z ${ONLY+x} ]; then 
+  echo "Backend list found. Only passed in backends will be processed."
+  IFS=' ' read -r -a CHECK_LIST <<< $ONLY
+fi
+
 update_all
 
 echo
@@ -122,7 +127,13 @@ function process_backend() {
 }
 
 while IFS= read -r p; do
-  process_backend "$p" || true
+  if [ ! -z ${ONLY+x} ]; then 
+    if [[ " ${CHECK_LIST[*]} " =~ " ${p} " ]]; then
+      process_backend "$p" || true
+    fi
+  else
+    process_backend "$p" || true
+  fi
 done < <(jq -r 'keys[]' <"$CUR/$config_file")
 
 echo

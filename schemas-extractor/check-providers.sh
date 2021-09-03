@@ -16,7 +16,11 @@ for name in $(cat providers.list); do
 done
 if [[ $fail -eq 1 ]]; then
   echo "New providers available, update providers.base.json"
-  exit 1
+  if [ -z ${CHECK_PROVIDERS_NOFAIL+x} ]; then
+    exit 1
+  else
+    echo "Bypassing provider check failure due to CHECK_PROVIDERS_NOFAIL"
+  fi
 fi
 
 echo "Done"

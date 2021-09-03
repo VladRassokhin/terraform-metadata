@@ -12,6 +12,18 @@ schemas: providers.json
 	@sh -c "'$(CURDIR)/build-backends.sh'"
 	@sh -c "'$(CURDIR)/build-functions.sh'"
 
+providers: providers.json
+	@sh -c "'$(CURDIR)/build-providers.sh'"
+
+provisioners: providers.json
+	@sh -c "'$(CURDIR)/build-provisioners.sh'"
+
+backends: providers.json
+	@sh -c "'$(CURDIR)/build-backends.sh'"
+
+functions: providers.json
+	@sh -c "'$(CURDIR)/build-functions.sh'"
+
 providers.list:
 	@sh -c "'$(CURDIR)/fetch-providers.sh'"
 
