@@ -30,7 +30,7 @@ function process_provider() {
     return 0
   fi
   repository="$(jq_get "$name" 'repository')"
-  pkg_prefix="$(jq_get "$name" 'pkg_prefix')"
+  pkg_prefix="$(jq_get "$name" 'pkg_prefix' | sed -e "s~__REPOSITORY__~$repository~g")"
   pkg_name="$(jq_get "$name" 'pkg_name')"
   provider_constr="$(jq_get "$name" 'provider_constr')"
   provider_args="$(jq_get "$name" 'provider_args')"
@@ -122,6 +122,16 @@ function process_provider() {
     sdk="terraform-plugin-sdk-v1"
   fi
 
+  if [ -f "go.mod" ] && [ "$sdk" == "terraform-plugin-sdk-v2" ]; then
+    pkg_full="$(grep '^module ' go.mod | head -n 1 | awk '{print $2}')"
+    if [ -n "$pkg_full" ] &&  [ "$pkg_full" != "$pkg_prefix" ]; then
+      echo "Package name in go.mod differs from 'pkg_prefix' in 'providers.json'"
+      echo "Expected: $pkg_prefix"
+      echo "Actual:   $pkg_full"
+      pkg_prefix="$pkg_full"
+    fi
+  fi
+
   if [ "$sdk" != "terraform" ] && [ ! -d "vendor" ] && [ -f "go.mod" ]; then
     go_envs="GO111MODULE=on"
   fi
@@ -141,6 +151,8 @@ replace github.com/golangci/ineffassign v0.0.0-20180808204949-42439a7714cc => gi
 replace github.com/golangci/lint-1 v0.0.0-20180610141402-ee948d087217 => github.com/golangci/lint-1 v0.0.0-20190420132249-ee948d087217
 replace mvdan.cc/unparam v0.0.0-20190124213536-fbb59629db34 => mvdan.cc/unparam v0.0.0-20190209190245-fbb59629db34
 EOF
+
+  rm -rf rubrikcdm/resource_rubrik_template.go
 
   rm -rf generate-schema
   mkdir generate-schema
