@@ -17,7 +17,7 @@ fi
 function jq_get() {
   name="$1"
   prop="$2"
-  jq -r ".\"$name\".$prop // .__NAME__.$prop // \"\" " <"$CUR/$config_file" | sed -e "s/__NAME__/$name/"
+  jq -r ".\"$name\".$prop // .__NAME__.$prop // \"\" " <"$CUR/$config_file" | sed -e "s~__NAME__~$name~g"
 }
 
 function trim() {
