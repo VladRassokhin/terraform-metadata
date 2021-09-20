@@ -141,7 +141,7 @@ function process_provider() {
   echo "Using base file: $base_file" | tee -a "$logs/$name.log"
   echo "Using go_envs: $go_envs" | tee -a "$logs/$name.log"
 
-  [ -f 'go.mod' ] && cat >>'go.mod' <<'EOF'
+  [ -f 'go.mod' ] && [[ ! "$go_envs" =~ "GO111MODULE=on" ]] && cat >>'go.mod' <<'EOF'
 replace github.com/go-critic/go-critic v0.0.0-20181204210945-1df300866540 => github.com/go-critic/go-critic v0.3.5-0.20190526074819-1df300866540
 replace github.com/golangci/errcheck v0.0.0-20181003203344-ef45e06d44b6 => github.com/golangci/errcheck v0.0.0-20181223084120-ef45e06d44b6
 replace github.com/golangci/go-tools v0.0.0-20180109140146-af6baa5dc196 => github.com/golangci/go-tools v0.0.0-20190318060251-af6baa5dc196
@@ -152,7 +152,14 @@ replace github.com/golangci/lint-1 v0.0.0-20180610141402-ee948d087217 => github.
 replace mvdan.cc/unparam v0.0.0-20190124213536-fbb59629db34 => mvdan.cc/unparam v0.0.0-20190209190245-fbb59629db34
 EOF
 
+  if [[ "$go_envs" =~ "GO111MODULE=on" ]]; then
+    echo "Fetching modules..."
+    go mod download
+  fi
+
+  # Fixes for various providers
   rm -rf rubrikcdm/resource_rubrik_template.go
+  [[ $name == "metalcloud" ]]  && go get github.com/terraform-providers/terraform-provider-metalcloud/metalcloud
 
   rm -rf generate-schema
   mkdir generate-schema
