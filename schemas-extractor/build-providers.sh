@@ -125,10 +125,9 @@ function process_provider() {
   if [ -f "go.mod" ] && [ "$sdk" == "terraform-plugin-sdk-v2" ]; then
     pkg_full="$(grep '^module ' go.mod | head -n 1 | awk '{print $2}')"
     if [ -n "$pkg_full" ] &&  [ "$pkg_full" != "$pkg_prefix" ]; then
-      echo "Package name in go.mod differs from 'pkg_prefix' in 'providers.json'"
+      echo "WARN: Package name in go.mod differs from 'pkg_prefix' in 'providers.json'"
       echo "Expected: $pkg_prefix"
       echo "Actual:   $pkg_full"
-      pkg_prefix="$pkg_full"
     fi
   fi
 
@@ -160,6 +159,7 @@ EOF
   # Fixes for various providers
   rm -rf rubrikcdm/resource_rubrik_template.go
   [[ $name == "metalcloud" ]]  && go get github.com/terraform-providers/terraform-provider-metalcloud/metalcloud
+  [[ $name == "profitbricks" ]] && go mod vendor
 
   rm -rf generate-schema
   mkdir generate-schema

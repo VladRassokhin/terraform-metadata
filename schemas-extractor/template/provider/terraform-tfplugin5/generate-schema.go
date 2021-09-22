@@ -6,8 +6,8 @@ import (
 	"github.com/zclconf/go-cty/cty"
 	cty_json "github.com/zclconf/go-cty/cty/json"
 
-	prvdr "__REPOSITORY__/__PKG_NAME__"
-	"__REPOSITORY__/tfplugin5"
+	prvdr "__PKG_PREFIX__/__PKG_NAME__"
+	"__PKG_PREFIX__/tfplugin5"
 
 	"encoding/json"
 	"fmt"
