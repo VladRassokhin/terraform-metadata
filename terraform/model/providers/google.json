@@ -3,7 +3,7 @@
   ".sdk_type": "terraform-plugin-sdk-v2",
   "name": "google",
   "type": "provider",
-  "version": "v3.84.0",
+  "version": "v3.85.0",
   "provider": {
     "access_approval_custom_endpoint": {
       "Type": "String",
@@ -3419,6 +3419,7 @@
               "Type": "List",
               "Optional": true,
               "Description": "The Docker image for the container that runs the version.",
+              "Computed": true,
               "MaxItems": 1,
               "IsBlock": true,
               "ConfigImplicitMode": "Block",
@@ -13472,49 +13473,64 @@
       "all_ports": {
         "Type": "Bool",
         "Optional": true,
-        "Description": "This field can be used with internal load balancer or network load balancer\nwhen the forwarding rule references a backend service, or with the target\nfield when it references a TargetInstance. Set this to true to\nallow packets addressed to any ports to be forwarded to the backends configured\nwith this forwarding rule. This can be used when the protocol is TCP/UDP, and it\nmust be set to true when the protocol is set to L3_DEFAULT.\nCannot be set if port or portRange are set."
+        "Description": "This field is used along with the `backend_service` field for internal load balancing or with the `target` field for internal TargetInstance. This field cannot be used with `port` or `portRange` fields. When the load balancing scheme is `INTERNAL` and protocol is TCP/UDP, specify this field to allow packets addressed to any ports will be forwarded to the backends configured with this forwarding rule."
       },
       "allow_global_access": {
         "Type": "Bool",
         "Optional": true,
-        "Description": "If true, clients can access ILB from all regions.\nOtherwise only allows from the local region the ILB is located at."
+        "Description": "This field is used along with the `backend_service` field for internal load balancing or with the `target` field for internal TargetInstance. If the field is set to `TRUE`, clients can access ILB from all regions. Otherwise only allows access from clients in the same region as the internal load balancer."
       },
       "backend_service": {
         "Type": "String",
         "Optional": true,
-        "Description": "A BackendService to receive the matched traffic. This is used only\nfor INTERNAL load balancing."
+        "Description": "This field is only used for `INTERNAL` load balancing. For internal load balancing, this field identifies the BackendService resource to receive the matched traffic."
       },
       "creation_timestamp": {
         "Type": "String",
-        "Description": "Creation timestamp in RFC3339 text format.",
+        "Description": "[Output Only] Creation timestamp in [RFC3339](https://www.ietf.org/rfc/rfc3339.txt) text format.",
         "Computed": true
       },
       "description": {
         "Type": "String",
         "Optional": true,
-        "Description": "An optional description of this resource. Provide this property when\nyou create the resource."
+        "Description": "An optional description of this resource. Provide this property when you create the resource."
       },
       "ip_address": {
         "Type": "String",
         "Optional": true,
-        "Description": "The IP address that this forwarding rule serves. When a client sends\ntraffic to this IP address, the forwarding rule directs the traffic to\nthe target that you specify in the forwarding rule. The\nloadBalancingScheme and the forwarding rule's target determine the\ntype of IP address that you can use. For detailed information, refer\nto [IP address specifications](https://cloud.google.com/load-balancing/docs/forwarding-rule-concepts#ip_address_specifications).\n\nAn address can be specified either by a literal IP address or a\nreference to an existing Address resource. If you don't specify a\nreserved IP address, an ephemeral IP address is assigned.\n\nThe value must be set to 0.0.0.0 when the target is a targetGrpcProxy\nthat has validateForProxyless field set to true.\n\nFor Private Service Connect forwarding rules that forward traffic to\nGoogle APIs, IP address must be provided.",
+        "Description": "IP address that this forwarding rule serves. When a client sends traffic to this IP address, the forwarding rule directs the traffic to the target that you specify in the forwarding rule. If you don't specify a reserved IP address, an ephemeral IP address is assigned. Methods for specifying an IP address: * IPv4 dotted decimal, as in `100.1.2.3` * Full URL, as in `https://www.googleapis.com/compute/v1/projects/project_id/regions/region/addresses/address-name` * Partial URL or by name, as in: * `projects/project_id/regions/region/addresses/address-name` * `regions/region/addresses/address-name` * `global/addresses/address-name` * `address-name` The loadBalancingScheme and the forwarding rule's target determine the type of IP address that you can use. For detailed information, refer to [IP address specifications](/load-balancing/docs/forwarding-rule-concepts#ip_address_specifications).",
         "Computed": true
       },
       "ip_protocol": {
         "Type": "String",
         "Optional": true,
-        "Description": "The IP protocol to which this rule applies.\n\nWhen the load balancing scheme is INTERNAL, only TCP and UDP are\nvalid. Possible values: [\"TCP\", \"UDP\", \"ESP\", \"AH\", \"SCTP\", \"ICMP\", \"L3_DEFAULT\"]",
+        "Description": "The IP protocol to which this rule applies. For protocol forwarding, valid options are `TCP`, `UDP`, `ESP`, `AH`, `SCTP` or `ICMP`. For Internal TCP/UDP Load Balancing, the load balancing scheme is `INTERNAL`, and one of `TCP` or `UDP` are valid. For Traffic Director, the load balancing scheme is `INTERNAL_SELF_MANAGED`, and only `TCP`is valid. For Internal HTTP(S) Load Balancing, the load balancing scheme is `INTERNAL_MANAGED`, and only `TCP` is valid. For HTTP(S), SSL Proxy, and TCP Proxy Load Balancing, the load balancing scheme is `EXTERNAL` and only `TCP` is valid. For Network TCP/UDP Load Balancing, the load balancing scheme is `EXTERNAL`, and one of `TCP` or `UDP` is valid.",
         "Computed": true
       },
       "is_mirroring_collector": {
         "Type": "Bool",
         "Optional": true,
-        "Description": "Indicates whether or not this load balancer can be used\nas a collector for packet mirroring. To prevent mirroring loops,\ninstances behind this load balancer will not have their traffic\nmirrored even if a PacketMirroring rule applies to them. This\ncan only be set to true for load balancers that have their\nloadBalancingScheme set to INTERNAL."
+        "Description": "Indicates whether or not this load balancer can be used as a collector for packet mirroring. To prevent mirroring loops, instances behind this load balancer will not have their traffic mirrored even if a `PacketMirroring` rule applies to them. This can only be set to true for load balancers that have their `loadBalancingScheme` set to `INTERNAL`."
+      },
+      "label_fingerprint": {
+        "Type": "String",
+        "Description": "Used internally during label updates.",
+        "Computed": true
+      },
+      "labels": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "Labels to apply to this rule.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       },
       "load_balancing_scheme": {
         "Type": "String",
         "Optional": true,
-        "Description": "This signifies what the ForwardingRule will be used for and can be\nEXTERNAL, INTERNAL, or INTERNAL_MANAGED. EXTERNAL is used for Classic\nCloud VPN gateways, protocol forwarding to VMs from an external IP address,\nand HTTP(S), SSL Proxy, TCP Proxy, and Network TCP/UDP load balancers.\nINTERNAL is used for protocol forwarding to VMs from an internal IP address,\nand internal TCP/UDP load balancers.\nINTERNAL_MANAGED is used for internal HTTP(S) load balancers. Default value: \"EXTERNAL\" Possible values: [\"EXTERNAL\", \"INTERNAL\", \"INTERNAL_MANAGED\"]",
+        "Description": "Specifies the forwarding rule type.\n\n*   `EXTERNAL` is used for:\n    *   Classic Cloud VPN gateways\n    *   Protocol forwarding to VMs from an external IP address\n    *   The following load balancers: HTTP(S), SSL Proxy, TCP Proxy, and Network TCP/UDP\n*   `INTERNAL` is used for:\n    *   Protocol forwarding to VMs from an internal IP address\n    *   Internal TCP/UDP load balancers\n*   `INTERNAL_MANAGED` is used for:\n    *   Internal HTTP(S) load balancers\n*   `INTERNAL_SELF_MANAGED` is used for:\n    *   Traffic Director\n\nFor more information about forwarding rules, refer to [Forwarding rule concepts](/load-balancing/docs/forwarding-rule-concepts). Possible values: INVALID, INTERNAL, INTERNAL_MANAGED, INTERNAL_SELF_MANAGED, EXTERNAL",
         "Default": {
           "Type": "string",
           "Value": "EXTERNAL"
@@ -13523,29 +13539,29 @@
       "name": {
         "Type": "String",
         "Required": true,
-        "Description": "Name of the resource; provided by the client when the resource is\ncreated. The name must be 1-63 characters long, and comply with\nRFC1035. Specifically, the name must be 1-63 characters long and match\nthe regular expression '[a-z]([-a-z0-9]*[a-z0-9])?' which means the\nfirst character must be a lowercase letter, and all following\ncharacters must be a dash, lowercase letter, or digit, except the last\ncharacter, which cannot be a dash."
+        "Description": "Name of the resource; provided by the client when the resource is created. The name must be 1-63 characters long, and comply with [RFC1035](https://www.ietf.org/rfc/rfc1035.txt). Specifically, the name must be 1-63 characters long and match the regular expression `[a-z]([-a-z0-9]*[a-z0-9])?` which means the first character must be a lowercase letter, and all following characters must be a dash, lowercase letter, or digit, except the last character, which cannot be a dash."
       },
       "network": {
         "Type": "String",
         "Optional": true,
-        "Description": "For internal load balancing, this field identifies the network that\nthe load balanced IP should belong to for this Forwarding Rule. If\nthis field is not specified, the default network will be used.\nThis field is only used for INTERNAL load balancing.",
+        "Description": "This field is not used for external load balancing. For `INTERNAL` and `INTERNAL_SELF_MANAGED` load balancing, this field identifies the network that the load balanced IP should belong to for this Forwarding Rule. If this field is not specified, the default network will be used.",
         "Computed": true
       },
       "network_tier": {
         "Type": "String",
         "Optional": true,
-        "Description": "The networking tier used for configuring this address. If this field is not\nspecified, it is assumed to be PREMIUM. Possible values: [\"PREMIUM\", \"STANDARD\"]",
+        "Description": "This signifies the networking tier used for configuring this load balancer and can only take the following values: `PREMIUM`, `STANDARD`. For regional ForwardingRule, the valid values are `PREMIUM` and `STANDARD`. For GlobalForwardingRule, the valid value is `PREMIUM`. If this field is not specified, it is assumed to be `PREMIUM`. If `IPAddress` is specified, this value must be equal to the networkTier of the Address.",
         "Computed": true
       },
       "port_range": {
         "Type": "String",
         "Optional": true,
-        "Description": "This field is used along with the target field for TargetHttpProxy,\nTargetHttpsProxy, TargetSslProxy, TargetTcpProxy, TargetVpnGateway,\nTargetPool, TargetInstance.\n\nApplicable only when IPProtocol is TCP, UDP, or SCTP, only packets\naddressed to ports in the specified range will be forwarded to target.\nForwarding rules with the same [IPAddress, IPProtocol] pair must have\ndisjoint port ranges.\n\nSome types of forwarding target have constraints on the acceptable\nports:\n\n* TargetHttpProxy: 80, 8080\n* TargetHttpsProxy: 443\n* TargetTcpProxy: 25, 43, 110, 143, 195, 443, 465, 587, 700, 993, 995,\n                  1883, 5222\n* TargetSslProxy: 25, 43, 110, 143, 195, 443, 465, 587, 700, 993, 995,\n                  1883, 5222\n* TargetVpnGateway: 500, 4500"
+        "Description": "When the load balancing scheme is `EXTERNAL`, `INTERNAL_SELF_MANAGED` and `INTERNAL_MANAGED`, you can specify a `port_range`. Use with a forwarding rule that points to a target proxy or a target pool. Do not use with a forwarding rule that points to a backend service. This field is used along with the `target` field for TargetHttpProxy, TargetHttpsProxy, TargetSslProxy, TargetTcpProxy, TargetVpnGateway, TargetPool, TargetInstance. Applicable only when `IPProtocol` is `TCP`, `UDP`, or `SCTP`, only packets addressed to ports in the specified range will be forwarded to `target`. Forwarding rules with the same `[IPAddress, IPProtocol]` pair must have disjoint port ranges. Some types of forwarding target have constraints on the acceptable ports:\n\n*   TargetHttpProxy: 80, 8080\n*   TargetHttpsProxy: 443\n*   TargetTcpProxy: 25, 43, 110, 143, 195, 443, 465, 587, 700, 993, 995, 1688, 1883, 5222\n*   TargetSslProxy: 25, 43, 110, 143, 195, 443, 465, 587, 700, 993, 995, 1688, 1883, 5222\n*   TargetVpnGateway: 500, 4500\n\n@pattern: d+(?:-d+)?"
       },
       "ports": {
         "Type": "Set",
         "Optional": true,
-        "Description": "This field is used along with internal load balancing and network\nload balancer when the forwarding rule references a backend service\nand when protocol is not L3_DEFAULT.\n\nA single port or a comma separated list of ports can be configured.\nOnly packets addressed to these ports will be forwarded to the backends\nconfigured with this forwarding rule.\n\nYou can only use one of ports and portRange, or allPorts.\nThe three are mutually exclusive.\n\nYou may specify a maximum of up to 5 ports, which can be non-contiguous.",
+        "Description": "This field is used along with the `backend_service` field for internal load balancing. When the load balancing scheme is `INTERNAL`, a list of ports can be configured, for example, ['80'], ['8000','9000']. Only packets addressed to these ports are forwarded to the backends configured with the forwarding rule. If the forwarding rule's loadBalancingScheme is INTERNAL, you can specify ports in one of the following ways: * A list of up to five ports, which can be non-contiguous * Keyword `ALL`, which causes the forwarding rule to forward traffic on any port of the forwarding rule's protocol. @pattern: d+(?:-d+)? For more information, refer to [Port specifications](/load-balancing/docs/forwarding-rule-concepts#port_specifications).",
         "MaxItems": 5,
         "ConfigImplicitMode": "Attr",
         "Elem": {
@@ -13556,38 +13572,40 @@
       "project": {
         "Type": "String",
         "Optional": true,
+        "Description": "The project this resource belongs in.",
         "Computed": true
       },
       "region": {
         "Type": "String",
         "Optional": true,
-        "Description": "A reference to the region where the regional forwarding rule resides.\nThis field is not applicable to global forwarding rules.",
+        "Description": "The location of this resource.",
         "Computed": true
       },
       "self_link": {
         "Type": "String",
+        "Description": "[Output Only] Server-defined URL for the resource.",
         "Computed": true
       },
       "service_label": {
         "Type": "String",
         "Optional": true,
-        "Description": "An optional prefix to the service name for this Forwarding Rule.\nIf specified, will be the first label of the fully qualified service\nname.\n\nThe label must be 1-63 characters long, and comply with RFC1035.\nSpecifically, the label must be 1-63 characters long and match the\nregular expression '[a-z]([-a-z0-9]*[a-z0-9])?' which means the first\ncharacter must be a lowercase letter, and all following characters\nmust be a dash, lowercase letter, or digit, except the last\ncharacter, which cannot be a dash.\n\nThis field is only used for INTERNAL load balancing."
+        "Description": "An optional prefix to the service name for this Forwarding Rule. If specified, the prefix is the first label of the fully qualified service name. The label must be 1-63 characters long, and comply with [RFC1035](https://www.ietf.org/rfc/rfc1035.txt). Specifically, the label must be 1-63 characters long and match the regular expression `[a-z]([-a-z0-9]*[a-z0-9])?` which means the first character must be a lowercase letter, and all following characters must be a dash, lowercase letter, or digit, except the last character, which cannot be a dash. This field is only used for internal load balancing."
       },
       "service_name": {
         "Type": "String",
-        "Description": "The internal fully qualified service name for this Forwarding Rule.\nThis field is only used for INTERNAL load balancing.",
+        "Description": "[Output Only] The internal fully qualified service name for this Forwarding Rule. This field is only used for internal load balancing.",
         "Computed": true
       },
       "subnetwork": {
         "Type": "String",
         "Optional": true,
-        "Description": "The subnetwork that the load balanced IP should belong to for this\nForwarding Rule.  This field is only used for INTERNAL load balancing.\n\nIf the network specified is in auto subnet mode, this field is\noptional. However, if the network is in custom subnet mode, a\nsubnetwork must be specified.",
+        "Description": "This field is only used for `INTERNAL` load balancing. For internal load balancing, this field identifies the subnetwork that the load balanced IP should belong to for this Forwarding Rule. If the network specified is in auto subnet mode, this field is optional. However, if the network is in custom subnet mode, a subnetwork must be specified.",
         "Computed": true
       },
       "target": {
         "Type": "String",
         "Optional": true,
-        "Description": "The URL of the target resource to receive the matched traffic.\nThe target must live in the same region as the forwarding rule.\nThe forwarded traffic must be of a type appropriate to the target\nobject."
+        "Description": "The URL of the target resource to receive the matched traffic. For regional forwarding rules, this target must live in the same region as the forwarding rule. For global forwarding rules, this target must be a global load balancing resource. The forwarded traffic must be of a type appropriate to the target object. For `INTERNAL_SELF_MANAGED` load balancing, only `targetHttpProxy` is valid, not `targetHttpsProxy`."
       }
     },
     "google_compute_global_address": {
@@ -13664,29 +13682,44 @@
       "description": {
         "Type": "String",
         "Optional": true,
-        "Description": "An optional description of this resource. Provide this property when\nyou create the resource."
+        "Description": "An optional description of this resource. Provide this property when you create the resource."
       },
       "ip_address": {
         "Type": "String",
         "Optional": true,
-        "Description": "The IP address that this forwarding rule serves. When a client sends\ntraffic to this IP address, the forwarding rule directs the traffic to\nthe target that you specify in the forwarding rule. The\nloadBalancingScheme and the forwarding rule's target determine the\ntype of IP address that you can use. For detailed information, refer\nto [IP address specifications](https://cloud.google.com/load-balancing/docs/forwarding-rule-concepts#ip_address_specifications).\n\nAn address can be specified either by a literal IP address or a\nreference to an existing Address resource. If you don't specify a\nreserved IP address, an ephemeral IP address is assigned.\n\nThe value must be set to 0.0.0.0 when the target is a targetGrpcProxy\nthat has validateForProxyless field set to true.\n\nFor Private Service Connect forwarding rules that forward traffic to\nGoogle APIs, IP address must be provided.",
+        "Description": "IP address that this forwarding rule serves. When a client sends traffic to this IP address, the forwarding rule directs the traffic to the target that you specify in the forwarding rule. If you don't specify a reserved IP address, an ephemeral IP address is assigned. Methods for specifying an IP address: * IPv4 dotted decimal, as in `100.1.2.3` * Full URL, as in `https://www.googleapis.com/compute/v1/projects/project_id/regions/region/addresses/address-name` * Partial URL or by name, as in: * `projects/project_id/regions/region/addresses/address-name` * `regions/region/addresses/address-name` * `global/addresses/address-name` * `address-name` The loadBalancingScheme and the forwarding rule's target determine the type of IP address that you can use. For detailed information, refer to [IP address specifications](/load-balancing/docs/forwarding-rule-concepts#ip_address_specifications).",
         "Computed": true
       },
       "ip_protocol": {
         "Type": "String",
         "Optional": true,
-        "Description": "The IP protocol to which this rule applies. When the load balancing scheme is\nINTERNAL_SELF_MANAGED, only TCP is valid. This field must not be set if the\nglobal address is configured as a purpose of PRIVATE_SERVICE_CONNECT\nand addressType of INTERNAL Possible values: [\"TCP\", \"UDP\", \"ESP\", \"AH\", \"SCTP\", \"ICMP\"]",
+        "Description": "The IP protocol to which this rule applies. For protocol forwarding, valid options are `TCP`, `UDP`, `ESP`, `AH`, `SCTP` or `ICMP`. For Internal TCP/UDP Load Balancing, the load balancing scheme is `INTERNAL`, and one of `TCP` or `UDP` are valid. For Traffic Director, the load balancing scheme is `INTERNAL_SELF_MANAGED`, and only `TCP`is valid. For Internal HTTP(S) Load Balancing, the load balancing scheme is `INTERNAL_MANAGED`, and only `TCP` is valid. For HTTP(S), SSL Proxy, and TCP Proxy Load Balancing, the load balancing scheme is `EXTERNAL` and only `TCP` is valid. For Network TCP/UDP Load Balancing, the load balancing scheme is `EXTERNAL`, and one of `TCP` or `UDP` is valid.",
         "Computed": true
       },
       "ip_version": {
         "Type": "String",
         "Optional": true,
-        "Description": "The IP Version that will be used by this global forwarding rule. Possible values: [\"IPV4\", \"IPV6\"]"
+        "Description": "The IP Version that will be used by this forwarding rule. Valid options are `IPV4` or `IPV6`. This can only be specified for an external global forwarding rule. Possible values: UNSPECIFIED_VERSION, IPV4, IPV6"
+      },
+      "label_fingerprint": {
+        "Type": "String",
+        "Description": "Used internally during label updates.",
+        "Computed": true
+      },
+      "labels": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "Labels to apply to this rule.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       },
       "load_balancing_scheme": {
         "Type": "String",
         "Optional": true,
-        "Description": "This signifies what the GlobalForwardingRule will be used for.\nThe value of INTERNAL_SELF_MANAGED means that this will be used for\nInternal Global HTTP(S) LB. The value of EXTERNAL means that this\nwill be used for External Global Load Balancing (HTTP(S) LB,\nExternal TCP/UDP LB, SSL Proxy)\n\n([Beta](https://terraform.io/docs/providers/google/guides/provider_versions.html) only) Note: This field must be set \"\" if the global address is\nconfigured as a purpose of PRIVATE_SERVICE_CONNECT and addressType of INTERNAL. Default value: \"EXTERNAL\" Possible values: [\"EXTERNAL\", \"INTERNAL_SELF_MANAGED\"]",
+        "Description": "Specifies the forwarding rule type.\n\n*   `EXTERNAL` is used for:\n    *   Classic Cloud VPN gateways\n    *   Protocol forwarding to VMs from an external IP address\n    *   The following load balancers: HTTP(S), SSL Proxy, TCP Proxy, and Network TCP/UDP\n*   `INTERNAL` is used for:\n    *   Protocol forwarding to VMs from an internal IP address\n    *   Internal TCP/UDP load balancers\n*   `INTERNAL_MANAGED` is used for:\n    *   Internal HTTP(S) load balancers\n*   `INTERNAL_SELF_MANAGED` is used for:\n    *   Traffic Director\n\nFor more information about forwarding rules, refer to [Forwarding rule concepts](/load-balancing/docs/forwarding-rule-concepts). Possible values: INVALID, INTERNAL, INTERNAL_MANAGED, INTERNAL_SELF_MANAGED, EXTERNAL",
         "Default": {
           "Type": "string",
           "Value": "EXTERNAL"
@@ -13695,7 +13728,7 @@
       "metadata_filters": {
         "Type": "List",
         "Optional": true,
-        "Description": "Opaque filter criteria used by Loadbalancer to restrict routing\nconfiguration to a limited set xDS compliant clients. In their xDS\nrequests to Loadbalancer, xDS clients present node metadata. If a\nmatch takes place, the relevant routing configuration is made available\nto those proxies.\n\nFor each metadataFilter in this list, if its filterMatchCriteria is set\nto MATCH_ANY, at least one of the filterLabels must match the\ncorresponding label provided in the metadata. If its filterMatchCriteria\nis set to MATCH_ALL, then all of its filterLabels must match with\ncorresponding labels in the provided metadata.\n\nmetadataFilters specified here can be overridden by those specified in\nthe UrlMap that this ForwardingRule references.\n\nmetadataFilters only applies to Loadbalancers that have their\nloadBalancingScheme set to INTERNAL_SELF_MANAGED.",
+        "Description": "Opaque filter criteria used by Loadbalancer to restrict routing configuration to a limited set of [xDS](https://github.com/envoyproxy/data-plane-api/blob/master/XDS_PROTOCOL.md) compliant clients. In their xDS requests to Loadbalancer, xDS clients present [node metadata](https://github.com/envoyproxy/data-plane-api/search?q=%22message+Node%22+in%3A%2Fenvoy%2Fapi%2Fv2%2Fcore%2Fbase.proto\u0026). If a match takes place, the relevant configuration is made available to those proxies. Otherwise, all the resources (e.g. `TargetHttpProxy`, `UrlMap`) referenced by the `ForwardingRule` will not be visible to those proxies.\n\nFor each `metadataFilter` in this list, if its `filterMatchCriteria` is set to MATCH_ANY, at least one of the `filterLabel`s must match the corresponding label provided in the metadata. If its `filterMatchCriteria` is set to MATCH_ALL, then all of its `filterLabel`s must match with corresponding labels provided in the metadata.\n\n`metadataFilters` specified here will be applifed before those specified in the `UrlMap` that this `ForwardingRule` references.\n\n`metadataFilters` only applies to Loadbalancers that have their loadBalancingScheme set to `INTERNAL_SELF_MANAGED`.",
         "IsBlock": true,
         "ConfigImplicitMode": "Block",
         "Elem": {
@@ -13704,7 +13737,7 @@
             "filter_labels": {
               "Type": "List",
               "Required": true,
-              "Description": "The list of label value pairs that must match labels in the\nprovided metadata based on filterMatchCriteria\n\nThis list must not be empty and can have at the most 64 entries.",
+              "Description": "The list of label value pairs that must match labels in the provided metadata based on `filterMatchCriteria`\n\nThis list must not be empty and can have at the most 64 entries.",
               "MaxItems": 64,
               "MinItems": 1,
               "IsBlock": true,
@@ -13715,12 +13748,12 @@
                   "name": {
                     "Type": "String",
                     "Required": true,
-                    "Description": "Name of the metadata label. The length must be between\n1 and 1024 characters, inclusive."
+                    "Description": "Name of metadata label.\n\nThe name can have a maximum length of 1024 characters and must be at least 1 character long."
                   },
                   "value": {
                     "Type": "String",
                     "Required": true,
-                    "Description": "The value that the label must match. The value has a maximum\nlength of 1024 characters."
+                    "Description": "The value of the label must match the specified value.\n\nvalue can have a maximum length of 1024 characters."
                   }
                 }
               }
@@ -13728,7 +13761,7 @@
             "filter_match_criteria": {
               "Type": "String",
               "Required": true,
-              "Description": "Specifies how individual filterLabel matches within the list of\nfilterLabels contribute towards the overall metadataFilter match.\n\nMATCH_ANY - At least one of the filterLabels must have a matching\nlabel in the provided metadata.\nMATCH_ALL - All filterLabels must have matching labels in the\nprovided metadata. Possible values: [\"MATCH_ANY\", \"MATCH_ALL\"]"
+              "Description": "Specifies how individual `filterLabel` matches within the list of `filterLabel`s contribute towards the overall `metadataFilter` match.\n\nSupported values are:\n\n*   MATCH_ANY: At least one of the `filterLabels` must have a matching label in the provided metadata.\n*   MATCH_ALL: All `filterLabels` must have matching labels in the provided metadata. Possible values: NOT_SET, MATCH_ALL, MATCH_ANY"
             }
           }
         }
@@ -13736,26 +13769,34 @@
       "name": {
         "Type": "String",
         "Required": true,
-        "Description": "Name of the resource; provided by the client when the resource is\ncreated. The name must be 1-63 characters long, and comply with\nRFC1035. Specifically, the name must be 1-63 characters long and match\nthe regular expression '[a-z]([-a-z0-9]*[a-z0-9])?' which means the\nfirst character must be a lowercase letter, and all following\ncharacters must be a dash, lowercase letter, or digit, except the last\ncharacter, which cannot be a dash."
+        "Description": "Name of the resource; provided by the client when the resource is created. The name must be 1-63 characters long, and comply with [RFC1035](https://www.ietf.org/rfc/rfc1035.txt). Specifically, the name must be 1-63 characters long and match the regular expression `[a-z]([-a-z0-9]*[a-z0-9])?` which means the first character must be a lowercase letter, and all following characters must be a dash, lowercase letter, or digit, except the last character, which cannot be a dash."
+      },
+      "network": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "This field is not used for external load balancing. For `INTERNAL` and `INTERNAL_SELF_MANAGED` load balancing, this field identifies the network that the load balanced IP should belong to for this Forwarding Rule. If this field is not specified, the default network will be used.",
+        "Computed": true
       },
       "port_range": {
         "Type": "String",
         "Optional": true,
-        "Description": "This field is used along with the target field for TargetHttpProxy,\nTargetHttpsProxy, TargetSslProxy, TargetTcpProxy, TargetVpnGateway,\nTargetPool, TargetInstance.\n\nApplicable only when IPProtocol is TCP, UDP, or SCTP, only packets\naddressed to ports in the specified range will be forwarded to target.\nForwarding rules with the same [IPAddress, IPProtocol] pair must have\ndisjoint port ranges.\n\nSome types of forwarding target have constraints on the acceptable\nports:\n\n* TargetHttpProxy: 80, 8080\n* TargetHttpsProxy: 443\n* TargetTcpProxy: 25, 43, 110, 143, 195, 443, 465, 587, 700, 993, 995,\n                  1883, 5222\n* TargetSslProxy: 25, 43, 110, 143, 195, 443, 465, 587, 700, 993, 995,\n                  1883, 5222\n* TargetVpnGateway: 500, 4500"
+        "Description": "When the load balancing scheme is `EXTERNAL`, `INTERNAL_SELF_MANAGED` and `INTERNAL_MANAGED`, you can specify a `port_range`. Use with a forwarding rule that points to a target proxy or a target pool. Do not use with a forwarding rule that points to a backend service. This field is used along with the `target` field for TargetHttpProxy, TargetHttpsProxy, TargetSslProxy, TargetTcpProxy, TargetVpnGateway, TargetPool, TargetInstance. Applicable only when `IPProtocol` is `TCP`, `UDP`, or `SCTP`, only packets addressed to ports in the specified range will be forwarded to `target`. Forwarding rules with the same `[IPAddress, IPProtocol]` pair must have disjoint port ranges. Some types of forwarding target have constraints on the acceptable ports:\n\n*   TargetHttpProxy: 80, 8080\n*   TargetHttpsProxy: 443\n*   TargetTcpProxy: 25, 43, 110, 143, 195, 443, 465, 587, 700, 993, 995, 1688, 1883, 5222\n*   TargetSslProxy: 25, 43, 110, 143, 195, 443, 465, 587, 700, 993, 995, 1688, 1883, 5222\n*   TargetVpnGateway: 500, 4500\n\n@pattern: d+(?:-d+)?"
       },
       "project": {
         "Type": "String",
         "Optional": true,
+        "Description": "The project this resource belongs in.",
         "Computed": true
       },
       "self_link": {
         "Type": "String",
+        "Description": "[Output Only] Server-defined URL for the resource.",
         "Computed": true
       },
       "target": {
         "Type": "String",
         "Required": true,
-        "Description": "The URL of the target resource to receive the matched traffic.\nThe forwarded traffic must be of a type appropriate to the target object.\nFor INTERNAL_SELF_MANAGED load balancing, only HTTP and HTTPS targets\nare valid.\n\n([Beta](https://terraform.io/docs/providers/google/guides/provider_versions.html) only) For global address with a purpose of PRIVATE_SERVICE_CONNECT and\naddressType of INTERNAL, only \"all-apis\" and \"vpc-sc\" are valid."
+        "Description": "The URL of the target resource to receive the matched traffic. For regional forwarding rules, this target must live in the same region as the forwarding rule. For global forwarding rules, this target must be a global load balancing resource. The forwarded traffic must be of a type appropriate to the target object. For `INTERNAL_SELF_MANAGED` load balancing, only `targetHttpProxy` is valid, not `targetHttpsProxy`."
       }
     },
     "google_compute_global_network_endpoint": {
@@ -18962,6 +19003,34 @@
           "ElementsType": "String"
         }
       },
+      "iap": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Settings for enabling Cloud Identity Aware Proxy",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "oauth2_client_id": {
+              "Type": "String",
+              "Required": true,
+              "Description": "OAuth2 Client ID for IAP"
+            },
+            "oauth2_client_secret": {
+              "Type": "String",
+              "Required": true,
+              "Description": "OAuth2 Client Secret for IAP"
+            },
+            "oauth2_client_secret_sha256": {
+              "Type": "String",
+              "Description": "OAuth2 Client Secret SHA-256 for IAP",
+              "Computed": true
+            }
+          }
+        }
+      },
       "load_balancing_scheme": {
         "Type": "String",
         "Optional": true,
@@ -22605,7 +22674,7 @@
       "next_hop_ilb": {
         "Type": "String",
         "Optional": true,
-        "Description": "The URL to a forwarding rule of type loadBalancingScheme=INTERNAL that should handle matching packets.\nYou can only specify the forwarding rule as a partial or full URL. For example, the following are all valid URLs:\nhttps://www.googleapis.com/compute/v1/projects/project/regions/region/forwardingRules/forwardingRule\nregions/region/forwardingRules/forwardingRule\nNote that this can only be used when the destinationRange is a public (non-RFC 1918) IP CIDR range."
+        "Description": "The IP address or URL to a forwarding rule of type\nloadBalancingScheme=INTERNAL that should handle matching\npackets.\n\nWith the GA provider you can only specify the forwarding\nrule as a partial or full URL. For example, the following\nare all valid values:\n* 10.128.0.56\n* https://www.googleapis.com/compute/v1/projects/project/regions/region/forwardingRules/forwardingRule\n* regions/region/forwardingRules/forwardingRule\n\nWhen the beta provider, you can also specify the IP address\nof a forwarding rule from the same VPC or any peered VPC.\n\nNote that this can only be used when the destinationRange is\na public (non-RFC 1918) IP CIDR range."
       },
       "next_hop_instance": {
         "Type": "String",
@@ -51447,6 +51516,15 @@
         "Optional": true,
         "Description": "A text description of the service account. Must be less than or equal to 256 UTF-8 bytes."
       },
+      "disabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether the service account is disabled. Defaults to false",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
       "display_name": {
         "Type": "String",
         "Optional": true,
@@ -54229,6 +54307,12 @@
                     "Type": "String",
                     "Required": true,
                     "Description": "Google Cloud Storage bucket name."
+                  },
+                  "path": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Google Cloud Storage path in bucket to transfer",
+                    "Computed": true
                   }
                 }
               }
@@ -54247,6 +54331,12 @@
                     "Type": "String",
                     "Required": true,
                     "Description": "Google Cloud Storage bucket name."
+                  },
+                  "path": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Google Cloud Storage path in bucket to transfer",
+                    "Computed": true
                   }
                 }
               }
@@ -56922,72 +57012,87 @@
     "google_compute_forwarding_rule": {
       "all_ports": {
         "Type": "Bool",
-        "Description": "This field can be used with internal load balancer or network load balancer\nwhen the forwarding rule references a backend service, or with the target\nfield when it references a TargetInstance. Set this to true to\nallow packets addressed to any ports to be forwarded to the backends configured\nwith this forwarding rule. This can be used when the protocol is TCP/UDP, and it\nmust be set to true when the protocol is set to L3_DEFAULT.\nCannot be set if port or portRange are set.",
+        "Description": "This field is used along with the `backend_service` field for internal load balancing or with the `target` field for internal TargetInstance. This field cannot be used with `port` or `portRange` fields. When the load balancing scheme is `INTERNAL` and protocol is TCP/UDP, specify this field to allow packets addressed to any ports will be forwarded to the backends configured with this forwarding rule.",
         "Computed": true
       },
       "allow_global_access": {
         "Type": "Bool",
-        "Description": "If true, clients can access ILB from all regions.\nOtherwise only allows from the local region the ILB is located at.",
+        "Description": "This field is used along with the `backend_service` field for internal load balancing or with the `target` field for internal TargetInstance. If the field is set to `TRUE`, clients can access ILB from all regions. Otherwise only allows access from clients in the same region as the internal load balancer.",
         "Computed": true
       },
       "backend_service": {
         "Type": "String",
-        "Description": "A BackendService to receive the matched traffic. This is used only\nfor INTERNAL load balancing.",
+        "Description": "This field is only used for `INTERNAL` load balancing. For internal load balancing, this field identifies the BackendService resource to receive the matched traffic.",
         "Computed": true
       },
       "creation_timestamp": {
         "Type": "String",
-        "Description": "Creation timestamp in RFC3339 text format.",
+        "Description": "[Output Only] Creation timestamp in [RFC3339](https://www.ietf.org/rfc/rfc3339.txt) text format.",
         "Computed": true
       },
       "description": {
         "Type": "String",
-        "Description": "An optional description of this resource. Provide this property when\nyou create the resource.",
+        "Description": "An optional description of this resource. Provide this property when you create the resource.",
         "Computed": true
       },
       "ip_address": {
         "Type": "String",
-        "Description": "The IP address that this forwarding rule serves. When a client sends\ntraffic to this IP address, the forwarding rule directs the traffic to\nthe target that you specify in the forwarding rule. The\nloadBalancingScheme and the forwarding rule's target determine the\ntype of IP address that you can use. For detailed information, refer\nto [IP address specifications](https://cloud.google.com/load-balancing/docs/forwarding-rule-concepts#ip_address_specifications).\n\nAn address can be specified either by a literal IP address or a\nreference to an existing Address resource. If you don't specify a\nreserved IP address, an ephemeral IP address is assigned.\n\nThe value must be set to 0.0.0.0 when the target is a targetGrpcProxy\nthat has validateForProxyless field set to true.\n\nFor Private Service Connect forwarding rules that forward traffic to\nGoogle APIs, IP address must be provided.",
+        "Description": "IP address that this forwarding rule serves. When a client sends traffic to this IP address, the forwarding rule directs the traffic to the target that you specify in the forwarding rule. If you don't specify a reserved IP address, an ephemeral IP address is assigned. Methods for specifying an IP address: * IPv4 dotted decimal, as in `100.1.2.3` * Full URL, as in `https://www.googleapis.com/compute/v1/projects/project_id/regions/region/addresses/address-name` * Partial URL or by name, as in: * `projects/project_id/regions/region/addresses/address-name` * `regions/region/addresses/address-name` * `global/addresses/address-name` * `address-name` The loadBalancingScheme and the forwarding rule's target determine the type of IP address that you can use. For detailed information, refer to [IP address specifications](/load-balancing/docs/forwarding-rule-concepts#ip_address_specifications).",
         "Computed": true
       },
       "ip_protocol": {
         "Type": "String",
-        "Description": "The IP protocol to which this rule applies.\n\nWhen the load balancing scheme is INTERNAL, only TCP and UDP are\nvalid. Possible values: [\"TCP\", \"UDP\", \"ESP\", \"AH\", \"SCTP\", \"ICMP\", \"L3_DEFAULT\"]",
+        "Description": "The IP protocol to which this rule applies. For protocol forwarding, valid options are `TCP`, `UDP`, `ESP`, `AH`, `SCTP` or `ICMP`. For Internal TCP/UDP Load Balancing, the load balancing scheme is `INTERNAL`, and one of `TCP` or `UDP` are valid. For Traffic Director, the load balancing scheme is `INTERNAL_SELF_MANAGED`, and only `TCP`is valid. For Internal HTTP(S) Load Balancing, the load balancing scheme is `INTERNAL_MANAGED`, and only `TCP` is valid. For HTTP(S), SSL Proxy, and TCP Proxy Load Balancing, the load balancing scheme is `EXTERNAL` and only `TCP` is valid. For Network TCP/UDP Load Balancing, the load balancing scheme is `EXTERNAL`, and one of `TCP` or `UDP` is valid.",
         "Computed": true
       },
       "is_mirroring_collector": {
         "Type": "Bool",
-        "Description": "Indicates whether or not this load balancer can be used\nas a collector for packet mirroring. To prevent mirroring loops,\ninstances behind this load balancer will not have their traffic\nmirrored even if a PacketMirroring rule applies to them. This\ncan only be set to true for load balancers that have their\nloadBalancingScheme set to INTERNAL.",
+        "Description": "Indicates whether or not this load balancer can be used as a collector for packet mirroring. To prevent mirroring loops, instances behind this load balancer will not have their traffic mirrored even if a `PacketMirroring` rule applies to them. This can only be set to true for load balancers that have their `loadBalancingScheme` set to `INTERNAL`.",
         "Computed": true
+      },
+      "label_fingerprint": {
+        "Type": "String",
+        "Description": "Used internally during label updates.",
+        "Computed": true
+      },
+      "labels": {
+        "Type": "Map",
+        "Description": "Labels to apply to this rule.",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       },
       "load_balancing_scheme": {
         "Type": "String",
-        "Description": "This signifies what the ForwardingRule will be used for and can be\nEXTERNAL, INTERNAL, or INTERNAL_MANAGED. EXTERNAL is used for Classic\nCloud VPN gateways, protocol forwarding to VMs from an external IP address,\nand HTTP(S), SSL Proxy, TCP Proxy, and Network TCP/UDP load balancers.\nINTERNAL is used for protocol forwarding to VMs from an internal IP address,\nand internal TCP/UDP load balancers.\nINTERNAL_MANAGED is used for internal HTTP(S) load balancers. Default value: \"EXTERNAL\" Possible values: [\"EXTERNAL\", \"INTERNAL\", \"INTERNAL_MANAGED\"]",
+        "Description": "Specifies the forwarding rule type.\n\n*   `EXTERNAL` is used for:\n    *   Classic Cloud VPN gateways\n    *   Protocol forwarding to VMs from an external IP address\n    *   The following load balancers: HTTP(S), SSL Proxy, TCP Proxy, and Network TCP/UDP\n*   `INTERNAL` is used for:\n    *   Protocol forwarding to VMs from an internal IP address\n    *   Internal TCP/UDP load balancers\n*   `INTERNAL_MANAGED` is used for:\n    *   Internal HTTP(S) load balancers\n*   `INTERNAL_SELF_MANAGED` is used for:\n    *   Traffic Director\n\nFor more information about forwarding rules, refer to [Forwarding rule concepts](/load-balancing/docs/forwarding-rule-concepts). Possible values: INVALID, INTERNAL, INTERNAL_MANAGED, INTERNAL_SELF_MANAGED, EXTERNAL",
         "Computed": true
       },
       "name": {
         "Type": "String",
         "Required": true,
-        "Description": "Name of the resource; provided by the client when the resource is\ncreated. The name must be 1-63 characters long, and comply with\nRFC1035. Specifically, the name must be 1-63 characters long and match\nthe regular expression '[a-z]([-a-z0-9]*[a-z0-9])?' which means the\nfirst character must be a lowercase letter, and all following\ncharacters must be a dash, lowercase letter, or digit, except the last\ncharacter, which cannot be a dash."
+        "Description": "Name of the resource; provided by the client when the resource is created. The name must be 1-63 characters long, and comply with [RFC1035](https://www.ietf.org/rfc/rfc1035.txt). Specifically, the name must be 1-63 characters long and match the regular expression `[a-z]([-a-z0-9]*[a-z0-9])?` which means the first character must be a lowercase letter, and all following characters must be a dash, lowercase letter, or digit, except the last character, which cannot be a dash."
       },
       "network": {
         "Type": "String",
-        "Description": "For internal load balancing, this field identifies the network that\nthe load balanced IP should belong to for this Forwarding Rule. If\nthis field is not specified, the default network will be used.\nThis field is only used for INTERNAL load balancing.",
+        "Description": "This field is not used for external load balancing. For `INTERNAL` and `INTERNAL_SELF_MANAGED` load balancing, this field identifies the network that the load balanced IP should belong to for this Forwarding Rule. If this field is not specified, the default network will be used.",
         "Computed": true
       },
       "network_tier": {
         "Type": "String",
-        "Description": "The networking tier used for configuring this address. If this field is not\nspecified, it is assumed to be PREMIUM. Possible values: [\"PREMIUM\", \"STANDARD\"]",
+        "Description": "This signifies the networking tier used for configuring this load balancer and can only take the following values: `PREMIUM`, `STANDARD`. For regional ForwardingRule, the valid values are `PREMIUM` and `STANDARD`. For GlobalForwardingRule, the valid value is `PREMIUM`. If this field is not specified, it is assumed to be `PREMIUM`. If `IPAddress` is specified, this value must be equal to the networkTier of the Address.",
         "Computed": true
       },
       "port_range": {
         "Type": "String",
-        "Description": "This field is used along with the target field for TargetHttpProxy,\nTargetHttpsProxy, TargetSslProxy, TargetTcpProxy, TargetVpnGateway,\nTargetPool, TargetInstance.\n\nApplicable only when IPProtocol is TCP, UDP, or SCTP, only packets\naddressed to ports in the specified range will be forwarded to target.\nForwarding rules with the same [IPAddress, IPProtocol] pair must have\ndisjoint port ranges.\n\nSome types of forwarding target have constraints on the acceptable\nports:\n\n* TargetHttpProxy: 80, 8080\n* TargetHttpsProxy: 443\n* TargetTcpProxy: 25, 43, 110, 143, 195, 443, 465, 587, 700, 993, 995,\n                  1883, 5222\n* TargetSslProxy: 25, 43, 110, 143, 195, 443, 465, 587, 700, 993, 995,\n                  1883, 5222\n* TargetVpnGateway: 500, 4500",
+        "Description": "When the load balancing scheme is `EXTERNAL`, `INTERNAL_SELF_MANAGED` and `INTERNAL_MANAGED`, you can specify a `port_range`. Use with a forwarding rule that points to a target proxy or a target pool. Do not use with a forwarding rule that points to a backend service. This field is used along with the `target` field for TargetHttpProxy, TargetHttpsProxy, TargetSslProxy, TargetTcpProxy, TargetVpnGateway, TargetPool, TargetInstance. Applicable only when `IPProtocol` is `TCP`, `UDP`, or `SCTP`, only packets addressed to ports in the specified range will be forwarded to `target`. Forwarding rules with the same `[IPAddress, IPProtocol]` pair must have disjoint port ranges. Some types of forwarding target have constraints on the acceptable ports:\n\n*   TargetHttpProxy: 80, 8080\n*   TargetHttpsProxy: 443\n*   TargetTcpProxy: 25, 43, 110, 143, 195, 443, 465, 587, 700, 993, 995, 1688, 1883, 5222\n*   TargetSslProxy: 25, 43, 110, 143, 195, 443, 465, 587, 700, 993, 995, 1688, 1883, 5222\n*   TargetVpnGateway: 500, 4500\n\n@pattern: d+(?:-d+)?",
         "Computed": true
       },
       "ports": {
         "Type": "Set",
-        "Description": "This field is used along with internal load balancing and network\nload balancer when the forwarding rule references a backend service\nand when protocol is not L3_DEFAULT.\n\nA single port or a comma separated list of ports can be configured.\nOnly packets addressed to these ports will be forwarded to the backends\nconfigured with this forwarding rule.\n\nYou can only use one of ports and portRange, or allPorts.\nThe three are mutually exclusive.\n\nYou may specify a maximum of up to 5 ports, which can be non-contiguous.",
+        "Description": "This field is used along with the `backend_service` field for internal load balancing. When the load balancing scheme is `INTERNAL`, a list of ports can be configured, for example, ['80'], ['8000','9000']. Only packets addressed to these ports are forwarded to the backends configured with the forwarding rule. If the forwarding rule's loadBalancingScheme is INTERNAL, you can specify ports in one of the following ways: * A list of up to five ports, which can be non-contiguous * Keyword `ALL`, which causes the forwarding rule to forward traffic on any port of the forwarding rule's protocol. @pattern: d+(?:-d+)? For more information, refer to [Port specifications](/load-balancing/docs/forwarding-rule-concepts#port_specifications).",
         "Computed": true,
         "ConfigImplicitMode": "Attr",
         "Elem": {
@@ -56997,35 +57102,37 @@
       },
       "project": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Description": "The project this resource belongs in."
       },
       "region": {
         "Type": "String",
         "Optional": true,
-        "Description": "A reference to the region where the regional forwarding rule resides.\nThis field is not applicable to global forwarding rules."
+        "Description": "The location of this resource."
       },
       "self_link": {
         "Type": "String",
+        "Description": "[Output Only] Server-defined URL for the resource.",
         "Computed": true
       },
       "service_label": {
         "Type": "String",
-        "Description": "An optional prefix to the service name for this Forwarding Rule.\nIf specified, will be the first label of the fully qualified service\nname.\n\nThe label must be 1-63 characters long, and comply with RFC1035.\nSpecifically, the label must be 1-63 characters long and match the\nregular expression '[a-z]([-a-z0-9]*[a-z0-9])?' which means the first\ncharacter must be a lowercase letter, and all following characters\nmust be a dash, lowercase letter, or digit, except the last\ncharacter, which cannot be a dash.\n\nThis field is only used for INTERNAL load balancing.",
+        "Description": "An optional prefix to the service name for this Forwarding Rule. If specified, the prefix is the first label of the fully qualified service name. The label must be 1-63 characters long, and comply with [RFC1035](https://www.ietf.org/rfc/rfc1035.txt). Specifically, the label must be 1-63 characters long and match the regular expression `[a-z]([-a-z0-9]*[a-z0-9])?` which means the first character must be a lowercase letter, and all following characters must be a dash, lowercase letter, or digit, except the last character, which cannot be a dash. This field is only used for internal load balancing.",
         "Computed": true
       },
       "service_name": {
         "Type": "String",
-        "Description": "The internal fully qualified service name for this Forwarding Rule.\nThis field is only used for INTERNAL load balancing.",
+        "Description": "[Output Only] The internal fully qualified service name for this Forwarding Rule. This field is only used for internal load balancing.",
         "Computed": true
       },
       "subnetwork": {
         "Type": "String",
-        "Description": "The subnetwork that the load balanced IP should belong to for this\nForwarding Rule.  This field is only used for INTERNAL load balancing.\n\nIf the network specified is in auto subnet mode, this field is\noptional. However, if the network is in custom subnet mode, a\nsubnetwork must be specified.",
+        "Description": "This field is only used for `INTERNAL` load balancing. For internal load balancing, this field identifies the subnetwork that the load balanced IP should belong to for this Forwarding Rule. If the network specified is in auto subnet mode, this field is optional. However, if the network is in custom subnet mode, a subnetwork must be specified.",
         "Computed": true
       },
       "target": {
         "Type": "String",
-        "Description": "The URL of the target resource to receive the matched traffic.\nThe target must live in the same region as the forwarding rule.\nThe forwarded traffic must be of a type appropriate to the target\nobject.",
+        "Description": "The URL of the target resource to receive the matched traffic. For regional forwarding rules, this target must live in the same region as the forwarding rule. For global forwarding rules, this target must be a global load balancing resource. The forwarded traffic must be of a type appropriate to the target object. For `INTERNAL_SELF_MANAGED` load balancing, only `targetHttpProxy` is valid, not `targetHttpsProxy`.",
         "Computed": true
       }
     },
@@ -57055,32 +57162,47 @@
     "google_compute_global_forwarding_rule": {
       "description": {
         "Type": "String",
-        "Description": "An optional description of this resource. Provide this property when\nyou create the resource.",
+        "Description": "An optional description of this resource. Provide this property when you create the resource.",
         "Computed": true
       },
       "ip_address": {
         "Type": "String",
-        "Description": "The IP address that this forwarding rule serves. When a client sends\ntraffic to this IP address, the forwarding rule directs the traffic to\nthe target that you specify in the forwarding rule. The\nloadBalancingScheme and the forwarding rule's target determine the\ntype of IP address that you can use. For detailed information, refer\nto [IP address specifications](https://cloud.google.com/load-balancing/docs/forwarding-rule-concepts#ip_address_specifications).\n\nAn address can be specified either by a literal IP address or a\nreference to an existing Address resource. If you don't specify a\nreserved IP address, an ephemeral IP address is assigned.\n\nThe value must be set to 0.0.0.0 when the target is a targetGrpcProxy\nthat has validateForProxyless field set to true.\n\nFor Private Service Connect forwarding rules that forward traffic to\nGoogle APIs, IP address must be provided.",
+        "Description": "IP address that this forwarding rule serves. When a client sends traffic to this IP address, the forwarding rule directs the traffic to the target that you specify in the forwarding rule. If you don't specify a reserved IP address, an ephemeral IP address is assigned. Methods for specifying an IP address: * IPv4 dotted decimal, as in `100.1.2.3` * Full URL, as in `https://www.googleapis.com/compute/v1/projects/project_id/regions/region/addresses/address-name` * Partial URL or by name, as in: * `projects/project_id/regions/region/addresses/address-name` * `regions/region/addresses/address-name` * `global/addresses/address-name` * `address-name` The loadBalancingScheme and the forwarding rule's target determine the type of IP address that you can use. For detailed information, refer to [IP address specifications](/load-balancing/docs/forwarding-rule-concepts#ip_address_specifications).",
         "Computed": true
       },
       "ip_protocol": {
         "Type": "String",
-        "Description": "The IP protocol to which this rule applies. When the load balancing scheme is\nINTERNAL_SELF_MANAGED, only TCP is valid. This field must not be set if the\nglobal address is configured as a purpose of PRIVATE_SERVICE_CONNECT\nand addressType of INTERNAL Possible values: [\"TCP\", \"UDP\", \"ESP\", \"AH\", \"SCTP\", \"ICMP\"]",
+        "Description": "The IP protocol to which this rule applies. For protocol forwarding, valid options are `TCP`, `UDP`, `ESP`, `AH`, `SCTP` or `ICMP`. For Internal TCP/UDP Load Balancing, the load balancing scheme is `INTERNAL`, and one of `TCP` or `UDP` are valid. For Traffic Director, the load balancing scheme is `INTERNAL_SELF_MANAGED`, and only `TCP`is valid. For Internal HTTP(S) Load Balancing, the load balancing scheme is `INTERNAL_MANAGED`, and only `TCP` is valid. For HTTP(S), SSL Proxy, and TCP Proxy Load Balancing, the load balancing scheme is `EXTERNAL` and only `TCP` is valid. For Network TCP/UDP Load Balancing, the load balancing scheme is `EXTERNAL`, and one of `TCP` or `UDP` is valid.",
         "Computed": true
       },
       "ip_version": {
         "Type": "String",
-        "Description": "The IP Version that will be used by this global forwarding rule. Possible values: [\"IPV4\", \"IPV6\"]",
+        "Description": "The IP Version that will be used by this forwarding rule. Valid options are `IPV4` or `IPV6`. This can only be specified for an external global forwarding rule. Possible values: UNSPECIFIED_VERSION, IPV4, IPV6",
         "Computed": true
+      },
+      "label_fingerprint": {
+        "Type": "String",
+        "Description": "Used internally during label updates.",
+        "Computed": true
+      },
+      "labels": {
+        "Type": "Map",
+        "Description": "Labels to apply to this rule.",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       },
       "load_balancing_scheme": {
         "Type": "String",
-        "Description": "This signifies what the GlobalForwardingRule will be used for.\nThe value of INTERNAL_SELF_MANAGED means that this will be used for\nInternal Global HTTP(S) LB. The value of EXTERNAL means that this\nwill be used for External Global Load Balancing (HTTP(S) LB,\nExternal TCP/UDP LB, SSL Proxy)\n\n([Beta](https://terraform.io/docs/providers/google/guides/provider_versions.html) only) Note: This field must be set \"\" if the global address is\nconfigured as a purpose of PRIVATE_SERVICE_CONNECT and addressType of INTERNAL. Default value: \"EXTERNAL\" Possible values: [\"EXTERNAL\", \"INTERNAL_SELF_MANAGED\"]",
+        "Description": "Specifies the forwarding rule type.\n\n*   `EXTERNAL` is used for:\n    *   Classic Cloud VPN gateways\n    *   Protocol forwarding to VMs from an external IP address\n    *   The following load balancers: HTTP(S), SSL Proxy, TCP Proxy, and Network TCP/UDP\n*   `INTERNAL` is used for:\n    *   Protocol forwarding to VMs from an internal IP address\n    *   Internal TCP/UDP load balancers\n*   `INTERNAL_MANAGED` is used for:\n    *   Internal HTTP(S) load balancers\n*   `INTERNAL_SELF_MANAGED` is used for:\n    *   Traffic Director\n\nFor more information about forwarding rules, refer to [Forwarding rule concepts](/load-balancing/docs/forwarding-rule-concepts). Possible values: INVALID, INTERNAL, INTERNAL_MANAGED, INTERNAL_SELF_MANAGED, EXTERNAL",
         "Computed": true
       },
       "metadata_filters": {
         "Type": "List",
-        "Description": "Opaque filter criteria used by Loadbalancer to restrict routing\nconfiguration to a limited set xDS compliant clients. In their xDS\nrequests to Loadbalancer, xDS clients present node metadata. If a\nmatch takes place, the relevant routing configuration is made available\nto those proxies.\n\nFor each metadataFilter in this list, if its filterMatchCriteria is set\nto MATCH_ANY, at least one of the filterLabels must match the\ncorresponding label provided in the metadata. If its filterMatchCriteria\nis set to MATCH_ALL, then all of its filterLabels must match with\ncorresponding labels in the provided metadata.\n\nmetadataFilters specified here can be overridden by those specified in\nthe UrlMap that this ForwardingRule references.\n\nmetadataFilters only applies to Loadbalancers that have their\nloadBalancingScheme set to INTERNAL_SELF_MANAGED.",
+        "Description": "Opaque filter criteria used by Loadbalancer to restrict routing configuration to a limited set of [xDS](https://github.com/envoyproxy/data-plane-api/blob/master/XDS_PROTOCOL.md) compliant clients. In their xDS requests to Loadbalancer, xDS clients present [node metadata](https://github.com/envoyproxy/data-plane-api/search?q=%22message+Node%22+in%3A%2Fenvoy%2Fapi%2Fv2%2Fcore%2Fbase.proto\u0026). If a match takes place, the relevant configuration is made available to those proxies. Otherwise, all the resources (e.g. `TargetHttpProxy`, `UrlMap`) referenced by the `ForwardingRule` will not be visible to those proxies.\n\nFor each `metadataFilter` in this list, if its `filterMatchCriteria` is set to MATCH_ANY, at least one of the `filterLabel`s must match the corresponding label provided in the metadata. If its `filterMatchCriteria` is set to MATCH_ALL, then all of its `filterLabel`s must match with corresponding labels provided in the metadata.\n\n`metadataFilters` specified here will be applifed before those specified in the `UrlMap` that this `ForwardingRule` references.\n\n`metadataFilters` only applies to Loadbalancers that have their loadBalancingScheme set to `INTERNAL_SELF_MANAGED`.",
         "Computed": true,
         "IsBlock": true,
         "ConfigImplicitMode": "ComputedBlock",
@@ -57089,7 +57211,7 @@
           "Info": {
             "filter_labels": {
               "Type": "List",
-              "Description": "The list of label value pairs that must match labels in the\nprovided metadata based on filterMatchCriteria\n\nThis list must not be empty and can have at the most 64 entries.",
+              "Description": "The list of label value pairs that must match labels in the provided metadata based on `filterMatchCriteria`\n\nThis list must not be empty and can have at the most 64 entries.",
               "Computed": true,
               "IsBlock": true,
               "ConfigImplicitMode": "ComputedBlock",
@@ -57098,12 +57220,12 @@
                 "Info": {
                   "name": {
                     "Type": "String",
-                    "Description": "Name of the metadata label. The length must be between\n1 and 1024 characters, inclusive.",
+                    "Description": "Name of metadata label.\n\nThe name can have a maximum length of 1024 characters and must be at least 1 character long.",
                     "Computed": true
                   },
                   "value": {
                     "Type": "String",
-                    "Description": "The value that the label must match. The value has a maximum\nlength of 1024 characters.",
+                    "Description": "The value of the label must match the specified value.\n\nvalue can have a maximum length of 1024 characters.",
                     "Computed": true
                   }
                 }
@@ -57111,7 +57233,7 @@
             },
             "filter_match_criteria": {
               "Type": "String",
-              "Description": "Specifies how individual filterLabel matches within the list of\nfilterLabels contribute towards the overall metadataFilter match.\n\nMATCH_ANY - At least one of the filterLabels must have a matching\nlabel in the provided metadata.\nMATCH_ALL - All filterLabels must have matching labels in the\nprovided metadata. Possible values: [\"MATCH_ANY\", \"MATCH_ALL\"]",
+              "Description": "Specifies how individual `filterLabel` matches within the list of `filterLabel`s contribute towards the overall `metadataFilter` match.\n\nSupported values are:\n\n*   MATCH_ANY: At least one of the `filterLabels` must have a matching label in the provided metadata.\n*   MATCH_ALL: All `filterLabels` must have matching labels in the provided metadata. Possible values: NOT_SET, MATCH_ALL, MATCH_ANY",
               "Computed": true
             }
           }
@@ -57120,24 +57242,31 @@
       "name": {
         "Type": "String",
         "Required": true,
-        "Description": "Name of the resource; provided by the client when the resource is\ncreated. The name must be 1-63 characters long, and comply with\nRFC1035. Specifically, the name must be 1-63 characters long and match\nthe regular expression '[a-z]([-a-z0-9]*[a-z0-9])?' which means the\nfirst character must be a lowercase letter, and all following\ncharacters must be a dash, lowercase letter, or digit, except the last\ncharacter, which cannot be a dash."
+        "Description": "Name of the resource; provided by the client when the resource is created. The name must be 1-63 characters long, and comply with [RFC1035](https://www.ietf.org/rfc/rfc1035.txt). Specifically, the name must be 1-63 characters long and match the regular expression `[a-z]([-a-z0-9]*[a-z0-9])?` which means the first character must be a lowercase letter, and all following characters must be a dash, lowercase letter, or digit, except the last character, which cannot be a dash."
+      },
+      "network": {
+        "Type": "String",
+        "Description": "This field is not used for external load balancing. For `INTERNAL` and `INTERNAL_SELF_MANAGED` load balancing, this field identifies the network that the load balanced IP should belong to for this Forwarding Rule. If this field is not specified, the default network will be used.",
+        "Computed": true
       },
       "port_range": {
         "Type": "String",
-        "Description": "This field is used along with the target field for TargetHttpProxy,\nTargetHttpsProxy, TargetSslProxy, TargetTcpProxy, TargetVpnGateway,\nTargetPool, TargetInstance.\n\nApplicable only when IPProtocol is TCP, UDP, or SCTP, only packets\naddressed to ports in the specified range will be forwarded to target.\nForwarding rules with the same [IPAddress, IPProtocol] pair must have\ndisjoint port ranges.\n\nSome types of forwarding target have constraints on the acceptable\nports:\n\n* TargetHttpProxy: 80, 8080\n* TargetHttpsProxy: 443\n* TargetTcpProxy: 25, 43, 110, 143, 195, 443, 465, 587, 700, 993, 995,\n                  1883, 5222\n* TargetSslProxy: 25, 43, 110, 143, 195, 443, 465, 587, 700, 993, 995,\n                  1883, 5222\n* TargetVpnGateway: 500, 4500",
+        "Description": "When the load balancing scheme is `EXTERNAL`, `INTERNAL_SELF_MANAGED` and `INTERNAL_MANAGED`, you can specify a `port_range`. Use with a forwarding rule that points to a target proxy or a target pool. Do not use with a forwarding rule that points to a backend service. This field is used along with the `target` field for TargetHttpProxy, TargetHttpsProxy, TargetSslProxy, TargetTcpProxy, TargetVpnGateway, TargetPool, TargetInstance. Applicable only when `IPProtocol` is `TCP`, `UDP`, or `SCTP`, only packets addressed to ports in the specified range will be forwarded to `target`. Forwarding rules with the same `[IPAddress, IPProtocol]` pair must have disjoint port ranges. Some types of forwarding target have constraints on the acceptable ports:\n\n*   TargetHttpProxy: 80, 8080\n*   TargetHttpsProxy: 443\n*   TargetTcpProxy: 25, 43, 110, 143, 195, 443, 465, 587, 700, 993, 995, 1688, 1883, 5222\n*   TargetSslProxy: 25, 43, 110, 143, 195, 443, 465, 587, 700, 993, 995, 1688, 1883, 5222\n*   TargetVpnGateway: 500, 4500\n\n@pattern: d+(?:-d+)?",
         "Computed": true
       },
       "project": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Description": "The project this resource belongs in."
       },
       "self_link": {
         "Type": "String",
+        "Description": "[Output Only] Server-defined URL for the resource.",
         "Computed": true
       },
       "target": {
         "Type": "String",
-        "Description": "The URL of the target resource to receive the matched traffic.\nThe forwarded traffic must be of a type appropriate to the target object.\nFor INTERNAL_SELF_MANAGED load balancing, only HTTP and HTTPS targets\nare valid.\n\n([Beta](https://terraform.io/docs/providers/google/guides/provider_versions.html) only) For global address with a purpose of PRIVATE_SERVICE_CONNECT and\naddressType of INTERNAL, only \"all-apis\" and \"vpc-sc\" are valid.",
+        "Description": "The URL of the target resource to receive the matched traffic. For regional forwarding rules, this target must live in the same region as the forwarding rule. For global forwarding rules, this target must be a global load balancing resource. The forwarded traffic must be of a type appropriate to the target object. For `INTERNAL_SELF_MANAGED` load balancing, only `targetHttpProxy` is valid, not `targetHttpsProxy`.",
         "Computed": true
       }
     },
