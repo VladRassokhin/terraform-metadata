@@ -66,8 +66,8 @@ function process_provider() {
   else
     # All tags:
     echo "Repository newest tags:"
-    git tag -l --sort=-v:refname | grep -v alpha | head -n 5
-    latest=$(git tag -l --sort=-v:refname | grep -v alpha | head -n 1)
+    git tag -l '--sort=-v:refname' | grep -v alpha | head -n 5
+    latest=$(git tag -l '--sort=-v:refname' | grep -v alpha | head -n 1)
     if [[ -z "$latest" ]]; then
       echo "There's no tags in $name, will use current state"
     else
