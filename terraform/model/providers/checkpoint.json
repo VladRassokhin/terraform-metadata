@@ -3,7 +3,7 @@
   ".sdk_type": "terraform-plugin-sdk-v1",
   "name": "checkpoint",
   "type": "provider",
-  "version": "v1.1.0",
+  "version": "v1.5.0",
   "provider": {
     "context": {
       "Type": "String",
@@ -35,6 +35,12 @@
       "Description": "Check Point Management server IP",
       "DefaultFunc": "ENV(CHECKPOINT_SERVER)"
     },
+    "session_file_name": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "File name used to store the current session id.",
+      "DefaultFunc": "ENV(CHECKPOINT_SESSION_FILE_NAME)"
+    },
     "timeout": {
       "Type": "Int",
       "Optional": true,
@@ -57,6 +63,15 @@
       }
     },
     "checkpoint_management_access_layer": {
+      "add_default_rule": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Indicates whether to include a cleanup rule in the new layer.",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
       "applications_and_url_filtering": {
         "Type": "Bool",
         "Optional": true,
@@ -92,11 +107,7 @@
       "detect_using_x_forward_for": {
         "Type": "Bool",
         "Optional": true,
-        "Description": "Whether to use X-Forward-For HTTP header, which is added by the  proxy server to keep track of the original source IP.",
-        "Default": {
-          "Type": "bool",
-          "Value": "false"
-        }
+        "Description": "Whether to use X-Forward-For HTTP header, which is added by the  proxy server to keep track of the original source IP."
       },
       "firewall": {
         "Type": "Bool",
@@ -251,6 +262,9 @@
       }
     },
     "checkpoint_management_access_role": {
+      "__timeouts__": [
+        "create"
+      ],
       "color": {
         "Type": "String",
         "Optional": true,
@@ -333,7 +347,11 @@
       "remote_access_clients": {
         "Type": "String",
         "Optional": true,
-        "Description": "Remote access clients identified by name or UID."
+        "Description": "Remote access clients identified by name or UID.",
+        "Default": {
+          "Type": "string",
+          "Value": "Any"
+        }
       },
       "tags": {
         "Type": "Set",
@@ -1710,6 +1728,84 @@
         "Computed": true
       }
     },
+    "checkpoint_management_generic_data_center_server": {
+      "color": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Color of the object. Should be one of existing colors.",
+        "Default": {
+          "Type": "string",
+          "Value": "black"
+        }
+      },
+      "comments": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Comments string."
+      },
+      "custom_header": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "When set to false, The admin is not using Key and Value for a Custom Header in order to connect to the feed server.\n\nWhen set to true, The admin is using Key and Value for a Custom Header in order to connect to the feed server.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "custom_key": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Key for the Custom Header, relevant and required only when custom_header set to true."
+      },
+      "custom_value": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Value for the Custom Header, relevant and required only when custom_header set to true."
+      },
+      "ignore_errors": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Apply changes ignoring errors. You won't be able to publish such a changes. If ignore-warnings flag was omitted - warnings will also be ignored.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "ignore_warnings": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Apply changes ignoring warnings. By Setting this parameter to 'true' test connection failure will be ignored.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "interval": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Update interval of the feed in seconds."
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Object name. Must be unique in the domain."
+      },
+      "tags": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Collection of tag identifiers.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "url": {
+        "Type": "String",
+        "Required": true,
+        "Description": "URL of the JSON feed (e.g. https://example.com/file.json)."
+      }
+    },
     "checkpoint_management_get_attachment": {
       "attachment_id": {
         "Type": "String",
@@ -2544,6 +2640,16 @@
         "Type": "Bool",
         "Optional": true,
         "Description": "Set to be true in order to install the Threat Prevention policy. By default, the value is true if Threat Prevention policy is enabled on the input policy package, otherwise false."
+      },
+      "triggers": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Triggers a install-policy if there are any changes to objects in this list.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       }
     },
     "checkpoint_management_install_software_package": {
@@ -2636,10 +2742,15 @@
       }
     },
     "checkpoint_management_logout": {
-      "message": {
-        "Type": "String",
+      "triggers": {
+        "Type": "Set",
         "Optional": true,
-        "Description": "Operation status."
+        "Description": "Triggers a logout if there are any changes to objects in this list.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       }
     },
     "checkpoint_management_mds": {
@@ -2901,6 +3012,176 @@
         "Optional": true,
         "Description": "Collection of tag identifiers.",
         "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      }
+    },
+    "checkpoint_management_nat_rule": {
+      "auto_generated": {
+        "Type": "Bool",
+        "Description": "Auto generated.",
+        "Computed": true
+      },
+      "comments": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Comments string."
+      },
+      "enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enable/Disable the rule.",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "ignore_errors": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Apply changes ignoring errors. You won't be able to publish such a changes. If ignore-warnings flag was omitted - warnings will also be ignored.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "ignore_warnings": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Apply changes ignoring warnings.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "install_on": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Which Gateways identified by the name or UID to install the policy on.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "method": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Nat method.",
+        "Default": {
+          "Type": "string",
+          "Value": "static"
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Rule name."
+      },
+      "original_destination": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Original destination.",
+        "Default": {
+          "Type": "string",
+          "Value": "Any"
+        }
+      },
+      "original_service": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Original service.",
+        "Default": {
+          "Type": "string",
+          "Value": "Any"
+        }
+      },
+      "original_source": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Original source.",
+        "Default": {
+          "Type": "string",
+          "Value": "Any"
+        }
+      },
+      "package": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the package."
+      },
+      "position": {
+        "Type": "Map",
+        "Required": true,
+        "Description": "Position in the rulebase.",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "translated_destination": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Translated destination.",
+        "Default": {
+          "Type": "string",
+          "Value": "Original"
+        }
+      },
+      "translated_service": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Translated service.",
+        "Default": {
+          "Type": "string",
+          "Value": "Original"
+        }
+      },
+      "translated_source": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Translated source.",
+        "Default": {
+          "Type": "string",
+          "Value": "Original"
+        }
+      }
+    },
+    "checkpoint_management_nat_section": {
+      "ignore_errors": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Apply changes ignoring errors. You won't be able to publish such a changes. If ignore-warnings flag was omitted - warnings will also be ignored.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "ignore_warnings": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Apply changes ignoring warnings.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Object name."
+      },
+      "package": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the package."
+      },
+      "position": {
+        "Type": "Map",
+        "Required": true,
+        "Description": "Position in the rulebase.",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -3189,6 +3470,16 @@
         "Type": "String",
         "Description": "Command asynchronous task unique identifier.",
         "Computed": true
+      },
+      "triggers": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Triggers a publish if there are any changes to objects in this list.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       },
       "uid": {
         "Type": "String",
@@ -4537,6 +4828,952 @@
         }
       }
     },
+    "checkpoint_management_simple_cluster": {
+      "anti_bot": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Anti-Bot blade enabled."
+      },
+      "anti_virus": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Anti-Virus blade enabled."
+      },
+      "application_control": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Application Control blade enabled."
+      },
+      "cluster_mode": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Cluster mode.",
+        "Default": {
+          "Type": "string",
+          "Value": "cluster-xl-ha"
+        }
+      },
+      "color": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Color of the object. Should be one of existing colors.",
+        "Default": {
+          "Type": "string",
+          "Value": "black"
+        }
+      },
+      "comments": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Comments string."
+      },
+      "content_awareness": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Content Awareness blade enabled."
+      },
+      "data_awareness": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Data Awareness blade enabled."
+      },
+      "dynamic_ip": {
+        "Type": "Bool",
+        "Description": "Dynamic IP address.",
+        "Computed": true
+      },
+      "firewall": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Firewall blade enabled."
+      },
+      "firewall_settings": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "Firewall settings.",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "hardware": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Cluster platform hardware."
+      },
+      "ignore_errors": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Apply changes ignoring errors. You won't be able to publish such a changes. If ignore-warnings flag was omitted - warnings will also be ignored.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "ignore_warnings": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Apply changes ignoring warnings.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "interfaces": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Network interfaces.",
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "anti_spoofing": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Anti spoofing.",
+              "Default": {
+                "Type": "bool",
+                "Value": "true"
+              }
+            },
+            "anti_spoofing_settings": {
+              "Type": "Map",
+              "Optional": true,
+              "Description": "Anti spoofing settings",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "color": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Color of the object. Should be one of existing colors.",
+              "Default": {
+                "Type": "string",
+                "Value": "black"
+              }
+            },
+            "comments": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Comments string."
+            },
+            "interface_type": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Cluster interface type."
+            },
+            "ipv4_address": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "IPv4 address."
+            },
+            "ipv4_mask_length": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "IPv4 network mask length."
+            },
+            "ipv4_network_mask": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "IPv4 network address."
+            },
+            "ipv6_address": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "IPv6 address."
+            },
+            "ipv6_mask_length": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "IPv6 network mask length."
+            },
+            "ipv6_network_mask": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "IPv6 network address."
+            },
+            "multicast_address": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Multicast IP Address."
+            },
+            "multicast_address_type": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Multicast Address Type."
+            },
+            "name": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Object name. Should be unique in the domain."
+            },
+            "security_zone": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Security zone.",
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
+              }
+            },
+            "security_zone_settings": {
+              "Type": "Map",
+              "Optional": true,
+              "Description": "Security zone settings.",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "topology": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Topology.",
+              "Default": {
+                "Type": "string",
+                "Value": "automatic"
+              }
+            },
+            "topology_automatic_calculation": {
+              "Type": "String",
+              "Description": "Shows the automatic topology calculation.",
+              "Computed": true
+            },
+            "topology_settings": {
+              "Type": "Map",
+              "Optional": true,
+              "Description": "Topology settings.",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
+      "ips": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Intrusion Prevention System blade enabled."
+      },
+      "ipv4_address": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "IPv4 address."
+      },
+      "ipv6_address": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "IPv6 address."
+      },
+      "members": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Cluster members.",
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "interfaces": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Network interfaces.",
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "ipv4_address": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "IPv4 address."
+                  },
+                  "ipv4_mask_length": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "IPv4 network mask length."
+                  },
+                  "ipv4_network_mask": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "IPv4 network address."
+                  },
+                  "ipv6_address": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "IPv6 address."
+                  },
+                  "ipv6_mask_length": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "IPv6 network mask length."
+                  },
+                  "ipv6_network_mask": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "IPv6 network address."
+                  },
+                  "name": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "Object name. Should be unique in the domain."
+                  }
+                }
+              }
+            },
+            "ip_address": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "IPv4 or IPv6 address."
+            },
+            "name": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Object name. Should be unique in the domain."
+            },
+            "one_time_password": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "SIC one time password."
+            },
+            "sic_message": {
+              "Type": "String",
+              "Description": "Secure Internal Communication state.",
+              "Computed": true
+            },
+            "sic_name": {
+              "Type": "String",
+              "Description": "Secure Internal Communication name.",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Object name. Should be unique in the domain."
+      },
+      "os_name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "OS name.",
+        "Default": {
+          "Type": "string",
+          "Value": "Gaia"
+        }
+      },
+      "save_logs_locally": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Save logs locally."
+      },
+      "send_alerts_to_server": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Server(s) to send alerts to.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "send_logs_to_backup_server": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Backup server(s) to send logs to.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "send_logs_to_server": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Server(s) to send logs to.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "sic_name": {
+        "Type": "String",
+        "Description": "Secure Internal Communication name.",
+        "Computed": true
+      },
+      "sic_state": {
+        "Type": "String",
+        "Description": "Secure Internal Communication state.",
+        "Computed": true
+      },
+      "tags": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Collection of tag identifiers.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "threat_emulation": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Threat Emulation blade enabled."
+      },
+      "url_filtering": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "URL Filtering blade enabled."
+      },
+      "version": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Cluster platform version."
+      },
+      "vpn": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "VPN blade enabled."
+      },
+      "vpn_settings": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "Gateway VPN settings.",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      }
+    },
+    "checkpoint_management_simple_gateway": {
+      "anti_bot": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Anti-Bot blade enabled."
+      },
+      "anti_virus": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Anti-Virus blade enabled."
+      },
+      "application_control": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Application Control blade enabled."
+      },
+      "color": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Color of the object. Should be one of existing colors.",
+        "Default": {
+          "Type": "string",
+          "Value": "black"
+        }
+      },
+      "comments": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Comments string."
+      },
+      "content_awareness": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Content Awareness blade enabled."
+      },
+      "dynamic_ip": {
+        "Type": "Bool",
+        "Description": "Dynamic IP address.",
+        "Computed": true
+      },
+      "firewall": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Firewall blade enabled.",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "firewall_settings": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "Firewall settings.",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "hardware": {
+        "Type": "String",
+        "Description": "Gateway platform hardware type.",
+        "Computed": true
+      },
+      "icap_server": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "ICAP Server enabled."
+      },
+      "ignore_warnings": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Apply changes ignoring warnings.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "interfaces": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Network interfaces.",
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "anti_spoofing": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Anti spoofing.",
+              "Default": {
+                "Type": "bool",
+                "Value": "true"
+              }
+            },
+            "anti_spoofing_settings": {
+              "Type": "Map",
+              "Optional": true,
+              "Description": "Anti spoofing settings",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "color": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Color of the object. Should be one of existing colors.",
+              "Default": {
+                "Type": "string",
+                "Value": "black"
+              }
+            },
+            "comments": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Comments string."
+            },
+            "ipv4_address": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "IPv4 address."
+            },
+            "ipv4_mask_length": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "IPv4 network mask length."
+            },
+            "ipv4_network_mask": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "IPv4 network address."
+            },
+            "ipv6_address": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "IPv6 address."
+            },
+            "ipv6_mask_length": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "IPv6 network mask length."
+            },
+            "ipv6_network_mask": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "IPv6 network address."
+            },
+            "name": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Object name. Should be unique in the domain."
+            },
+            "security_zone": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Security zone.",
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
+              }
+            },
+            "security_zone_settings": {
+              "Type": "Map",
+              "Optional": true,
+              "Description": "Security zone settings.",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "topology": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Topology.",
+              "Default": {
+                "Type": "string",
+                "Value": "automatic"
+              }
+            },
+            "topology_automatic_calculation": {
+              "Type": "String",
+              "Description": "Shows the automatic topology calculation.",
+              "Computed": true
+            },
+            "topology_settings": {
+              "Type": "Map",
+              "Optional": true,
+              "Description": "Topology settings.",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
+      "ips": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Intrusion Prevention System blade enabled."
+      },
+      "ipv4_address": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "IPv4 address."
+      },
+      "ipv6_address": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "IPv6 address."
+      },
+      "logs_settings": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "Logs settings.",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Object name. Should be unique in the domain."
+      },
+      "one_time_password": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "SIC one time password."
+      },
+      "os_name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "OS name.",
+        "Default": {
+          "Type": "string",
+          "Value": "Gaia"
+        }
+      },
+      "save_logs_locally": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Save logs locally."
+      },
+      "send_alerts_to_server": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Server(s) to send alerts to.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "send_logs_to_backup_server": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Backup server(s) to send logs to.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "send_logs_to_server": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Server(s) to send logs to.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "sic_name": {
+        "Type": "String",
+        "Description": "Secure Internal Communication name.",
+        "Computed": true
+      },
+      "sic_state": {
+        "Type": "String",
+        "Description": "Secure Internal Communication state.",
+        "Computed": true
+      },
+      "tags": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Collection of tag identifiers.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "threat_emulation": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Threat Emulation blade enabled."
+      },
+      "threat_extraction": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Threat Extraction blade enabled."
+      },
+      "url_filtering": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "URL Filtering blade enabled."
+      },
+      "version": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Gateway platform version."
+      },
+      "vpn": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "VPN blade enabled."
+      },
+      "vpn_settings": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "Gateway VPN settings.",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      }
+    },
+    "checkpoint_management_threat_exception": {
+      "action": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Action-the enforced profile.",
+        "Default": {
+          "Type": "string",
+          "Value": "Detect"
+        }
+      },
+      "comments": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Comments string."
+      },
+      "destination": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Collection of Network objects identified by the name or UID.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "destination_negate": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "True if negate is set for destination.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enable/Disable the rule.",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "exception_group_name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of the exception-group."
+      },
+      "exception_group_uid": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The UID of the exception-group."
+      },
+      "ignore_errors": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Apply changes ignoring errors. You won't be able to publish such a changes. If ignore-warnings flag was omitted - warnings will also be ignored.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "ignore_warnings": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Apply changes ignoring warnings.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "install_on": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Which Gateways identified by the name or UID to install the policy on.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "layer": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Layer that the rule belongs to identified by the name or UID."
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Rule name."
+      },
+      "owner": {
+        "Type": "String",
+        "Description": "Owner UID.",
+        "Computed": true
+      },
+      "position": {
+        "Type": "Map",
+        "Required": true,
+        "Description": "Position in the rulebase.",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "protected_scope": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Collection of objects defining Protected Scope identified by the name or UID.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "protected_scope_negate": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "True if negate is set for Protected Scope.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "protection_or_site": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Name of the protection or site.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "rule_name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of the parent rule."
+      },
+      "rule_uid": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The UID of the parent rule."
+      },
+      "service": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Collection of Network objects identified by the name or UID.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "service_negate": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "True if negate is set for service.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "source": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Collection of Network objects identified by the name or UID.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "source_negate": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "True if negate is set for source.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "track": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Packet tracking.",
+        "Default": {
+          "Type": "string",
+          "Value": "Log"
+        }
+      }
+    },
     "checkpoint_management_threat_indicator": {
       "action": {
         "Type": "String",
@@ -4698,6 +5935,530 @@
         "Optional": true,
         "Description": "Collection of tag identifiers.",
         "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      }
+    },
+    "checkpoint_management_threat_profile": {
+      "activate_protections_by_extended_attributes": {
+        "Type": "List",
+        "Description": "Activate protections by these extended attributes.",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "category": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "IPS tag category name."
+            },
+            "name": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "IPS tag name."
+            },
+            "uid": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "IPS tag unique identifier."
+            },
+            "values": {
+              "Type": "List",
+              "Description": "IPS protection extended attribute values",
+              "Computed": true,
+              "IsBlock": true,
+              "ConfigImplicitMode": "ComputedBlock",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "name": {
+                    "Type": "String",
+                    "Description": "Object name.",
+                    "Computed": true
+                  },
+                  "uid": {
+                    "Type": "String",
+                    "Description": "Object unique identifier.",
+                    "Computed": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "active_protections_performance_impact": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Protections with this performance impact only will be activated in the profile."
+      },
+      "active_protections_severity": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Protections with this severity only will be activated in the profile."
+      },
+      "anti_bot": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Is Anti-Bot blade activated.",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "anti_virus": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Is Anti-Virus blade activated.",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "color": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Color of the object. Should be one of existing colors.",
+        "Default": {
+          "Type": "string",
+          "Value": "black"
+        }
+      },
+      "comments": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Comments string."
+      },
+      "confidence_level_high": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Action for protections with high confidence level.",
+        "Default": {
+          "Type": "string",
+          "Value": "Prevent"
+        }
+      },
+      "confidence_level_low": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Action for protections with low confidence level.",
+        "Default": {
+          "Type": "string",
+          "Value": "Detect"
+        }
+      },
+      "confidence_level_medium": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Action for protections with medium confidence level.",
+        "Default": {
+          "Type": "string",
+          "Value": "Prevent"
+        }
+      },
+      "deactivate_protections_by_extended_attributes": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Deactivate protections by these extended attributes.",
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "category": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "IPS tag category name."
+            },
+            "name": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "IPS tag name."
+            },
+            "uid": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "IPS tag unique identifier."
+            },
+            "values": {
+              "Type": "List",
+              "Description": "IPS protection extended attribute values",
+              "Computed": true,
+              "IsBlock": true,
+              "ConfigImplicitMode": "ComputedBlock",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "name": {
+                    "Type": "String",
+                    "Description": "Object name.",
+                    "Computed": true
+                  },
+                  "uid": {
+                    "Type": "String",
+                    "Description": "Object unique identifier.",
+                    "Computed": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "ignore_errors": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Apply changes ignoring errors. You won't be able to publish such a changes. If ignore-warnings flag was omitted - warnings will also be ignored.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "ignore_warnings": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Apply changes ignoring warnings.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "indicator_overrides": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Indicators whose action will be overridden in this profile.",
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "action": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The indicator's action in this profile."
+            },
+            "indicator": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The indicator whose action is to be overriden."
+            }
+          }
+        }
+      },
+      "ips": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Is IPS blade activated.",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "ips_settings": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "IPS blade settings.",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "malicious_mail_policy_settings": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "Malicious Mail Policy for MTA Gateways.",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Object name. Should be unique in the domain."
+      },
+      "overrides": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Overrides per profile for this protection.",
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "action": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Protection action."
+            },
+            "capture_packets": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Capture packets."
+            },
+            "default": {
+              "Type": "Map",
+              "Description": "Default settings.",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "final": {
+              "Type": "Map",
+              "Description": "Final settings.",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "protection": {
+              "Type": "String",
+              "Required": true,
+              "Description": "IPS protection identified by name."
+            },
+            "protection_external_info": {
+              "Type": "Set",
+              "Description": "Collection of industry reference (CVE).",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "protection_uid": {
+              "Type": "String",
+              "Description": "IPS protection unique identifier.",
+              "Computed": true
+            },
+            "track": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Tracking method for protection."
+            }
+          }
+        }
+      },
+      "scan_malicious_links": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "Scans malicious links (URLs) inside email messages.",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "tags": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Collection of tag identifiers.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "threat_emulation": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Is Threat Emulation blade activated.",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "use_extended_attributes": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether to activate/deactivate IPS protections according to the extended attributes."
+      },
+      "use_indicators": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Indicates whether the profile should make use of indicators.",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      }
+    },
+    "checkpoint_management_threat_rule": {
+      "action": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Action-the enforced profile.",
+        "Default": {
+          "Type": "string",
+          "Value": "Optimized"
+        }
+      },
+      "comments": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Comments string."
+      },
+      "destination": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Collection of Network objects identified by the name or UID.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "destination_negate": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "True if negate is set for destination.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enable/Disable the rule.",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "exceptions": {
+        "Type": "Set",
+        "Description": "Collection of rule's exceptions identified by UID",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "ignore_errors": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Apply changes ignoring errors. You won't be able to publish such a changes. If ignore-warnings flag was omitted - warnings will also be ignored.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "ignore_warnings": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Apply changes ignoring warnings.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "install_on": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Which Gateways identified by the name or UID to install the policy on.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "layer": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Layer that the rule belongs to identified by the name or UID."
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Rule name."
+      },
+      "position": {
+        "Type": "Map",
+        "Required": true,
+        "Description": "Position in the rulebase.",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "protected_scope": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Collection of objects defining Protected Scope identified by the name or UID.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "protected_scope_negate": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "True if negate is set for Protected Scope.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "service": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Collection of Network objects identified by the name or UID.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "service_negate": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "True if negate is set for service.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "source": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Collection of Network objects identified by the name or UID.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "source_negate": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "True if negate is set for source.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "track": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Packet tracking.",
+        "Default": {
+          "Type": "string",
+          "Value": "Log"
+        }
+      },
+      "track_settings": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "Threat rule track settings.",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
@@ -8644,6 +10405,62 @@
         "Description": "Object unique identifier."
       }
     },
+    "checkpoint_management_generic_data_center_server": {
+      "color": {
+        "Type": "String",
+        "Description": "Color of the object. Should be one of existing colors.",
+        "Computed": true
+      },
+      "comments": {
+        "Type": "String",
+        "Computed": true
+      },
+      "custom_header": {
+        "Type": "Bool",
+        "Description": "When set to false, The admin is not using Key and Value for a Custom Header in order to connect to the feed server.\n\nWhen set to true, The admin is using Key and Value for a Custom Header in order to connect to the feed server.",
+        "Computed": true
+      },
+      "custom_key": {
+        "Type": "String",
+        "Description": "Key for the Custom Header, relevant and required only when custom_header set to true.",
+        "Computed": true
+      },
+      "custom_value": {
+        "Type": "String",
+        "Description": "Value for the Custom Header, relevant and required only when custom_header set to true.",
+        "Computed": true
+      },
+      "interval": {
+        "Type": "String",
+        "Description": "Update interval of the feed in seconds.",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Object name. Must be unique in the domain."
+      },
+      "tags": {
+        "Type": "Set",
+        "Description": "Collection of tag identifiers.",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "uid": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Object unique identifier."
+      },
+      "url": {
+        "Type": "String",
+        "Description": "URL of the JSON feed (e.g. https://example.com/file.json).",
+        "Computed": true
+      }
+    },
     "checkpoint_management_gsn_handover_group": {
       "color": {
         "Type": "String",
@@ -8835,6 +10652,100 @@
         "Computed": true
       }
     },
+    "checkpoint_management_nat_rule": {
+      "auto_generated": {
+        "Type": "Bool",
+        "Description": "Auto generated.",
+        "Computed": true
+      },
+      "comments": {
+        "Type": "String",
+        "Description": "Comments string.",
+        "Computed": true
+      },
+      "enabled": {
+        "Type": "Bool",
+        "Description": "Enable/Disable the rule.",
+        "Computed": true
+      },
+      "install_on": {
+        "Type": "Set",
+        "Description": "Which Gateways identified by the name or UID to install the policy on.",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "method": {
+        "Type": "String",
+        "Description": "Nat method.",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Rule name."
+      },
+      "original_destination": {
+        "Type": "String",
+        "Description": "Original destination.",
+        "Computed": true
+      },
+      "original_service": {
+        "Type": "String",
+        "Description": "Original service.",
+        "Computed": true
+      },
+      "original_source": {
+        "Type": "String",
+        "Description": "Original source.",
+        "Computed": true
+      },
+      "package": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the package."
+      },
+      "translated_destination": {
+        "Type": "String",
+        "Description": "Translated destination.",
+        "Computed": true
+      },
+      "translated_service": {
+        "Type": "String",
+        "Description": "Translated service.",
+        "Computed": true
+      },
+      "translated_source": {
+        "Type": "String",
+        "Description": "Translated source.",
+        "Computed": true
+      },
+      "uid": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Rule UID."
+      }
+    },
+    "checkpoint_management_nat_section": {
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Object name."
+      },
+      "package": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the package."
+      },
+      "uid": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Object unique identifier."
+      }
+    },
     "checkpoint_management_service_citrix_tcp": {
       "application": {
         "Type": "String",
@@ -8903,6 +10814,1460 @@
         "Description": "Collection of tag identifiers.",
         "Computed": true,
         "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "uid": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Object unique identifier."
+      }
+    },
+    "checkpoint_management_show_objects": {
+      "filter": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Search expression to filter objects by. The provided text should be exactly the same as it would be given in Smart Console. The logical operators in the expression ('AND', 'OR') should be provided in capital letters. By default, the search involves both a textual search and a IP search. To use IP search only, set the \"ip-only\" parameter to true."
+      },
+      "from": {
+        "Type": "Int",
+        "Description": "From which element number the query was done.",
+        "Computed": true
+      },
+      "ip_only": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "If using \"filter\", use this field to search objects by their IP address only, without involving the textual search."
+      },
+      "limit": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The maximal number of returned results."
+      },
+      "objects": {
+        "Type": "List",
+        "Description": "Objects list",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "domain": {
+              "Type": "Map",
+              "Description": "Information about the domain that holds the Object.",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "name": {
+              "Type": "String",
+              "Description": "Object name.",
+              "Computed": true
+            },
+            "type": {
+              "Type": "String",
+              "Description": "Object type.",
+              "Computed": true
+            },
+            "uid": {
+              "Type": "String",
+              "Description": "Object unique identifier.",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "offset": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Number of the results to initially skip."
+      },
+      "order": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Sorts the results by search criteria. Automatically sorts the results by Name, in the ascending order.",
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "asc": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Sorts results by the given field in ascending order."
+            },
+            "desc": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Sorts results by the given field in descending order."
+            }
+          }
+        }
+      },
+      "to": {
+        "Type": "Int",
+        "Description": "To which element number the query was done.",
+        "Computed": true
+      },
+      "total": {
+        "Type": "Int",
+        "Description": "Total number of elements returned by the query.",
+        "Computed": true
+      },
+      "type": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The objects' type, e.g.: host, service-tcp, network, address-range...",
+        "Default": {
+          "Type": "string",
+          "Value": "object"
+        }
+      }
+    },
+    "checkpoint_management_show_updatable_objects_repository_content": {
+      "filter": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "Return results matching the specified filter.",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "from": {
+        "Type": "Int",
+        "Description": "From which element number the query was done.",
+        "Computed": true
+      },
+      "limit": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The maximal number of returned results."
+      },
+      "objects": {
+        "Type": "List",
+        "Description": "Objects list",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "additional_properties": {
+              "Type": "Map",
+              "Description": "Additional properties on the object.",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "name_in_updatable_objects_repository": {
+              "Type": "String",
+              "Description": "Object name in the Updatable Objects Repository.",
+              "Computed": true
+            },
+            "uid_in_updatable_objects_repository": {
+              "Type": "String",
+              "Description": "Unique identifier of the object in the Updatable Objects Repository.",
+              "Computed": true
+            },
+            "updatable_object": {
+              "Type": "Map",
+              "Description": "The imported management object (if exists).",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
+      "offset": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Number of the results to initially skip."
+      },
+      "order": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Sorts the results by search criteria. Automatically sorts the results by Name, in the ascending order.",
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "asc": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Sorts results by the given field in ascending order."
+            },
+            "desc": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Sorts results by the given field in descending order."
+            }
+          }
+        }
+      },
+      "to": {
+        "Type": "Int",
+        "Description": "To which element number the query was done.",
+        "Computed": true
+      },
+      "total": {
+        "Type": "Int",
+        "Description": "Total number of elements returned by the query.",
+        "Computed": true
+      },
+      "uid_in_updatable_objects_repository": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The object's unique identifier in the Updatable Objects repository."
+      }
+    },
+    "checkpoint_management_simple_cluster": {
+      "anti_bot": {
+        "Type": "Bool",
+        "Description": "Anti-Bot blade enabled.",
+        "Computed": true
+      },
+      "anti_virus": {
+        "Type": "Bool",
+        "Description": "Anti-Virus blade enabled.",
+        "Computed": true
+      },
+      "application_control": {
+        "Type": "Bool",
+        "Description": "Application Control blade enabled.",
+        "Computed": true
+      },
+      "cluster_mode": {
+        "Type": "String",
+        "Description": "Cluster mode.",
+        "Computed": true
+      },
+      "color": {
+        "Type": "String",
+        "Description": "Color of the object. Should be one of existing colors.",
+        "Computed": true
+      },
+      "comments": {
+        "Type": "String",
+        "Description": "Comments string.",
+        "Computed": true
+      },
+      "content_awareness": {
+        "Type": "Bool",
+        "Description": "Content Awareness blade enabled.",
+        "Computed": true
+      },
+      "data_awareness": {
+        "Type": "Bool",
+        "Description": "Data Awareness blade enabled.",
+        "Computed": true
+      },
+      "dynamic_ip": {
+        "Type": "Bool",
+        "Description": "Dynamic IP address.",
+        "Computed": true
+      },
+      "firewall": {
+        "Type": "Bool",
+        "Description": "Firewall blade enabled.",
+        "Computed": true
+      },
+      "firewall_settings": {
+        "Type": "Map",
+        "Description": "Firewall settings.",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "hardware": {
+        "Type": "String",
+        "Description": "Cluster platform hardware.",
+        "Computed": true
+      },
+      "interfaces": {
+        "Type": "List",
+        "Description": "Network interfaces.",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "anti_spoofing": {
+              "Type": "Bool",
+              "Description": "Anti spoofing.",
+              "Computed": true
+            },
+            "anti_spoofing_settings": {
+              "Type": "Map",
+              "Description": "Anti spoofing settings",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "color": {
+              "Type": "String",
+              "Description": "Color of the object. Should be one of existing colors.",
+              "Computed": true
+            },
+            "comments": {
+              "Type": "String",
+              "Description": "Comments string.",
+              "Computed": true
+            },
+            "interface_type": {
+              "Type": "String",
+              "Description": "Cluster interface type.",
+              "Computed": true
+            },
+            "ipv4_address": {
+              "Type": "String",
+              "Description": "IPv4 address.",
+              "Computed": true
+            },
+            "ipv4_mask_length": {
+              "Type": "String",
+              "Description": "IPv4 network mask length.",
+              "Computed": true
+            },
+            "ipv4_network_mask": {
+              "Type": "String",
+              "Description": "IPv4 network address.",
+              "Computed": true
+            },
+            "ipv6_address": {
+              "Type": "String",
+              "Description": "IPv6 address.",
+              "Computed": true
+            },
+            "ipv6_mask_length": {
+              "Type": "String",
+              "Description": "IPv6 network mask length.",
+              "Computed": true
+            },
+            "ipv6_network_mask": {
+              "Type": "String",
+              "Description": "IPv6 network address.",
+              "Computed": true
+            },
+            "multicast_address": {
+              "Type": "String",
+              "Description": "Multicast IP Address.",
+              "Computed": true
+            },
+            "multicast_address_type": {
+              "Type": "String",
+              "Description": "Multicast Address Type.",
+              "Computed": true
+            },
+            "name": {
+              "Type": "String",
+              "Description": "Object name. Should be unique in the domain.",
+              "Computed": true
+            },
+            "security_zone": {
+              "Type": "Bool",
+              "Description": "Security zone.",
+              "Computed": true
+            },
+            "security_zone_settings": {
+              "Type": "Map",
+              "Description": "Security zone settings.",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "topology": {
+              "Type": "String",
+              "Description": "Topology.",
+              "Computed": true
+            },
+            "topology_automatic_calculation": {
+              "Type": "String",
+              "Description": "Shows the automatic topology calculation.",
+              "Computed": true
+            },
+            "topology_settings": {
+              "Type": "Map",
+              "Description": "Topology settings.",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
+      "ips": {
+        "Type": "Bool",
+        "Description": "Intrusion Prevention System blade enabled.",
+        "Computed": true
+      },
+      "ipv4_address": {
+        "Type": "String",
+        "Description": "IPv4 address.",
+        "Computed": true
+      },
+      "ipv6_address": {
+        "Type": "String",
+        "Description": "IPv6 address.",
+        "Computed": true
+      },
+      "logs_settings": {
+        "Type": "Map",
+        "Description": "Logs settings.",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "members": {
+        "Type": "List",
+        "Description": "Cluster members.",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "interfaces": {
+              "Type": "List",
+              "Description": "Network interfaces.",
+              "Computed": true,
+              "IsBlock": true,
+              "ConfigImplicitMode": "ComputedBlock",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "ipv4_address": {
+                    "Type": "String",
+                    "Description": "IPv4 address.",
+                    "Computed": true
+                  },
+                  "ipv4_mask_length": {
+                    "Type": "String",
+                    "Description": "IPv4 network mask length.",
+                    "Computed": true
+                  },
+                  "ipv4_network_mask": {
+                    "Type": "String",
+                    "Description": "IPv4 network address.",
+                    "Computed": true
+                  },
+                  "ipv6_address": {
+                    "Type": "String",
+                    "Description": "IPv6 address.",
+                    "Computed": true
+                  },
+                  "ipv6_mask_length": {
+                    "Type": "String",
+                    "Description": "IPv6 network mask length.",
+                    "Computed": true
+                  },
+                  "ipv6_network_mask": {
+                    "Type": "String",
+                    "Description": "IPv6 network address.",
+                    "Computed": true
+                  },
+                  "name": {
+                    "Type": "String",
+                    "Description": "Object name. Should be unique in the domain.",
+                    "Computed": true
+                  }
+                }
+              }
+            },
+            "ip_address": {
+              "Type": "String",
+              "Description": "IPv4 or IPv6 address.",
+              "Computed": true
+            },
+            "name": {
+              "Type": "String",
+              "Description": "Object name. Should be unique in the domain.",
+              "Computed": true
+            },
+            "sic_message": {
+              "Type": "String",
+              "Description": "Secure Internal Communication state.",
+              "Computed": true
+            },
+            "sic_name": {
+              "Type": "String",
+              "Description": "Secure Internal Communication name.",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Object name. Should be unique in the domain."
+      },
+      "os_name": {
+        "Type": "String",
+        "Description": "OS name.",
+        "Computed": true
+      },
+      "save_logs_locally": {
+        "Type": "Bool",
+        "Description": "Save logs locally.",
+        "Computed": true
+      },
+      "send_alerts_to_server": {
+        "Type": "Set",
+        "Description": "Server(s) to send alerts to.",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "send_logs_to_backup_server": {
+        "Type": "Set",
+        "Description": "Backup server(s) to send logs to.",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "send_logs_to_server": {
+        "Type": "Set",
+        "Description": "Server(s) to send logs to.",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "sic_name": {
+        "Type": "String",
+        "Description": "Secure Internal Communication name.",
+        "Computed": true
+      },
+      "sic_state": {
+        "Type": "String",
+        "Description": "Secure Internal Communication state.",
+        "Computed": true
+      },
+      "tags": {
+        "Type": "Set",
+        "Description": "Collection of tag identifiers.",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "threat_emulation": {
+        "Type": "Bool",
+        "Description": "Threat Emulation blade enabled.",
+        "Computed": true
+      },
+      "uid": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Object unique identifier."
+      },
+      "url_filtering": {
+        "Type": "Bool",
+        "Description": "URL Filtering blade enabled.",
+        "Computed": true
+      },
+      "version": {
+        "Type": "String",
+        "Description": "Cluster platform version.",
+        "Computed": true
+      },
+      "vpn": {
+        "Type": "Bool",
+        "Description": "VPN blade enabled.",
+        "Computed": true
+      },
+      "vpn_settings": {
+        "Type": "Map",
+        "Description": "Gateway VPN settings.",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      }
+    },
+    "checkpoint_management_simple_gateway": {
+      "anti_bot": {
+        "Type": "Bool",
+        "Description": "Anti-Bot blade enabled.",
+        "Computed": true
+      },
+      "anti_virus": {
+        "Type": "Bool",
+        "Description": "Anti-Virus blade enabled.",
+        "Computed": true
+      },
+      "application_control": {
+        "Type": "Bool",
+        "Description": "Application Control blade enabled.",
+        "Computed": true
+      },
+      "color": {
+        "Type": "String",
+        "Description": "Color of the object. Should be one of existing colors.",
+        "Computed": true
+      },
+      "comments": {
+        "Type": "String",
+        "Description": "Comments string.",
+        "Computed": true
+      },
+      "content_awareness": {
+        "Type": "Bool",
+        "Description": "Content Awareness blade enabled.",
+        "Computed": true
+      },
+      "dynamic_ip": {
+        "Type": "Bool",
+        "Description": "Dynamic IP address.",
+        "Computed": true
+      },
+      "firewall": {
+        "Type": "Bool",
+        "Description": "Firewall blade enabled.",
+        "Computed": true
+      },
+      "firewall_settings": {
+        "Type": "Map",
+        "Description": "Firewall settings",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "hardware": {
+        "Type": "String",
+        "Description": "Gateway platform hardware type.",
+        "Computed": true
+      },
+      "icap_server": {
+        "Type": "Bool",
+        "Description": "ICAP Server enabled.",
+        "Computed": true
+      },
+      "interfaces": {
+        "Type": "List",
+        "Description": "Network interfaces.",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "anti_spoofing": {
+              "Type": "Bool",
+              "Description": "Anti spoofing.",
+              "Computed": true
+            },
+            "anti_spoofing_settings": {
+              "Type": "Map",
+              "Description": "Anti spoofing settings",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "color": {
+              "Type": "String",
+              "Description": "Color of the object. Should be one of existing colors.",
+              "Computed": true
+            },
+            "comments": {
+              "Type": "String",
+              "Description": "Comments string.",
+              "Computed": true
+            },
+            "ipv4_address": {
+              "Type": "String",
+              "Description": "IPv4 address.",
+              "Computed": true
+            },
+            "ipv4_mask_length": {
+              "Type": "String",
+              "Description": "IPv4 network mask length.",
+              "Computed": true
+            },
+            "ipv4_network_mask": {
+              "Type": "String",
+              "Description": "IPv4 network address.",
+              "Computed": true
+            },
+            "ipv6_address": {
+              "Type": "String",
+              "Description": "IPv6 address.",
+              "Computed": true
+            },
+            "ipv6_mask_length": {
+              "Type": "String",
+              "Description": "IPv6 network mask length.",
+              "Computed": true
+            },
+            "ipv6_network_mask": {
+              "Type": "String",
+              "Description": "IPv6 network address.",
+              "Computed": true
+            },
+            "name": {
+              "Type": "String",
+              "Description": "Object name. Should be unique in the domain.",
+              "Computed": true
+            },
+            "security_zone": {
+              "Type": "Bool",
+              "Description": "Security zone.",
+              "Computed": true
+            },
+            "security_zone_settings": {
+              "Type": "Map",
+              "Description": "Security zone settings.",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "topology": {
+              "Type": "String",
+              "Description": "Topology.",
+              "Computed": true
+            },
+            "topology_automatic_calculation": {
+              "Type": "String",
+              "Description": "Shows the automatic topology calculation.",
+              "Computed": true
+            },
+            "topology_settings": {
+              "Type": "Map",
+              "Description": "Topology settings.",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
+      "ips": {
+        "Type": "Bool",
+        "Description": "Intrusion Prevention System blade enabled.",
+        "Computed": true
+      },
+      "ipv4_address": {
+        "Type": "String",
+        "Description": "IPv4 address.",
+        "Computed": true
+      },
+      "ipv6_address": {
+        "Type": "String",
+        "Description": "IPv6 address.",
+        "Computed": true
+      },
+      "logs_settings": {
+        "Type": "Map",
+        "Description": "Logs settings.",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Object name. Should be unique in the domain."
+      },
+      "os_name": {
+        "Type": "String",
+        "Description": "OS name.",
+        "Computed": true
+      },
+      "save_logs_locally": {
+        "Type": "Bool",
+        "Description": "Save logs locally.",
+        "Computed": true
+      },
+      "send_alerts_to_server": {
+        "Type": "Set",
+        "Description": "Server(s) to send alerts to.",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "send_logs_to_backup_server": {
+        "Type": "Set",
+        "Description": "Backup server(s) to send logs to.",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "send_logs_to_server": {
+        "Type": "Set",
+        "Description": "Server(s) to send logs to.",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "sic_name": {
+        "Type": "String",
+        "Description": "Secure Internal Communication name.",
+        "Computed": true
+      },
+      "sic_state": {
+        "Type": "String",
+        "Description": "Secure Internal Communication state.",
+        "Computed": true
+      },
+      "tags": {
+        "Type": "Set",
+        "Description": "Collection of tag identifiers.",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "threat_emulation": {
+        "Type": "Bool",
+        "Description": "Threat Emulation blade enabled.",
+        "Computed": true
+      },
+      "threat_extraction": {
+        "Type": "Bool",
+        "Description": "Threat Extraction blade enabled.",
+        "Computed": true
+      },
+      "uid": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Object unique identifier."
+      },
+      "url_filtering": {
+        "Type": "Bool",
+        "Description": "URL Filtering blade enabled.",
+        "Computed": true
+      },
+      "version": {
+        "Type": "String",
+        "Description": "Gateway platform version.",
+        "Computed": true
+      },
+      "vpn": {
+        "Type": "Bool",
+        "Description": "VPN blade enabled.",
+        "Computed": true
+      },
+      "vpn_settings": {
+        "Type": "Map",
+        "Description": "Gateway VPN settings.",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      }
+    },
+    "checkpoint_management_threat_exception": {
+      "action": {
+        "Type": "String",
+        "Description": "Action-the enforced profile.",
+        "Computed": true
+      },
+      "comments": {
+        "Type": "String",
+        "Description": "Comments string.",
+        "Computed": true
+      },
+      "destination": {
+        "Type": "Set",
+        "Description": "Collection of Network objects identified by the name or UID.",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "destination_negate": {
+        "Type": "Bool",
+        "Description": "True if negate is set for destination.",
+        "Computed": true
+      },
+      "enabled": {
+        "Type": "Bool",
+        "Description": "Enable/Disable the rule.",
+        "Computed": true
+      },
+      "exception_group_name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of the exception-group."
+      },
+      "exception_group_uid": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The UID of the exception-group."
+      },
+      "install_on": {
+        "Type": "Set",
+        "Description": "Which Gateways identified by the name or UID to install the policy on.",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "layer": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Layer that the rule belongs to identified by the name or UID."
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of the exception."
+      },
+      "owner": {
+        "Type": "String",
+        "Description": "Owner UID.",
+        "Computed": true
+      },
+      "protected_scope": {
+        "Type": "Set",
+        "Description": "Collection of objects defining Protected Scope identified by the name or UID.",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "protected_scope_negate": {
+        "Type": "Bool",
+        "Description": "True if negate is set for Protected Scope.",
+        "Computed": true
+      },
+      "protection_or_site": {
+        "Type": "Set",
+        "Description": "Name of the protection or site.",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "rule_name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of the parent rule."
+      },
+      "rule_uid": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The UID of the parent rule."
+      },
+      "service": {
+        "Type": "Set",
+        "Description": "Collection of Network objects identified by the name or UID.",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "service_negate": {
+        "Type": "Bool",
+        "Description": "True if negate is set for service.",
+        "Computed": true
+      },
+      "source": {
+        "Type": "Set",
+        "Description": "Collection of Network objects identified by the name or UID.",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "source_negate": {
+        "Type": "Bool",
+        "Description": "True if negate is set for source.",
+        "Computed": true
+      },
+      "track": {
+        "Type": "String",
+        "Description": "Packet tracking.",
+        "Computed": true
+      },
+      "uid": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Object unique identifier."
+      }
+    },
+    "checkpoint_management_threat_profile": {
+      "activate_protections_by_extended_attributes": {
+        "Type": "List",
+        "Description": "Activate protections by these extended attributes.",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "category": {
+              "Type": "String",
+              "Description": "IPS tag category name.",
+              "Computed": true
+            },
+            "name": {
+              "Type": "String",
+              "Description": "IPS tag name.",
+              "Computed": true
+            },
+            "uid": {
+              "Type": "String",
+              "Description": "IPS tag unique identifier.",
+              "Computed": true
+            },
+            "values": {
+              "Type": "List",
+              "Description": "IPS protection extended attribute values",
+              "Computed": true,
+              "IsBlock": true,
+              "ConfigImplicitMode": "ComputedBlock",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "name": {
+                    "Type": "String",
+                    "Description": "Object name.",
+                    "Computed": true
+                  },
+                  "uid": {
+                    "Type": "String",
+                    "Description": "Object unique identifier.",
+                    "Computed": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "active_protections_performance_impact": {
+        "Type": "String",
+        "Description": "Protections with this performance impact only will be activated in the profile.",
+        "Computed": true
+      },
+      "active_protections_severity": {
+        "Type": "String",
+        "Description": "Protections with this severity only will be activated in the profile.",
+        "Computed": true
+      },
+      "anti_bot": {
+        "Type": "Bool",
+        "Description": "Is Anti-Bot blade activated.",
+        "Computed": true
+      },
+      "anti_virus": {
+        "Type": "Bool",
+        "Description": "Is Anti-Virus blade activated.",
+        "Computed": true
+      },
+      "color": {
+        "Type": "String",
+        "Description": "Color of the object. Should be one of existing colors.",
+        "Computed": true
+      },
+      "comments": {
+        "Type": "String",
+        "Description": "Comments string.",
+        "Computed": true
+      },
+      "confidence_level_high": {
+        "Type": "String",
+        "Description": "Action for protections with high confidence level.",
+        "Computed": true
+      },
+      "confidence_level_low": {
+        "Type": "String",
+        "Description": "Action for protections with low confidence level.",
+        "Computed": true
+      },
+      "confidence_level_medium": {
+        "Type": "String",
+        "Description": "Action for protections with medium confidence level.",
+        "Computed": true
+      },
+      "deactivate_protections_by_extended_attributes": {
+        "Type": "List",
+        "Description": "Deactivate protections by these extended attributes.",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "category": {
+              "Type": "String",
+              "Description": "IPS tag category name.",
+              "Computed": true
+            },
+            "name": {
+              "Type": "String",
+              "Description": "IPS tag name.",
+              "Computed": true
+            },
+            "uid": {
+              "Type": "String",
+              "Description": "IPS tag unique identifier.",
+              "Computed": true
+            },
+            "values": {
+              "Type": "List",
+              "Description": "IPS protection extended attribute values",
+              "Computed": true,
+              "IsBlock": true,
+              "ConfigImplicitMode": "ComputedBlock",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "name": {
+                    "Type": "String",
+                    "Description": "Object name.",
+                    "Computed": true
+                  },
+                  "uid": {
+                    "Type": "String",
+                    "Description": "Object unique identifier.",
+                    "Computed": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "indicator_overrides": {
+        "Type": "List",
+        "Description": "Indicators whose action will be overridden in this profile.",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "action": {
+              "Type": "String",
+              "Description": "The indicator's action in this profile.",
+              "Computed": true
+            },
+            "indicator": {
+              "Type": "String",
+              "Description": "The indicator whose action is to be overriden.",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "ips": {
+        "Type": "Bool",
+        "Description": "Is IPS blade activated.",
+        "Computed": true
+      },
+      "ips_settings": {
+        "Type": "Map",
+        "Description": "IPS blade settings.",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "malicious_mail_policy_settings": {
+        "Type": "Map",
+        "Description": "Malicious Mail Policy for MTA Gateways.",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Object name. Should be unique in the domain."
+      },
+      "overrides": {
+        "Type": "List",
+        "Description": "Overrides per profile for this protection.",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "action": {
+              "Type": "String",
+              "Description": "Protection action.",
+              "Computed": true
+            },
+            "capture_packets": {
+              "Type": "Bool",
+              "Description": "Capture packets.",
+              "Computed": true
+            },
+            "default": {
+              "Type": "Map",
+              "Description": "Default settings.",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "final": {
+              "Type": "Map",
+              "Description": "Final settings.",
+              "Computed": true,
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "protection": {
+              "Type": "String",
+              "Description": "IPS protection identified by name",
+              "Computed": true
+            },
+            "protection_external_info": {
+              "Type": "Set",
+              "Description": "Collection of tag identifiers.",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "protection_uid": {
+              "Type": "String",
+              "Description": "IPS protection unique identifier.",
+              "Computed": true
+            },
+            "track": {
+              "Type": "String",
+              "Description": "Tracking method for protection.",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "scan_malicious_links": {
+        "Type": "Map",
+        "Description": "Scans malicious links (URLs) inside email messages.",
+        "Computed": true,
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "tags": {
+        "Type": "Set",
+        "Description": "Collection of tag identifiers.",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "threat_emulation": {
+        "Type": "Bool",
+        "Description": "Is Threat Emulation blade activated.",
+        "Computed": true
+      },
+      "uid": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Object unique identifier."
+      },
+      "use_extended_attributes": {
+        "Type": "Bool",
+        "Description": "Whether to activate/deactivate IPS protections according to the extended attributes.",
+        "Computed": true
+      },
+      "use_indicators": {
+        "Type": "Bool",
+        "Description": "Indicates whether the profile should make use of indicators.",
+        "Computed": true
+      }
+    },
+    "checkpoint_management_threat_rule": {
+      "action": {
+        "Type": "String",
+        "Description": "Action-the enforced profile.",
+        "Computed": true
+      },
+      "comments": {
+        "Type": "String",
+        "Description": "Comments string.",
+        "Computed": true
+      },
+      "destination": {
+        "Type": "Set",
+        "Description": "Collection of Network objects identified by the name or UID.",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "destination_negate": {
+        "Type": "Bool",
+        "Description": "True if negate is set for destination.",
+        "Computed": true
+      },
+      "enabled": {
+        "Type": "Bool",
+        "Description": "Enable/Disable the rule.",
+        "Computed": true
+      },
+      "exceptions": {
+        "Type": "Set",
+        "Description": "Collection of rule's exceptions identified by UID",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "install_on": {
+        "Type": "Set",
+        "Description": "Which Gateways identified by the name or UID to install the policy on.",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "layer": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Layer that the rule belongs to identified by the name or UID."
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Rule name."
+      },
+      "protected_scope": {
+        "Type": "Set",
+        "Description": "Collection of objects defining Protected Scope identified by the name or UID.",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "protected_scope_negate": {
+        "Type": "Bool",
+        "Description": "True if negate is set for Protected Scope.",
+        "Computed": true
+      },
+      "service": {
+        "Type": "Set",
+        "Description": "Collection of Network objects identified by the name or UID.",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "service_negate": {
+        "Type": "Bool",
+        "Description": "True if negate is set for service.",
+        "Computed": true
+      },
+      "source": {
+        "Type": "Set",
+        "Description": "Collection of Network objects identified by the name or UID.",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "source_negate": {
+        "Type": "Bool",
+        "Description": "True if negate is set for source.",
+        "Computed": true
+      },
+      "track": {
+        "Type": "String",
+        "Description": "Packet tracking.",
+        "Computed": true
+      },
+      "track_settings": {
+        "Type": "Map",
+        "Description": "Threat rule track settings.",
+        "Computed": true,
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"

@@ -3,7 +3,7 @@
   ".sdk_type": "terraform-plugin-sdk-v2",
   "name": "azuread",
   "type": "provider",
-  "version": "v2.2.1",
+  "version": "v2.9.0",
   "provider": {
     "client_certificate": {
       "Type": "String",
@@ -44,7 +44,7 @@
     "environment": {
       "Type": "String",
       "Required": true,
-      "Description": "The cloud environment which should be used. Possible values are `global` (formerly `public`), `usgovernment`, `dod`, `germany`, and `china`. Defaults to `global`",
+      "Description": "The cloud environment which should be used. Possible values are: `global` (also `public`), `usgovernmentl4` (also `usgovernment`), `usgovernmentl5` (also `dod`), `germany` (also `german`), and `china`. Defaults to `global`",
       "DefaultFunc": "ENV(ARM_ENVIRONMENT)"
     },
     "msi_endpoint": {
@@ -79,6 +79,43 @@
     }
   },
   "resources": {
+    "azuread_app_role_assignment": {
+      "__timeouts__": [
+        "create",
+        "read",
+        "delete"
+      ],
+      "app_role_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The ID of the app role to be assigned"
+      },
+      "principal_display_name": {
+        "Type": "String",
+        "Description": "The display name of the principal to which the app role is assigned",
+        "Computed": true
+      },
+      "principal_object_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The object ID of the user, group or service principal to be assigned this app role"
+      },
+      "principal_type": {
+        "Type": "String",
+        "Description": "The object type of the principal to which the app role is assigned",
+        "Computed": true
+      },
+      "resource_display_name": {
+        "Type": "String",
+        "Description": "The display name of the application representing the resource",
+        "Computed": true
+      },
+      "resource_object_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The object ID of the service principal representing the resource"
+      }
+    },
     "azuread_application": {
       "__timeouts__": [
         "create",
@@ -268,6 +305,42 @@
         "Optional": true,
         "Description": "Specifies whether the application is a public client. Appropriate for apps using token grant flows that don't use a redirect URI"
       },
+      "feature_tags": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Block of features to configure for this application using tags",
+        "Computed": true,
+        "ConflictsWith": [
+          "tags"
+        ],
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "custom_single_sign_on": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Whether this application represents a custom SAML application for linked service principals"
+            },
+            "enterprise": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Whether this application represents an Enterprise Application for linked service principals"
+            },
+            "gallery": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Whether this application represents a gallery application for linked service principals"
+            },
+            "hide": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Whether this application is invisible to users in My Apps and Office 365 Launcher"
+            }
+          }
+        }
+      },
       "group_membership_claims": {
         "Type": "Set",
         "Optional": true,
@@ -287,6 +360,11 @@
           "Type": "SchemaElements",
           "ElementsType": "String"
         }
+      },
+      "logo_image": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Base64 encoded logo image in gif, png or jpeg format"
       },
       "logo_url": {
         "Type": "String",
@@ -574,6 +652,20 @@
         "Optional": true,
         "Description": "URL of the application's support page"
       },
+      "tags": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "A set of tags to apply to the application",
+        "Computed": true,
+        "ConflictsWith": [
+          "feature_tags"
+        ],
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
       "template_id": {
         "Type": "String",
         "Optional": true,
@@ -737,7 +829,12 @@
           "end_date"
         ]
       },
-      "keepers": {
+      "key_id": {
+        "Type": "String",
+        "Description": "A UUID used to uniquely identify this password credential",
+        "Computed": true
+      },
+      "rotate_when_changed": {
         "Type": "Map",
         "Optional": true,
         "Description": "Arbitrary map of values that, when changed, will trigger rotation of the password",
@@ -746,11 +843,6 @@
           "Type": "SchemaElements",
           "ElementsType": "String"
         }
-      },
-      "key_id": {
-        "Type": "String",
-        "Description": "A UUID used to uniquely identify this password credential",
-        "Computed": true
       },
       "start_date": {
         "Type": "String",
@@ -810,7 +902,7 @@
           "Info": {
             "applications": {
               "Type": "List",
-              "Optional": true,
+              "Required": true,
               "MaxItems": 1,
               "IsBlock": true,
               "ConfigImplicitMode": "Block",
@@ -849,7 +941,7 @@
             },
             "client_app_types": {
               "Type": "List",
-              "Optional": true,
+              "Required": true,
               "ConfigImplicitMode": "Attr",
               "Elem": {
                 "Type": "SchemaElements",
@@ -858,7 +950,7 @@
             },
             "locations": {
               "Type": "List",
-              "Optional": true,
+              "Required": true,
               "MaxItems": 1,
               "IsBlock": true,
               "ConfigImplicitMode": "Block",
@@ -888,7 +980,7 @@
             },
             "platforms": {
               "Type": "List",
-              "Optional": true,
+              "Required": true,
               "MaxItems": 1,
               "IsBlock": true,
               "ConfigImplicitMode": "Block",
@@ -936,7 +1028,7 @@
             },
             "users": {
               "Type": "List",
-              "Optional": true,
+              "Required": true,
               "MaxItems": 1,
               "IsBlock": true,
               "ConfigImplicitMode": "Block",
@@ -1081,6 +1173,54 @@
       "state": {
         "Type": "String",
         "Required": true
+      }
+    },
+    "azuread_directory_role": {
+      "__timeouts__": [
+        "create",
+        "read",
+        "update",
+        "delete"
+      ],
+      "description": {
+        "Type": "String",
+        "Description": "The description of the directory role",
+        "Computed": true
+      },
+      "display_name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The display name of the directory role",
+        "Computed": true
+      },
+      "object_id": {
+        "Type": "String",
+        "Description": "The object ID of the directory role",
+        "Computed": true
+      },
+      "template_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The object ID of the template associated with the directory role",
+        "Computed": true
+      }
+    },
+    "azuread_directory_role_member": {
+      "__timeouts__": [
+        "create",
+        "read",
+        "update",
+        "delete"
+      ],
+      "member_object_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The object ID of the member"
+      },
+      "role_object_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The object ID of the directory role"
       }
     },
     "azuread_group": {
@@ -1515,6 +1655,85 @@
         "Description": "The display name of the application associated with this service principal",
         "Computed": true
       },
+      "feature_tags": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Block of features to configure for this service principal using tags",
+        "Computed": true,
+        "ConflictsWith": [
+          "features",
+          "tags"
+        ],
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "custom_single_sign_on": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Whether this service principal represents a custom SAML application"
+            },
+            "enterprise": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Whether this service principal represents an Enterprise Application"
+            },
+            "gallery": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Whether this service principal represents a gallery application"
+            },
+            "hide": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Whether this app is invisible to users in My Apps and Office 365 Launcher"
+            }
+          }
+        }
+      },
+      "features": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Block of features to configure for this service principal using tags",
+        "Computed": true,
+        "ConflictsWith": [
+          "feature_tags",
+          "tags"
+        ],
+        "Deprecated": "This block has been renamed to `feature_tags` and will be removed in version 3.0 of the provider",
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "custom_single_sign_on_app": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Whether this service principal represents a custom SAML application"
+            },
+            "enterprise_application": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Whether this service principal represents an Enterprise Application"
+            },
+            "gallery_application": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Whether this service principal represents a gallery application"
+            },
+            "visible_to_users": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Whether this app is visible to users in My Apps and Office 365 Launcher",
+              "Default": {
+                "Type": "bool",
+                "Value": "true"
+              }
+            }
+          }
+        }
+      },
       "homepage_url": {
         "Type": "String",
         "Description": "Home page or landing page of the application",
@@ -1678,6 +1897,11 @@
         "Type": "Set",
         "Optional": true,
         "Description": "A set of tags to apply to the service principal",
+        "Computed": true,
+        "ConflictsWith": [
+          "features",
+          "feature_tags"
+        ],
         "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
@@ -1773,7 +1997,12 @@
         "Description": "The end date until which the password is valid, formatted as an RFC3339 date string (e.g. `2018-01-01T01:02:03Z`)",
         "Computed": true
       },
-      "keepers": {
+      "key_id": {
+        "Type": "String",
+        "Description": "A UUID used to uniquely identify this password credential",
+        "Computed": true
+      },
+      "rotate_when_changed": {
         "Type": "Map",
         "Optional": true,
         "Description": "Arbitrary map of values that, when changed, will trigger rotation of the password",
@@ -1782,11 +2011,6 @@
           "Type": "SchemaElements",
           "ElementsType": "String"
         }
-      },
-      "key_id": {
-        "Type": "String",
-        "Description": "A UUID used to uniquely identify this password credential",
-        "Computed": true
       },
       "service_principal_id": {
         "Type": "String",
@@ -1856,6 +2080,11 @@
         "Optional": true,
         "Description": "Whether consent has been obtained for minors"
       },
+      "cost_center": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The cost center associated with the user."
+      },
       "country": {
         "Type": "String",
         "Optional": true,
@@ -1894,10 +2123,20 @@
         "Required": true,
         "Description": "The name to display in the address book for the user"
       },
+      "division": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of the division in which the user works."
+      },
       "employee_id": {
         "Type": "String",
         "Optional": true,
         "Description": "The employee identifier assigned to the user by the organisation"
+      },
+      "employee_type": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Captures enterprise worker type. For example, Employee, Contractor, Consultant, or Vendor."
       },
       "external_user_state": {
         "Type": "String",
@@ -1949,6 +2188,11 @@
         "Optional": true,
         "Description": "The mail alias for the user. Defaults to the user name part of the user principal name (UPN)",
         "Computed": true
+      },
+      "manager_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The object ID of the user's manager"
       },
       "mobile_phone": {
         "Type": "String",
@@ -2250,6 +2494,42 @@
         "Description": "The fallback application type as public client, such as an installed application running on a mobile device",
         "Computed": true
       },
+      "feature_tags": {
+        "Type": "List",
+        "Description": "Block of features configured for this application using tags",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "custom_single_sign_on": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Whether this application principal represents a custom SAML application for linked service principals"
+            },
+            "enterprise": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Whether this application represents an Enterprise Application for linked service principals"
+            },
+            "gallery": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Whether this application represents a gallery application for linked service principals"
+            },
+            "hide": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Whether this app is invisible to users in My Apps and Office 365 Launcher",
+              "Default": {
+                "Type": "bool",
+                "Value": "true"
+              }
+            }
+          }
+        }
+      },
       "group_membership_claims": {
         "Type": "List",
         "Description": "The `groups` claim issued in a user or OAuth 2.0 access token that the app expects",
@@ -2541,6 +2821,16 @@
         "Type": "String",
         "Description": "URL of the application's support page",
         "Computed": true
+      },
+      "tags": {
+        "Type": "Set",
+        "Description": "A set of tags applied to the application",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       },
       "terms_of_service_url": {
         "Type": "String",
@@ -2974,6 +3264,15 @@
           "ElementsType": "String"
         }
       },
+      "mail_enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether the groups are mail-enabled",
+        "Computed": true,
+        "ConflictsWith": [
+          "object_ids"
+        ]
+      },
       "object_ids": {
         "Type": "List",
         "Optional": true,
@@ -2989,6 +3288,15 @@
         "Type": "Bool",
         "Optional": true,
         "Description": "Retrieve all groups with no filter"
+      },
+      "security_enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether the groups are security-enabled",
+        "Computed": true,
+        "ConflictsWith": [
+          "object_ids"
+        ]
       }
     },
     "azuread_service_principal": {
@@ -3092,6 +3400,71 @@
         "Optional": true,
         "Description": "The display name of the application associated with this service principal",
         "Computed": true
+      },
+      "feature_tags": {
+        "Type": "List",
+        "Description": "Block of features configured for this service principal using tags",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "custom_single_sign_on": {
+              "Type": "Bool",
+              "Description": "Whether this service principal represents a custom SAML application",
+              "Computed": true
+            },
+            "enterprise": {
+              "Type": "Bool",
+              "Description": "Whether this service principal represents an Enterprise Application",
+              "Computed": true
+            },
+            "gallery": {
+              "Type": "Bool",
+              "Description": "Whether this service principal represents a gallery application",
+              "Computed": true
+            },
+            "hide": {
+              "Type": "Bool",
+              "Description": "Whether this app is invisible to users in My Apps and Office 365 Launcher",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "features": {
+        "Type": "List",
+        "Description": "Block of features configured for this service principal using tags",
+        "Computed": true,
+        "Deprecated": "This block has been renamed to `feature_tags` and will be removed in version 3.0 of the provider",
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "custom_single_sign_on_app": {
+              "Type": "Bool",
+              "Description": "Whether this service principal represents a custom SAML application",
+              "Computed": true
+            },
+            "enterprise_application": {
+              "Type": "Bool",
+              "Description": "Whether this service principal represents an Enterprise Application",
+              "Computed": true
+            },
+            "gallery_application": {
+              "Type": "Bool",
+              "Description": "Whether this service principal represents a gallery application",
+              "Computed": true
+            },
+            "visible_to_users": {
+              "Type": "Bool",
+              "Description": "Whether this app is visible to users in My Apps and Office 365 Launcher",
+              "Computed": true
+            }
+          }
+        }
       },
       "homepage_url": {
         "Type": "String",
@@ -3436,6 +3809,11 @@
         "Description": "Whether consent has been obtained for minors",
         "Computed": true
       },
+      "cost_center": {
+        "Type": "String",
+        "Description": "The cost center associated with the user.",
+        "Computed": true
+      },
       "country": {
         "Type": "String",
         "Description": "The country/region in which the user is located, e.g. `US` or `UK`",
@@ -3456,9 +3834,19 @@
         "Description": "The display name of the user",
         "Computed": true
       },
+      "division": {
+        "Type": "String",
+        "Description": "The name of the division in which the user works.",
+        "Computed": true
+      },
       "employee_id": {
         "Type": "String",
         "Description": "The employee identifier assigned to the user by the organisation",
+        "Computed": true
+      },
+      "employee_type": {
+        "Type": "String",
+        "Description": "Captures enterprise worker type. For example, Employee, Contractor, Consultant, or Vendor.",
         "Computed": true
       },
       "external_user_state": {
@@ -3500,6 +3888,11 @@
         "Type": "String",
         "Optional": true,
         "Description": "The email alias of the user",
+        "Computed": true
+      },
+      "manager_id": {
+        "Type": "String",
+        "Description": "The object ID of the user's manager",
         "Computed": true
       },
       "mobile_phone": {

@@ -1,28 +1,88 @@
 {
   ".schema_version": "2",
-  ".sdk_type": "terraform",
+  ".sdk_type": "terraform-plugin-sdk-v2",
   "name": "grafana",
   "type": "provider",
-  "version": "v1.5.0",
+  "version": "v1.14.0",
   "provider": {
     "auth": {
       "Type": "String",
       "Required": true,
-      "Description": "Credentials for accessing the Grafana API.",
+      "Description": "API token or basic auth username:password. May alternatively be set via the `GRAFANA_AUTH` environment variable.",
       "DefaultFunc": "ENV(GRAFANA_AUTH)"
+    },
+    "ca_cert": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "Certificate CA bundle to use to verify the Grafana server's certificate. May alternatively be set via the `GRAFANA_CA_CERT` environment variable.",
+      "DefaultFunc": "ENV(GRAFANA_CA_CERT)"
+    },
+    "insecure_skip_verify": {
+      "Type": "Bool",
+      "Optional": true,
+      "Description": "Skip TLS certificate verification. May alternatively be set via the `GRAFANA_INSECURE_SKIP_VERIFY` environment variable.",
+      "DefaultFunc": "ENV(GRAFANA_INSECURE_SKIP_VERIFY)"
+    },
+    "org_id": {
+      "Type": "Int",
+      "Required": true,
+      "Description": "The organization id to operate on within grafana. May alternatively be set via the `GRAFANA_ORG_ID` environment variable.",
+      "DefaultFunc": "ENV(GRAFANA_ORG_ID)"
+    },
+    "sm_access_token": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "A Synthetic Monitoring access token. May alternatively be set via the `GRAFANA_SM_ACCESS_TOKEN` environment variable.",
+      "DefaultFunc": "ENV(GRAFANA_SM_ACCESS_TOKEN)"
+    },
+    "sm_url": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "Synthetic monitoring backend address. May alternatively be set via the `GRAFANA_SM_URL` environment variable.",
+      "DefaultFunc": "ENV(GRAFANA_SM_URL)"
+    },
+    "tls_cert": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "Client TLS certificate file to use to authenticate to the Grafana server. May alternatively be set via the `GRAFANA_TLS_CERT` environment variable.",
+      "DefaultFunc": "ENV(GRAFANA_TLS_CERT)"
+    },
+    "tls_key": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "Client TLS key file to use to authenticate to the Grafana server. May alternatively be set via the `GRAFANA_TLS_KEY` environment variable.",
+      "DefaultFunc": "ENV(GRAFANA_TLS_KEY)"
     },
     "url": {
       "Type": "String",
       "Required": true,
-      "Description": "URL of the root of the target Grafana server.",
+      "Description": "The root URL of a Grafana server. May alternatively be set via the `GRAFANA_URL` environment variable.",
       "DefaultFunc": "ENV(GRAFANA_URL)"
     }
   },
   "resources": {
     "grafana_alert_notification": {
+      "disable_resolve_message": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether to disable sending resolve messages.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "frequency": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Frequency of alert reminders. Frequency must be set if reminders are enabled.",
+        "Default": {
+          "Type": "string"
+        }
+      },
       "is_default": {
         "Type": "Bool",
         "Optional": true,
+        "Description": "Is this the default channel for all your alerts.",
         "Default": {
           "Type": "bool",
           "Value": "false"
@@ -30,35 +90,163 @@
       },
       "name": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "The name of the alert notification channel."
+      },
+      "secure_settings": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "Additional secure settings, for full reference lookup [Grafana Supported Settings documentation](https://grafana.com/docs/grafana/latest/administration/provisioning/#supported-settings)."
+      },
+      "send_reminder": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether to send reminders for triggered alerts.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
       },
       "settings": {
         "Type": "Map",
-        "Optional": true
+        "Optional": true,
+        "Description": "Additional settings, for full reference see [Grafana HTTP API documentation](https://grafana.com/docs/grafana/latest/http_api/alerting_notification_channels/)."
       },
       "type": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "The type of the alert notification channel."
+      },
+      "uid": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Unique identifier. If unset, this will be automatically generated.",
+        "Computed": true
+      }
+    },
+    "grafana_builtin_role_assignment": {
+      "builtin_role": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Organization roles (`Viewer`, `Editor`, `Admin`) or `Grafana Admin` to assign the roles to."
+      },
+      "roles": {
+        "Type": "Set",
+        "Required": true,
+        "Description": "Fixed or custom roles which provide granular access for specific resources within Grafana.",
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "global": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "States whether the assignment is available across all organizations or not.",
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
+              }
+            },
+            "uid": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Unique identifier of the role to assign to `builtin_role`."
+            }
+          }
+        }
       }
     },
     "grafana_dashboard": {
       "config_json": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "The complete dashboard model JSON."
+      },
+      "dashboard_id": {
+        "Type": "Int",
+        "Description": "The numeric ID of the dashboard computed by Grafana.",
+        "Computed": true
       },
       "folder": {
         "Type": "Int",
-        "Optional": true
+        "Optional": true,
+        "Description": "The id of the folder to save the dashboard in."
+      },
+      "overwrite": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Set to true if you want to overwrite existing dashboard with newer version, same dashboard title in folder or same dashboard uid."
       },
       "slug": {
         "Type": "String",
+        "Description": "URL friendly version of the dashboard title. This field is deprecated, please use `uid` instead.",
+        "Computed": true,
+        "Deprecated": "Use `uid` instead."
+      },
+      "uid": {
+        "Type": "String",
+        "Description": "The unique identifier of a dashboard. This is used to construct its URL. It’s automatically generated if not provided when creating a dashboard. The uid allows having consistent URLs for accessing dashboards and when syncing dashboards between multiple Grafana installs. ",
         "Computed": true
+      },
+      "version": {
+        "Type": "Int",
+        "Description": "Whenever you save a version of your dashboard, a copy of that version is saved so that previous versions of your dashboard are not lost.",
+        "Computed": true
+      }
+    },
+    "grafana_dashboard_permission": {
+      "dashboard_id": {
+        "Type": "Int",
+        "Required": true,
+        "Description": "ID of the dashboard to apply permissions to."
+      },
+      "permissions": {
+        "Type": "Set",
+        "Required": true,
+        "Description": "The permission items to add/update. Items that are omitted from the list will be removed.",
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "permission": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Permission to associate with item. Must be one of `View`, `Edit`, or `Admin`."
+            },
+            "role": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Manage permissions for `Viewer` or `Editor` roles."
+            },
+            "team_id": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "ID of the team to manage permissions for.",
+              "Default": {
+                "Type": "int",
+                "Value": "0"
+              }
+            },
+            "user_id": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "ID of the user to manage permissions for.",
+              "Default": {
+                "Type": "int",
+                "Value": "0"
+              }
+            }
+          }
+        }
       }
     },
     "grafana_data_source": {
       "access_mode": {
         "Type": "String",
         "Optional": true,
+        "Description": "The method by which Grafana will access the data source: `proxy` or `direct`.",
         "Default": {
           "Type": "string",
           "Value": "proxy"
@@ -67,6 +255,7 @@
       "basic_auth_enabled": {
         "Type": "Bool",
         "Optional": true,
+        "Description": "Whether to enable basic auth for the data source.",
         "Default": {
           "Type": "bool",
           "Value": "false"
@@ -75,6 +264,7 @@
       "basic_auth_password": {
         "Type": "String",
         "Optional": true,
+        "Description": "Basic auth password.",
         "Default": {
           "Type": "string"
         }
@@ -82,6 +272,7 @@
       "basic_auth_username": {
         "Type": "String",
         "Optional": true,
+        "Description": "Basic auth username.",
         "Default": {
           "Type": "string"
         }
@@ -89,6 +280,7 @@
       "database_name": {
         "Type": "String",
         "Optional": true,
+        "Description": "(Required by some data source types) The name of the database to use on the selected data source server.",
         "Default": {
           "Type": "string"
         }
@@ -96,6 +288,7 @@
       "is_default": {
         "Type": "Bool",
         "Optional": true,
+        "Description": "Whether to set the data source as default. This should only be `true` to a single data source.",
         "Default": {
           "Type": "bool",
           "Value": "false"
@@ -104,6 +297,7 @@
       "json_data": {
         "Type": "List",
         "Optional": true,
+        "Description": "(Required by some data source types)",
         "IsBlock": true,
         "ConfigImplicitMode": "Block",
         "Elem": {
@@ -111,30 +305,201 @@
           "Info": {
             "assume_role_arn": {
               "Type": "String",
-              "Optional": true
+              "Optional": true,
+              "Description": "(CloudWatch) The ARN of the role to be assumed by Grafana when using the CloudWatch data source."
             },
             "auth_type": {
               "Type": "String",
-              "Required": true
+              "Optional": true,
+              "Description": "(CloudWatch) The authentication type used to access the data source."
+            },
+            "authentication_type": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "(Stackdriver) The authentication type: `jwt` or `gce`."
+            },
+            "client_email": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "(Stackdriver) Service account email address."
+            },
+            "conn_max_lifetime": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "(MySQL, PostgreSQL, and MSSQL) Maximum amount of time in seconds a connection may be reused (Grafana v5.4+)."
             },
             "custom_metrics_namespaces": {
               "Type": "String",
-              "Optional": true
+              "Optional": true,
+              "Description": "(CloudWatch) A comma-separated list of custom namespaces to be queried by the CloudWatch data source."
+            },
+            "default_project": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "(Stackdriver) The default project for the data source."
             },
             "default_region": {
               "Type": "String",
-              "Required": true
+              "Optional": true,
+              "Description": "(CloudWatch) The default region for the data source."
+            },
+            "encrypt": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "(MSSQL) Connection SSL encryption handling: 'disable', 'false' or 'true'."
+            },
+            "es_version": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "(Elasticsearch) Elasticsearch semantic version (Grafana v8.0+)."
+            },
+            "graphite_version": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "(Graphite) Graphite version."
+            },
+            "http_method": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "(Prometheus) HTTP method to use for making requests."
+            },
+            "interval": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "(Elasticsearch) Index date time format. nil(No Pattern), 'Hourly', 'Daily', 'Weekly', 'Monthly' or 'Yearly'."
+            },
+            "log_level_field": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "(Elasticsearch) Which field should be used to indicate the priority of the log message."
+            },
+            "log_message_field": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "(Elasticsearch) Which field should be used as the log message."
+            },
+            "max_concurrent_shard_requests": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "(Elasticsearch) Maximum number of concurrent shard requests."
+            },
+            "max_idle_conns": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "(MySQL, PostgreSQL and MSSQL) Maximum number of connections in the idle connection pool (Grafana v5.4+)."
+            },
+            "max_open_conns": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "(MySQL, PostgreSQL and MSSQL) Maximum number of open connections to the database (Grafana v5.4+)."
+            },
+            "postgres_version": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "(PostgreSQL) Postgres version as a number (903/904/905/906/1000) meaning v9.3, v9.4, etc."
+            },
+            "profile": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "(CloudWatch) The credentials profile name to use when authentication type is set as 'Credentials file'."
+            },
+            "query_timeout": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "(Prometheus) Timeout for queries made to the Prometheus data source in seconds."
+            },
+            "sigv4_assume_role_arn": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "(Elasticsearch and Prometheus) Specifies the ARN of an IAM role to assume."
+            },
+            "sigv4_auth": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "(Elasticsearch and Prometheus) Enable usage of SigV4."
+            },
+            "sigv4_auth_type": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "(Elasticsearch and Prometheus) The Sigv4 authentication provider to use: 'default', 'credentials' or 'keys' (AMG: 'workspace-iam-role')."
+            },
+            "sigv4_external_id": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "(Elasticsearch and Prometheus) When assuming a role in another account use this external ID."
+            },
+            "sigv4_profile": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "(Elasticsearch and Prometheus) Credentials profile name, leave blank for default."
+            },
+            "sigv4_region": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "(Elasticsearch and Prometheus) AWS region to use for Sigv4."
+            },
+            "ssl_mode": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "(PostgreSQL) SSLmode. 'disable', 'require', 'verify-ca' or 'verify-full'."
+            },
+            "time_field": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "(Elasticsearch) Which field that should be used as timestamp."
+            },
+            "time_interval": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "(Prometheus, Elasticsearch, InfluxDB, MySQL, PostgreSQL, and MSSQL) Lowest interval/step value that should be used for this data source."
+            },
+            "timescaledb": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "(PostgreSQL) Enable usage of TimescaleDB extension."
+            },
+            "tls_auth": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "(All) Enable TLS authentication using client cert configured in secure json data."
+            },
+            "tls_auth_with_ca_cert": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "(All) Enable TLS authentication using CA cert."
+            },
+            "tls_skip_verify": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "(All) Controls whether a client verifies the server’s certificate chain and host name."
+            },
+            "token_uri": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "(Stackdriver) The token URI used, provided in the service account key."
+            },
+            "tsdb_resolution": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "(OpenTSDB) Resolution."
+            },
+            "tsdb_version": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "(OpenTSDB) Version."
             }
           }
         }
       },
       "name": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "A unique name for the data source."
       },
       "password": {
         "Type": "String",
         "Optional": true,
+        "Description": "(Required by some data source types) The password to use to authenticate to the data source.",
         "Default": {
           "Type": "string"
         }
@@ -149,26 +514,71 @@
           "Info": {
             "access_key": {
               "Type": "String",
-              "Required": true
+              "Optional": true,
+              "Description": "(CloudWatch) The access key to use to access the data source."
+            },
+            "basic_auth_password": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "(All) Password to use for basic authentication."
+            },
+            "password": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "(All) Password to use for authentication."
+            },
+            "private_key": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "(Stackdriver) The service account key `private_key` to use to access the data source."
             },
             "secret_key": {
               "Type": "String",
-              "Required": true
+              "Optional": true,
+              "Description": "(CloudWatch) The secret key to use to access the data source."
+            },
+            "sigv4_access_key": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "(Elasticsearch and Prometheus) SigV4 access key. Required when using 'keys' auth provider."
+            },
+            "sigv4_secret_key": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "(Elasticsearch and Prometheus) SigV4 secret key. Required when using 'keys' auth provider."
+            },
+            "tls_ca_cert": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "(All) CA cert for out going requests."
+            },
+            "tls_client_cert": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "(All) TLS Client cert for outgoing requests."
+            },
+            "tls_client_key": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "(All) TLS Client key for outgoing requests."
             }
           }
         }
       },
       "type": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "The data source type. Must be one of the supported data source keywords."
       },
       "url": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Description": "The URL for the data source. The type of URL required varies depending on the chosen data source type."
       },
       "username": {
         "Type": "String",
         "Optional": true,
+        "Description": "(Required by some data source types) The username to use to authenticate to the data source.",
         "Default": {
           "Type": "string"
         }
@@ -177,25 +587,76 @@
     "grafana_folder": {
       "title": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "The title of the folder."
       },
       "uid": {
         "Type": "String",
+        "Description": "Unique identifier.",
         "Computed": true
+      }
+    },
+    "grafana_folder_permission": {
+      "folder_uid": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The UID of the folder."
+      },
+      "permissions": {
+        "Type": "Set",
+        "Required": true,
+        "Description": "The permission items to add/update. Items that are omitted from the list will be removed.",
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "permission": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Permission to associate with item. Must be one of `View`, `Edit`, or `Admin`."
+            },
+            "role": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Manage permissions for `Viewer` or `Editor` roles."
+            },
+            "team_id": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "ID of the team to manage permissions for.",
+              "Default": {
+                "Type": "int",
+                "Value": "0"
+              }
+            },
+            "user_id": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "ID of the user to manage permissions for.",
+              "Default": {
+                "Type": "int",
+                "Value": "0"
+              }
+            }
+          }
+        }
       }
     },
     "grafana_organization": {
       "admin_user": {
         "Type": "String",
         "Optional": true,
+        "Description": "\nThe login name of the configured default admin user for the Grafana\ninstallation. If unset, this value defaults to admin, the Grafana default.\nGrafana adds the default admin user to all organizations automatically upon\ncreation, and this parameter keeps Terraform from removing it from\norganizations.\n",
         "Default": {
           "Type": "string",
           "Value": "admin"
         }
       },
       "admins": {
-        "Type": "List",
+        "Type": "Set",
         "Optional": true,
+        "Description": "\nA list of email addresses corresponding to users who should be given admin\naccess to the organization. Note: users specified here must already exist in\nGrafana unless 'create_users' is set to true.\n",
         "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
@@ -205,14 +666,16 @@
       "create_users": {
         "Type": "Bool",
         "Optional": true,
+        "Description": "\nWhether or not to create Grafana users specified in the organization's\nmembership if they don't already exist in Grafana. If unspecified, this\nparameter defaults to true, creating placeholder users with the name, login,\nand email set to the email of the user, and a random password. Setting this\noption to false will cause an error to be thrown for any users that do not\nalready exist in Grafana.\n",
         "Default": {
           "Type": "bool",
           "Value": "true"
         }
       },
       "editors": {
-        "Type": "List",
+        "Type": "Set",
         "Optional": true,
+        "Description": "\nA list of email addresses corresponding to users who should be given editor\naccess to the organization. Note: users specified here must already exist in\nGrafana unless 'create_users' is set to true.\n",
         "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
@@ -221,22 +684,972 @@
       },
       "name": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "The display name for the Grafana organization created."
       },
       "org_id": {
         "Type": "Int",
+        "Description": "The organization id assigned to this organization by Grafana.",
         "Computed": true
       },
       "viewers": {
-        "Type": "List",
+        "Type": "Set",
         "Optional": true,
+        "Description": "\nA list of email addresses corresponding to users who should be given viewer\naccess to the organization. Note: users specified here must already exist in\nGrafana unless 'create_users' is set to true.\n",
         "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
         }
       }
+    },
+    "grafana_role": {
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Description of the role."
+      },
+      "global": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Boolean to state whether the role is available across all organizations or not.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the role"
+      },
+      "permissions": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Specific set of actions granted by the role.",
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "action": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Specific action users granted with the role will be allowed to perform (for example: `users:read`)"
+            },
+            "scope": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Scope to restrict the action to a set of resources (for example: `users:*` or `roles:customrole1`)"
+            }
+          }
+        }
+      },
+      "uid": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Unique identifier of the role. Used for assignments.",
+        "Computed": true
+      },
+      "version": {
+        "Type": "Int",
+        "Required": true,
+        "Description": "Version of the role. A role is updated only on version increase."
+      }
+    },
+    "grafana_synthetic_monitoring_check": {
+      "alert_sensitivity": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Can be set to `none`, `low`, `medium`, or `high` to correspond to the check [alert levels](https://grafana.com/docs/grafana-cloud/synthetic-monitoring/synthetic-monitoring-alerting/).",
+        "Default": {
+          "Type": "string",
+          "Value": "none"
+        }
+      },
+      "basic_metrics_only": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Metrics are reduced by default. Set this to `false` if you'd like to publish all metrics. We maintain a [full list of metrics](https://github.com/grafana/synthetic-monitoring-agent/tree/main/internal/scraper/testdata) collected for each.",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether to enable the check.",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "frequency": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "How often the check runs in milliseconds (the value is not truly a \"frequency\" but a \"period\"). The minimum acceptable value is 1 second (1000 ms), and the maximum is 120 seconds (120000 ms).",
+        "Default": {
+          "Type": "int",
+          "Value": "60000"
+        }
+      },
+      "id": {
+        "Type": "String",
+        "Description": "The ID of the check.",
+        "Computed": true
+      },
+      "job": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name used for job label."
+      },
+      "labels": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "Custom labels to be included with collected metrics and logs. The maximum number of labels that can be specified per check is 5. These are applied, along with the probe-specific labels, to the outgoing metrics. The names and values of the labels cannot be empty, and the maximum length is 32 bytes.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "probes": {
+        "Type": "Set",
+        "Required": true,
+        "Description": "List of probe location IDs where this target will be checked from.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "Int"
+        }
+      },
+      "settings": {
+        "Type": "Set",
+        "Required": true,
+        "Description": "Check settings.",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "dns": {
+              "Type": "Set",
+              "Optional": true,
+              "Description": "Settings for DNS check. The target must be a valid hostname (or IP address for `PTR` records).",
+              "MaxItems": 1,
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "ip_version": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Options are `V4`, `V6`, `Any`. Specifies whether the corresponding check will be performed using IPv4 or IPv6. The `Any` value indicates that IPv6 should be used, falling back to IPv4 if that's not available.",
+                    "Default": {
+                      "Type": "string",
+                      "Value": "V4"
+                    }
+                  },
+                  "port": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Description": "Port to target.",
+                    "Default": {
+                      "Type": "int",
+                      "Value": "53"
+                    }
+                  },
+                  "protocol": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "`TCP` or `UDP`.",
+                    "Default": {
+                      "Type": "string",
+                      "Value": "UDP"
+                    }
+                  },
+                  "record_type": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "One of `ANY`, `A`, `AAAA`, `CNAME`, `MX`, `NS`, `PTR`, `SOA`, `SRV`, `TXT`.",
+                    "Default": {
+                      "Type": "string",
+                      "Value": "A"
+                    }
+                  },
+                  "server": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "DNS server address to target.",
+                    "Default": {
+                      "Type": "string",
+                      "Value": "8.8.8.8"
+                    }
+                  },
+                  "source_ip_address": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Source IP address."
+                  },
+                  "valid_r_codes": {
+                    "Type": "Set",
+                    "Optional": true,
+                    "Description": "List of valid response codes. Options include `NOERROR`, `BADALG`, `BADMODE`, `BADKEY`, `BADCOOKIE`, `BADNAME`, `BADSIG`, `BADTIME`, `BADTRUNC`, `BADVERS`, `FORMERR`, `NOTIMP`, `NOTAUTH`, `NOTZONE`, `NXDOMAIN`, `NXRRSET`, `REFUSED`, `SERVFAIL`, `YXDOMAIN`, `YXRRSET`.",
+                    "ConfigImplicitMode": "Attr",
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  },
+                  "validate_additional_rrs": {
+                    "Type": "Set",
+                    "Optional": true,
+                    "Description": "Validate additional matches.",
+                    "IsBlock": true,
+                    "ConfigImplicitMode": "Block",
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "fail_if_matches_regexp": {
+                          "Type": "Set",
+                          "Optional": true,
+                          "Description": "Fail if value matches regex.",
+                          "ConfigImplicitMode": "Attr",
+                          "Elem": {
+                            "Type": "SchemaElements",
+                            "ElementsType": "String"
+                          }
+                        },
+                        "fail_if_not_matches_regexp": {
+                          "Type": "Set",
+                          "Optional": true,
+                          "Description": "Fail if value does not match regex.",
+                          "ConfigImplicitMode": "Attr",
+                          "Elem": {
+                            "Type": "SchemaElements",
+                            "ElementsType": "String"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "validate_answer_rrs": {
+                    "Type": "Set",
+                    "Optional": true,
+                    "Description": "Validate response answer.",
+                    "MaxItems": 1,
+                    "IsBlock": true,
+                    "ConfigImplicitMode": "Block",
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "fail_if_matches_regexp": {
+                          "Type": "Set",
+                          "Optional": true,
+                          "Description": "Fail if value matches regex.",
+                          "ConfigImplicitMode": "Attr",
+                          "Elem": {
+                            "Type": "SchemaElements",
+                            "ElementsType": "String"
+                          }
+                        },
+                        "fail_if_not_matches_regexp": {
+                          "Type": "Set",
+                          "Optional": true,
+                          "Description": "Fail if value does not match regex.",
+                          "ConfigImplicitMode": "Attr",
+                          "Elem": {
+                            "Type": "SchemaElements",
+                            "ElementsType": "String"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "validate_authority_rrs": {
+                    "Type": "Set",
+                    "Optional": true,
+                    "Description": "Validate response authority.",
+                    "MaxItems": 1,
+                    "IsBlock": true,
+                    "ConfigImplicitMode": "Block",
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "fail_if_matches_regexp": {
+                          "Type": "Set",
+                          "Optional": true,
+                          "Description": "Fail if value matches regex.",
+                          "ConfigImplicitMode": "Attr",
+                          "Elem": {
+                            "Type": "SchemaElements",
+                            "ElementsType": "String"
+                          }
+                        },
+                        "fail_if_not_matches_regexp": {
+                          "Type": "Set",
+                          "Optional": true,
+                          "Description": "Fail if value does not match regex.",
+                          "ConfigImplicitMode": "Attr",
+                          "Elem": {
+                            "Type": "SchemaElements",
+                            "ElementsType": "String"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "http": {
+              "Type": "Set",
+              "Optional": true,
+              "Description": "Settings for HTTP check. The target must be a URL (http or https).",
+              "MaxItems": 1,
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "basic_auth": {
+                    "Type": "Set",
+                    "Optional": true,
+                    "Description": "Basic auth settings.",
+                    "MaxItems": 1,
+                    "IsBlock": true,
+                    "ConfigImplicitMode": "Block",
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "password": {
+                          "Type": "String",
+                          "Required": true,
+                          "Description": "Basic auth password."
+                        },
+                        "username": {
+                          "Type": "String",
+                          "Required": true,
+                          "Description": "Basic auth username."
+                        }
+                      }
+                    }
+                  },
+                  "bearer_token": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Token for use with bearer authorization header."
+                  },
+                  "body": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "The body of the HTTP request used in probe."
+                  },
+                  "cache_busting_query_param_name": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "The name of the query parameter used to prevent the server from using a cached response. Each probe will assign a random value to this parameter each time a request is made."
+                  },
+                  "fail_if_body_matches_regexp": {
+                    "Type": "Set",
+                    "Optional": true,
+                    "Description": "List of regexes. If any match the response body, the check will fail.",
+                    "ConfigImplicitMode": "Attr",
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  },
+                  "fail_if_body_not_matches_regexp": {
+                    "Type": "Set",
+                    "Optional": true,
+                    "Description": "List of regexes. If any do not match the response body, the check will fail.",
+                    "ConfigImplicitMode": "Attr",
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  },
+                  "fail_if_header_matches_regexp": {
+                    "Type": "Set",
+                    "Optional": true,
+                    "Description": "Check fails if headers match.",
+                    "IsBlock": true,
+                    "ConfigImplicitMode": "Block",
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "allow_missing": {
+                          "Type": "Bool",
+                          "Optional": true,
+                          "Description": "Allow header to be missing from responses.",
+                          "Default": {
+                            "Type": "bool",
+                            "Value": "false"
+                          }
+                        },
+                        "header": {
+                          "Type": "String",
+                          "Required": true,
+                          "Description": "Header name."
+                        },
+                        "regexp": {
+                          "Type": "String",
+                          "Required": true,
+                          "Description": "Regex that header value should match."
+                        }
+                      }
+                    }
+                  },
+                  "fail_if_header_not_matches_regexp": {
+                    "Type": "Set",
+                    "Optional": true,
+                    "Description": "Check fails if headers do not match.",
+                    "IsBlock": true,
+                    "ConfigImplicitMode": "Block",
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "allow_missing": {
+                          "Type": "Bool",
+                          "Optional": true,
+                          "Description": "Allow header to be missing from responses.",
+                          "Default": {
+                            "Type": "bool",
+                            "Value": "false"
+                          }
+                        },
+                        "header": {
+                          "Type": "String",
+                          "Required": true,
+                          "Description": "Header name."
+                        },
+                        "regexp": {
+                          "Type": "String",
+                          "Required": true,
+                          "Description": "Regex that header value should match."
+                        }
+                      }
+                    }
+                  },
+                  "fail_if_not_ssl": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Description": "Fail if SSL is not present.",
+                    "Default": {
+                      "Type": "bool",
+                      "Value": "false"
+                    }
+                  },
+                  "fail_if_ssl": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Description": "Fail if SSL is present.",
+                    "Default": {
+                      "Type": "bool",
+                      "Value": "false"
+                    }
+                  },
+                  "headers": {
+                    "Type": "Set",
+                    "Optional": true,
+                    "Description": "The HTTP headers set for the probe.",
+                    "ConfigImplicitMode": "Attr",
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  },
+                  "ip_version": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Options are `V4`, `V6`, `Any`. Specifies whether the corresponding check will be performed using IPv4 or IPv6. The `Any` value indicates that IPv6 should be used, falling back to IPv4 if that's not available.",
+                    "Default": {
+                      "Type": "string",
+                      "Value": "V4"
+                    }
+                  },
+                  "method": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Request method. One of `GET`, `CONNECT`, `DELETE`, `HEAD`, `OPTIONS`, `POST`, `PUT`, `TRACE`",
+                    "Default": {
+                      "Type": "string",
+                      "Value": "GET"
+                    }
+                  },
+                  "no_follow_redirects": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Description": "Do not follow redirects.",
+                    "Default": {
+                      "Type": "bool",
+                      "Value": "false"
+                    }
+                  },
+                  "proxy_url": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Proxy URL."
+                  },
+                  "tls_config": {
+                    "Type": "Set",
+                    "Optional": true,
+                    "Description": "TLS config.",
+                    "MaxItems": 1,
+                    "IsBlock": true,
+                    "ConfigImplicitMode": "Block",
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "ca_cert": {
+                          "Type": "String",
+                          "Optional": true,
+                          "Description": "CA certificate in PEM format."
+                        },
+                        "client_cert": {
+                          "Type": "String",
+                          "Optional": true,
+                          "Description": "Client certificate in PEM format."
+                        },
+                        "client_key": {
+                          "Type": "String",
+                          "Optional": true,
+                          "Description": "Client key in PEM format."
+                        },
+                        "insecure_skip_verify": {
+                          "Type": "Bool",
+                          "Optional": true,
+                          "Description": "Disable target certificate validation.",
+                          "Default": {
+                            "Type": "bool",
+                            "Value": "false"
+                          }
+                        },
+                        "server_name": {
+                          "Type": "String",
+                          "Optional": true,
+                          "Description": "Used to verify the hostname for the targets."
+                        }
+                      }
+                    }
+                  },
+                  "valid_http_versions": {
+                    "Type": "Set",
+                    "Optional": true,
+                    "Description": "List of valid HTTP versions. Options include `HTTP/1.0`, `HTTP/1.1`, `HTTP/2`",
+                    "ConfigImplicitMode": "Attr",
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  },
+                  "valid_status_codes": {
+                    "Type": "Set",
+                    "Optional": true,
+                    "Description": "Accepted status codes. If unset, defaults to 2xx.",
+                    "ConfigImplicitMode": "Attr",
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "Int"
+                    }
+                  }
+                }
+              }
+            },
+            "ping": {
+              "Type": "Set",
+              "Optional": true,
+              "Description": "Settings for ping (ICMP) check. The target must be a valid hostname or IP address.",
+              "MaxItems": 1,
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "dont_fragment": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Description": "Set the DF-bit in the IP-header. Only works with ipV4.",
+                    "Default": {
+                      "Type": "bool",
+                      "Value": "false"
+                    }
+                  },
+                  "ip_version": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Options are `V4`, `V6`, `Any`. Specifies whether the corresponding check will be performed using IPv4 or IPv6. The `Any` value indicates that IPv6 should be used, falling back to IPv4 if that's not available.",
+                    "Default": {
+                      "Type": "string",
+                      "Value": "V4"
+                    }
+                  },
+                  "payload_size": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Description": "Payload size.",
+                    "Default": {
+                      "Type": "int",
+                      "Value": "0"
+                    }
+                  },
+                  "source_ip_address": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Source IP address."
+                  }
+                }
+              }
+            },
+            "tcp": {
+              "Type": "Set",
+              "Optional": true,
+              "Description": "Settings for TCP check. The target must be of the form `\u003chost\u003e:\u003cport\u003e`, where the host portion must be a valid hostname or IP address.",
+              "MaxItems": 1,
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "ip_version": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Options are `V4`, `V6`, `Any`. Specifies whether the corresponding check will be performed using IPv4 or IPv6. The `Any` value indicates that IPv6 should be used, falling back to IPv4 if that's not available.",
+                    "Default": {
+                      "Type": "string",
+                      "Value": "V4"
+                    }
+                  },
+                  "query_response": {
+                    "Type": "Set",
+                    "Optional": true,
+                    "Description": "The query sent in the TCP probe and the expected associated response.",
+                    "IsBlock": true,
+                    "ConfigImplicitMode": "Block",
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "expect": {
+                          "Type": "String",
+                          "Required": true,
+                          "Description": "Response to expect."
+                        },
+                        "send": {
+                          "Type": "String",
+                          "Required": true,
+                          "Description": "Data to send."
+                        },
+                        "start_tls": {
+                          "Type": "Bool",
+                          "Optional": true,
+                          "Description": "Upgrade TCP connection to TLS.",
+                          "Default": {
+                            "Type": "bool",
+                            "Value": "false"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "source_ip_address": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Source IP address."
+                  },
+                  "tls": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Description": "Whether or not TLS is used when the connection is initiated.",
+                    "Default": {
+                      "Type": "bool",
+                      "Value": "false"
+                    }
+                  },
+                  "tls_config": {
+                    "Type": "Set",
+                    "Optional": true,
+                    "Description": "TLS config.",
+                    "MaxItems": 1,
+                    "IsBlock": true,
+                    "ConfigImplicitMode": "Block",
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "ca_cert": {
+                          "Type": "String",
+                          "Optional": true,
+                          "Description": "CA certificate in PEM format."
+                        },
+                        "client_cert": {
+                          "Type": "String",
+                          "Optional": true,
+                          "Description": "Client certificate in PEM format."
+                        },
+                        "client_key": {
+                          "Type": "String",
+                          "Optional": true,
+                          "Description": "Client key in PEM format."
+                        },
+                        "insecure_skip_verify": {
+                          "Type": "Bool",
+                          "Optional": true,
+                          "Description": "Disable target certificate validation.",
+                          "Default": {
+                            "Type": "bool",
+                            "Value": "false"
+                          }
+                        },
+                        "server_name": {
+                          "Type": "String",
+                          "Optional": true,
+                          "Description": "Used to verify the hostname for the targets."
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "target": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Hostname to ping."
+      },
+      "tenant_id": {
+        "Type": "Int",
+        "Description": "The tenant ID of the check.",
+        "Computed": true
+      },
+      "timeout": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Specifies the maximum running time for the check in milliseconds. The minimum acceptable value is 1 second (1000 ms), and the maximum 10 seconds (10000 ms).",
+        "Default": {
+          "Type": "int",
+          "Value": "3000"
+        }
+      }
+    },
+    "grafana_synthetic_monitoring_probe": {
+      "auth_token": {
+        "Type": "String",
+        "Description": "The probe authentication token. Your probe must use this to authenticate with Grafana Cloud.",
+        "Computed": true
+      },
+      "id": {
+        "Type": "String",
+        "Description": "The ID of the probe.",
+        "Computed": true
+      },
+      "labels": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "Custom labels to be included with collected metrics and logs.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "latitude": {
+        "Type": "Float",
+        "Required": true,
+        "Description": "Latitude coordinates."
+      },
+      "longitude": {
+        "Type": "Float",
+        "Required": true,
+        "Description": "Longitude coordinates."
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the probe."
+      },
+      "public": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Public probes are run by Grafana Labs and can be used by all users. Only Grafana Labs managed public probes will be set to `true`.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "region": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Region of the probe."
+      },
+      "tenant_id": {
+        "Type": "Int",
+        "Description": "The tenant ID of the probe.",
+        "Computed": true
+      }
+    },
+    "grafana_team": {
+      "email": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "An email address for the team."
+      },
+      "members": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "\nA list of email addresses corresponding to users who should be given membership\nto the team. Note: users specified here must already exist in Grafana.\n",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The display name for the Grafana team created."
+      },
+      "team_id": {
+        "Type": "Int",
+        "Description": "The team id assigned to this team by Grafana.",
+        "Computed": true
+      }
+    },
+    "grafana_team_external_group": {
+      "groups": {
+        "Type": "Set",
+        "Required": true,
+        "Description": "The team external groups list",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "team_id": {
+        "Type": "Int",
+        "Required": true,
+        "Description": "The Team ID"
+      }
+    },
+    "grafana_team_preferences": {
+      "home_dashboard_id": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The numeric ID of the dashboard to display when a team member logs in."
+      },
+      "team_id": {
+        "Type": "Int",
+        "Required": true,
+        "Description": "The numeric team ID."
+      },
+      "theme": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The theme for the specified team. Available themes are `light`, `dark`, or an empty string for the default theme."
+      },
+      "timezone": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The timezone for the specified team. Available values are `utc`, `browser`, or an empty string for the default."
+      }
+    },
+    "grafana_user": {
+      "email": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The email address of the Grafana user."
+      },
+      "is_admin": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether to make user an admin.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "login": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The username for the Grafana user."
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The display name for the Grafana user."
+      },
+      "password": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The password for the Grafana user."
+      }
     }
   },
-  "data-sources": {}
+  "data-sources": {
+    "grafana_synthetic_monitoring_probe": {
+      "id": {
+        "Type": "String",
+        "Description": "The ID of the probe.",
+        "Computed": true
+      },
+      "labels": {
+        "Type": "Map",
+        "Description": "Custom labels to be included with collected metrics and logs.",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "latitude": {
+        "Type": "Float",
+        "Description": "Latitude coordinates.",
+        "Computed": true
+      },
+      "longitude": {
+        "Type": "Float",
+        "Description": "Longitude coordinates.",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Name of the probe."
+      },
+      "public": {
+        "Type": "Bool",
+        "Description": "Public probes are run by Grafana Labs and can be used by all users. Only Grafana Labs managed public probes will be set to `true`.",
+        "Computed": true
+      },
+      "region": {
+        "Type": "String",
+        "Description": "Region of the probe.",
+        "Computed": true
+      },
+      "tenant_id": {
+        "Type": "Int",
+        "Description": "The tenant ID of the probe.",
+        "Computed": true
+      }
+    },
+    "grafana_synthetic_monitoring_probes": {
+      "probes": {
+        "Type": "Map",
+        "Description": "Map of probes with their names as keys and IDs as values.",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "Int"
+        }
+      }
+    }
+  }
 }

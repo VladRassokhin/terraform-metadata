@@ -3,7 +3,7 @@
   ".sdk_type": "terraform-plugin-sdk-v1",
   "name": "cloudamqp",
   "type": "provider",
-  "version": "v1.8.0",
+  "version": "v1.12.0",
   "provider": {
     "apikey": {
       "Type": "String",
@@ -74,6 +74,18 @@
         "Description": "Regex for which vhost the queues are in"
       }
     },
+    "cloudamqp_custom_domain": {
+      "hostname": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The custom hostname."
+      },
+      "instance_id": {
+        "Type": "Int",
+        "Required": true,
+        "Description": "Instance identifier"
+      }
+    },
     "cloudamqp_instance": {
       "apikey": {
         "Type": "String",
@@ -98,21 +110,19 @@
       "no_default_alarms": {
         "Type": "Bool",
         "Optional": true,
-        "Description": "Set to true to not create default alarms"
+        "Description": "Set to true to not create default alarms",
+        "Computed": true
       },
       "nodes": {
         "Type": "Int",
         "Optional": true,
         "Description": "Number of nodes in cluster (plan must support it)",
-        "Default": {
-          "Type": "int",
-          "Value": "1"
-        }
+        "Computed": true
       },
       "plan": {
         "Type": "String",
         "Required": true,
-        "Description": "Name of the plan, valid options are: lemur, tiger, bunny, rabbit, panda, ape, hippo, lion"
+        "Description": "Name of the plan, see documentation for valid plans"
       },
       "ready": {
         "Type": "Bool",
@@ -127,7 +137,8 @@
       "rmq_version": {
         "Type": "String",
         "Optional": true,
-        "Description": "RabbitMQ version"
+        "Description": "RabbitMQ version",
+        "Computed": true
       },
       "tags": {
         "Type": "List",
@@ -149,10 +160,17 @@
         "Description": "The virtual host",
         "Computed": true
       },
+      "vpc_id": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The ID of the VPC to create your instance in",
+        "Computed": true
+      },
       "vpc_subnet": {
         "Type": "String",
         "Optional": true,
-        "Description": "Dedicated VPC subnet, shouldn't overlap with your current VPC's subnet"
+        "Description": "Dedicated VPC subnet, shouldn't overlap with your current VPC's subnet",
+        "Computed": true
       }
     },
     "cloudamqp_integration_log": {
@@ -268,10 +286,22 @@
         "Optional": true,
         "Description": "Project ID. (Stackdriver)"
       },
+      "queue_allowlist": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "(optional) allowlist using regular expression",
+        "ConflictsWith": [
+          "queue_whitelist"
+        ]
+      },
       "queue_whitelist": {
         "Type": "String",
         "Optional": true,
-        "Description": "(optional) whitelist using regular expression"
+        "Description": "**Deprecated**",
+        "ConflictsWith": [
+          "queue_allowlist"
+        ],
+        "Deprecated": "use queue_allowlist instead"
       },
       "region": {
         "Type": "String",
@@ -288,10 +318,22 @@
         "Optional": true,
         "Description": "(optional) tags. E.g. env=prod,region=europe"
       },
+      "vhost_allowlist": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "(optional) allowlist using regular expression",
+        "ConflictsWith": [
+          "vhost_whitelist"
+        ]
+      },
       "vhost_whitelist": {
         "Type": "String",
         "Optional": true,
-        "Description": "(optional) whitelist using regular expression"
+        "Description": "**Deprecated**",
+        "ConflictsWith": [
+          "vhost_allowlist"
+        ],
+        "Deprecated": "use vhost_allowlist instead"
       }
     },
     "cloudamqp_notification": {
@@ -308,7 +350,7 @@
       "type": {
         "Type": "String",
         "Required": true,
-        "Description": "Type of the notification, valid options are: email, webhook, pagerduty, victorops, opsgenie, opsgenie-eu, slack"
+        "Description": "Type of the notification, valid options are: email, webhook, pagerduty, victorops, opsgenie, opsgenie-eu, slack, teams"
       },
       "value": {
         "Type": "String",
@@ -387,7 +429,7 @@
             "services": {
               "Type": "List",
               "Optional": true,
-              "Description": "Pre-defined services 'AMQP', 'AMQPS', 'MQTT', 'MQTTS', 'STOMP', 'STOMPS'",
+              "Description": "Pre-defined services 'AMQP', 'AMQPS', 'HTTPS', 'MQTT', 'MQTTS', 'STOMP', 'STOMPS'",
               "ConfigImplicitMode": "Attr",
               "Elem": {
                 "Type": "SchemaElements",
@@ -414,9 +456,84 @@
         "Description": "VPC peering status",
         "Computed": true
       }
+    },
+    "cloudamqp_webhook": {
+      "concurrency": {
+        "Type": "Int",
+        "Required": true,
+        "Description": "How many times the request will be made if previous call fails"
+      },
+      "instance_id": {
+        "Type": "Int",
+        "Required": true,
+        "Description": "Instance identifier"
+      },
+      "queue": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The queue that should be forwarded, must be a durable queue!"
+      },
+      "retry_interval": {
+        "Type": "Int",
+        "Required": true,
+        "Description": "How often push of a message will retry if the previous call fails. In seconds"
+      },
+      "vhost": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The name of the virtual host"
+      },
+      "webhook_uri": {
+        "Type": "String",
+        "Required": true,
+        "Description": "A POST request will be made for each message in the queue to this endpoint"
+      }
     }
   },
   "data-sources": {
+    "cloudamqp_account": {
+      "instances": {
+        "Type": "List",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "id": {
+              "Type": "Int",
+              "Description": "The instance identifier",
+              "Computed": true
+            },
+            "name": {
+              "Type": "String",
+              "Description": "The name of the instance",
+              "Computed": true
+            },
+            "plan": {
+              "Type": "String",
+              "Description": "The subscription plan used for the instance",
+              "Computed": true
+            },
+            "region": {
+              "Type": "String",
+              "Description": "The region were the instanece is located in",
+              "Computed": true
+            },
+            "tags": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Tag for the instance",
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      }
+    },
     "cloudamqp_alarm": {
       "alarm_id": {
         "Type": "Int",
@@ -482,11 +599,11 @@
       },
       "password": {
         "Type": "String",
-        "Optional": true
+        "Computed": true
       },
       "username": {
         "Type": "String",
-        "Optional": true
+        "Computed": true
       }
     },
     "cloudamqp_instance": {
@@ -515,6 +632,11 @@
         "Description": "Name of the instance",
         "Computed": true
       },
+      "no_default_alarms": {
+        "Type": "Bool",
+        "Description": "If default alarms set or not for the instance",
+        "Computed": true
+      },
       "nodes": {
         "Type": "Int",
         "Description": "Number of nodes in cluster (plan must support it)",
@@ -522,7 +644,12 @@
       },
       "plan": {
         "Type": "String",
-        "Description": "Name of the plan, valid options are: lemur, tiger, bunny, rabbit, panda, ape, hippo, lion",
+        "Description": "Name of the plan, see documentation for valid plans",
+        "Computed": true
+      },
+      "ready": {
+        "Type": "Bool",
+        "Description": "Flag describing if the resource is ready",
         "Computed": true
       },
       "region": {
@@ -555,10 +682,15 @@
         "Description": "The virtual host",
         "Computed": true
       },
+      "vpc_id": {
+        "Type": "Int",
+        "Description": "The ID of the VPC to create your instance in",
+        "Computed": true
+      },
       "vpc_subnet": {
         "Type": "String",
-        "Optional": true,
-        "Description": "Dedicated VPC subnet, shouldn't overlap with your current VPC's subnet"
+        "Description": "Dedicated VPC subnet, shouldn't overlap with your current VPC's subnet",
+        "Computed": true
       }
     },
     "cloudamqp_nodes": {
@@ -569,41 +701,38 @@
       },
       "nodes": {
         "Type": "List",
-        "Optional": true,
         "Computed": true,
         "IsBlock": true,
-        "ConfigImplicitMode": "Block",
+        "ConfigImplicitMode": "ComputedBlock",
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
+            "configured": {
+              "Type": "Bool",
+              "Computed": true
+            },
             "erlang_version": {
               "Type": "String",
-              "Optional": true,
               "Computed": true
             },
             "hipe": {
               "Type": "Bool",
-              "Optional": true,
               "Computed": true
             },
             "hostname": {
               "Type": "String",
-              "Optional": true,
               "Computed": true
             },
             "name": {
               "Type": "String",
-              "Optional": true,
               "Computed": true
             },
             "rabbitmq_version": {
               "Type": "String",
-              "Optional": true,
               "Computed": true
             },
             "running": {
               "Type": "Bool",
-              "Optional": true,
               "Computed": true
             }
           }
@@ -645,27 +774,27 @@
       },
       "plugins": {
         "Type": "List",
-        "Optional": true,
+        "Computed": true,
         "IsBlock": true,
-        "ConfigImplicitMode": "Block",
+        "ConfigImplicitMode": "ComputedBlock",
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
             "description": {
               "Type": "String",
-              "Optional": true
+              "Computed": true
             },
             "enabled": {
               "Type": "Bool",
-              "Optional": true
+              "Computed": true
             },
             "name": {
               "Type": "String",
-              "Optional": true
+              "Computed": true
             },
             "version": {
               "Type": "String",
-              "Optional": true
+              "Computed": true
             }
           }
         }
@@ -679,23 +808,23 @@
       },
       "plugins": {
         "Type": "List",
-        "Optional": true,
+        "Computed": true,
         "IsBlock": true,
-        "ConfigImplicitMode": "Block",
+        "ConfigImplicitMode": "ComputedBlock",
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
             "description": {
               "Type": "String",
-              "Optional": true
+              "Computed": true
             },
             "name": {
               "Type": "String",
-              "Optional": true
+              "Computed": true
             },
             "require": {
               "Type": "String",
-              "Optional": true
+              "Computed": true
             }
           }
         }

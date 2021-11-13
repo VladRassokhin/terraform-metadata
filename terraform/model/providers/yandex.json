@@ -3,7 +3,7 @@
   ".sdk_type": "terraform-plugin-sdk-v1",
   "name": "yandex",
   "type": "provider",
-  "version": "v0.43.0",
+  "version": "ymq-init-commit",
   "provider": {
     "cloud_id": {
       "Type": "String",
@@ -47,7 +47,7 @@
     "service_account_key_file": {
       "Type": "String",
       "Optional": true,
-      "Description": "Either the path to or the contents of a Service Account key file in JSON format.",
+      "Description": "Path to file with Yandex.Cloud Service Account key.",
       "DefaultFunc": "ENV(YC_SERVICE_ACCOUNT_KEY_FILE)",
       "ConflictsWith": [
         "token"
@@ -76,24 +76,6 @@
       "Optional": true,
       "Description": "The access token for API operations.",
       "DefaultFunc": "ENV(YC_TOKEN)"
-    },
-    "ymq_access_key": {
-      "Type": "String",
-      "Optional": true,
-      "Description": "Yandex.Cloud Message Queue service access key. \nUsed when a message queue resource doesn't have an access key explicitly specified.",
-      "DefaultFunc": "ENV(YC_MESSAGE_QUEUE_ACCESS_KEY)"
-    },
-    "ymq_endpoint": {
-      "Type": "String",
-      "Optional": true,
-      "Description": "Yandex.Cloud Message Queue service endpoint. Default is \nmessage-queue.api.cloud.yandex.net",
-      "DefaultFunc": "ENV(YC_MESSAGE_QUEUE_ENDPOINT)"
-    },
-    "ymq_secret_key": {
-      "Type": "String",
-      "Optional": true,
-      "Description": "Yandex.Cloud Message Queue service secret key. \nUsed when a message queue resource doesn't have a secret key explicitly specified.",
-      "DefaultFunc": "ENV(YC_MESSAGE_QUEUE_SECRET_KEY)"
     },
     "zone": {
       "Type": "String",
@@ -521,16 +503,6 @@
               "Type": "String",
               "Computed": true
             },
-            "security_group_ids": {
-              "Type": "Set",
-              "Optional": true,
-              "Computed": true,
-              "ConfigImplicitMode": "Attr",
-              "Elem": {
-                "Type": "SchemaElements",
-                "ElementsType": "String"
-              }
-            },
             "subnet_id": {
               "Type": "String",
               "Required": true
@@ -680,14 +652,6 @@
       "created_at": {
         "Type": "String",
         "Computed": true
-      },
-      "deletion_protection": {
-        "Type": "Bool",
-        "Optional": true,
-        "Default": {
-          "Type": "bool",
-          "Value": "false"
-        }
       },
       "deploy_policy": {
         "Type": "List",
@@ -957,15 +921,6 @@
                     "Type": "String",
                     "Optional": true
                   },
-                  "security_group_ids": {
-                    "Type": "Set",
-                    "Optional": true,
-                    "ConfigImplicitMode": "Attr",
-                    "Elem": {
-                      "Type": "SchemaElements",
-                      "ElementsType": "String"
-                    }
-                  },
                   "subnet_ids": {
                     "Type": "Set",
                     "Optional": true,
@@ -1081,7 +1036,10 @@
                         },
                         "image_id": {
                           "Type": "String",
-                          "Optional": true
+                          "Optional": true,
+                          "ConflictsWith": [
+                            "instance_template.secondary_disk.initialize_params.snapshot_id"
+                          ]
                         },
                         "size": {
                           "Type": "Int",
@@ -1093,7 +1051,10 @@
                         },
                         "snapshot_id": {
                           "Type": "String",
-                          "Optional": true
+                          "Optional": true,
+                          "ConflictsWith": [
+                            "instance_template.secondary_disk.initialize_params.image_id"
+                          ]
                         },
                         "type": {
                           "Type": "String",
@@ -1377,92 +1338,6 @@
                   "size": {
                     "Type": "Int",
                     "Required": true
-                  }
-                }
-              }
-            },
-            "test_auto_scale": {
-              "Type": "List",
-              "Optional": true,
-              "MaxItems": 1,
-              "IsBlock": true,
-              "ConfigImplicitMode": "Block",
-              "Elem": {
-                "Type": "SchemaInfo",
-                "Info": {
-                  "cpu_utilization_target": {
-                    "Type": "Float",
-                    "Optional": true
-                  },
-                  "custom_rule": {
-                    "Type": "List",
-                    "Optional": true,
-                    "IsBlock": true,
-                    "ConfigImplicitMode": "Block",
-                    "Elem": {
-                      "Type": "SchemaInfo",
-                      "Info": {
-                        "labels": {
-                          "Type": "Map",
-                          "Optional": true,
-                          "ConfigImplicitMode": "Attr",
-                          "Elem": {
-                            "Type": "SchemaElements",
-                            "ElementsType": "String"
-                          }
-                        },
-                        "metric_name": {
-                          "Type": "String",
-                          "Required": true
-                        },
-                        "metric_type": {
-                          "Type": "String",
-                          "Required": true
-                        },
-                        "rule_type": {
-                          "Type": "String",
-                          "Required": true
-                        },
-                        "target": {
-                          "Type": "Float",
-                          "Required": true
-                        }
-                      }
-                    }
-                  },
-                  "initial_size": {
-                    "Type": "Int",
-                    "Required": true
-                  },
-                  "max_size": {
-                    "Type": "Int",
-                    "Optional": true,
-                    "Default": {
-                      "Type": "int",
-                      "Value": "0"
-                    }
-                  },
-                  "measurement_duration": {
-                    "Type": "Int",
-                    "Required": true
-                  },
-                  "min_zone_size": {
-                    "Type": "Int",
-                    "Optional": true,
-                    "Default": {
-                      "Type": "int",
-                      "Value": "0"
-                    }
-                  },
-                  "stabilization_duration": {
-                    "Type": "Int",
-                    "Optional": true,
-                    "Computed": true
-                  },
-                  "warmup_duration": {
-                    "Type": "Int",
-                    "Optional": true,
-                    "Computed": true
                   }
                 }
               }
@@ -2913,14 +2788,6 @@
                     "Optional": true,
                     "Computed": true
                   },
-                  "gpus": {
-                    "Type": "Int",
-                    "Optional": true,
-                    "Default": {
-                      "Type": "int",
-                      "Value": "0"
-                    }
-                  },
                   "memory": {
                     "Type": "Float",
                     "Optional": true,
@@ -4301,7 +4168,7 @@
         "Computed": true
       },
       "database": {
-        "Type": "List",
+        "Type": "Set",
         "Required": true,
         "IsBlock": true,
         "ConfigImplicitMode": "Block",
@@ -4392,10 +4259,6 @@
               "Type": "String",
               "Computed": true
             },
-            "role": {
-              "Type": "String",
-              "Computed": true
-            },
             "subnet_id": {
               "Type": "String",
               "Optional": true,
@@ -4430,7 +4293,7 @@
         "Computed": true
       },
       "user": {
-        "Type": "List",
+        "Type": "Set",
         "Required": true,
         "IsBlock": true,
         "ConfigImplicitMode": "Block",
@@ -4510,10 +4373,6 @@
               "Type": "Int",
               "Optional": true,
               "Computed": true
-            },
-            "version": {
-              "Type": "String",
-              "Required": true
             }
           }
         }
@@ -4616,95 +4475,6 @@
       "status": {
         "Type": "String",
         "Computed": true
-      }
-    },
-    "yandex_message_queue": {
-      "access_key": {
-        "Type": "String",
-        "Optional": true
-      },
-      "arn": {
-        "Type": "String",
-        "Computed": true
-      },
-      "content_based_deduplication": {
-        "Type": "Bool",
-        "Optional": true,
-        "Default": {
-          "Type": "bool",
-          "Value": "false"
-        }
-      },
-      "delay_seconds": {
-        "Type": "Int",
-        "Optional": true,
-        "Default": {
-          "Type": "int",
-          "Value": "0"
-        }
-      },
-      "fifo_queue": {
-        "Type": "Bool",
-        "Optional": true,
-        "Default": {
-          "Type": "bool",
-          "Value": "false"
-        }
-      },
-      "max_message_size": {
-        "Type": "Int",
-        "Optional": true,
-        "Default": {
-          "Type": "int",
-          "Value": "262144"
-        }
-      },
-      "message_retention_seconds": {
-        "Type": "Int",
-        "Optional": true,
-        "Default": {
-          "Type": "int",
-          "Value": "345600"
-        }
-      },
-      "name": {
-        "Type": "String",
-        "Optional": true,
-        "Computed": true,
-        "ConflictsWith": [
-          "name_prefix"
-        ]
-      },
-      "name_prefix": {
-        "Type": "String",
-        "Optional": true,
-        "ConflictsWith": [
-          "name"
-        ]
-      },
-      "receive_wait_time_seconds": {
-        "Type": "Int",
-        "Optional": true,
-        "Default": {
-          "Type": "int",
-          "Value": "0"
-        }
-      },
-      "redrive_policy": {
-        "Type": "String",
-        "Optional": true
-      },
-      "secret_key": {
-        "Type": "String",
-        "Optional": true
-      },
-      "visibility_timeout_seconds": {
-        "Type": "Int",
-        "Optional": true,
-        "Default": {
-          "Type": "int",
-          "Value": "30"
-        }
       }
     },
     "yandex_resourcemanager_cloud_iam_binding": {
@@ -5321,40 +5091,6 @@
         "Type": "String",
         "Optional": true
       },
-      "dhcp_options": {
-        "Type": "List",
-        "Optional": true,
-        "MaxItems": 1,
-        "IsBlock": true,
-        "ConfigImplicitMode": "Block",
-        "Elem": {
-          "Type": "SchemaInfo",
-          "Info": {
-            "domain_name": {
-              "Type": "String",
-              "Optional": true
-            },
-            "domain_name_servers": {
-              "Type": "List",
-              "Optional": true,
-              "ConfigImplicitMode": "Attr",
-              "Elem": {
-                "Type": "SchemaElements",
-                "ElementsType": "String"
-              }
-            },
-            "ntp_servers": {
-              "Type": "List",
-              "Optional": true,
-              "ConfigImplicitMode": "Attr",
-              "Elem": {
-                "Type": "SchemaElements",
-                "ElementsType": "String"
-              }
-            }
-          }
-        }
-      },
       "folder_id": {
         "Type": "String",
         "Optional": true,
@@ -5380,7 +5116,8 @@
       },
       "route_table_id": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Computed": true
       },
       "v4_cidr_blocks": {
         "Type": "List",
@@ -5408,24 +5145,6 @@
     }
   },
   "data-sources": {
-    "yandex_client_config": {
-      "cloud_id": {
-        "Type": "String",
-        "Computed": true
-      },
-      "folder_id": {
-        "Type": "String",
-        "Computed": true
-      },
-      "iam_token": {
-        "Type": "String",
-        "Computed": true
-      },
-      "zone": {
-        "Type": "String",
-        "Computed": true
-      }
-    },
     "yandex_compute_disk": {
       "created_at": {
         "Type": "String",
@@ -5723,15 +5442,6 @@
               "Type": "String",
               "Computed": true
             },
-            "security_group_ids": {
-              "Type": "Set",
-              "Computed": true,
-              "ConfigImplicitMode": "Attr",
-              "Elem": {
-                "Type": "SchemaElements",
-                "ElementsType": "String"
-              }
-            },
             "subnet_id": {
               "Type": "String",
               "Computed": true
@@ -5856,10 +5566,6 @@
       },
       "created_at": {
         "Type": "String",
-        "Computed": true
-      },
-      "deletion_protection": {
-        "Type": "Bool",
         "Computed": true
       },
       "deploy_policy": {
@@ -6082,15 +5788,6 @@
                   "network_id": {
                     "Type": "String",
                     "Computed": true
-                  },
-                  "security_group_ids": {
-                    "Type": "Set",
-                    "Computed": true,
-                    "ConfigImplicitMode": "Attr",
-                    "Elem": {
-                      "Type": "SchemaElements",
-                      "ElementsType": "String"
-                    }
                   },
                   "subnet_ids": {
                     "Type": "Set",
@@ -6478,81 +6175,6 @@
                 "Type": "SchemaInfo",
                 "Info": {
                   "size": {
-                    "Type": "Int",
-                    "Computed": true
-                  }
-                }
-              }
-            },
-            "test_auto_scale": {
-              "Type": "List",
-              "Computed": true,
-              "IsBlock": true,
-              "ConfigImplicitMode": "ComputedBlock",
-              "Elem": {
-                "Type": "SchemaInfo",
-                "Info": {
-                  "cpu_utilization_target": {
-                    "Type": "Float",
-                    "Computed": true
-                  },
-                  "custom_rule": {
-                    "Type": "List",
-                    "Computed": true,
-                    "IsBlock": true,
-                    "ConfigImplicitMode": "ComputedBlock",
-                    "Elem": {
-                      "Type": "SchemaInfo",
-                      "Info": {
-                        "labels": {
-                          "Type": "Map",
-                          "Computed": true,
-                          "ConfigImplicitMode": "Attr",
-                          "Elem": {
-                            "Type": "SchemaElements",
-                            "ElementsType": "String"
-                          }
-                        },
-                        "metric_name": {
-                          "Type": "String",
-                          "Computed": true
-                        },
-                        "metric_type": {
-                          "Type": "String",
-                          "Computed": true
-                        },
-                        "rule_type": {
-                          "Type": "String",
-                          "Computed": true
-                        },
-                        "target": {
-                          "Type": "Float",
-                          "Computed": true
-                        }
-                      }
-                    }
-                  },
-                  "initial_size": {
-                    "Type": "Int",
-                    "Computed": true
-                  },
-                  "max_size": {
-                    "Type": "Int",
-                    "Computed": true
-                  },
-                  "measurement_duration": {
-                    "Type": "Int",
-                    "Computed": true
-                  },
-                  "min_zone_size": {
-                    "Type": "Int",
-                    "Computed": true
-                  },
-                  "stabilization_duration": {
-                    "Type": "Int",
-                    "Computed": true
-                  },
-                  "warmup_duration": {
                     "Type": "Int",
                     "Computed": true
                   }
@@ -7153,24 +6775,15 @@
       },
       "folder_id": {
         "Type": "String",
-        "Optional": true,
         "Computed": true
       },
       "name": {
         "Type": "String",
-        "Optional": true,
-        "Computed": true,
-        "ConflictsWith": [
-          "service_account_id"
-        ]
+        "Computed": true
       },
       "service_account_id": {
         "Type": "String",
-        "Optional": true,
-        "Computed": true,
-        "ConflictsWith": [
-          "name"
-        ]
+        "Required": true
       }
     },
     "yandex_iam_user": {
@@ -7668,10 +7281,6 @@
                     "Computed": true
                   },
                   "cores": {
-                    "Type": "Int",
-                    "Computed": true
-                  },
-                  "gpus": {
                     "Type": "Int",
                     "Computed": true
                   },
@@ -8918,7 +8527,7 @@
         "Computed": true
       },
       "database": {
-        "Type": "List",
+        "Type": "Set",
         "Computed": true,
         "IsBlock": true,
         "ConfigImplicitMode": "ComputedBlock",
@@ -8997,10 +8606,6 @@
               "Type": "String",
               "Computed": true
             },
-            "role": {
-              "Type": "String",
-              "Computed": true
-            },
             "subnet_id": {
               "Type": "String",
               "Computed": true
@@ -9035,7 +8640,7 @@
         "Computed": true
       },
       "user": {
-        "Type": "List",
+        "Type": "Set",
         "Computed": true,
         "IsBlock": true,
         "ConfigImplicitMode": "ComputedBlock",
@@ -9107,10 +8712,6 @@
             },
             "timeout": {
               "Type": "Int",
-              "Computed": true
-            },
-            "version": {
-              "Type": "String",
               "Computed": true
             }
           }
@@ -9207,28 +8808,6 @@
         "Computed": true
       },
       "status": {
-        "Type": "String",
-        "Computed": true
-      }
-    },
-    "yandex_message_queue": {
-      "access_key": {
-        "Type": "String",
-        "Optional": true
-      },
-      "arn": {
-        "Type": "String",
-        "Computed": true
-      },
-      "name": {
-        "Type": "String",
-        "Required": true
-      },
-      "secret_key": {
-        "Type": "String",
-        "Optional": true
-      },
-      "url": {
         "Type": "String",
         "Computed": true
       }
@@ -9570,40 +9149,6 @@
       "description": {
         "Type": "String",
         "Computed": true
-      },
-      "dhcp_options": {
-        "Type": "List",
-        "Computed": true,
-        "MaxItems": 1,
-        "IsBlock": true,
-        "ConfigImplicitMode": "ComputedBlock",
-        "Elem": {
-          "Type": "SchemaInfo",
-          "Info": {
-            "domain_name": {
-              "Type": "String",
-              "Computed": true
-            },
-            "domain_name_servers": {
-              "Type": "List",
-              "Computed": true,
-              "ConfigImplicitMode": "Attr",
-              "Elem": {
-                "Type": "SchemaElements",
-                "ElementsType": "String"
-              }
-            },
-            "ntp_servers": {
-              "Type": "List",
-              "Computed": true,
-              "ConfigImplicitMode": "Attr",
-              "Elem": {
-                "Type": "SchemaElements",
-                "ElementsType": "String"
-              }
-            }
-          }
-        }
       },
       "folder_id": {
         "Type": "String",

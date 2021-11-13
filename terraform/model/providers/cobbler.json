@@ -1,39 +1,39 @@
 {
   ".schema_version": "2",
-  ".sdk_type": "terraform",
+  ".sdk_type": "terraform-plugin-sdk-v1",
   "name": "cobbler",
   "type": "provider",
-  "version": "v1.1.0",
+  "version": "v2.0.3",
   "provider": {
     "cacert_file": {
       "Type": "String",
       "Optional": true,
-      "Description": "The path or contents of an SSL CA certificate",
-      "DefaultFunc": "UNKNOWN"
+      "Description": "The path or contents of an SSL CA certificate. This can also be specified with the `COBBLER_CACERT_FILE`shell environment variable.",
+      "DefaultFunc": "ENV(COBBLER_CACERT_FILE)"
     },
     "insecure": {
       "Type": "Bool",
       "Optional": true,
-      "Description": "Ignore SSL certificate warnings and errors.",
-      "DefaultFunc": "UNKNOWN"
+      "Description": "The url to the Cobbler service. This can also be specified with the `COBBLER_URL` shell environment variable.",
+      "DefaultFunc": "ENV(COBBLER_INSECURE)"
     },
     "password": {
       "Type": "String",
       "Required": true,
-      "Description": "The password for accessing Cobbler.",
-      "DefaultFunc": "UNKNOWN"
+      "Description": "The password to the Cobbler service. This can also be specified with the `COBBLER_PASSWORD` shell environment variable.",
+      "DefaultFunc": "ENV(COBBLER_PASSWORD)"
     },
     "url": {
       "Type": "String",
       "Required": true,
-      "Description": "Cobbler URL",
-      "DefaultFunc": "UNKNOWN"
+      "Description": "The url to the Cobbler service. This can also be specified with the `COBBLER_URL` shell environment variable.",
+      "DefaultFunc": "ENV(COBBLER_URL)"
     },
     "username": {
       "Type": "String",
       "Required": true,
-      "Description": "The username for accessing Cobbler.",
-      "DefaultFunc": "UNKNOWN"
+      "Description": "The username to the Cobbler service. This can also be specified with the `COBBLER_USERNAME` shell environment variable.",
+      "DefaultFunc": "ENV(COBBLER_USERNAME)"
     }
   },
   "resources": {
@@ -41,48 +41,64 @@
       "arch": {
         "Type": "String",
         "Optional": true,
+        "Description": "The architecture of the distro. Valid options are: i386, x86_64, ia64, ppc, ppc64, s390, arm.",
         "Computed": true
       },
       "boot_files": {
         "Type": "String",
         "Optional": true,
+        "Description": "Files copied into tftpboot beyond the kernel/initrd.",
+        "Computed": true
+      },
+      "boot_loader": {
+        "Type": "String",
+        "Optional": true,
+        "Description": " Must be either `grub` or `pxelinux`.",
         "Computed": true
       },
       "breed": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "The \"breed\" of distribution. Valid options are: redhat, fedora, centos, scientific linux, suse, debian, and ubuntu. These choices may vary depending on the version of Cobbler in use."
       },
       "comment": {
         "Type": "String",
         "Optional": true,
+        "Description": "Free form text description.",
         "Computed": true
       },
       "fetchable_files": {
         "Type": "String",
         "Optional": true,
+        "Description": "Templates for tftp or wget.",
         "Computed": true
       },
       "initrd": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "Absolute path to initrd on filesystem. This must already exist prior to creating the distro."
       },
       "kernel": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "Absolute path to kernel on filesystem. This must already exist prior to creating the distro."
       },
       "kernel_options": {
         "Type": "String",
         "Optional": true,
+        "Description": "Kernel options to use with the kernel.",
         "Computed": true
       },
       "kernel_options_post": {
         "Type": "String",
         "Optional": true,
+        "Description": "Post install Kernel options to use with the kernel after installation.",
         "Computed": true
       },
       "mgmt_classes": {
         "Type": "List",
         "Optional": true,
+        "Description": "Management classes for external config management.",
         "Computed": true,
         "ConfigImplicitMode": "Attr",
         "Elem": {
@@ -92,15 +108,18 @@
       },
       "name": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "A name for the distro."
       },
       "os_version": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "The version of the distro you are creating. This varies with the version of Cobbler you are using. An updated signature list may need to be obtained in order to support a newer version. Example: `bionic`."
       },
       "owners": {
         "Type": "List",
         "Optional": true,
+        "Description": "Owners list for authz_ownership.",
         "Computed": true,
         "ConfigImplicitMode": "Attr",
         "Elem": {
@@ -111,82 +130,85 @@
       "redhat_management_key": {
         "Type": "String",
         "Optional": true,
-        "Computed": true
-      },
-      "redhat_management_server": {
-        "Type": "String",
-        "Optional": true,
+        "Description": "Obsolete - removed in Cobbler 3.",
         "Computed": true
       },
       "template_files": {
         "Type": "String",
         "Optional": true,
+        "Description": "File mappings for built-in config management.",
         "Computed": true
       }
     },
-    "cobbler_kickstart_file": {
-      "body": {
-        "Type": "String",
-        "Required": true
-      },
-      "name": {
-        "Type": "String",
-        "Required": true
-      }
-    },
     "cobbler_profile": {
+      "autoinstall": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Template remote kickstarts or preseeds.",
+        "Computed": true
+      },
+      "autoinstall_meta": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Automatic installation template metadata, formerly Kickstart metadata.",
+        "Computed": true
+      },
       "boot_files": {
         "Type": "String",
         "Optional": true,
+        "Description": "Files copied into tftpboot beyond the kernel/initrd.",
         "Computed": true
       },
       "comment": {
         "Type": "String",
         "Optional": true,
+        "Description": "Free form text description.",
         "Computed": true
+      },
+      "dhcp_tag": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "DHCP tag."
       },
       "distro": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "Parent distribution."
       },
       "enable_gpxe": {
         "Type": "Bool",
         "Optional": true,
+        "Description": "Use gPXE instead of PXELINUX for advanced booting options.",
         "Computed": true
       },
       "enable_menu": {
         "Type": "Bool",
         "Optional": true,
+        "Description": "Enable a boot menu.",
         "Computed": true
       },
       "fetchable_files": {
         "Type": "String",
         "Optional": true,
+        "Description": "Templates for tftp or wget.",
         "Computed": true
       },
       "kernel_options": {
         "Type": "String",
         "Optional": true,
+        "Description": "Kernel options for the profile.",
         "Computed": true
       },
       "kernel_options_post": {
         "Type": "String",
         "Optional": true,
-        "Computed": true
-      },
-      "kickstart": {
-        "Type": "String",
-        "Optional": true,
-        "Computed": true
-      },
-      "ks_meta": {
-        "Type": "String",
-        "Optional": true,
+        "Description": "Post install kernel options.",
         "Computed": true
       },
       "mgmt_classes": {
         "Type": "List",
         "Optional": true,
+        "Description": "For external configuration management.",
         "Computed": true,
         "ConfigImplicitMode": "Attr",
         "Elem": {
@@ -197,15 +219,18 @@
       "mgmt_parameters": {
         "Type": "String",
         "Optional": true,
+        "Description": "Parameters which will be handed to your management application (Must be a valid YAML dictionary).",
         "Computed": true
       },
       "name": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "The name of the profile."
       },
       "name_servers": {
         "Type": "List",
         "Optional": true,
+        "Description": "Name servers.",
         "Computed": true,
         "ConfigImplicitMode": "Attr",
         "Elem": {
@@ -216,6 +241,7 @@
       "name_servers_search": {
         "Type": "List",
         "Optional": true,
+        "Description": "Name server search settings.",
         "Computed": true,
         "ConfigImplicitMode": "Attr",
         "Elem": {
@@ -223,9 +249,16 @@
           "ElementsType": "String"
         }
       },
+      "next_server": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The next_server option is used for DHCP/PXE as the IP of the TFTP server from which network boot files are downloaded. Usually, this will be the same IP as the server setting.",
+        "Computed": true
+      },
       "owners": {
         "Type": "List",
         "Optional": true,
+        "Description": "Owners list for authz_ownership.",
         "Computed": true,
         "ConfigImplicitMode": "Attr",
         "Elem": {
@@ -236,26 +269,25 @@
       "parent": {
         "Type": "String",
         "Optional": true,
+        "Description": "The parent this profile inherits settings from.",
         "Computed": true
       },
       "proxy": {
         "Type": "String",
         "Optional": true,
+        "Description": "Proxy URL.",
         "Computed": true
       },
       "redhat_management_key": {
         "Type": "String",
         "Optional": true,
-        "Computed": true
-      },
-      "redhat_management_server": {
-        "Type": "String",
-        "Optional": true,
+        "Description": "Obsolete - removed in Cobbler 3.",
         "Computed": true
       },
       "repos": {
         "Type": "List",
         "Optional": true,
+        "Description": "Repos to auto-assign to this profile.",
         "Computed": true,
         "ConfigImplicitMode": "Attr",
         "Elem": {
@@ -266,56 +298,61 @@
       "server": {
         "Type": "String",
         "Optional": true,
+        "Description": "The server-override for the profile.",
         "Computed": true
       },
       "template_files": {
         "Type": "String",
         "Optional": true,
-        "Computed": true
-      },
-      "template_remote_kickstarts": {
-        "Type": "Int",
-        "Optional": true,
+        "Description": "File mappings for built-in config management.",
         "Computed": true
       },
       "virt_auto_boot": {
         "Type": "String",
         "Optional": true,
+        "Description": "Auto boot virtual machines.",
         "Computed": true
       },
       "virt_bridge": {
         "Type": "String",
         "Optional": true,
+        "Description": "The bridge for virtual machines.",
         "Computed": true
       },
       "virt_cpus": {
         "Type": "String",
         "Optional": true,
+        "Description": "The number of virtual CPUs",
         "Computed": true
       },
       "virt_disk_driver": {
         "Type": "String",
         "Optional": true,
+        "Description": "The virtual machine disk driver.",
         "Computed": true
       },
       "virt_file_size": {
         "Type": "String",
         "Optional": true,
+        "Description": "The virtual machine file size.",
         "Computed": true
       },
       "virt_path": {
         "Type": "String",
         "Optional": true,
+        "Description": "The virtual machine path.",
         "Computed": true
       },
       "virt_ram": {
         "Type": "String",
         "Optional": true,
+        "Description": "The amount of RAM for the virtual machine.",
         "Computed": true
       },
       "virt_type": {
         "Type": "String",
         "Optional": true,
+        "Description": "The type of virtual machine. Valid options are: xenpv, xenfv, qemu, kvm, vmware, openvz.",
         "Computed": true
       }
     },
@@ -323,6 +360,7 @@
       "apt_components": {
         "Type": "List",
         "Optional": true,
+        "Description": "List of Apt components such as main, restricted, universe. Applicable to apt breeds only.",
         "Computed": true,
         "ConfigImplicitMode": "Attr",
         "Elem": {
@@ -333,6 +371,7 @@
       "apt_dists": {
         "Type": "List",
         "Optional": true,
+        "Description": "List of Apt distribution names such as bionic, bionic-updates. Applicable to apt breeds only.",
         "Computed": true,
         "ConfigImplicitMode": "Attr",
         "Elem": {
@@ -343,48 +382,58 @@
       "arch": {
         "Type": "String",
         "Optional": true,
+        "Description": "The architecture of the repo. Valid options are: i386, x86_64, ia64, ppc, ppc64, s390, arm.",
         "Computed": true
       },
       "breed": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "The \"breed\" of distribution. Valid options are: rsync, rhn, yum, apt, and wget. These choices may vary depending on the version of Cobbler in use."
       },
       "comment": {
         "Type": "String",
         "Optional": true,
+        "Description": "Free form text description.",
         "Computed": true
       },
       "createrepo_flags": {
         "Type": "String",
         "Optional": true,
+        "Description": "Flags to use with `createrepo`.",
         "Computed": true
       },
       "environment": {
         "Type": "String",
         "Optional": true,
+        "Description": "Environment variables to use during repo command execution.",
         "Computed": true
       },
       "keep_updated": {
         "Type": "Bool",
         "Optional": true,
+        "Description": "Update the repo upon Cobbler sync. Valid values are true or false.",
         "Computed": true
       },
       "mirror": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "Address of the repo to mirror."
       },
       "mirror_locally": {
         "Type": "Bool",
         "Optional": true,
+        "Description": "Whether to copy the files locally or just references to the external files. Valid values are true or false.",
         "Computed": true
       },
       "name": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "A name for the repo."
       },
       "owners": {
         "Type": "List",
         "Optional": true,
+        "Description": "List of Owners for authz_ownership.",
         "Computed": true,
         "ConfigImplicitMode": "Attr",
         "Elem": {
@@ -395,11 +444,13 @@
       "proxy": {
         "Type": "String",
         "Optional": true,
+        "Description": "Proxy to use for downloading the repo. This argument does not work on older versions of Cobbler.",
         "Computed": true
       },
       "rpm_list": {
         "Type": "List",
         "Optional": true,
+        "Description": "List of specific RPMs to mirror.",
         "Computed": true,
         "ConfigImplicitMode": "Attr",
         "Elem": {
@@ -411,52 +462,80 @@
     "cobbler_snippet": {
       "body": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "The body of the snippet. May also point to a file: `body = file(\"my_snippet\")`."
       },
       "name": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "The name of the snippet. This must be the name only, so without `/var/lib/cobbler/snippets`."
       }
     },
     "cobbler_system": {
+      "autoinstall": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Template remote kickstarts or preseeds.",
+        "Computed": true
+      },
+      "autoinstall_meta": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Automatic installation template metadata, formerly Kickstart metadata.",
+        "Computed": true
+      },
       "boot_files": {
         "Type": "String",
         "Optional": true,
+        "Description": "Files copied into tftpboot beyond the kernel/initrd.",
+        "Computed": true
+      },
+      "boot_loader": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Must be either `grub` or `pxelinux`.",
         "Computed": true
       },
       "comment": {
         "Type": "String",
         "Optional": true,
+        "Description": "Free form text description.",
         "Computed": true
       },
       "enable_gpxe": {
         "Type": "Bool",
         "Optional": true,
+        "Description": "Use gPXE instead of PXELINUX for advanced booting options.",
         "Computed": true
       },
       "fetchable_files": {
         "Type": "String",
         "Optional": true,
+        "Description": "Templates for tftp or wget.",
         "Computed": true
       },
       "gateway": {
         "Type": "String",
         "Optional": true,
+        "Description": "Network gateway.",
         "Computed": true
       },
       "hostname": {
         "Type": "String",
         "Optional": true,
+        "Description": "Hostname of the system.",
         "Computed": true
       },
       "image": {
         "Type": "String",
         "Optional": true,
+        "Description": "Parent image (if no profile is used).",
         "Computed": true
       },
       "interface": {
         "Type": "Set",
         "Optional": true,
+        "Description": "The `interface` Block Set.",
         "Computed": true,
         "IsBlock": true,
         "ConfigImplicitMode": "Block",
@@ -466,16 +545,19 @@
             "bonding_opts": {
               "Type": "String",
               "Optional": true,
+              "Description": "Options for bonded interfaces.",
               "Computed": true
             },
             "bridge_opts": {
               "Type": "String",
               "Optional": true,
+              "Description": "Options for bridge interfaces.",
               "Computed": true
             },
             "cnames": {
               "Type": "List",
               "Optional": true,
+              "Description": "Canonical name records.",
               "Computed": true,
               "ConfigImplicitMode": "Attr",
               "Elem": {
@@ -486,51 +568,61 @@
             "dhcp_tag": {
               "Type": "String",
               "Optional": true,
+              "Description": "DHCP tag.",
               "Computed": true
             },
             "dns_name": {
               "Type": "String",
               "Optional": true,
+              "Description": "DNS name.",
               "Computed": true
             },
             "gateway": {
               "Type": "String",
               "Optional": true,
+              "Description": "Per-interface gateway.",
               "Computed": true
             },
             "interface_master": {
               "Type": "String",
               "Optional": true,
+              "Description": "The master interface when slave.",
               "Computed": true
             },
             "interface_type": {
               "Type": "String",
               "Optional": true,
+              "Description": "The type of interface: na, master, slave, bond, bond_slave, bridge, bridge_slave, bonded_bridge_slave.",
               "Computed": true
             },
             "ip_address": {
               "Type": "String",
               "Optional": true,
+              "Description": "The IP address of the interface.",
               "Computed": true
             },
             "ipv6_address": {
               "Type": "String",
               "Optional": true,
+              "Description": "The IPv6 address of the interface.",
               "Computed": true
             },
             "ipv6_default_gateway": {
               "Type": "String",
               "Optional": true,
+              "Description": "The default gateawy for the IPv6 address / interface.",
               "Computed": true
             },
             "ipv6_mtu": {
               "Type": "String",
               "Optional": true,
+              "Description": "The MTU of the IPv6 address.",
               "Computed": true
             },
             "ipv6_secondaries": {
               "Type": "List",
               "Optional": true,
+              "Description": "IPv6 secondaries.",
               "Computed": true,
               "ConfigImplicitMode": "Attr",
               "Elem": {
@@ -541,6 +633,7 @@
             "ipv6_static_routes": {
               "Type": "List",
               "Optional": true,
+              "Description": "Static routes for the IPv6 interface.",
               "Computed": true,
               "ConfigImplicitMode": "Attr",
               "Elem": {
@@ -551,30 +644,36 @@
             "mac_address": {
               "Type": "String",
               "Optional": true,
+              "Description": "The MAC address of the interface.",
               "Computed": true
             },
             "management": {
               "Type": "Bool",
               "Optional": true,
+              "Description": "Whether this interface is a management interface.",
               "Computed": true
             },
             "name": {
               "Type": "String",
-              "Required": true
+              "Required": true,
+              "Description": "The device name of the interface. ex: `eth0`."
             },
             "netmask": {
               "Type": "String",
               "Optional": true,
+              "Description": "The IPv4 netmask of the interface.",
               "Computed": true
             },
             "static": {
               "Type": "Bool",
               "Optional": true,
+              "Description": "Whether the interface should be static or DHCP.",
               "Computed": true
             },
             "static_routes": {
               "Type": "List",
               "Optional": true,
+              "Description": "Static routes for the interface.",
               "Computed": true,
               "ConfigImplicitMode": "Attr",
               "Elem": {
@@ -585,6 +684,7 @@
             "virt_bridge": {
               "Type": "String",
               "Optional": true,
+              "Description": "The virtual bridge to attach to.",
               "Computed": true
             }
           }
@@ -593,41 +693,25 @@
       "ipv6_default_device": {
         "Type": "String",
         "Optional": true,
+        "Description": "IPv6 default device.",
         "Computed": true
       },
       "kernel_options": {
         "Type": "String",
         "Optional": true,
+        "Description": "Kernel options. ex: `selinux=permissive`.",
         "Computed": true
       },
       "kernel_options_post": {
         "Type": "String",
         "Optional": true,
-        "Computed": true
-      },
-      "kickstart": {
-        "Type": "String",
-        "Optional": true,
-        "Computed": true
-      },
-      "ks_meta": {
-        "Type": "String",
-        "Optional": true,
-        "Computed": true
-      },
-      "ldap_enabled": {
-        "Type": "Bool",
-        "Optional": true,
-        "Computed": true
-      },
-      "ldap_type": {
-        "Type": "String",
-        "Optional": true,
+        "Description": "Kernel options (post install).",
         "Computed": true
       },
       "mgmt_classes": {
         "Type": "List",
         "Optional": true,
+        "Description": "For external configuration management.",
         "Computed": true,
         "ConfigImplicitMode": "Attr",
         "Elem": {
@@ -638,20 +722,18 @@
       "mgmt_parameters": {
         "Type": "String",
         "Optional": true,
-        "Computed": true
-      },
-      "monit_enabled": {
-        "Type": "Bool",
-        "Optional": true,
+        "Description": "Parameters which will be handed to your management application (Must be a valid YAML dictionary).",
         "Computed": true
       },
       "name": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "The name of the system."
       },
       "name_servers": {
         "Type": "List",
         "Optional": true,
+        "Description": "Name servers.",
         "Computed": true,
         "ConfigImplicitMode": "Attr",
         "Elem": {
@@ -662,6 +744,7 @@
       "name_servers_search": {
         "Type": "List",
         "Optional": true,
+        "Description": "Name server search settings.",
         "Computed": true,
         "ConfigImplicitMode": "Attr",
         "Elem": {
@@ -672,11 +755,19 @@
       "netboot_enabled": {
         "Type": "Bool",
         "Optional": true,
+        "Description": "(Re)install this machine at next boot.",
+        "Computed": true
+      },
+      "next_server": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The next_server option is used for DHCP/PXE as the IP of the TFTP server from which network boot files are downloaded. Usually, this will be the same IP as the server setting.",
         "Computed": true
       },
       "owners": {
         "Type": "List",
         "Optional": true,
+        "Description": "Owners list for authz_ownership.",
         "Computed": true,
         "ConfigImplicitMode": "Attr",
         "Elem": {
@@ -687,101 +778,121 @@
       "power_address": {
         "Type": "String",
         "Optional": true,
+        "Description": "Power management address.",
         "Computed": true
       },
       "power_id": {
         "Type": "String",
         "Optional": true,
+        "Description": "Usually a plug number or blade name if power type requires it.",
         "Computed": true
       },
       "power_pass": {
         "Type": "String",
         "Optional": true,
+        "Description": "Power management password.",
         "Computed": true
       },
       "power_type": {
         "Type": "String",
         "Optional": true,
+        "Description": "Power management type.",
         "Computed": true
       },
       "power_user": {
         "Type": "String",
         "Optional": true,
+        "Description": "Power management user.",
         "Computed": true
       },
       "profile": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "Parent profile."
       },
       "proxy": {
         "Type": "String",
         "Optional": true,
+        "Description": "Proxy URL.",
         "Computed": true
       },
       "redhat_management_key": {
         "Type": "String",
         "Optional": true,
-        "Computed": true
-      },
-      "redhat_management_server": {
-        "Type": "String",
-        "Optional": true,
+        "Description": "Obsolete - removed in Cobbler 3.",
         "Computed": true
       },
       "status": {
         "Type": "String",
         "Optional": true,
+        "Description": "System status (development, testing, acceptance, production).",
         "Computed": true
       },
       "template_files": {
         "Type": "String",
         "Optional": true,
-        "Computed": true
-      },
-      "template_remote_kickstarts": {
-        "Type": "Int",
-        "Optional": true,
+        "Description": "File mappings for built-in config management.",
         "Computed": true
       },
       "virt_auto_boot": {
         "Type": "String",
         "Optional": true,
+        "Description": "Auto boot virtual machines.",
         "Computed": true
       },
       "virt_cpus": {
         "Type": "String",
         "Optional": true,
+        "Description": "The number of virtual CPUs",
         "Computed": true
       },
       "virt_disk_driver": {
         "Type": "String",
         "Optional": true,
+        "Description": "The virtual machine disk driver.",
         "Computed": true
       },
       "virt_file_size": {
         "Type": "String",
         "Optional": true,
+        "Description": "The virtual machine file size.",
         "Computed": true
       },
       "virt_path": {
         "Type": "String",
         "Optional": true,
+        "Description": "The virtual machine path.",
         "Computed": true
       },
       "virt_pxe_boot": {
         "Type": "Int",
         "Optional": true,
+        "Description": "Use PXE to build this virtual machine.",
         "Computed": true
       },
       "virt_ram": {
         "Type": "String",
         "Optional": true,
+        "Description": "The amount of RAM for the virtual machine.",
         "Computed": true
       },
       "virt_type": {
         "Type": "String",
         "Optional": true,
+        "Description": "The type of virtual machine. Valid options are: xenpv, xenfv, qemu, kvm, vmware, openvz.",
         "Computed": true
+      }
+    },
+    "cobbler_template_file": {
+      "body": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The body of the template file. May also point to a file: `body = file(\"my_template.ks\")`."
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The name of the template file. This must be the name only, so without `/var/lib/cobbler/templates`."
       }
     }
   },

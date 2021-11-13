@@ -3,8 +3,13 @@
   ".sdk_type": "terraform-plugin-sdk-v2",
   "name": "googleworkspace",
   "type": "provider",
-  "version": "v0.4.1",
+  "version": "v0.5.1",
   "provider": {
+    "access_token": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "A temporary [OAuth 2.0 access token] obtained from the Google Authorization server, i.e. the `Authorization: Bearer` token used to authenticate HTTP requests to Google Admin SDK APIs. This is an alternative to `credentials`, and ignores the `scopes` field. If both are specified, `access_token` will be used over the `credentials` field."
+    },
     "credentials": {
       "Type": "String",
       "Optional": true,
@@ -20,7 +25,7 @@
     "impersonated_user_email": {
       "Type": "String",
       "Optional": true,
-      "Description": "The impersonated user's email with access to the Admin APIs can access the Admin SDK Directory API.",
+      "Description": "The impersonated user's email with access to the Admin APIs can access the Admin SDK Directory API. `impersonated_user_email` is required for all services except group and user management.",
       "DefaultFunc": "MENV(GOOGLEWORKSPACE_IMPERSONATED_USER_EMAIL)"
     },
     "oauth_scopes": {
@@ -32,6 +37,11 @@
         "Type": "SchemaElements",
         "ElementsType": "String"
       }
+    },
+    "service_account": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "The service account used to create the provided `access_token` if authenticating using the `access_token` method and needing to impersonate a user. This service account will require the GCP role `Service Account Token Creator` if needing to impersonate a user."
     }
   },
   "resources": {
@@ -294,7 +304,7 @@
       },
       "non_editable_aliases": {
         "Type": "List",
-        "Description": "asps.list of the group's non-editable alias email addresses that are outside of theaccount's primary domain or subdomains. These are functioning email addresses used by the group.",
+        "Description": "asps.list of the group's non-editable alias email addresses that are outside of the account's primary domain or subdomains. These are functioning email addresses used by the group.",
         "Computed": true,
         "ConfigImplicitMode": "Attr",
         "Elem": {
@@ -304,6 +314,10 @@
       }
     },
     "googleworkspace_group_member": {
+      "__timeouts__": [
+        "create",
+        "update"
+      ],
       "delivery_settings": {
         "Type": "String",
         "Optional": true,
@@ -316,7 +330,7 @@
       "email": {
         "Type": "String",
         "Required": true,
-        "Description": "The member's email address. A member can be a user or another group. This property isrequired when adding a member to a group. The email must be unique and cannot be an alias ofanother group. If the email address is changed, the API automatically reflects the email address changes."
+        "Description": "The member's email address. A member can be a user or another group. This property is required when adding a member to a group. The email must be unique and cannot be an alias of another group. If the email address is changed, the API automatically reflects the email address changes."
       },
       "etag": {
         "Type": "String",
@@ -362,6 +376,77 @@
         }
       }
     },
+    "googleworkspace_group_members": {
+      "etag": {
+        "Type": "String",
+        "Description": "ETag of the resource.",
+        "Computed": true
+      },
+      "group_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Identifies the group in the API request. The value can be the group's email address, group alias, or the unique group ID."
+      },
+      "id": {
+        "Type": "String",
+        "Description": "The ID of this resource.",
+        "Computed": true
+      },
+      "members": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "The members of the group",
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "delivery_settings": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Defines mail delivery preferences of member. Acceptable values are:`ALL_MAIL`: All messages, delivered as soon as they arrive. `DAILY`: No more than one message a day. `DIGEST`: Up to 25 messages bundled into a single message. `DISABLED`: Remove subscription. `NONE`: No messages.",
+              "Default": {
+                "Type": "string",
+                "Value": "ALL_MAIL"
+              }
+            },
+            "email": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The member's email address. A member can be a user or another group. This property isrequired when adding a member to a group. The email must be unique and cannot be an alias of another group. If the email address is changed, the API automatically reflects the email address changes."
+            },
+            "id": {
+              "Type": "String",
+              "Description": "The unique ID of the group member. A member id can be used as a member request URI's memberKey.",
+              "Computed": true
+            },
+            "role": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The member's role in a group. The API returns an error for cycles in group memberships. For example, if group1 is a member of group2, group2 cannot be a member of group1. Acceptable values are: `MANAGER`: This role is only available if the Google Groups for Business is enabled using the Admin Console. A `MANAGER` role can do everything done by an `OWNER` role except make a member an `OWNER` or delete the group. A group can have multiple `MANAGER` members. `MEMBER`: This role can subscribe to a group, view discussion archives, and view the group's membership list. `OWNER`: This role can send messages to the group, add or remove members, change member roles, change group's settings, and delete the group. An OWNER must be a member of the group. A group can have more than one OWNER.",
+              "Default": {
+                "Type": "string",
+                "Value": "MEMBER"
+              }
+            },
+            "status": {
+              "Type": "String",
+              "Description": "Status of member.",
+              "Computed": true
+            },
+            "type": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The type of group member. Acceptable values are: `CUSTOMER`: The member represents all users in a domain. An email address is not returned and the ID returned is the customer ID. `GROUP`: The member is another group. `USER`: The member is a user.",
+              "Default": {
+                "Type": "string",
+                "Value": "USER"
+              }
+            }
+          }
+        }
+      }
+    },
     "googleworkspace_group_settings": {
       "__timeouts__": [
         "create",
@@ -388,7 +473,7 @@
       "archive_only": {
         "Type": "Bool",
         "Optional": true,
-        "Description": "Allows the group to be archived only. If true, Group is archived and the group is inactive. New messages to this group are rejected. The older archived messages are browseable and searchable. If true, the `who_can_post_message` property is set to `NONE_CAN_POST`. If reverted from true to false, `who_can_post_message` is set to `ALL_MANAGERS_CAN_POST`. If false, The group is active and can receive messages. When false, updating `who_can_post_message` to `NONE_CAN_POST`, results in an error.",
+        "Description": "Allows the group to be archived only. If true, Group is archived and the group is inactive. New messages to this group are rejected. The older archived messages are browsable and searchable. If true, the `who_can_post_message` property is set to `NONE_CAN_POST`. If reverted from true to false, `who_can_post_message` is set to `ALL_MANAGERS_CAN_POST`. If false, The group is active and can receive messages. When false, updating `who_can_post_message` to `NONE_CAN_POST`, results in an error.",
         "Default": {
           "Type": "bool",
           "Value": "false"
@@ -491,7 +576,7 @@
       "primary_language": {
         "Type": "String",
         "Optional": true,
-        "Description": "The primary language for group. For a group's primary language use the language tags fromthe Google Workspace languages found at Google Workspace Email Settings API Email Language Tags."
+        "Description": "The primary language for group. For a group's primary language use the language tags from the Google Workspace languages found at Google Workspace Email Settings API Email Language Tags."
       },
       "reply_to": {
         "Type": "String",
@@ -586,7 +671,7 @@
       "who_can_post_message": {
         "Type": "String",
         "Optional": true,
-        "Description": "Permissions to post messages. Possible values are: `NONE_CAN_POST`: The group is disabled and archived. No one can post a message to this group. * When archiveOnly is false, updating whoCanPostMessage to NONE_CAN_POST, results in an error. * If archiveOnly is reverted from true to false, whoCanPostMessages is set to ALL_MANAGERS_CAN_POST. `ALL_MANAGERS_CAN_POST`: Managers, including group owners, can post messages. `ALL_MEMBERS_CAN_POST`: Any group member can post a message. `ALL_OWNERS_CAN_POST`: Only group owners can post a message. `ALL_IN_DOMAIN_CAN_POST`: Anyone in the account can post a message. `ANYONE_CAN_POST`: Any Internet user who outside your account can access your Google Groupsservice and post a message. *Note: When `who_can_post_message` is set to `ANYONE_CAN_POST`, we recommend the`message_moderation_level` be set to `MODERATE_NON_MEMBERS` to protect the group from possible spam. Users not belonging to the organization are not allowed to become members of this group.",
+        "Description": "Permissions to post messages. Possible values are: `NONE_CAN_POST`: The group is disabled and archived. No one can post a message to this group. * When archiveOnly is false, updating whoCanPostMessage to NONE_CAN_POST, results in an error. * If archiveOnly is reverted from true to false, whoCanPostMessages is set to ALL_MANAGERS_CAN_POST. `ALL_MANAGERS_CAN_POST`: Managers, including group owners, can post messages. `ALL_MEMBERS_CAN_POST`: Any group member can post a message. `ALL_OWNERS_CAN_POST`: Only group owners can post a message. `ALL_IN_DOMAIN_CAN_POST`: Anyone in the account can post a message. `ANYONE_CAN_POST`: Any Internet user who outside your account can access your Google Groups service and post a message. *Note: When `who_can_post_message` is set to `ANYONE_CAN_POST`, we recommend the`message_moderation_level` be set to `MODERATE_NON_MEMBERS` to protect the group from possible spam. Users not belonging to the organization are not allowed to become members of this group.",
         "Computed": true
       },
       "who_can_view_group": {
@@ -834,12 +919,12 @@
                   "max_value": {
                     "Type": "Float",
                     "Optional": true,
-                    "Description": "Maximum value of this field. This is meant to be indicativerather than enforced. Values outside this range will still be indexed,but search may not be as performant."
+                    "Description": "Maximum value of this field. This is meant to be indicative rather than enforced. Values outside this range will still be indexed, but search may not be as performant."
                   },
                   "min_value": {
                     "Type": "Float",
                     "Optional": true,
-                    "Description": "Minimum value of this field. This is meant to be indicativerather than enforced. Values outside this range will still be indexed,but search may not be as performant."
+                    "Description": "Minimum value of this field. This is meant to be indicative rather than enforced. Values outside this range will still be indexed, but search may not be as performant."
                   }
                 }
               }
@@ -1896,7 +1981,7 @@
       },
       "non_editable_aliases": {
         "Type": "List",
-        "Description": "asps.list of the group's non-editable alias email addresses that are outside of theaccount's primary domain or subdomains. These are functioning email addresses used by the group.",
+        "Description": "asps.list of the group's non-editable alias email addresses that are outside of the account's primary domain or subdomains. These are functioning email addresses used by the group.",
         "Computed": true,
         "ConfigImplicitMode": "Attr",
         "Elem": {
@@ -1914,7 +1999,7 @@
       "email": {
         "Type": "String",
         "Optional": true,
-        "Description": "The member's email address. A member can be a user or another group. This property isrequired when adding a member to a group. The email must be unique and cannot be an alias ofanother group. If the email address is changed, the API automatically reflects the email address changes."
+        "Description": "The member's email address. A member can be a user or another group. This property is required when adding a member to a group. The email must be unique and cannot be an alias of another group. If the email address is changed, the API automatically reflects the email address changes."
       },
       "etag": {
         "Type": "String",
@@ -1952,6 +2037,65 @@
         "Computed": true
       }
     },
+    "googleworkspace_group_members": {
+      "etag": {
+        "Type": "String",
+        "Description": "ETag of the resource.",
+        "Computed": true
+      },
+      "group_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Identifies the group in the API request. The value can be the group's email address, group alias, or the unique group ID."
+      },
+      "id": {
+        "Type": "String",
+        "Description": "The ID of this resource.",
+        "Computed": true
+      },
+      "members": {
+        "Type": "Set",
+        "Description": "The members of the group",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "delivery_settings": {
+              "Type": "String",
+              "Description": "Defines mail delivery preferences of member. Acceptable values are:`ALL_MAIL`: All messages, delivered as soon as they arrive. `DAILY`: No more than one message a day. `DIGEST`: Up to 25 messages bundled into a single message. `DISABLED`: Remove subscription. `NONE`: No messages.",
+              "Computed": true
+            },
+            "email": {
+              "Type": "String",
+              "Description": "The member's email address. A member can be a user or another group. This property isrequired when adding a member to a group. The email must be unique and cannot be an alias of another group. If the email address is changed, the API automatically reflects the email address changes.",
+              "Computed": true
+            },
+            "id": {
+              "Type": "String",
+              "Description": "The unique ID of the group member. A member id can be used as a member request URI's memberKey.",
+              "Computed": true
+            },
+            "role": {
+              "Type": "String",
+              "Description": "The member's role in a group. The API returns an error for cycles in group memberships. For example, if group1 is a member of group2, group2 cannot be a member of group1. Acceptable values are: `MANAGER`: This role is only available if the Google Groups for Business is enabled using the Admin Console. A `MANAGER` role can do everything done by an `OWNER` role except make a member an `OWNER` or delete the group. A group can have multiple `MANAGER` members. `MEMBER`: This role can subscribe to a group, view discussion archives, and view the group's membership list. `OWNER`: This role can send messages to the group, add or remove members, change member roles, change group's settings, and delete the group. An OWNER must be a member of the group. A group can have more than one OWNER.",
+              "Computed": true
+            },
+            "status": {
+              "Type": "String",
+              "Description": "Status of member.",
+              "Computed": true
+            },
+            "type": {
+              "Type": "String",
+              "Description": "The type of group member. Acceptable values are: `CUSTOMER`: The member represents all users in a domain. An email address is not returned and the ID returned is the customer ID. `GROUP`: The member is another group. `USER`: The member is a user.",
+              "Computed": true
+            }
+          }
+        }
+      }
+    },
     "googleworkspace_group_settings": {
       "allow_external_members": {
         "Type": "Bool",
@@ -1965,7 +2109,7 @@
       },
       "archive_only": {
         "Type": "Bool",
-        "Description": "Allows the group to be archived only. If true, Group is archived and the group is inactive. New messages to this group are rejected. The older archived messages are browseable and searchable. If true, the `who_can_post_message` property is set to `NONE_CAN_POST`. If reverted from true to false, `who_can_post_message` is set to `ALL_MANAGERS_CAN_POST`. If false, The group is active and can receive messages. When false, updating `who_can_post_message` to `NONE_CAN_POST`, results in an error.",
+        "Description": "Allows the group to be archived only. If true, Group is archived and the group is inactive. New messages to this group are rejected. The older archived messages are browsable and searchable. If true, the `who_can_post_message` property is set to `NONE_CAN_POST`. If reverted from true to false, `who_can_post_message` is set to `ALL_MANAGERS_CAN_POST`. If false, The group is active and can receive messages. When false, updating `who_can_post_message` to `NONE_CAN_POST`, results in an error.",
         "Computed": true
       },
       "custom_footer_text": {
@@ -2040,7 +2184,7 @@
       },
       "primary_language": {
         "Type": "String",
-        "Description": "The primary language for group. For a group's primary language use the language tags fromthe Google Workspace languages found at Google Workspace Email Settings API Email Language Tags.",
+        "Description": "The primary language for group. For a group's primary language use the language tags from the Google Workspace languages found at Google Workspace Email Settings API Email Language Tags.",
         "Computed": true
       },
       "reply_to": {
@@ -2095,7 +2239,7 @@
       },
       "who_can_post_message": {
         "Type": "String",
-        "Description": "Permissions to post messages. Possible values are: `NONE_CAN_POST`: The group is disabled and archived. No one can post a message to this group. * When archiveOnly is false, updating whoCanPostMessage to NONE_CAN_POST, results in an error. * If archiveOnly is reverted from true to false, whoCanPostMessages is set to ALL_MANAGERS_CAN_POST. `ALL_MANAGERS_CAN_POST`: Managers, including group owners, can post messages. `ALL_MEMBERS_CAN_POST`: Any group member can post a message. `ALL_OWNERS_CAN_POST`: Only group owners can post a message. `ALL_IN_DOMAIN_CAN_POST`: Anyone in the account can post a message. `ANYONE_CAN_POST`: Any Internet user who outside your account can access your Google Groupsservice and post a message. *Note: When `who_can_post_message` is set to `ANYONE_CAN_POST`, we recommend the`message_moderation_level` be set to `MODERATE_NON_MEMBERS` to protect the group from possible spam. Users not belonging to the organization are not allowed to become members of this group.",
+        "Description": "Permissions to post messages. Possible values are: `NONE_CAN_POST`: The group is disabled and archived. No one can post a message to this group. * When archiveOnly is false, updating whoCanPostMessage to NONE_CAN_POST, results in an error. * If archiveOnly is reverted from true to false, whoCanPostMessages is set to ALL_MANAGERS_CAN_POST. `ALL_MANAGERS_CAN_POST`: Managers, including group owners, can post messages. `ALL_MEMBERS_CAN_POST`: Any group member can post a message. `ALL_OWNERS_CAN_POST`: Only group owners can post a message. `ALL_IN_DOMAIN_CAN_POST`: Anyone in the account can post a message. `ANYONE_CAN_POST`: Any Internet user who outside your account can access your Google Groups service and post a message. *Note: When `who_can_post_message` is set to `ANYONE_CAN_POST`, we recommend the`message_moderation_level` be set to `MODERATE_NON_MEMBERS` to protect the group from possible spam. Users not belonging to the organization are not allowed to become members of this group.",
         "Computed": true
       },
       "who_can_view_group": {
@@ -2320,12 +2464,12 @@
                 "Info": {
                   "max_value": {
                     "Type": "Float",
-                    "Description": "Maximum value of this field. This is meant to be indicativerather than enforced. Values outside this range will still be indexed,but search may not be as performant.",
+                    "Description": "Maximum value of this field. This is meant to be indicative rather than enforced. Values outside this range will still be indexed, but search may not be as performant.",
                     "Computed": true
                   },
                   "min_value": {
                     "Type": "Float",
-                    "Description": "Minimum value of this field. This is meant to be indicativerather than enforced. Values outside this range will still be indexed,but search may not be as performant.",
+                    "Description": "Minimum value of this field. This is meant to be indicative rather than enforced. Values outside this range will still be indexed, but search may not be as performant.",
                     "Computed": true
                   }
                 }

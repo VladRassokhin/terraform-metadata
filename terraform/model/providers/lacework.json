@@ -1,9 +1,9 @@
 {
   ".schema_version": "2",
-  ".sdk_type": "terraform-plugin-sdk-v1",
+  ".sdk_type": "terraform-plugin-sdk-v2",
   "name": "lacework",
   "type": "provider",
-  "version": "v0.2.4",
+  "version": "v0.12.2",
   "provider": {
     "account": {
       "Type": "String",
@@ -23,14 +23,64 @@
       "Description": "Lacework API access secret",
       "DefaultFunc": "ENV(LW_API_SECRET)"
     },
+    "organization": {
+      "Type": "Bool",
+      "Optional": true,
+      "Description": "Set it to true to access organization level data sets (org admins only)",
+      "DefaultFunc": "ENV(LW_ORGANIZATION)"
+    },
     "profile": {
       "Type": "String",
       "Optional": true,
       "Description": "Lacework profile name to use, profiles are configured at $HOME/.lacework.toml via the Lacework CLI",
       "DefaultFunc": "ENV(LW_PROFILE)"
+    },
+    "subaccount": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "The sub-account name inside your organization (org admins only)",
+      "DefaultFunc": "ENV(LW_SUBACCOUNT)"
     }
   },
   "resources": {
+    "lacework_agent_access_token": {
+      "account": {
+        "Type": "String",
+        "Computed": true
+      },
+      "created_time": {
+        "Type": "String",
+        "Computed": true
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true
+      },
+      "enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "last_updated_time": {
+        "Type": "String",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true
+      },
+      "token": {
+        "Type": "String",
+        "Computed": true
+      },
+      "version": {
+        "Type": "String",
+        "Computed": true
+      }
+    },
     "lacework_alert_channel_aws_cloudwatch": {
       "created_or_updated_by": {
         "Type": "String",
@@ -43,6 +93,7 @@
       "enabled": {
         "Type": "Bool",
         "Optional": true,
+        "Description": "The state of the external integration",
         "Default": {
           "Type": "bool",
           "Value": "true"
@@ -50,14 +101,90 @@
       },
       "event_bus_arn": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "The ARN of your AWS CloudWatch event bus"
       },
       "group_issues_by": {
         "Type": "String",
         "Optional": true,
+        "Description": "Defines how Lacework compliance events get grouped. Must be one of Events or Resources. Defaults to Events",
         "Default": {
           "Type": "string",
           "Value": "Events"
+        }
+      },
+      "intg_guid": {
+        "Type": "String",
+        "Description": "The integration unique identifier",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The integration name"
+      },
+      "org_level": {
+        "Type": "Bool",
+        "Computed": true
+      },
+      "test_integration": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether to test the integration of an alert channel upon creation and modification",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "type_name": {
+        "Type": "String",
+        "Computed": true
+      }
+    },
+    "lacework_alert_channel_aws_s3": {
+      "bucket_arn": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The ARN of the S3 bucket"
+      },
+      "created_or_updated_by": {
+        "Type": "String",
+        "Computed": true
+      },
+      "created_or_updated_time": {
+        "Type": "String",
+        "Computed": true
+      },
+      "credentials": {
+        "Type": "List",
+        "Required": true,
+        "Description": "The credentials needed by the integration",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "external_id": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The ARN of the IAM role"
+            },
+            "role_arn": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The external ID of the IAM role"
+            }
+          }
+        }
+      },
+      "enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "The state of the external integration",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
         }
       },
       "intg_guid": {
@@ -66,11 +193,292 @@
       },
       "name": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "The integration name"
       },
       "org_level": {
         "Type": "Bool",
         "Computed": true
+      },
+      "test_integration": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether to test the integration of an alert channel upon creation and modification",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "type_name": {
+        "Type": "String",
+        "Computed": true
+      }
+    },
+    "lacework_alert_channel_cisco_webex": {
+      "created_or_updated_by": {
+        "Type": "String",
+        "Computed": true
+      },
+      "created_or_updated_time": {
+        "Type": "String",
+        "Computed": true
+      },
+      "enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "The state of the external integration",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "intg_guid": {
+        "Type": "String",
+        "Description": "The unique identifier of the integration",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The name of the alert channel"
+      },
+      "org_level": {
+        "Type": "Bool",
+        "Computed": true
+      },
+      "test_integration": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether to test the integration of an alert channel upon creation and modification",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "type_name": {
+        "Type": "String",
+        "Computed": true
+      },
+      "webhook_url": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The webhook url for the integration"
+      }
+    },
+    "lacework_alert_channel_datadog": {
+      "api_key": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The Datadog api key required to submit metrics and events to Datadog"
+      },
+      "created_or_updated_by": {
+        "Type": "String",
+        "Computed": true
+      },
+      "created_or_updated_time": {
+        "Type": "String",
+        "Computed": true
+      },
+      "datadog_service": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The level of detail of logs or event stream",
+        "Default": {
+          "Type": "string",
+          "Value": "Logs Detail"
+        }
+      },
+      "datadog_site": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Where to store your logs, either the US or Europe",
+        "Default": {
+          "Type": "string",
+          "Value": "com"
+        }
+      },
+      "enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "The state of the external integration",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "intg_guid": {
+        "Type": "String",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The integration name"
+      },
+      "org_level": {
+        "Type": "Bool",
+        "Computed": true
+      },
+      "test_integration": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether to test the integration of an alert channel upon creation and modifications",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "type_name": {
+        "Type": "String",
+        "Computed": true
+      }
+    },
+    "lacework_alert_channel_email": {
+      "created_or_updated_by": {
+        "Type": "String",
+        "Computed": true
+      },
+      "created_or_updated_time": {
+        "Type": "String",
+        "Computed": true
+      },
+      "enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "The state of the external integration",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "intg_guid": {
+        "Type": "String",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The integration name"
+      },
+      "org_level": {
+        "Type": "Bool",
+        "Computed": true
+      },
+      "recipients": {
+        "Type": "List",
+        "Required": true,
+        "Description": "List of email addresses that you want to receive the alerts",
+        "MinItems": 1,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "test_integration": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether to test the integration of an alert channel upon creation and modification",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "type_name": {
+        "Type": "String",
+        "Computed": true
+      }
+    },
+    "lacework_alert_channel_gcp_pub_sub": {
+      "created_or_updated_by": {
+        "Type": "String",
+        "Computed": true
+      },
+      "created_or_updated_time": {
+        "Type": "String",
+        "Computed": true
+      },
+      "credentials": {
+        "Type": "List",
+        "Required": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "client_email": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The service account client email"
+            },
+            "client_id": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The service account client ID"
+            },
+            "private_key": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The service account private key ID"
+            },
+            "private_key_id": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The service account private key"
+            }
+          }
+        }
+      },
+      "enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "The state of the external integration",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "intg_guid": {
+        "Type": "String",
+        "Computed": true
+      },
+      "issue_grouping": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Defines how Lacework compliance events get grouped. Must be one of Events or Resources. Defaults to Events.",
+        "Default": {
+          "Type": "string",
+          "Value": "Events"
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The integration name"
+      },
+      "org_level": {
+        "Type": "Bool",
+        "Computed": true
+      },
+      "project_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The name of the Google Cloud Project"
+      },
+      "test_integration": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether to test the integration of an alert channel upon creation and modification",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "topic_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The ID of the Google Cloud Pub/Sub topic"
       },
       "type_name": {
         "Type": "String",
@@ -80,7 +488,8 @@
     "lacework_alert_channel_jira_cloud": {
       "api_token": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "The Jira API Token"
       },
       "created_or_updated_by": {
         "Type": "String",
@@ -92,11 +501,13 @@
       },
       "custom_template_file": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Description": "A Custom Template JSON file to populate fields in the new Jira issues"
       },
       "enabled": {
         "Type": "Bool",
         "Optional": true,
+        "Description": "The state of the external integration",
         "Default": {
           "Type": "bool",
           "Value": "true"
@@ -105,6 +516,7 @@
       "group_issues_by": {
         "Type": "String",
         "Optional": true,
+        "Description": "Defines how Lacework compliance events get grouped. Must be one of Events or Resources. Defaults to Events",
         "Default": {
           "Type": "string",
           "Value": "Events"
@@ -116,15 +528,18 @@
       },
       "issue_type": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "The Jira issue type (such as a Bug) to create when a new Jira issue is created"
       },
       "jira_url": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "The URL of your Jira implementation without https protocol"
       },
       "name": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "The alert channel integration name"
       },
       "org_level": {
         "Type": "Bool",
@@ -132,7 +547,17 @@
       },
       "project_key": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "The project key for the Jira project where the new Jira issues should be created"
+      },
+      "test_integration": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether to test the integration of an alert channel upon creation and modification",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
       },
       "type_name": {
         "Type": "String",
@@ -140,7 +565,8 @@
       },
       "username": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "The Jira user name. Lacework recommends a dedicated Jira user."
       }
     },
     "lacework_alert_channel_jira_server": {
@@ -154,11 +580,13 @@
       },
       "custom_template_file": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Description": "A Custom Template JSON file to populate fields in the new Jira issues"
       },
       "enabled": {
         "Type": "Bool",
         "Optional": true,
+        "Description": "The state of the external integration",
         "Default": {
           "Type": "bool",
           "Value": "true"
@@ -167,6 +595,7 @@
       "group_issues_by": {
         "Type": "String",
         "Optional": true,
+        "Description": "Defines how Lacework compliance events get grouped. Must be one of Events or Resources. Defaults to Events",
         "Default": {
           "Type": "string",
           "Value": "Events"
@@ -178,15 +607,18 @@
       },
       "issue_type": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "The Jira issue type (such as a Bug) to create when a new Jira issue is created"
       },
       "jira_url": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "The URL of your Jira implementation without https protocol"
       },
       "name": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "The alert channel integration name"
       },
       "org_level": {
         "Type": "Bool",
@@ -194,11 +626,22 @@
       },
       "password": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "The password to the Jira user"
       },
       "project_key": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "The project key for the Jira project where the new Jira issues should be created"
+      },
+      "test_integration": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether to test the integration of an alert channel upon creation and modification",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
       },
       "type_name": {
         "Type": "String",
@@ -206,7 +649,114 @@
       },
       "username": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "The Jira user name. Lacework recommends a dedicated Jira user."
+      }
+    },
+    "lacework_alert_channel_microsoft_teams": {
+      "created_or_updated_by": {
+        "Type": "String",
+        "Computed": true
+      },
+      "created_or_updated_time": {
+        "Type": "String",
+        "Computed": true
+      },
+      "enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "The state of the external integration",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "intg_guid": {
+        "Type": "String",
+        "Description": "The unique identifier of the integration",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The name of the alert channel"
+      },
+      "org_level": {
+        "Type": "Bool",
+        "Computed": true
+      },
+      "test_integration": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether to test the integration of an alert channel upon creation and modification",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "type_name": {
+        "Type": "String",
+        "Computed": true
+      },
+      "webhook_url": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The webhook url for the integration"
+      }
+    },
+    "lacework_alert_channel_newrelic": {
+      "account_id": {
+        "Type": "Int",
+        "Required": true,
+        "Description": "The New Relic account ID"
+      },
+      "created_or_updated_by": {
+        "Type": "String",
+        "Computed": true
+      },
+      "created_or_updated_time": {
+        "Type": "String",
+        "Computed": true
+      },
+      "enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "The state of the external integration",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "insert_key": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The New Relic Insert API key"
+      },
+      "intg_guid": {
+        "Type": "String",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The integration name"
+      },
+      "org_level": {
+        "Type": "Bool",
+        "Computed": true
+      },
+      "test_integration": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether to test the integration of an alert channel upon creation and modification",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "type_name": {
+        "Type": "String",
+        "Computed": true
       }
     },
     "lacework_alert_channel_pagerduty": {
@@ -221,6 +771,7 @@
       "enabled": {
         "Type": "Bool",
         "Optional": true,
+        "Description": "The state of the external integration",
         "Default": {
           "Type": "bool",
           "Value": "true"
@@ -228,7 +779,8 @@
       },
       "integration_key": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "The PagerDuty service integration key"
       },
       "intg_guid": {
         "Type": "String",
@@ -236,15 +788,163 @@
       },
       "name": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "The integration name"
       },
       "org_level": {
         "Type": "Bool",
         "Computed": true
       },
+      "test_integration": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether to test the integration of an alert channel upon creation or modification",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
       "type_name": {
         "Type": "String",
         "Computed": true
+      }
+    },
+    "lacework_alert_channel_qradar": {
+      "communication_type": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The communication protocol used",
+        "Default": {
+          "Type": "string",
+          "Value": "HTTPS"
+        }
+      },
+      "created_or_updated_by": {
+        "Type": "String",
+        "Computed": true
+      },
+      "created_or_updated_time": {
+        "Type": "String",
+        "Computed": true
+      },
+      "enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "The state of the external integration",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "host_port": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The listen port defined in QRadar"
+      },
+      "host_url": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The domain name or IP address of QRadar"
+      },
+      "intg_guid": {
+        "Type": "String",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The integration name"
+      },
+      "org_level": {
+        "Type": "Bool",
+        "Computed": true
+      },
+      "test_integration": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether to test the integration of an alert channel upon creation or modification",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "type_name": {
+        "Type": "String",
+        "Computed": true
+      }
+    },
+    "lacework_alert_channel_service_now": {
+      "created_or_updated_by": {
+        "Type": "String",
+        "Computed": true
+      },
+      "created_or_updated_time": {
+        "Type": "String",
+        "Computed": true
+      },
+      "custom_template_file": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Populate fields in the ServiceNow incident with values from a custom template JSON file"
+      },
+      "enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "The state of the external integration",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "instance_url": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The ServiceNow instance URL"
+      },
+      "intg_guid": {
+        "Type": "String",
+        "Computed": true
+      },
+      "issue_grouping": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Defines how Lacework compliance events get grouped. Must be one of Events or Resources",
+        "Default": {
+          "Type": "string",
+          "Value": "Events"
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The integration name"
+      },
+      "org_level": {
+        "Type": "Bool",
+        "Computed": true
+      },
+      "password": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The ServiceNow password"
+      },
+      "test_integration": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether to test the integration of an alert channel upon creation and modification",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "type_name": {
+        "Type": "String",
+        "Computed": true
+      },
+      "username": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The ServiceNow username"
       }
     },
     "lacework_alert_channel_slack": {
@@ -259,6 +959,7 @@
       "enabled": {
         "Type": "Bool",
         "Optional": true,
+        "Description": "The state of the external integration",
         "Default": {
           "Type": "bool",
           "Value": "true"
@@ -270,7 +971,8 @@
       },
       "name": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "The integration name"
       },
       "org_level": {
         "Type": "Bool",
@@ -278,9 +980,310 @@
       },
       "slack_url": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "The URL of the incoming Slack webhook"
+      },
+      "test_integration": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether to test the integration of an alert channel upon creation and modification",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
       },
       "type_name": {
+        "Type": "String",
+        "Computed": true
+      }
+    },
+    "lacework_alert_channel_splunk": {
+      "channel": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The Splunk channel name"
+      },
+      "created_or_updated_by": {
+        "Type": "String",
+        "Computed": true
+      },
+      "created_or_updated_time": {
+        "Type": "String",
+        "Computed": true
+      },
+      "enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "The state of the external integration",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "event_data": {
+        "Type": "List",
+        "Required": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "index": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Index to store generated events"
+            },
+            "source": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The Splunk source"
+            }
+          }
+        }
+      },
+      "hec_token": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The token you generate when you create a new HEC input"
+      },
+      "host": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The hostname of the client from which you're sending data"
+      },
+      "intg_guid": {
+        "Type": "String",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The integration name"
+      },
+      "org_level": {
+        "Type": "Bool",
+        "Computed": true
+      },
+      "port": {
+        "Type": "Int",
+        "Required": true,
+        "Description": "The destination port for forwarding events"
+      },
+      "ssl": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enable or Disable SSL",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "test_integration": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether to test the integration of an alert channel upon creation and modification",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "type_name": {
+        "Type": "String",
+        "Computed": true
+      }
+    },
+    "lacework_alert_channel_victorops": {
+      "created_or_updated_by": {
+        "Type": "String",
+        "Computed": true
+      },
+      "created_or_updated_time": {
+        "Type": "String",
+        "Computed": true
+      },
+      "enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "The state of the external integration",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "intg_guid": {
+        "Type": "String",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The integration name"
+      },
+      "org_level": {
+        "Type": "Bool",
+        "Computed": true
+      },
+      "test_integration": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether to test the integration of an alert channel upon creation and modification",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "type_name": {
+        "Type": "String",
+        "Computed": true
+      },
+      "webhook_url": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The url of the external webhook"
+      }
+    },
+    "lacework_alert_channel_webhook": {
+      "created_or_updated_by": {
+        "Type": "String",
+        "Computed": true
+      },
+      "created_or_updated_time": {
+        "Type": "String",
+        "Computed": true
+      },
+      "enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "The state of the external integration",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "intg_guid": {
+        "Type": "String",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The integration name"
+      },
+      "org_level": {
+        "Type": "Bool",
+        "Computed": true
+      },
+      "test_integration": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether to test the integration of an alert channel upon creation and modification",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "type_name": {
+        "Type": "String",
+        "Computed": true
+      },
+      "webhook_url": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The url of the external webhook"
+      }
+    },
+    "lacework_alert_rule": {
+      "alert_channels": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "List of alert channels for the alert rule",
+        "ConflictsWith": [
+          "channels"
+        ],
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "channels": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "List of channels for the alert rule",
+        "ConflictsWith": [
+          "alert_channels"
+        ],
+        "Deprecated": "This attribute deprecated and has been replaced by `alert_channels`",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "created_or_updated_by": {
+        "Type": "String",
+        "Computed": true
+      },
+      "created_or_updated_time": {
+        "Type": "String",
+        "Computed": true
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The description of the alert rule"
+      },
+      "enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "The state of the alert rule",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "event_categories": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "List of event categories for the alert rule. Valid categories are: Compliance, App, Cloud, File, Machine, User, Platform",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "guid": {
+        "Type": "String",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The name of the alert rule"
+      },
+      "resource_groups": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "List of resource groups for the alert rule",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "severities": {
+        "Type": "List",
+        "Required": true,
+        "Description": "List of severities for the alert rule. Valid severities are: Critical, High, Medium, Low, Info",
+        "MinItems": 1,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "type": {
         "Type": "String",
         "Computed": true
       }
@@ -334,6 +1337,15 @@
         "Type": "Bool",
         "Computed": true
       },
+      "retries": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The number of attempts to create the external integration.",
+        "Default": {
+          "Type": "int",
+          "Value": "5"
+        }
+      },
       "type_name": {
         "Type": "String",
         "Computed": true
@@ -351,6 +1363,7 @@
       "credentials": {
         "Type": "List",
         "Required": true,
+        "Description": "The credentials needed by the integration.",
         "MaxItems": 1,
         "IsBlock": true,
         "ConfigImplicitMode": "Block",
@@ -364,6 +1377,199 @@
             "role_arn": {
               "Type": "String",
               "Required": true
+            }
+          }
+        }
+      },
+      "enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "The state of the external integration.",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "intg_guid": {
+        "Type": "String",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The integration name."
+      },
+      "org_account_mappings": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Mapping of AWS accounts to Lacework accounts within a Lacework organization.",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "default_lacework_account": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The default Lacework account name where any non-mapped AWS account will appear"
+            },
+            "mapping": {
+              "Type": "Set",
+              "Required": true,
+              "Description": "A map of AWS accounts to Lacework account. This can be specified multiple times to map multiple Lacework accounts.",
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "aws_accounts": {
+                    "Type": "Set",
+                    "Required": true,
+                    "Description": "The list of AWS account IDs to map.",
+                    "MinItems": 1,
+                    "ConfigImplicitMode": "Attr",
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  },
+                  "lacework_account": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "The Lacework account name where the CloudTrail activity from the selected AWS accounts will appear."
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "org_level": {
+        "Type": "Bool",
+        "Computed": true
+      },
+      "queue_url": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The SQS Queue URL."
+      },
+      "retries": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The number of attempts to create the external integration.",
+        "Default": {
+          "Type": "int",
+          "Value": "5"
+        }
+      },
+      "type_name": {
+        "Type": "String",
+        "Computed": true
+      }
+    },
+    "lacework_integration_aws_govcloud_cfg": {
+      "account_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The AWS Account ID"
+      },
+      "created_or_updated_by": {
+        "Type": "String",
+        "Computed": true
+      },
+      "created_or_updated_time": {
+        "Type": "String",
+        "Computed": true
+      },
+      "credentials": {
+        "Type": "List",
+        "Required": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "access_key_id": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The AWS access key ID"
+            },
+            "secret_access_key": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The AWS secret key for the specified AWS access key"
+            }
+          }
+        }
+      },
+      "enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "intg_guid": {
+        "Type": "String",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true
+      },
+      "org_level": {
+        "Type": "Bool",
+        "Computed": true
+      },
+      "retries": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The number of attempts to create the external integration.",
+        "Default": {
+          "Type": "int",
+          "Value": "5"
+        }
+      },
+      "type_name": {
+        "Type": "String",
+        "Computed": true
+      }
+    },
+    "lacework_integration_aws_govcloud_ct": {
+      "account_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The AWS Account ID"
+      },
+      "created_or_updated_by": {
+        "Type": "String",
+        "Computed": true
+      },
+      "created_or_updated_time": {
+        "Type": "String",
+        "Computed": true
+      },
+      "credentials": {
+        "Type": "List",
+        "Required": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "access_key_id": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The AWS access key ID"
+            },
+            "secret_access_key": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The AWS secret key for the specified AWS access key"
             }
           }
         }
@@ -390,7 +1596,17 @@
       },
       "queue_url": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "The SQS Queue URL."
+      },
+      "retries": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The number of attempts to create the external integration.",
+        "Default": {
+          "Type": "int",
+          "Value": "5"
+        }
       },
       "type_name": {
         "Type": "String",
@@ -450,6 +1666,15 @@
         "Type": "String",
         "Required": true
       },
+      "retries": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The number of attempts to create the external integration.",
+        "Default": {
+          "Type": "int",
+          "Value": "5"
+        }
+      },
       "tenant_id": {
         "Type": "String",
         "Required": true
@@ -508,6 +1733,15 @@
         "Type": "Bool",
         "Computed": true
       },
+      "retries": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The number of attempts to create the external integration.",
+        "Default": {
+          "Type": "int",
+          "Value": "5"
+        }
+      },
       "tenant_id": {
         "Type": "String",
         "Required": true
@@ -529,6 +1763,7 @@
       "enabled": {
         "Type": "Bool",
         "Optional": true,
+        "Description": "The state of the external integration",
         "Default": {
           "Type": "bool",
           "Value": "true"
@@ -541,29 +1776,81 @@
       "limit_by_label": {
         "Type": "String",
         "Optional": true,
+        "Description": "A comma-separated list of image labels to limit the assessment of images with matching labels",
+        "ConflictsWith": [
+          "limit_by_labels"
+        ],
+        "Deprecated": "This attribute will be replaced by a new attribute `limit_by_labels` in version 1.0 of the Lacework provider",
         "Default": {
           "Type": "string",
           "Value": "*"
+        }
+      },
+      "limit_by_labels": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "A key based map of labels to limit the assessment of images with matching key:value labels",
+        "ConflictsWith": [
+          "limit_by_label"
+        ],
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
         }
       },
       "limit_by_repos": {
         "Type": "String",
         "Optional": true,
-        "Default": {
-          "Type": "string"
+        "Description": "A comma-separated list of repositories to assess",
+        "ConflictsWith": [
+          "limit_by_repositories"
+        ],
+        "Deprecated": "This attribute will be replaced by a new attribute `limit_by_repositories` in version 1.0 of the Lacework provider"
+      },
+      "limit_by_repositories": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "A list of repositories to assess",
+        "ConflictsWith": [
+          "limit_by_repos"
+        ],
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
         }
       },
       "limit_by_tag": {
         "Type": "String",
         "Optional": true,
+        "Description": "A comma-separated list of image tags to limit the assessment of images with matching tags",
+        "ConflictsWith": [
+          "limit_by_tags"
+        ],
+        "Deprecated": "This attribute will be replaced by a new attribute `limit_by_tags` in version 1.0 of the Lacework provider",
         "Default": {
           "Type": "string",
           "Value": "*"
         }
       },
+      "limit_by_tags": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "A list of image tags to limit the assessment of images with matching tags",
+        "ConflictsWith": [
+          "limit_by_tag"
+        ],
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
       "limit_num_imgs": {
         "Type": "Int",
         "Optional": true,
+        "Description": "The maximum number of newest container images to assess per repository",
         "Default": {
           "Type": "int",
           "Value": "5"
@@ -571,7 +1858,17 @@
       },
       "name": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "The Docker Hub integration name"
+      },
+      "non_os_package_support": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enable program language scanning",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
       },
       "org_level": {
         "Type": "Bool",
@@ -579,7 +1876,8 @@
       },
       "password": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "The password for the specified Docker Hub user"
       },
       "type_name": {
         "Type": "String",
@@ -587,7 +1885,8 @@
       },
       "username": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "The Docker user that has at least read-only permissions to the Docker Hub container repositories"
       }
     },
     "lacework_integration_docker_v2": {
@@ -614,22 +1913,67 @@
       "limit_by_label": {
         "Type": "String",
         "Optional": true,
+        "Description": "A comma-separated list of image labels to limit the assessment of images with matching labels",
+        "ConflictsWith": [
+          "limit_by_labels"
+        ],
+        "Deprecated": "This attribute will be replaced by a new attribute `limit_by_labels` in version 1.0 of the Lacework provider",
         "Default": {
           "Type": "string",
           "Value": "*"
+        }
+      },
+      "limit_by_labels": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "A key based map of labels to limit the assessment of images with matching key:value labels",
+        "ConflictsWith": [
+          "limit_by_label"
+        ],
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
         }
       },
       "limit_by_tag": {
         "Type": "String",
         "Optional": true,
+        "Description": "A comma-separated list of image tags to limit the assessment of images with matching tags",
+        "ConflictsWith": [
+          "limit_by_tags"
+        ],
+        "Deprecated": "This attribute will be replaced by a new attribute `limit_by_tags` in version 1.0 of the Lacework provider",
         "Default": {
           "Type": "string",
           "Value": "*"
         }
       },
+      "limit_by_tags": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "A list of image tags to limit the assessment of images with matching tags",
+        "ConflictsWith": [
+          "limit_by_tag"
+        ],
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
       "name": {
         "Type": "String",
         "Required": true
+      },
+      "non_os_package_support": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enable program language scanning",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
       },
       "org_level": {
         "Type": "Bool",
@@ -661,9 +2005,10 @@
       }
     },
     "lacework_integration_ecr": {
-      "access_key_id": {
+      "aws_auth_type": {
         "Type": "String",
-        "Required": true
+        "Description": "Authentication method of the ECR integration",
+        "Computed": true
       },
       "created_or_updated_by": {
         "Type": "String",
@@ -672,6 +2017,201 @@
       "created_or_updated_time": {
         "Type": "String",
         "Computed": true
+      },
+      "credentials": {
+        "Type": "List",
+        "Required": true,
+        "Description": "The credentials needed by the integration",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "access_key_id": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The AWS access key ID for an AWS IAM user that permissions to access the Amazon Container Registry"
+            },
+            "external_id": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The external ID for the IAM role"
+            },
+            "role_arn": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The ARN of the IAM role with permissions to access the Amazon Container Registry"
+            },
+            "secret_access_key": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The AWS secret key for the specified AWS access key"
+            }
+          }
+        }
+      },
+      "enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "The state of the external integration",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "intg_guid": {
+        "Type": "String",
+        "Computed": true
+      },
+      "limit_by_label": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "A comma-separated list of image labels to limit the assessment of images with matching labels",
+        "ConflictsWith": [
+          "limit_by_labels"
+        ],
+        "Deprecated": "This attribute will be replaced by a new attribute `limit_by_labels` in version 1.0 of the Lacework provider",
+        "Default": {
+          "Type": "string",
+          "Value": "*"
+        }
+      },
+      "limit_by_labels": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "A key based map of labels to limit the assessment of images with matching key:value labels",
+        "ConflictsWith": [
+          "limit_by_label"
+        ],
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "limit_by_repos": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "A comma-separated list of repositories to assess",
+        "ConflictsWith": [
+          "limit_by_repositories"
+        ],
+        "Deprecated": "This attribute will be replaced by a new attribute `limit_by_repositories` in version 1.0 of the Lacework provider"
+      },
+      "limit_by_repositories": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "A list of repositories to assess",
+        "ConflictsWith": [
+          "limit_by_repos"
+        ],
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "limit_by_tag": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "A comma-separated list of image tags to limit the assessment of images with matching tags",
+        "ConflictsWith": [
+          "limit_by_tags"
+        ],
+        "Deprecated": "This attribute will be replaced by a new attribute `limit_by_tags` in version 1.0 of the Lacework provider",
+        "Default": {
+          "Type": "string",
+          "Value": "*"
+        }
+      },
+      "limit_by_tags": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "A list of image tags to limit the assessment of images with matching tags",
+        "ConflictsWith": [
+          "limit_by_tag"
+        ],
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "limit_num_imgs": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The maximum number of newest container images to assess per repository",
+        "Default": {
+          "Type": "int",
+          "Value": "5"
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The ECR integration name"
+      },
+      "non_os_package_support": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enable program language scanning",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "org_level": {
+        "Type": "Bool",
+        "Description": "Wheter or not this integration is configured at the Organization level",
+        "Computed": true
+      },
+      "registry_domain": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The Amazon Container Registry (ECR) domain"
+      },
+      "type_name": {
+        "Type": "String",
+        "Computed": true
+      }
+    },
+    "lacework_integration_gar": {
+      "created_or_updated_by": {
+        "Type": "String",
+        "Computed": true
+      },
+      "created_or_updated_time": {
+        "Type": "String",
+        "Computed": true
+      },
+      "credentials": {
+        "Type": "List",
+        "Required": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "client_email": {
+              "Type": "String",
+              "Required": true
+            },
+            "client_id": {
+              "Type": "String",
+              "Required": true
+            },
+            "private_key": {
+              "Type": "String",
+              "Required": true
+            },
+            "private_key_id": {
+              "Type": "String",
+              "Required": true
+            }
+          }
+        }
       },
       "enabled": {
         "Type": "Bool",
@@ -686,31 +2226,49 @@
         "Computed": true
       },
       "limit_by_label": {
-        "Type": "String",
+        "Type": "Set",
         "Optional": true,
-        "Default": {
-          "Type": "string",
-          "Value": "*"
+        "Description": "A list of key/value labels to limit the assessment of images",
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "key": {
+              "Type": "String",
+              "Required": true
+            },
+            "value": {
+              "Type": "String",
+              "Required": true
+            }
+          }
         }
       },
-      "limit_by_repos": {
-        "Type": "String",
+      "limit_by_repositories": {
+        "Type": "List",
         "Optional": true,
-        "Default": {
-          "Type": "string"
+        "Description": "A list of repositories to assess",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
         }
       },
-      "limit_by_tag": {
-        "Type": "String",
+      "limit_by_tags": {
+        "Type": "List",
         "Optional": true,
-        "Default": {
-          "Type": "string",
-          "Value": "*"
+        "Description": "A list of image tags to limit the assessment of images with matching tags",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
         }
       },
       "limit_num_imgs": {
         "Type": "Int",
         "Optional": true,
+        "Description": "The maximum number of newest container images to assess per repository.",
         "Default": {
           "Type": "int",
           "Value": "5"
@@ -720,15 +2278,20 @@
         "Type": "String",
         "Required": true
       },
+      "non_os_package_support": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enable program language scanning",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
       "org_level": {
         "Type": "Bool",
         "Computed": true
       },
       "registry_domain": {
-        "Type": "String",
-        "Required": true
-      },
-      "secret_access_key": {
         "Type": "String",
         "Required": true
       },
@@ -804,6 +2367,15 @@
         "Default": {
           "Type": "string",
           "Value": "PROJECT"
+        }
+      },
+      "retries": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The number of attempts to create the external integration.",
+        "Default": {
+          "Type": "int",
+          "Value": "5"
         }
       },
       "subscription": {
@@ -884,6 +2456,15 @@
           "Value": "PROJECT"
         }
       },
+      "retries": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The number of attempts to create the external integration.",
+        "Default": {
+          "Type": "int",
+          "Value": "5"
+        }
+      },
       "type_name": {
         "Type": "String",
         "Computed": true
@@ -941,24 +2522,75 @@
       "limit_by_label": {
         "Type": "String",
         "Optional": true,
+        "Description": "A comma-separated list of image labels to limit the assessment of images with matching labels",
+        "ConflictsWith": [
+          "limit_by_labels"
+        ],
+        "Deprecated": "This attribute will be replaced by a new attribute `limit_by_labels` in version 1.0 of the Lacework provider",
         "Default": {
           "Type": "string",
           "Value": "*"
+        }
+      },
+      "limit_by_labels": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "A key based map of labels to limit the assessment of images with matching key:value labels",
+        "ConflictsWith": [
+          "limit_by_label"
+        ],
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
         }
       },
       "limit_by_repos": {
         "Type": "String",
         "Optional": true,
-        "Default": {
-          "Type": "string"
+        "Description": "A comma-separated list of repositories to assess",
+        "ConflictsWith": [
+          "limit_by_repositories"
+        ],
+        "Deprecated": "This attribute will be replaced by a new attribute `limit_by_repositories` in version 1.0 of the Lacework provider"
+      },
+      "limit_by_repositories": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "A list of repositories to assess",
+        "ConflictsWith": [
+          "limit_by_repos"
+        ],
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
         }
       },
       "limit_by_tag": {
         "Type": "String",
         "Optional": true,
+        "Description": "A comma-separated list of image tags to limit the assessment of images with matching tags",
+        "ConflictsWith": [
+          "limit_by_tags"
+        ],
+        "Deprecated": "This attribute will be replaced by a new attribute `limit_by_tags` in version 1.0 of the Lacework provider",
         "Default": {
           "Type": "string",
           "Value": "*"
+        }
+      },
+      "limit_by_tags": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "A list of image tags to limit the assessment of images with matching tags",
+        "ConflictsWith": [
+          "limit_by_tag"
+        ],
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
         }
       },
       "limit_num_imgs": {
@@ -973,6 +2605,15 @@
         "Type": "String",
         "Required": true
       },
+      "non_os_package_support": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enable program language scanning",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
       "org_level": {
         "Type": "Bool",
         "Computed": true
@@ -985,9 +2626,551 @@
         "Type": "String",
         "Computed": true
       }
+    },
+    "lacework_integration_ghcr": {
+      "created_or_updated_by": {
+        "Type": "String",
+        "Computed": true
+      },
+      "created_or_updated_time": {
+        "Type": "String",
+        "Computed": true
+      },
+      "enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "The state of the external integration",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "intg_guid": {
+        "Type": "String",
+        "Computed": true
+      },
+      "limit_by_label": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "A list of key/value labels to limit the assessment of images",
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "key": {
+              "Type": "String",
+              "Required": true
+            },
+            "value": {
+              "Type": "String",
+              "Required": true
+            }
+          }
+        }
+      },
+      "limit_by_repositories": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "A list of repositories to assess",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "limit_by_tags": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "A list of image tags to limit the assessment of images with matching tags",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "limit_num_imgs": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The maximum number of newest container images to assess per repository.",
+        "Default": {
+          "Type": "int",
+          "Value": "5"
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The integration name"
+      },
+      "non_os_package_support": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enable program language scanning",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "org_level": {
+        "Type": "Bool",
+        "Computed": true
+      },
+      "password": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The Github personal access token with read:packages"
+      },
+      "registry_domain": {
+        "Type": "String",
+        "Computed": true
+      },
+      "registry_notifications": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Subscribe to Registry Notifications",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "ssl": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enable or disable SSL communication",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "type_name": {
+        "Type": "String",
+        "Computed": true
+      },
+      "username": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The username with permissions to pull the images from the container registry"
+      }
+    },
+    "lacework_resource_group_account": {
+      "accounts": {
+        "Type": "List",
+        "Required": true,
+        "Description": "The list of Lacework accounts to include in the resource group",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The description of the resource group"
+      },
+      "enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "The state of the resource group",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "id": {
+        "Type": "String",
+        "Description": "The resource group unique identifier",
+        "Computed": true
+      },
+      "is_default": {
+        "Type": "Bool",
+        "Description": "Whether the resource group is a default resource group.",
+        "Computed": true
+      },
+      "lacework_account_id": {
+        "Type": "String",
+        "Description": "The lacework account id",
+        "Computed": true
+      },
+      "last_updated": {
+        "Type": "String",
+        "Description": "The time in millis when the resource was last updated",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The resource group name"
+      },
+      "type": {
+        "Type": "String",
+        "Description": "The type of the resource group",
+        "Computed": true
+      },
+      "updated_by": {
+        "Type": "String",
+        "Description": "The username of the lacework user who performed the last update",
+        "Computed": true
+      }
+    },
+    "lacework_resource_group_aws": {
+      "accounts": {
+        "Type": "List",
+        "Required": true,
+        "Description": "The list of AWS accounts to include in the resource group",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The description of the resource group"
+      },
+      "enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "The state of the resource group",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "id": {
+        "Type": "String",
+        "Description": "The resource group unique identifier",
+        "Computed": true
+      },
+      "is_default": {
+        "Type": "Bool",
+        "Description": "Whether the resource group is a default resource group.",
+        "Computed": true
+      },
+      "lacework_account_id": {
+        "Type": "String",
+        "Description": "The lacework account id",
+        "Computed": true
+      },
+      "last_updated": {
+        "Type": "String",
+        "Description": "The time in millis when the resource was last updated",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The resource group name"
+      },
+      "type": {
+        "Type": "String",
+        "Description": "The type of the resource group",
+        "Computed": true
+      },
+      "updated_by": {
+        "Type": "String",
+        "Description": "The username of the lacework user who performed the last update",
+        "Computed": true
+      }
+    },
+    "lacework_resource_group_azure": {
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The description of the resource group"
+      },
+      "enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "The state of the resource group",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "id": {
+        "Type": "String",
+        "Description": "The resource group unique identifier",
+        "Computed": true
+      },
+      "is_default": {
+        "Type": "Bool",
+        "Description": "Whether the resource group is a default resource group.",
+        "Computed": true
+      },
+      "lacework_account_id": {
+        "Type": "String",
+        "Description": "The lacework account id",
+        "Computed": true
+      },
+      "last_updated": {
+        "Type": "String",
+        "Description": "The time in millis when the resource was last updated",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The resource group name"
+      },
+      "subscriptions": {
+        "Type": "List",
+        "Required": true,
+        "Description": "The list of Azure subscription id's to include in the resource group",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "tenant": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The Azure tenant id"
+      },
+      "type": {
+        "Type": "String",
+        "Description": "The type of the resource group",
+        "Computed": true
+      },
+      "updated_by": {
+        "Type": "String",
+        "Description": "The username of the lacework user who performed the last update",
+        "Computed": true
+      }
+    },
+    "lacework_resource_group_container": {
+      "container_labels": {
+        "Type": "Set",
+        "Required": true,
+        "Description": "The key value pairs of container labels to include in the resource group",
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "key": {
+              "Type": "String",
+              "Required": true
+            },
+            "value": {
+              "Type": "String",
+              "Required": true
+            }
+          }
+        }
+      },
+      "container_tags": {
+        "Type": "List",
+        "Required": true,
+        "Description": "The list of containers tags to include in the resource group",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The description of the resource group"
+      },
+      "enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "The state of the resource group",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "id": {
+        "Type": "String",
+        "Description": "The resource group unique identifier",
+        "Computed": true
+      },
+      "is_default": {
+        "Type": "Bool",
+        "Description": "Whether the resource group is a default resource group",
+        "Computed": true
+      },
+      "lacework_account_id": {
+        "Type": "String",
+        "Description": "The lacework account id",
+        "Computed": true
+      },
+      "last_updated": {
+        "Type": "String",
+        "Description": "The time in millis when the resource was last updated",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The resource group name"
+      },
+      "type": {
+        "Type": "String",
+        "Description": "The type of the resource group",
+        "Computed": true
+      },
+      "updated_by": {
+        "Type": "String",
+        "Description": "The username of the lacework user who performed the last update",
+        "Computed": true
+      }
+    },
+    "lacework_resource_group_gcp": {
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The description of the resource group"
+      },
+      "enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "The state of the resource group",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "id": {
+        "Type": "String",
+        "Description": "The resource group unique identifier",
+        "Computed": true
+      },
+      "is_default": {
+        "Type": "Bool",
+        "Description": "Whether the resource group is a default resource group.",
+        "Computed": true
+      },
+      "lacework_account_id": {
+        "Type": "String",
+        "Description": "The lacework account id",
+        "Computed": true
+      },
+      "last_updated": {
+        "Type": "String",
+        "Description": "The time in millis when the resource was last updated",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The resource group name"
+      },
+      "organization": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The GCP organization id"
+      },
+      "projects": {
+        "Type": "List",
+        "Required": true,
+        "Description": "The list of GCP project id's to include in the resource group",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "type": {
+        "Type": "String",
+        "Description": "The type of the resource group",
+        "Computed": true
+      },
+      "updated_by": {
+        "Type": "String",
+        "Description": "The username of the lacework user who performed the last update",
+        "Computed": true
+      }
+    },
+    "lacework_resource_group_machine": {
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The description of the resource group"
+      },
+      "enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "The state of the resource group",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "id": {
+        "Type": "String",
+        "Description": "The resource group unique identifier",
+        "Computed": true
+      },
+      "is_default": {
+        "Type": "Bool",
+        "Description": "Whether the resource group is a default resource group",
+        "Computed": true
+      },
+      "lacework_account_id": {
+        "Type": "String",
+        "Description": "The lacework account id",
+        "Computed": true
+      },
+      "last_updated": {
+        "Type": "String",
+        "Description": "The time in millis when the resource was last updated",
+        "Computed": true
+      },
+      "machine_tags": {
+        "Type": "Set",
+        "Required": true,
+        "Description": "The list of machines tags to include in the resource group",
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "key": {
+              "Type": "String",
+              "Required": true
+            },
+            "value": {
+              "Type": "String",
+              "Required": true
+            }
+          }
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The resource group name"
+      },
+      "type": {
+        "Type": "String",
+        "Description": "The type of the resource group",
+        "Computed": true
+      },
+      "updated_by": {
+        "Type": "String",
+        "Description": "The username of the lacework user who performed the last update",
+        "Computed": true
+      }
     }
   },
   "data-sources": {
+    "lacework_agent_access_token": {
+      "name": {
+        "Type": "String",
+        "Required": true
+      },
+      "token": {
+        "Type": "String",
+        "Computed": true
+      }
+    },
     "lacework_api_token": {
       "token": {
         "Type": "String",

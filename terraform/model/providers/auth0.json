@@ -3,7 +3,7 @@
   ".sdk_type": "terraform-plugin-sdk-v1",
   "name": "auth0",
   "type": "provider",
-  "version": "v0.14.0",
+  "version": "v0.24.0",
   "provider": {
     "client_id": {
       "Type": "String",
@@ -27,6 +27,176 @@
     }
   },
   "resources": {
+    "auth0_action": {
+      "code": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The source code of the action."
+      },
+      "dependencies": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "List of third party npm modules, and their versions, that this action depends on",
+        "MinItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "name": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Dependency name. For example lodash"
+            },
+            "version": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Dependency version. For example `latest` or `4.17.21`"
+            }
+          }
+        }
+      },
+      "deploy": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Deploying an action will create a new immutable version of the action. If the action is currently bound to a trigger, then the system will begin executing the newly deployed version of the action immediately",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The name of an action"
+      },
+      "runtime": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The Node runtime. For example `node16`, defaults to `node12`",
+        "Computed": true
+      },
+      "secrets": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "List of secrets that are included in an action or a version of an action",
+        "MinItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "name": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Secret name"
+            },
+            "value": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Secret value"
+            }
+          }
+        }
+      },
+      "supported_triggers": {
+        "Type": "List",
+        "Required": true,
+        "Description": "List of triggers that this action supports. At this time, an action can only target a single trigger at a time",
+        "MaxItems": 1,
+        "MinItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "id": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Trigger ID"
+            },
+            "version": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Trigger version"
+            }
+          }
+        }
+      },
+      "version_id": {
+        "Type": "String",
+        "Description": "Version ID of the action. This value is available if `deploy` is set to true",
+        "Computed": true
+      }
+    },
+    "auth0_branding": {
+      "colors": {
+        "Type": "List",
+        "Optional": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "page_background": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "primary": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            }
+          }
+        }
+      },
+      "favicon_url": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "font": {
+        "Type": "List",
+        "Optional": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "url": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            }
+          }
+        }
+      },
+      "logo_url": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "universal_login": {
+        "Type": "List",
+        "Optional": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "body": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            }
+          }
+        }
+      }
+    },
     "auth0_client": {
       "addons": {
         "Type": "List",
@@ -289,6 +459,15 @@
           }
         }
       },
+      "allowed_clients": {
+        "Type": "List",
+        "Optional": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
       "allowed_logout_urls": {
         "Type": "List",
         "Optional": true,
@@ -356,10 +535,6 @@
         "Type": "Bool",
         "Optional": true,
         "Computed": true
-      },
-      "custom_login_page_preview": {
-        "Type": "String",
-        "Optional": true
       },
       "description": {
         "Type": "String",
@@ -509,6 +684,14 @@
         "Optional": true,
         "Computed": true
       },
+      "organization_require_behavior": {
+        "Type": "String",
+        "Optional": true
+      },
+      "organization_usage": {
+        "Type": "String",
+        "Optional": true
+      },
       "refresh_token": {
         "Type": "List",
         "Optional": true,
@@ -523,6 +706,18 @@
             "expiration_type": {
               "Type": "String",
               "Required": true
+            },
+            "idle_token_lifetime": {
+              "Type": "Int",
+              "Optional": true
+            },
+            "infinite_idle_token_lifetime": {
+              "Type": "Bool",
+              "Optional": true
+            },
+            "infinite_token_lifetime": {
+              "Type": "Bool",
+              "Optional": true
             },
             "leeway": {
               "Type": "Int",
@@ -639,7 +834,7 @@
             "app_domain": {
               "Type": "String",
               "Optional": true,
-              "Deprecated": "use domain instead"
+              "Deprecated": "Use domain instead"
             },
             "app_id": {
               "Type": "String",
@@ -805,9 +1000,40 @@
               "Type": "String",
               "Optional": true
             },
+            "mfa": {
+              "Type": "List",
+              "Optional": true,
+              "MaxItems": 1,
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "active": {
+                    "Type": "Bool",
+                    "Optional": true
+                  },
+                  "return_enroll_settings": {
+                    "Type": "Bool",
+                    "Optional": true
+                  }
+                }
+              }
+            },
             "name": {
               "Type": "String",
               "Optional": true
+            },
+            "non_persistent_attrs": {
+              "Type": "Set",
+              "Optional": true,
+              "Description": "If there are user fields that should not be stored in Auth0 databases due to privacy reasons, you can add them to the DenyList here",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
             },
             "password_complexity_options": {
               "Type": "List",
@@ -901,6 +1127,11 @@
               "Optional": true,
               "Description": "The SAML Response Binding: how the SAML token is received by Auth0 from IdP"
             },
+            "request_template": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Template that formats the SAML request."
+            },
             "requires_username": {
               "Type": "Bool",
               "Optional": true,
@@ -914,6 +1145,26 @@
                 "Type": "SchemaElements",
                 "ElementsType": "String"
               }
+            },
+            "scripts": {
+              "Type": "Map",
+              "Optional": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "set_user_root_attributes": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Determines whether the 'name', 'given_name', 'family_name', 'nickname', and 'picture' attributes can be independently updated when using an external IdP. Possible values are 'on_each_login' (default value, it configures the connection to automatically update the root attributes from the external IdP with each user login. When this setting is used, root attributes cannot be independently updated), 'on_first_login' (configures the connection to only set the root attributes on first login, allowing them to be independently updated thereafter)",
+              "Computed": true
+            },
+            "should_trust_email_verified_connection": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Choose how Auth0 sets the email_verified field in the user profile."
             },
             "sign_in_endpoint": {
               "Type": "String",
@@ -1015,17 +1266,45 @@
               "Type": "Bool",
               "Optional": true
             },
+            "user_id_attribute": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Attribute in the SAML token that will be mapped to the user_id property in Auth0."
+            },
             "userinfo_endpoint": {
               "Type": "String",
               "Optional": true
             },
             "validation": {
-              "Type": "Map",
+              "Type": "List",
               "Optional": true,
-              "ConfigImplicitMode": "Attr",
+              "MaxItems": 1,
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
               "Elem": {
-                "Type": "SchemaElements",
-                "ElementsType": "String"
+                "Type": "SchemaInfo",
+                "Info": {
+                  "username": {
+                    "Type": "List",
+                    "Optional": true,
+                    "MaxItems": 1,
+                    "IsBlock": true,
+                    "ConfigImplicitMode": "Block",
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "max": {
+                          "Type": "Int",
+                          "Optional": true
+                        },
+                        "min": {
+                          "Type": "Int",
+                          "Optional": true
+                        }
+                      }
+                    }
+                  }
+                }
               }
             },
             "waad_common_endpoint": {
@@ -1059,6 +1338,15 @@
         "Type": "String",
         "Optional": true,
         "Computed": true
+      },
+      "validation": {
+        "Type": "Map",
+        "Optional": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       }
     },
     "auth0_custom_domain": {
@@ -1099,6 +1387,16 @@
         }
       },
       "verification_method": {
+        "Type": "String",
+        "Optional": true,
+        "Deprecated": "The method is chosen according to the type of the custom domain. CNAME for auth0_managed_certs, TXT for self_managed_certs"
+      }
+    },
+    "auth0_custom_domain_verification": {
+      "__timeouts__": [
+        "create"
+      ],
+      "custom_domain_id": {
         "Type": "String",
         "Required": true
       }
@@ -1466,6 +1764,16 @@
           }
         }
       },
+      "allowed_clients": {
+        "Type": "List",
+        "Optional": true,
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
       "allowed_logout_urls": {
         "Type": "List",
         "Optional": true,
@@ -1541,11 +1849,6 @@
       },
       "custom_login_page_on": {
         "Type": "Bool",
-        "Optional": true,
-        "Computed": true
-      },
-      "custom_login_page_preview": {
-        "Type": "String",
         "Optional": true,
         "Computed": true
       },
@@ -1704,6 +2007,16 @@
         "Optional": true,
         "Computed": true
       },
+      "organization_require_behavior": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "organization_usage": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
       "refresh_token": {
         "Type": "List",
         "Optional": true,
@@ -1718,6 +2031,18 @@
             "expiration_type": {
               "Type": "String",
               "Required": true
+            },
+            "idle_token_lifetime": {
+              "Type": "Int",
+              "Optional": true
+            },
+            "infinite_idle_token_lifetime": {
+              "Type": "Bool",
+              "Optional": true
+            },
+            "infinite_token_lifetime": {
+              "Type": "Bool",
+              "Optional": true
             },
             "leeway": {
               "Type": "Int",
@@ -1760,11 +2085,89 @@
         }
       }
     },
+    "auth0_guardian": {
+      "phone": {
+        "Type": "List",
+        "Optional": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "message_types": {
+              "Type": "List",
+              "Required": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "options": {
+              "Type": "List",
+              "Optional": true,
+              "MaxItems": 1,
+              "MinItems": 1,
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "auth_token": {
+                    "Type": "String",
+                    "Optional": true
+                  },
+                  "enrollment_message": {
+                    "Type": "String",
+                    "Optional": true
+                  },
+                  "from": {
+                    "Type": "String",
+                    "Optional": true
+                  },
+                  "messaging_service_sid": {
+                    "Type": "String",
+                    "Optional": true
+                  },
+                  "sid": {
+                    "Type": "String",
+                    "Optional": true
+                  },
+                  "verification_message": {
+                    "Type": "String",
+                    "Optional": true
+                  }
+                }
+              }
+            },
+            "provider": {
+              "Type": "String",
+              "Required": true
+            }
+          }
+        }
+      },
+      "policy": {
+        "Type": "String",
+        "Required": true
+      }
+    },
     "auth0_hook": {
+      "dependencies": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "Dependencies of this hook used by webtask server",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Value": "String"
+        }
+      },
       "enabled": {
         "Type": "Bool",
         "Optional": true,
-        "Description": "Whether the hook is enabled, or disabled"
+        "Description": "Whether the hook is enabled, or disabled",
+        "Computed": true
       },
       "name": {
         "Type": "String",
@@ -1776,13 +2179,214 @@
         "Required": true,
         "Description": "Code to be executed when this hook runs"
       },
+      "secrets": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "The secrets associated with the hook",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Value": "String"
+        }
+      },
       "trigger_id": {
         "Type": "String",
         "Required": true,
         "Description": "Execution stage of this rule. Can be credentials-exchange, pre-user-registration, post-user-registration, post-change-password, or send-phone-message"
       }
     },
+    "auth0_log_stream": {
+      "name": {
+        "Type": "String",
+        "Required": true
+      },
+      "sink": {
+        "Type": "List",
+        "Required": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "aws_account_id": {
+              "Type": "String",
+              "Optional": true
+            },
+            "aws_partner_event_source": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Name of the Partner Event Source to be used with AWS, if the type is 'eventbridge'",
+              "Computed": true
+            },
+            "aws_region": {
+              "Type": "String",
+              "Optional": true
+            },
+            "azure_partner_topic": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Name of the Partner Topic to be used with Azure, if the type is 'eventgrid'",
+              "Computed": true
+            },
+            "azure_region": {
+              "Type": "String",
+              "Optional": true
+            },
+            "azure_resource_group": {
+              "Type": "String",
+              "Optional": true
+            },
+            "azure_subscription_id": {
+              "Type": "String",
+              "Optional": true
+            },
+            "datadog_api_key": {
+              "Type": "String",
+              "Optional": true
+            },
+            "datadog_region": {
+              "Type": "String",
+              "Optional": true
+            },
+            "http_authorization": {
+              "Type": "String",
+              "Optional": true
+            },
+            "http_content_format": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "HTTP Content Format can be JSONLINES or JSONARRAY"
+            },
+            "http_content_type": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "HTTP Content Type"
+            },
+            "http_custom_headers": {
+              "Type": "Set",
+              "Optional": true,
+              "Description": "Custom HTTP headers",
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "http_endpoint": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "HTTP endpoint"
+            },
+            "splunk_domain": {
+              "Type": "String",
+              "Optional": true
+            },
+            "splunk_port": {
+              "Type": "String",
+              "Optional": true
+            },
+            "splunk_secure": {
+              "Type": "Bool",
+              "Optional": true
+            },
+            "splunk_token": {
+              "Type": "String",
+              "Optional": true
+            },
+            "sumo_source_address": {
+              "Type": "String",
+              "Optional": true
+            }
+          }
+        }
+      },
+      "status": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Status of the LogStream",
+        "Computed": true
+      },
+      "type": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Type of the log stream, which indicates the sink provider"
+      }
+    },
+    "auth0_organization": {
+      "branding": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Defines how to style the login pages",
+        "Computed": true,
+        "MaxItems": 1,
+        "MinItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "colors": {
+              "Type": "Map",
+              "Optional": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "logo_url": {
+              "Type": "String",
+              "Optional": true
+            }
+          }
+        }
+      },
+      "connections": {
+        "Type": "Set",
+        "Optional": true,
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "assign_membership_on_login": {
+              "Type": "Bool",
+              "Optional": true
+            },
+            "connection_id": {
+              "Type": "String",
+              "Required": true
+            }
+          }
+        }
+      },
+      "display_name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Friendly name of this organization"
+      },
+      "metadata": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "Metadata associated with the organization, Maximum of 10 metadata properties allowed",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The name of this organization"
+      }
+    },
     "auth0_prompt": {
+      "identifier_first": {
+        "Type": "Bool",
+        "Optional": true
+      },
       "universal_login_experience": {
         "Type": "String",
         "Optional": true
@@ -1982,7 +2586,7 @@
         "Computed": true
       },
       "enabled_locales": {
-        "Type": "Set",
+        "Type": "List",
         "Optional": true,
         "Computed": true,
         "ConfigImplicitMode": "Attr",
@@ -2111,7 +2715,7 @@
         }
       },
       "idle_session_lifetime": {
-        "Type": "Int",
+        "Type": "Float",
         "Optional": true,
         "Computed": true
       },
@@ -2126,7 +2730,7 @@
         "Computed": true
       },
       "session_lifetime": {
-        "Type": "Int",
+        "Type": "Float",
         "Optional": true,
         "Computed": true
       },

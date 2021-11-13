@@ -1,9 +1,9 @@
 {
   ".schema_version": "2",
-  ".sdk_type": "terraform-plugin-sdk-v1",
+  ".sdk_type": "terraform-plugin-sdk-v2",
   "name": "docker",
   "type": "provider",
-  "version": "v2.7.2",
+  "version": "v2.15.0",
   "provider": {
     "ca_material": {
       "Type": "String",
@@ -36,8 +36,9 @@
       "DefaultFunc": "ENV(DOCKER_KEY_MATERIAL)"
     },
     "registry_auth": {
-      "Type": "Set",
+      "Type": "List",
       "Optional": true,
+      "MaxItems": 1,
       "IsBlock": true,
       "ConfigImplicitMode": "Block",
       "Elem": {
@@ -110,6 +111,7 @@
       "attach": {
         "Type": "Bool",
         "Optional": true,
+        "Description": "If `true` attach to the container after its creation and waits the end of its execution. Defaults to `false`.",
         "Default": {
           "Type": "bool",
           "Value": "false"
@@ -117,11 +119,13 @@
       },
       "bridge": {
         "Type": "String",
+        "Description": "The network bridge of the container as read from its NetworkSettings.",
         "Computed": true
       },
       "capabilities": {
         "Type": "Set",
         "Optional": true,
+        "Description": "Add or drop certrain linux capabilities.",
         "MaxItems": 1,
         "IsBlock": true,
         "ConfigImplicitMode": "Block",
@@ -131,6 +135,7 @@
             "add": {
               "Type": "Set",
               "Optional": true,
+              "Description": "List of linux capabilities to add.",
               "ConfigImplicitMode": "Attr",
               "Elem": {
                 "Type": "SchemaElements",
@@ -140,6 +145,7 @@
             "drop": {
               "Type": "Set",
               "Optional": true,
+              "Description": "List of linux capabilities to drop.",
               "ConfigImplicitMode": "Attr",
               "Elem": {
                 "Type": "SchemaElements",
@@ -152,6 +158,7 @@
       "command": {
         "Type": "List",
         "Optional": true,
+        "Description": "The command to use to start the container. For example, to run `/usr/bin/myprogram -f baz.conf` set the command to be `[\"/usr/bin/myprogram\",\"-\",\"baz.con\"]`.",
         "Computed": true,
         "ConfigImplicitMode": "Attr",
         "Elem": {
@@ -161,23 +168,28 @@
       },
       "container_logs": {
         "Type": "String",
+        "Description": "The logs of the container if its execution is done (`attach` must be disabled).",
         "Computed": true
       },
       "cpu_set": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Description": "A comma-separated list or hyphen-separated range of CPUs a container can use, e.g. `0-1`."
       },
       "cpu_shares": {
         "Type": "Int",
-        "Optional": true
+        "Optional": true,
+        "Description": "CPU shares (relative weight) for the container."
       },
       "destroy_grace_seconds": {
         "Type": "Int",
-        "Optional": true
+        "Optional": true,
+        "Description": "If defined will attempt to stop the container before destroying. Container will be destroyed after `n` seconds or on successful stop."
       },
       "devices": {
         "Type": "Set",
         "Optional": true,
+        "Description": "Bind devices to the container.",
         "IsBlock": true,
         "ConfigImplicitMode": "Block",
         "Elem": {
@@ -185,15 +197,18 @@
           "Info": {
             "container_path": {
               "Type": "String",
-              "Optional": true
+              "Optional": true,
+              "Description": "The path in the container where the device will be bound."
             },
             "host_path": {
               "Type": "String",
-              "Required": true
+              "Required": true,
+              "Description": "The path on the host where the device is located."
             },
             "permissions": {
               "Type": "String",
-              "Optional": true
+              "Optional": true,
+              "Description": "The cgroup permissions given to the container to access the device. Defaults to `rwm`."
             }
           }
         }
@@ -201,7 +216,7 @@
       "dns": {
         "Type": "Set",
         "Optional": true,
-        "Computed": true,
+        "Description": "DNS servers to use.",
         "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
@@ -211,7 +226,7 @@
       "dns_opts": {
         "Type": "Set",
         "Optional": true,
-        "Computed": true,
+        "Description": "DNS options used by the DNS provider(s), see `resolv.conf` documentation for valid list of options.",
         "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
@@ -221,6 +236,7 @@
       "dns_search": {
         "Type": "Set",
         "Optional": true,
+        "Description": "DNS search domains that are used when bare unqualified hostnames are used inside of the container.",
         "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
@@ -229,11 +245,13 @@
       },
       "domainname": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Description": "Domain name of the container."
       },
       "entrypoint": {
         "Type": "List",
         "Optional": true,
+        "Description": "The command to use as the Entrypoint for the container. The Entrypoint allows you to configure a container to run as an executable. For example, to run `/usr/bin/myprogram` when starting a container, set the entrypoint to be `\"/usr/bin/myprogra\"]`.",
         "Computed": true,
         "ConfigImplicitMode": "Attr",
         "Elem": {
@@ -244,6 +262,8 @@
       "env": {
         "Type": "Set",
         "Optional": true,
+        "Description": "Environment variables to set in the form of `KEY=VALUE`, e.g. `DEBUG=0`",
+        "Computed": true,
         "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
@@ -252,12 +272,14 @@
       },
       "exit_code": {
         "Type": "Int",
+        "Description": "The exit code of the container if its execution is done (`must_run` must be disabled).",
         "Computed": true
       },
       "gateway": {
         "Type": "String",
+        "Description": "The network gateway of the container.",
         "Computed": true,
-        "Deprecated": "Use gateway from ip_adresses_data instead. This field exposes the data of the container's first network."
+        "Deprecated": "Use `network_data` instead. The network gateway of the container as read from its NetworkSettings."
       },
       "group_add": {
         "Type": "Set",
@@ -273,6 +295,7 @@
         "Type": "List",
         "Optional": true,
         "Description": "A test to perform to check that the container is healthy",
+        "Computed": true,
         "MaxItems": 1,
         "IsBlock": true,
         "ConfigImplicitMode": "Block",
@@ -282,7 +305,7 @@
             "interval": {
               "Type": "String",
               "Optional": true,
-              "Description": "Time between running the check (ms|s|m|h)",
+              "Description": "Time between running the check (ms|s|m|h). Defaults to `0s`.",
               "Default": {
                 "Type": "string",
                 "Value": "0s"
@@ -291,7 +314,7 @@
             "retries": {
               "Type": "Int",
               "Optional": true,
-              "Description": "Consecutive failures needed to report unhealthy",
+              "Description": "Consecutive failures needed to report unhealthy. Defaults to `0`.",
               "Default": {
                 "Type": "int",
                 "Value": "0"
@@ -300,7 +323,7 @@
             "start_period": {
               "Type": "String",
               "Optional": true,
-              "Description": "Start period for the container to initialize before counting retries towards unstable (ms|s|m|h)",
+              "Description": "Start period for the container to initialize before counting retries towards unstable (ms|s|m|h). Defaults to `0s`.",
               "Default": {
                 "Type": "string",
                 "Value": "0s"
@@ -309,7 +332,7 @@
             "test": {
               "Type": "List",
               "Required": true,
-              "Description": "The test to perform as list",
+              "Description": "Command to run to check health. For example, to run `curl -f localhost/health` set the command to be `[\"CMD\", \"curl\", \"-f\", \"localhost/health\"]`.",
               "ConfigImplicitMode": "Attr",
               "Elem": {
                 "Type": "SchemaElements",
@@ -319,7 +342,7 @@
             "timeout": {
               "Type": "String",
               "Optional": true,
-              "Description": "Maximum time to allow one check to run (ms|s|m|h)",
+              "Description": "Maximum time to allow one check to run (ms|s|m|h). Defaults to `0s`.",
               "Default": {
                 "Type": "string",
                 "Value": "0s"
@@ -331,6 +354,7 @@
       "host": {
         "Type": "Set",
         "Optional": true,
+        "Description": "Additional hosts to add to the container.",
         "IsBlock": true,
         "ConfigImplicitMode": "Block",
         "Elem": {
@@ -338,11 +362,13 @@
           "Info": {
             "host": {
               "Type": "String",
-              "Required": true
+              "Required": true,
+              "Description": "Hostname to add"
             },
             "ip": {
               "Type": "String",
-              "Required": true
+              "Required": true,
+              "Description": "IP address this hostname should resolve to."
             }
           }
         }
@@ -350,31 +376,43 @@
       "hostname": {
         "Type": "String",
         "Optional": true,
+        "Description": "Hostname of the container.",
         "Computed": true
       },
       "image": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "The ID of the image to back this container. The easiest way to get this value is to use the `docker_image` resource as is shown in the example."
+      },
+      "init": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Configured whether an init process should be injected for this container. If unset this will default to the `dockerd` defaults.",
+        "Computed": true
       },
       "ip_address": {
         "Type": "String",
+        "Description": "The IP address of the container.",
         "Computed": true,
-        "Deprecated": "Use ip_adresses_data instead. This field exposes the data of the container's first network."
+        "Deprecated": "Use `network_data` instead. The IP address of the container's first network it."
       },
       "ip_prefix_length": {
         "Type": "Int",
+        "Description": "The IP prefix length of the container.",
         "Computed": true,
-        "Deprecated": "Use ip_prefix_length from ip_adresses_data instead. This field exposes the data of the container's first network."
+        "Deprecated": "Use `network_data` instead. The IP prefix length of the container as read from its NetworkSettings."
       },
       "ipc_mode": {
         "Type": "String",
         "Optional": true,
-        "Description": "IPC sharing mode for the container",
+        "Description": "IPC sharing mode for the container. Possible values are: `none`, `private`, `shareable`, `container:\u003cname|id\u003e` or `host`.",
         "Computed": true
       },
       "labels": {
         "Type": "Set",
         "Optional": true,
+        "Description": "User-defined key/value metadata",
+        "Computed": true,
         "IsBlock": true,
         "ConfigImplicitMode": "Block",
         "Elem": {
@@ -396,6 +434,7 @@
       "links": {
         "Type": "Set",
         "Optional": true,
+        "Description": "Set of links for link based connectivity between containers that are running on the same host.",
         "Deprecated": "The --link flag is a legacy feature of Docker. It may eventually be removed.",
         "ConfigImplicitMode": "Attr",
         "Elem": {
@@ -406,16 +445,21 @@
       "log_driver": {
         "Type": "String",
         "Optional": true,
-        "Computed": true
+        "Description": "The logging driver to use for the container. Defaults to `json-file`.",
+        "Default": {
+          "Type": "string",
+          "Value": "json-file"
+        }
       },
       "log_opts": {
         "Type": "Map",
         "Optional": true,
-        "Computed": true
+        "Description": "Key/value pairs to use as options for the logging driver."
       },
       "logs": {
         "Type": "Bool",
         "Optional": true,
+        "Description": "Save the container logs (`attach` must be enabled). Defaults to `false`.",
         "Default": {
           "Type": "bool",
           "Value": "false"
@@ -423,20 +467,23 @@
       },
       "max_retry_count": {
         "Type": "Int",
-        "Optional": true
+        "Optional": true,
+        "Description": "The maximum amount of times to an attempt a restart when `restart` is set to 'on-failure'."
       },
       "memory": {
         "Type": "Int",
-        "Optional": true
+        "Optional": true,
+        "Description": "The memory limit for the container in MBs."
       },
       "memory_swap": {
         "Type": "Int",
-        "Optional": true
+        "Optional": true,
+        "Description": "The total memory limit (memory + swap) for the container in MBs. This setting may compute to `-1` after `terraform apply` if the target host doesn't support memory swap, when that is the case docker will use a soft limitation."
       },
       "mounts": {
         "Type": "Set",
         "Optional": true,
-        "Description": "Specification for mounts to be added to containers created as part of the service",
+        "Description": "Specification for mounts to be added to containers created as part of the service.",
         "IsBlock": true,
         "ConfigImplicitMode": "Block",
         "Elem": {
@@ -445,7 +492,7 @@
             "bind_options": {
               "Type": "List",
               "Optional": true,
-              "Description": "Optional configuration for the bind type",
+              "Description": "Optional configuration for the bind type.",
               "MaxItems": 1,
               "IsBlock": true,
               "ConfigImplicitMode": "Block",
@@ -455,7 +502,7 @@
                   "propagation": {
                     "Type": "String",
                     "Optional": true,
-                    "Description": "A propagation mode with the value"
+                    "Description": "A propagation mode with the value."
                   }
                 }
               }
@@ -463,12 +510,12 @@
             "read_only": {
               "Type": "Bool",
               "Optional": true,
-              "Description": "Whether the mount should be read-only"
+              "Description": "Whether the mount should be read-only."
             },
             "source": {
               "Type": "String",
               "Optional": true,
-              "Description": "Mount source (e.g. a volume name, a host path)"
+              "Description": "Mount source (e.g. a volume name, a host path)."
             },
             "target": {
               "Type": "String",
@@ -478,7 +525,7 @@
             "tmpfs_options": {
               "Type": "List",
               "Optional": true,
-              "Description": "Optional configuration for the tmpfs type",
+              "Description": "Optional configuration for the tmpfs type.",
               "MaxItems": 1,
               "IsBlock": true,
               "ConfigImplicitMode": "Block",
@@ -488,12 +535,12 @@
                   "mode": {
                     "Type": "Int",
                     "Optional": true,
-                    "Description": "The permission mode for the tmpfs mount in an integer"
+                    "Description": "The permission mode for the tmpfs mount in an integer."
                   },
                   "size_bytes": {
                     "Type": "Int",
                     "Optional": true,
-                    "Description": "The size for the tmpfs mount in bytes"
+                    "Description": "The size for the tmpfs mount in bytes."
                   }
                 }
               }
@@ -506,7 +553,7 @@
             "volume_options": {
               "Type": "List",
               "Optional": true,
-              "Description": "Optional configuration for the volume type",
+              "Description": "Optional configuration for the volume type.",
               "MaxItems": 1,
               "IsBlock": true,
               "ConfigImplicitMode": "Block",
@@ -521,7 +568,7 @@
                   "driver_options": {
                     "Type": "Map",
                     "Optional": true,
-                    "Description": "key/value map of driver specific options",
+                    "Description": "key/value map of driver specific options.",
                     "ConfigImplicitMode": "Attr",
                     "Elem": {
                       "Type": "SchemaElements",
@@ -531,7 +578,7 @@
                   "labels": {
                     "Type": "Set",
                     "Optional": true,
-                    "Description": "User-defined key/value metadata",
+                    "Description": "User-defined key/value metadata.",
                     "IsBlock": true,
                     "ConfigImplicitMode": "Block",
                     "Elem": {
@@ -553,7 +600,7 @@
                   "no_copy": {
                     "Type": "Bool",
                     "Optional": true,
-                    "Description": "Populate volume with data from the target"
+                    "Description": "Populate volume with data from the target."
                   }
                 }
               }
@@ -564,6 +611,7 @@
       "must_run": {
         "Type": "Bool",
         "Optional": true,
+        "Description": "If `true`, then the Docker container will be kept running. If `false`, then as long as the container exists, Terraform assumes it is successful. Defaults to `true`.",
         "Default": {
           "Type": "bool",
           "Value": "true"
@@ -571,13 +619,14 @@
       },
       "name": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "The name of the container."
       },
       "network_alias": {
         "Type": "Set",
         "Optional": true,
         "Description": "Set an alias for the container in all specified networks",
-        "Deprecated": "Use networks_advanced instead. Will be removed in v2.0.0",
+        "Deprecated": "Use networks_advanced instead. Will be removed in v3.0.0",
         "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
@@ -586,6 +635,7 @@
       },
       "network_data": {
         "Type": "List",
+        "Description": "The data of the networks the container is connected to.",
         "Computed": true,
         "IsBlock": true,
         "ConfigImplicitMode": "ComputedBlock",
@@ -594,18 +644,40 @@
           "Info": {
             "gateway": {
               "Type": "String",
+              "Description": "The network gateway of the container.",
+              "Computed": true,
+              "Deprecated": "Use `network_data` instead. The network gateway of the container as read from its NetworkSettings."
+            },
+            "global_ipv6_address": {
+              "Type": "String",
+              "Description": "The IPV6 address of the container.",
+              "Computed": true
+            },
+            "global_ipv6_prefix_length": {
+              "Type": "Int",
+              "Description": "The IPV6 prefix length address of the container.",
               "Computed": true
             },
             "ip_address": {
               "Type": "String",
-              "Computed": true
+              "Description": "The IP address of the container.",
+              "Computed": true,
+              "Deprecated": "Use `network_data` instead. The IP address of the container's first network it."
             },
             "ip_prefix_length": {
               "Type": "Int",
+              "Description": "The IP prefix length of the container.",
+              "Computed": true,
+              "Deprecated": "Use `network_data` instead. The IP prefix length of the container as read from its NetworkSettings."
+            },
+            "ipv6_gateway": {
+              "Type": "String",
+              "Description": "The IPV6 gateway of the container.",
               "Computed": true
             },
             "network_name": {
               "Type": "String",
+              "Description": "The name of the network",
               "Computed": true
             }
           }
@@ -613,12 +685,14 @@
       },
       "network_mode": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Description": "Network mode of the container."
       },
       "networks": {
         "Type": "Set",
         "Optional": true,
-        "Deprecated": "Use networks_advanced instead. Will be removed in v2.0.0",
+        "Description": "ID of the networks in which the container is.",
+        "Deprecated": "Use networks_advanced instead. Will be removed in v3.0.0",
         "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
@@ -628,6 +702,7 @@
       "networks_advanced": {
         "Type": "Set",
         "Optional": true,
+        "Description": "The networks the container is attached to",
         "IsBlock": true,
         "ConfigImplicitMode": "Block",
         "Elem": {
@@ -636,6 +711,7 @@
             "aliases": {
               "Type": "Set",
               "Optional": true,
+              "Description": "The network aliases of the container in the specific network.",
               "ConfigImplicitMode": "Attr",
               "Elem": {
                 "Type": "SchemaElements",
@@ -644,26 +720,31 @@
             },
             "ipv4_address": {
               "Type": "String",
-              "Optional": true
+              "Optional": true,
+              "Description": "The IPV4 address of the container in the specific network."
             },
             "ipv6_address": {
               "Type": "String",
-              "Optional": true
+              "Optional": true,
+              "Description": "The IPV6 address of the container in the specific network."
             },
             "name": {
               "Type": "String",
-              "Required": true
+              "Required": true,
+              "Description": "The name of the network."
             }
           }
         }
       },
       "pid_mode": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Description": "he PID (Process) Namespace mode for the container. Either `container:\u003cname|id\u003e` or `host`."
       },
       "ports": {
         "Type": "List",
         "Optional": true,
+        "Description": "Publish a container's port(s) to the host.",
         "IsBlock": true,
         "ConfigImplicitMode": "Block",
         "Elem": {
@@ -672,15 +753,18 @@
             "external": {
               "Type": "Int",
               "Optional": true,
+              "Description": "Port exposed out of the container. If not given a free random port `\u003e= 32768` will be used.",
               "Computed": true
             },
             "internal": {
               "Type": "Int",
-              "Required": true
+              "Required": true,
+              "Description": "Port within the container."
             },
             "ip": {
               "Type": "String",
               "Optional": true,
+              "Description": "IP address/mask that can access this port. Defaults to `0.0.0.0`.",
               "Default": {
                 "Type": "string",
                 "Value": "0.0.0.0"
@@ -689,6 +773,7 @@
             "protocol": {
               "Type": "String",
               "Optional": true,
+              "Description": "Protocol that can be used over this port. Defaults to `tcp`.",
               "Default": {
                 "Type": "string",
                 "Value": "tcp"
@@ -699,23 +784,36 @@
       },
       "privileged": {
         "Type": "Bool",
-        "Optional": true
+        "Optional": true,
+        "Description": "If `true`, the container runs in privileged mode."
       },
       "publish_all_ports": {
         "Type": "Bool",
-        "Optional": true
+        "Optional": true,
+        "Description": "Publish all ports of the container."
       },
       "read_only": {
         "Type": "Bool",
         "Optional": true,
+        "Description": "If `true`, the container will be started as readonly. Defaults to `false`.",
         "Default": {
           "Type": "bool",
           "Value": "false"
         }
       },
+      "remove_volumes": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "If `true`, it will remove anonymous volumes associated with the container. Defaults to `true`.",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
       "restart": {
         "Type": "String",
         "Optional": true,
+        "Description": "The restart policy for the container. Must be one of 'no', 'on-failure', 'always', 'unless-stopped'. Defaults to `no`.",
         "Default": {
           "Type": "string",
           "Value": "no"
@@ -724,35 +822,75 @@
       "rm": {
         "Type": "Bool",
         "Optional": true,
+        "Description": "If `true`, then the container will be automatically removed after his execution. Terraform won't check this container after creation. Defaults to `false`.",
         "Default": {
           "Type": "bool",
           "Value": "false"
         }
       },
+      "security_opts": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "List of string values to customize labels for MLS systems, such as SELinux. See https://docs.docker.com/engine/reference/run/#security-configuration.",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
       "shm_size": {
         "Type": "Int",
         "Optional": true,
+        "Description": "Size of `/dev/shm` in MBs.",
         "Computed": true
       },
       "start": {
         "Type": "Bool",
         "Optional": true,
+        "Description": "If `true`, then the Docker container will be started after creation. If `false`, then the container is only created. Defaults to `true`.",
         "Default": {
           "Type": "bool",
           "Value": "true"
         }
       },
+      "stdin_open": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "If `true`, keep STDIN open even if not attached (`docker run -i`). Defaults to `false`.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "storage_opts": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "Key/value pairs for the storage driver options, e.g. `size`: `120G`"
+      },
       "sysctls": {
         "Type": "Map",
-        "Optional": true
+        "Optional": true,
+        "Description": "A map of kernel parameters (sysctls) to set in the container."
       },
       "tmpfs": {
         "Type": "Map",
-        "Optional": true
+        "Optional": true,
+        "Description": "A map of container directories which should be replaced by `tmpfs mounts`, and their corresponding mount options."
+      },
+      "tty": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "If `true`, allocate a pseudo-tty (`docker run -t`). Defaults to `false`.",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
       },
       "ulimit": {
         "Type": "Set",
         "Optional": true,
+        "Description": "Ulimit options to add.",
         "IsBlock": true,
         "ConfigImplicitMode": "Block",
         "Elem": {
@@ -760,15 +898,18 @@
           "Info": {
             "hard": {
               "Type": "Int",
-              "Required": true
+              "Required": true,
+              "Description": "The hard limit"
             },
             "name": {
               "Type": "String",
-              "Required": true
+              "Required": true,
+              "Description": "The name of the ulimit"
             },
             "soft": {
               "Type": "Int",
-              "Required": true
+              "Required": true,
+              "Description": "The soft limit"
             }
           }
         }
@@ -776,6 +917,7 @@
       "upload": {
         "Type": "Set",
         "Optional": true,
+        "Description": "Specifies files to upload to the container before starting it. Only one of `content` or `content_base64` can be set and at least one of them has to be set.",
         "IsBlock": true,
         "ConfigImplicitMode": "Block",
         "Elem": {
@@ -783,15 +925,18 @@
           "Info": {
             "content": {
               "Type": "String",
-              "Optional": true
+              "Optional": true,
+              "Description": "Literal string value to use as the object content, which will be uploaded as UTF-8-encoded text. Conflicts with `content_base64` \u0026 `source`"
             },
             "content_base64": {
               "Type": "String",
-              "Optional": true
+              "Optional": true,
+              "Description": "Base64-encoded data that will be decoded and uploaded as raw bytes for the object content. This allows safely uploading non-UTF8 binary data, but is recommended only for larger binary content such as the result of the `base64encode` interpolation function. See [here](https://github.com/terraform-providers/terraform-provider-docker/issues/48#issuecomment-374174588) for the reason. Conflicts with `content` \u0026 `source`"
             },
             "executable": {
               "Type": "Bool",
               "Optional": true,
+              "Description": "If `true`, the file will be uploaded with user executable permission. Defaults to `false`.",
               "Default": {
                 "Type": "bool",
                 "Value": "false"
@@ -799,15 +944,18 @@
             },
             "file": {
               "Type": "String",
-              "Required": true
+              "Required": true,
+              "Description": "Path to the file in the container where is upload goes to"
             },
             "source": {
               "Type": "String",
-              "Optional": true
+              "Optional": true,
+              "Description": "A filename that references a file which will be uploaded as the object content. This allows for large file uploads that do not get stored in state. Conflicts with `content` \u0026 `content_base64`"
             },
             "source_hash": {
               "Type": "String",
-              "Optional": true
+              "Optional": true,
+              "Description": "If using `source`, this will force an update if the file content has updated but the filename has not. "
             }
           }
         }
@@ -815,7 +963,7 @@
       "user": {
         "Type": "String",
         "Optional": true,
-        "Computed": true,
+        "Description": "User used for run the first process. Format is `user` or `user:group` which user and group can be passed literraly or by name.",
         "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
@@ -824,11 +972,13 @@
       },
       "userns_mode": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Description": "Sets the usernamespace mode for the container when usernamespace remapping option is enabled."
       },
       "volumes": {
         "Type": "Set",
         "Optional": true,
+        "Description": "Spec for mounting volumes in the container.",
         "IsBlock": true,
         "ConfigImplicitMode": "Block",
         "Elem": {
@@ -836,23 +986,28 @@
           "Info": {
             "container_path": {
               "Type": "String",
-              "Optional": true
+              "Optional": true,
+              "Description": "The path in the container where the volume will be mounted."
             },
             "from_container": {
               "Type": "String",
-              "Optional": true
+              "Optional": true,
+              "Description": "The container where the volume is coming from."
             },
             "host_path": {
               "Type": "String",
-              "Optional": true
+              "Optional": true,
+              "Description": "The path on the host where the volume is coming from."
             },
             "read_only": {
               "Type": "Bool",
-              "Optional": true
+              "Optional": true,
+              "Description": "If `true`, this volume will be readonly. Defaults to `false`."
             },
             "volume_name": {
               "Type": "String",
-              "Optional": true
+              "Optional": true,
+              "Description": "The name of the docker volume which should be mounted."
             }
           }
         }
@@ -860,25 +1015,130 @@
       "working_dir": {
         "Type": "String",
         "Optional": true,
-        "Computed": true
+        "Description": "The working directory for commands to run in."
       }
     },
     "docker_image": {
+      "build": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Configuration to build an image. Please see [docker build command reference](https://docs.docker.com/engine/reference/commandline/build/#options) too.",
+        "MaxItems": 1,
+        "ConflictsWith": [
+          "pull_triggers",
+          "pull_trigger"
+        ],
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "build_arg": {
+              "Type": "Map",
+              "Optional": true,
+              "Description": "Set build-time variables",
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "dockerfile": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Name of the Dockerfile. Defaults to `Dockerfile`.",
+              "Default": {
+                "Type": "string",
+                "Value": "Dockerfile"
+              }
+            },
+            "force_remove": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Always remove intermediate containers"
+            },
+            "label": {
+              "Type": "Map",
+              "Optional": true,
+              "Description": "Set metadata for an image",
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "no_cache": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Do not use cache when building the image"
+            },
+            "path": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Context path"
+            },
+            "remove": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Remove intermediate containers after a successful build. Defaults to  `true`.",
+              "Default": {
+                "Type": "bool",
+                "Value": "true"
+              }
+            },
+            "tag": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Name and optionally a tag in the 'name:tag' format",
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "target": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Set the target build stage to build"
+            }
+          }
+        }
+      },
+      "force_remove": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "If true, then the image is removed forcibly when the resource is destroyed."
+      },
       "keep_locally": {
         "Type": "Bool",
-        "Optional": true
+        "Optional": true,
+        "Description": "If true, then the Docker image won't be deleted on destroy operation. If this is false, it will delete the image from the docker local storage on destroy operation."
       },
       "latest": {
         "Type": "String",
-        "Computed": true
+        "Description": "The ID of the image in the form of `sha256:\u003chash\u003e` image digest. Do not confuse it with the default `latest` tag.",
+        "Computed": true,
+        "Deprecated": "Use repo_digest instead"
       },
       "name": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "The name of the Docker image, including any tags or SHA256 repo digests."
+      },
+      "output": {
+        "Type": "String",
+        "Computed": true,
+        "Deprecated": "Is unused and will be removed.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       },
       "pull_trigger": {
         "Type": "String",
         "Optional": true,
+        "Description": "A value which cause an image pull when changed",
         "ConflictsWith": [
           "pull_triggers"
         ],
@@ -887,39 +1147,51 @@
       "pull_triggers": {
         "Type": "Set",
         "Optional": true,
+        "Description": "List of values which cause an image pull when changed. This is used to store the image digest from the registry when using the [docker_registry_image](../data-sources/registry_image.md).",
         "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
         }
+      },
+      "repo_digest": {
+        "Type": "String",
+        "Description": "The image sha256 digest in the form of `repo[:tag]@sha256:\u003chash\u003e`.",
+        "Computed": true
       }
     },
     "docker_network": {
       "attachable": {
         "Type": "Bool",
-        "Optional": true
+        "Optional": true,
+        "Description": "Enable manual container attachment to the network."
       },
       "check_duplicate": {
         "Type": "Bool",
-        "Optional": true
+        "Optional": true,
+        "Description": "Requests daemon to check for networks with same name."
       },
       "driver": {
         "Type": "String",
         "Optional": true,
+        "Description": "The driver of the Docker network. Possible values are `bridge`, `host`, `overlay`, `macvlan`. See [network docs](https://docs.docker.com/network/#network-drivers) for more details.",
         "Computed": true
       },
       "ingress": {
         "Type": "Bool",
-        "Optional": true
+        "Optional": true,
+        "Description": "Create swarm routing-mesh network. Defaults to `false`."
       },
       "internal": {
         "Type": "Bool",
         "Optional": true,
+        "Description": "Whether the network is internal.",
         "Computed": true
       },
       "ipam_config": {
         "Type": "Set",
         "Optional": true,
+        "Description": "The IPAM configuration options",
         "Computed": true,
         "IsBlock": true,
         "ConfigImplicitMode": "Block",
@@ -928,19 +1200,23 @@
           "Info": {
             "aux_address": {
               "Type": "Map",
-              "Optional": true
+              "Optional": true,
+              "Description": "Auxiliary IPv4 or IPv6 addresses used by Network driver"
             },
             "gateway": {
               "Type": "String",
-              "Optional": true
+              "Optional": true,
+              "Description": "The IP address of the gateway"
             },
             "ip_range": {
               "Type": "String",
-              "Optional": true
+              "Optional": true,
+              "Description": "The ip range in CIDR form"
             },
             "subnet": {
               "Type": "String",
-              "Optional": true
+              "Optional": true,
+              "Description": "The subnet in CIDR form"
             }
           }
         }
@@ -948,6 +1224,7 @@
       "ipam_driver": {
         "Type": "String",
         "Optional": true,
+        "Description": "Driver used by the custom IP scheme of the network. Defaults to `default`",
         "Default": {
           "Type": "string",
           "Value": "default"
@@ -955,11 +1232,13 @@
       },
       "ipv6": {
         "Type": "Bool",
-        "Optional": true
+        "Optional": true,
+        "Description": "Enable IPv6 networking. Defaults to `false`."
       },
       "labels": {
         "Type": "Set",
         "Optional": true,
+        "Description": "User-defined key/value metadata",
         "IsBlock": true,
         "ConfigImplicitMode": "Block",
         "Elem": {
@@ -980,15 +1259,410 @@
       },
       "name": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "The name of the Docker network."
       },
       "options": {
         "Type": "Map",
         "Optional": true,
+        "Description": "Only available with bridge networks. See [bridge options docs](https://docs.docker.com/engine/reference/commandline/network_create/#bridge-driver-options) for more details.",
         "Computed": true
       },
       "scope": {
         "Type": "String",
+        "Description": "Scope of the network. One of `swarm`, `global`, or `local`.",
+        "Computed": true
+      }
+    },
+    "docker_plugin": {
+      "alias": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Docker Plugin alias",
+        "Computed": true
+      },
+      "enable_timeout": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "HTTP client timeout to enable the plugin"
+      },
+      "enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "If `true` the plugin is enabled. Defaults to `true`",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "env": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "The environment variables in the form of `KEY=VALUE`, e.g. `DEBUG=0`",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "force_destroy": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "If true, then the plugin is destroyed forcibly"
+      },
+      "force_disable": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "If true, then the plugin is disabled forcibly"
+      },
+      "grant_all_permissions": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "If true, grant all permissions necessary to run the plugin",
+        "ConflictsWith": [
+          "grant_permissions"
+        ]
+      },
+      "grant_permissions": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Grant specific permissions only",
+        "ConflictsWith": [
+          "grant_all_permissions"
+        ],
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "name": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The name of the permission"
+            },
+            "value": {
+              "Type": "Set",
+              "Required": true,
+              "Description": "The value of the permission",
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Docker Plugin name"
+      },
+      "plugin_reference": {
+        "Type": "String",
+        "Description": "Docker Plugin Reference",
+        "Computed": true
+      }
+    },
+    "docker_registry_image": {
+      "build": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Definition for building the image",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "auth_config": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "The configuration for the authentication",
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "auth": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "the auth token"
+                  },
+                  "email": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "the user emal"
+                  },
+                  "host_name": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "hostname of the registry"
+                  },
+                  "identity_token": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "the identity token"
+                  },
+                  "password": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "the registry password"
+                  },
+                  "registry_token": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "the registry token"
+                  },
+                  "server_address": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "the server address"
+                  },
+                  "user_name": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "the registry user name"
+                  }
+                }
+              }
+            },
+            "build_args": {
+              "Type": "Map",
+              "Optional": true,
+              "Description": "Pairs for build-time variables in the form TODO",
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "build_id": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "BuildID is an optional identifier that can be passed together with the build request. The "
+            },
+            "cache_from": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Images to consider as cache sources",
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "cgroup_parent": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Optional parent cgroup for the container"
+            },
+            "context": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The absolute path to the context folder. You can use the helper function '${path.cwd}/context-dir'."
+            },
+            "cpu_period": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "The length of a CPU period in microseconds"
+            },
+            "cpu_quota": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "Microseconds of CPU time that the container can get in a CPU period"
+            },
+            "cpu_set_cpus": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "CPUs in which to allow execution (e.g., `0-3`, `0`, `1`)"
+            },
+            "cpu_set_mems": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "MEMs in which to allow execution (`0-3`, `0`, `1`)"
+            },
+            "cpu_shares": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "CPU shares (relative weight)"
+            },
+            "dockerfile": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Dockerfile file. Defaults to `Dockerfile`",
+              "Default": {
+                "Type": "string",
+                "Value": "Dockerfile"
+              }
+            },
+            "extra_hosts": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "A list of hostnames/IP mappings to add to the container’s /etc/hosts file. Specified in the form [\"hostname:IP\"]",
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "force_remove": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Always remove intermediate containers"
+            },
+            "isolation": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Isolation represents the isolation technology of a container. The supported values are "
+            },
+            "labels": {
+              "Type": "Map",
+              "Optional": true,
+              "Description": "User-defined key/value metadata",
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "memory": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "Set memory limit for build"
+            },
+            "memory_swap": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "Total memory (memory + swap), -1 to enable unlimited swap"
+            },
+            "network_mode": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Set the networking mode for the RUN instructions during build"
+            },
+            "no_cache": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Do not use the cache when building the image"
+            },
+            "platform": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Set platform if server is multi-platform capable"
+            },
+            "pull_parent": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Attempt to pull the image even if an older image exists locally"
+            },
+            "remote_context": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "A Git repository URI or HTTP/HTTPS context URI"
+            },
+            "remove": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Remove intermediate containers after a successful build (default behavior)"
+            },
+            "security_opt": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "The security options",
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "session_id": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Set an ID for the build session"
+            },
+            "shm_size": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "Size of /dev/shm in bytes. The size must be greater than 0"
+            },
+            "squash": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "If true the new layers are squashed into a new image with a single new layer"
+            },
+            "suppress_output": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Suppress the build output and print image ID on success"
+            },
+            "target": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Set the target build stage to build"
+            },
+            "ulimit": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Configuration for ulimits",
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "hard": {
+                    "Type": "Int",
+                    "Required": true,
+                    "Description": "soft limit"
+                  },
+                  "name": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "type of ulimit, e.g. `nofile`"
+                  },
+                  "soft": {
+                    "Type": "Int",
+                    "Required": true,
+                    "Description": "hard limit"
+                  }
+                }
+              }
+            },
+            "version": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Version of the unerlying builder to use"
+            }
+          }
+        }
+      },
+      "insecure_skip_verify": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "If `true`, the verification of TLS certificates of the server/registry is disabled. Defaults to `false`",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "keep_remotely": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "If true, then the Docker image won't be deleted on destroy operation. If this is false, it will delete the image from the docker registry on destroy operation. Defaults to `false`",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The name of the Docker image."
+      },
+      "sha256_digest": {
+        "Type": "String",
+        "Description": "The sha256 digest of the image.",
         "Computed": true
       }
     },
@@ -1001,6 +1675,7 @@
       "labels": {
         "Type": "Set",
         "Optional": true,
+        "Description": "User-defined key/value metadata",
         "IsBlock": true,
         "ConfigImplicitMode": "Block",
         "Elem": {
@@ -1027,11 +1702,33 @@
     },
     "docker_service": {
       "auth": {
-        "Type": "Map",
+        "Type": "List",
         "Optional": true,
+        "Description": "Configuration for the authentication for pulling the images of the service",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
         "Elem": {
-          "Type": "SchemaElements",
-          "ElementsType": "String"
+          "Type": "SchemaInfo",
+          "Info": {
+            "password": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The password",
+              "DefaultFunc": "ENV(DOCKER_REGISTRY_PASS)"
+            },
+            "server_address": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The address of the server for the authentication"
+            },
+            "username": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The username",
+              "DefaultFunc": "ENV(DOCKER_REGISTRY_USER)"
+            }
+          }
         }
       },
       "converge_config": {
@@ -1050,7 +1747,7 @@
             "delay": {
               "Type": "String",
               "Optional": true,
-              "Description": "The interval to check if the desired state is reached (ms|s). Default: 7s",
+              "Description": "The interval to check if the desired state is reached (ms|s). Defaults to `7s`.",
               "Default": {
                 "Type": "string",
                 "Value": "7s"
@@ -1059,7 +1756,7 @@
             "timeout": {
               "Type": "String",
               "Optional": true,
-              "Description": "The timeout of the service to reach the desired state (s|m). Default: 3m",
+              "Description": "The timeout of the service to reach the desired state (s|m). Defaults to `3m`",
               "Default": {
                 "Type": "string",
                 "Value": "3m"
@@ -1088,7 +1785,7 @@
             "ports": {
               "Type": "List",
               "Optional": true,
-              "Description": "List of exposed ports that this service is accessible on from the outside. Ports can only be provided if 'vip' resolution mode is used.",
+              "Description": "List of exposed ports that this service is accessible on from the outside. Ports can only be provided if 'vip' resolution mode is used",
               "IsBlock": true,
               "ConfigImplicitMode": "Block",
               "Elem": {
@@ -1102,7 +1799,7 @@
                   "protocol": {
                     "Type": "String",
                     "Optional": true,
-                    "Description": "Rrepresents the protocol of a port: 'tcp', 'udp' or 'sctp'",
+                    "Description": "Rrepresents the protocol of a port: 'tcp', 'udp' or 'sctp'. Defaults to `tcp`.",
                     "Default": {
                       "Type": "string",
                       "Value": "tcp"
@@ -1111,7 +1808,7 @@
                   "publish_mode": {
                     "Type": "String",
                     "Optional": true,
-                    "Description": "Represents the mode in which the port is to be published: 'ingress' or 'host'",
+                    "Description": "Represents the mode in which the port is to be published: 'ingress' or 'host'. Defaults to `ingress`.",
                     "Default": {
                       "Type": "string",
                       "Value": "ingress"
@@ -1120,7 +1817,7 @@
                   "published_port": {
                     "Type": "Int",
                     "Optional": true,
-                    "Description": "The port on the swarm hosts.",
+                    "Description": "The port on the swarm hosts",
                     "Computed": true
                   },
                   "target_port": {
@@ -1171,7 +1868,7 @@
             "global": {
               "Type": "Bool",
               "Optional": true,
-              "Description": "The global service mode",
+              "Description": "The global service mode. Defaults to `false`",
               "ConflictsWith": [
                 "mode.0.replicated",
                 "converge_config"
@@ -1198,7 +1895,7 @@
                   "replicas": {
                     "Type": "Int",
                     "Optional": true,
-                    "Description": "The amount of replicas of the service",
+                    "Description": "The amount of replicas of the service. Defaults to `1`",
                     "Default": {
                       "Type": "int",
                       "Value": "1"
@@ -1228,7 +1925,7 @@
             "delay": {
               "Type": "String",
               "Optional": true,
-              "Description": "Delay between task rollbacks (ns|us|ms|s|m|h)",
+              "Description": "Delay between task rollbacks (ns|us|ms|s|m|h). Defaults to `0s`.",
               "Default": {
                 "Type": "string",
                 "Value": "0s"
@@ -1237,7 +1934,7 @@
             "failure_action": {
               "Type": "String",
               "Optional": true,
-              "Description": "Action on rollback failure: pause | continue",
+              "Description": "Action on rollback failure: pause | continue. Defaults to `pause`.",
               "Default": {
                 "Type": "string",
                 "Value": "pause"
@@ -1246,7 +1943,7 @@
             "max_failure_ratio": {
               "Type": "String",
               "Optional": true,
-              "Description": "Failure rate to tolerate during a rollback",
+              "Description": "Failure rate to tolerate during a rollback. Defaults to `0.0`.",
               "Default": {
                 "Type": "string",
                 "Value": "0.0"
@@ -1255,7 +1952,7 @@
             "monitor": {
               "Type": "String",
               "Optional": true,
-              "Description": "Duration after each task rollback to monitor for failure (ns|us|ms|s|m|h)",
+              "Description": "Duration after each task rollback to monitor for failure (ns|us|ms|s|m|h). Defaults to `5s`.",
               "Default": {
                 "Type": "string",
                 "Value": "5s"
@@ -1264,7 +1961,7 @@
             "order": {
               "Type": "String",
               "Optional": true,
-              "Description": "Rollback order: either 'stop-first' or 'start-first'",
+              "Description": "Rollback order: either 'stop-first' or 'start-first'. Defaults to `stop-first`.",
               "Default": {
                 "Type": "string",
                 "Value": "stop-first"
@@ -1273,7 +1970,7 @@
             "parallelism": {
               "Type": "Int",
               "Optional": true,
-              "Description": "Maximum number of tasks to be rollbacked in one iteration",
+              "Description": "Maximum number of tasks to be rollbacked in one iteration. Defaults to `1`",
               "Default": {
                 "Type": "int",
                 "Value": "1"
@@ -1315,7 +2012,7 @@
                   "command": {
                     "Type": "List",
                     "Optional": true,
-                    "Description": "The command to be run in the image",
+                    "Description": "The command/entrypoint to be run in the image. According to the [docker cli](https://github.com/docker/cli/blob/v20.10.7/cli/command/service/opts.go#L705) the override of the entrypoint is also passed to the `command` property and there is no `entrypoint` attribute in the `ContainerSpec` of the service.",
                     "ConfigImplicitMode": "Attr",
                     "Elem": {
                       "Type": "SchemaElements",
@@ -1344,7 +2041,7 @@
                         "file_gid": {
                           "Type": "String",
                           "Optional": true,
-                          "Description": "Represents the file GID",
+                          "Description": "Represents the file GID. Defaults to `0`.",
                           "Default": {
                             "Type": "string",
                             "Value": "0"
@@ -1353,7 +2050,7 @@
                         "file_mode": {
                           "Type": "Int",
                           "Optional": true,
-                          "Description": "Represents represents the FileMode of the file",
+                          "Description": "Represents represents the FileMode of the file. Defaults to `0o444`.",
                           "Default": {
                             "Type": "int",
                             "Value": "292"
@@ -1367,7 +2064,7 @@
                         "file_uid": {
                           "Type": "String",
                           "Optional": true,
-                          "Description": "Represents the file UID",
+                          "Description": "Represents the file UID. Defaults to `0`.",
                           "Default": {
                             "Type": "string",
                             "Value": "0"
@@ -1459,7 +2156,7 @@
                         "interval": {
                           "Type": "String",
                           "Optional": true,
-                          "Description": "Time between running the check (ms|s|m|h)",
+                          "Description": "Time between running the check (ms|s|m|h). Defaults to `0s`.",
                           "Default": {
                             "Type": "string",
                             "Value": "0s"
@@ -1468,7 +2165,7 @@
                         "retries": {
                           "Type": "Int",
                           "Optional": true,
-                          "Description": "Consecutive failures needed to report unhealthy",
+                          "Description": "Consecutive failures needed to report unhealthy. Defaults to `0`",
                           "Default": {
                             "Type": "int",
                             "Value": "0"
@@ -1477,7 +2174,7 @@
                         "start_period": {
                           "Type": "String",
                           "Optional": true,
-                          "Description": "Start period for the container to initialize before counting retries towards unstable (ms|s|m|h)",
+                          "Description": "Start period for the container to initialize before counting retries towards unstable (ms|s|m|h). Defaults to `0s`.",
                           "Default": {
                             "Type": "string",
                             "Value": "0s"
@@ -1496,7 +2193,7 @@
                         "timeout": {
                           "Type": "String",
                           "Optional": true,
-                          "Description": "Maximum time to allow one check to run (ms|s|m|h)",
+                          "Description": "Maximum time to allow one check to run (ms|s|m|h). Defaults to `0s`.",
                           "Default": {
                             "Type": "string",
                             "Value": "0s"
@@ -1513,7 +2210,7 @@
                   "hosts": {
                     "Type": "Set",
                     "Optional": true,
-                    "Description": "A list of hostname/IP mappings to add to the container's hosts file.",
+                    "Description": "A list of hostname/IP mappings to add to the container's hosts file",
                     "IsBlock": true,
                     "ConfigImplicitMode": "Block",
                     "Elem": {
@@ -1521,11 +2218,13 @@
                       "Info": {
                         "host": {
                           "Type": "String",
-                          "Required": true
+                          "Required": true,
+                          "Description": "The name of the host"
                         },
                         "ip": {
                           "Type": "String",
-                          "Required": true
+                          "Required": true,
+                          "Description": "The ip of the host"
                         }
                       }
                     }
@@ -1533,12 +2232,12 @@
                   "image": {
                     "Type": "String",
                     "Required": true,
-                    "Description": "The image name to use for the containers of the service"
+                    "Description": "The image name to use for the containers of the service, like `nginx:1.17.6`. Also use the data-source or resource of `docker_image` with the `repo_digest` or `docker_registry_image` with the `name` attribute for this, as shown in the examples."
                   },
                   "isolation": {
                     "Type": "String",
                     "Optional": true,
-                    "Description": "Isolation technology of the containers running the service. (Windows only)",
+                    "Description": "Isolation technology of the containers running the service. (Windows only). Defaults to `default`.",
                     "Default": {
                       "Type": "string",
                       "Value": "default"
@@ -1588,7 +2287,11 @@
                               "propagation": {
                                 "Type": "String",
                                 "Optional": true,
-                                "Description": "A propagation mode with the value"
+                                "Description": "Bind propagation refers to whether or not mounts created within a given bind-mount or named volume can be propagated to replicas of that mount. See the [docs](https://docs.docker.com/storage/bind-mounts/#configure-bind-propagation) for details. Defaults to `rprivate`",
+                                "Default": {
+                                  "Type": "string",
+                                  "Value": "rprivate"
+                                }
                               }
                             }
                           }
@@ -1649,7 +2352,7 @@
                               "driver_name": {
                                 "Type": "String",
                                 "Optional": true,
-                                "Description": "Name of the driver to use to create the volume."
+                                "Description": "Name of the driver to use to create the volume"
                               },
                               "driver_options": {
                                 "Type": "Map",
@@ -1785,7 +2488,7 @@
                         "file_gid": {
                           "Type": "String",
                           "Optional": true,
-                          "Description": "Represents the file GID",
+                          "Description": "Represents the file GID. Defaults to `0`",
                           "Default": {
                             "Type": "string",
                             "Value": "0"
@@ -1794,7 +2497,7 @@
                         "file_mode": {
                           "Type": "Int",
                           "Optional": true,
-                          "Description": "Represents represents the FileMode of the file",
+                          "Description": "Represents represents the FileMode of the file. Defaults to `0o444`",
                           "Default": {
                             "Type": "int",
                             "Value": "292"
@@ -1808,7 +2511,7 @@
                         "file_uid": {
                           "Type": "String",
                           "Optional": true,
-                          "Description": "Represents the file UID",
+                          "Description": "Represents the file UID. Defaults to `0`",
                           "Default": {
                             "Type": "string",
                             "Value": "0"
@@ -1830,7 +2533,7 @@
                   "stop_grace_period": {
                     "Type": "String",
                     "Optional": true,
-                    "Description": "Amount of time to wait for the container to terminate before forcefully removing it (ms|s|m|h)",
+                    "Description": "Amount of time to wait for the container to terminate before forcefully removing it (ms|s|m|h). If not specified or '0s' the destroy will not check if all tasks/containers of the service terminate.",
                     "Computed": true
                   },
                   "stop_signal": {
@@ -1849,7 +2552,7 @@
             "force_update": {
               "Type": "Int",
               "Optional": true,
-              "Description": "A counter that triggers an update even if no relevant parameters have been changed. See https://github.com/docker/swarmkit/blob/master/api/specs.proto#L126",
+              "Description": "A counter that triggers an update even if no relevant parameters have been changed. See the [spec](https://github.com/docker/swarmkit/blob/master/api/specs.proto#L126).",
               "Computed": true
             },
             "log_driver": {
@@ -1883,7 +2586,7 @@
             "networks": {
               "Type": "Set",
               "Optional": true,
-              "Description": "Ids of the networks in which the  container will be put in.",
+              "Description": "Ids of the networks in which the  container will be put in",
               "ConfigImplicitMode": "Attr",
               "Elem": {
                 "Type": "SchemaElements",
@@ -1904,12 +2607,17 @@
                   "constraints": {
                     "Type": "Set",
                     "Optional": true,
-                    "Description": "An array of constraints. e.g.: node.role==manager",
+                    "Description": "An array of constraints. e.g.: `node.role==manager`",
                     "ConfigImplicitMode": "Attr",
                     "Elem": {
                       "Type": "SchemaElements",
                       "ElementsType": "String"
                     }
+                  },
+                  "max_replicas": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Description": "Maximum number of replicas for per node (default value is `0`, which is unlimited)"
                   },
                   "platforms": {
                     "Type": "Set",
@@ -1923,12 +2631,12 @@
                         "architecture": {
                           "Type": "String",
                           "Required": true,
-                          "Description": "The architecture, e.g. amd64"
+                          "Description": "The architecture, e.g. `amd64`"
                         },
                         "os": {
                           "Type": "String",
                           "Required": true,
-                          "Description": "The operation system, e.g. linux"
+                          "Description": "The operation system, e.g. `linux`"
                         }
                       }
                     }
@@ -1967,39 +2675,6 @@
                     "Elem": {
                       "Type": "SchemaInfo",
                       "Info": {
-                        "generic_resources": {
-                          "Type": "List",
-                          "Optional": true,
-                          "Description": "User-defined resources can be either Integer resources (e.g, SSD=3) or String resources (e.g, GPU=UUID1)",
-                          "MaxItems": 1,
-                          "IsBlock": true,
-                          "ConfigImplicitMode": "Block",
-                          "Elem": {
-                            "Type": "SchemaInfo",
-                            "Info": {
-                              "discrete_resources_spec": {
-                                "Type": "Set",
-                                "Optional": true,
-                                "Description": "The Integer resources",
-                                "ConfigImplicitMode": "Attr",
-                                "Elem": {
-                                  "Type": "SchemaElements",
-                                  "ElementsType": "String"
-                                }
-                              },
-                              "named_resources_spec": {
-                                "Type": "Set",
-                                "Optional": true,
-                                "Description": "The String resources",
-                                "ConfigImplicitMode": "Attr",
-                                "Elem": {
-                                  "Type": "SchemaElements",
-                                  "ElementsType": "String"
-                                }
-                              }
-                            }
-                          }
-                        },
                         "memory_bytes": {
                           "Type": "Int",
                           "Optional": true,
@@ -2008,7 +2683,7 @@
                         "nano_cpus": {
                           "Type": "Int",
                           "Optional": true,
-                          "Description": "CPU shares in units of 1/1e9 (or 10^-9) of the CPU. Should be at least 1000000"
+                          "Description": "CPU shares in units of `1/1e9` (or `10^-9`) of the CPU. Should be at least 1000000"
                         }
                       }
                     }
@@ -2026,7 +2701,7 @@
                         "generic_resources": {
                           "Type": "List",
                           "Optional": true,
-                          "Description": "User-defined resources can be either Integer resources (e.g, SSD=3) or String resources (e.g, GPU=UUID1)",
+                          "Description": "User-defined resources can be either Integer resources (e.g, `SSD=3`) or String resources (e.g, GPU=UUID1)",
                           "MaxItems": 1,
                           "IsBlock": true,
                           "ConfigImplicitMode": "Block",
@@ -2073,19 +2748,43 @@
               }
             },
             "restart_policy": {
-              "Type": "Map",
+              "Type": "List",
               "Optional": true,
               "Description": "Specification for the restart policy which applies to containers created as part of this service.",
               "Computed": true,
+              "MaxItems": 1,
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
               "Elem": {
-                "Type": "SchemaElements",
-                "ElementsType": "String"
+                "Type": "SchemaInfo",
+                "Info": {
+                  "condition": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Condition for restart"
+                  },
+                  "delay": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Delay between restart attempts (ms|s|m|h)"
+                  },
+                  "max_attempts": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Description": "Maximum attempts to restart a given container before giving up (default value is `0`, which is ignored)"
+                  },
+                  "window": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "The time window used to evaluate the restart policy (default value is `0`, which is unbounded) (ms|s|m|h)"
+                  }
+                }
               }
             },
             "runtime": {
               "Type": "String",
               "Optional": true,
-              "Description": "Runtime is the type of runtime specified for the task executor. See https://github.com/moby/moby/blob/master/api/types/swarm/runtime.go",
+              "Description": "Runtime is the type of runtime specified for the task executor. See the [types](https://github.com/moby/moby/blob/master/api/types/swarm/runtime.go).",
               "Computed": true
             }
           }
@@ -2104,7 +2803,7 @@
             "delay": {
               "Type": "String",
               "Optional": true,
-              "Description": "Delay between task updates (ns|us|ms|s|m|h)",
+              "Description": "Delay between task updates (ns|us|ms|s|m|h). Defaults to `0s`.",
               "Default": {
                 "Type": "string",
                 "Value": "0s"
@@ -2113,7 +2812,7 @@
             "failure_action": {
               "Type": "String",
               "Optional": true,
-              "Description": "Action on update failure: pause | continue | rollback",
+              "Description": "Action on update failure: pause | continue | rollback. Defaults to `pause`.",
               "Default": {
                 "Type": "string",
                 "Value": "pause"
@@ -2122,7 +2821,7 @@
             "max_failure_ratio": {
               "Type": "String",
               "Optional": true,
-              "Description": "Failure rate to tolerate during an update",
+              "Description": "Failure rate to tolerate during an update. Defaults to `0.0`.",
               "Default": {
                 "Type": "string",
                 "Value": "0.0"
@@ -2131,7 +2830,7 @@
             "monitor": {
               "Type": "String",
               "Optional": true,
-              "Description": "Duration after each task update to monitor for failure (ns|us|ms|s|m|h)",
+              "Description": "Duration after each task update to monitor for failure (ns|us|ms|s|m|h). Defaults to `5s`.",
               "Default": {
                 "Type": "string",
                 "Value": "5s"
@@ -2140,7 +2839,7 @@
             "order": {
               "Type": "String",
               "Optional": true,
-              "Description": "Update order: either 'stop-first' or 'start-first'",
+              "Description": "Update order: either 'stop-first' or 'start-first'. Defaults to `stop-first`.",
               "Default": {
                 "Type": "string",
                 "Value": "stop-first"
@@ -2149,7 +2848,7 @@
             "parallelism": {
               "Type": "Int",
               "Optional": true,
-              "Description": "Maximum number of tasks to be updated in one iteration",
+              "Description": "Maximum number of tasks to be updated in one iteration. Defaults to `1`",
               "Default": {
                 "Type": "int",
                 "Value": "1"
@@ -2163,15 +2862,18 @@
       "driver": {
         "Type": "String",
         "Optional": true,
+        "Description": "Driver type for the volume. Defaults to `local`.",
         "Computed": true
       },
       "driver_opts": {
         "Type": "Map",
-        "Optional": true
+        "Optional": true,
+        "Description": "Options specific to the driver."
       },
       "labels": {
         "Type": "Set",
         "Optional": true,
+        "Description": "User-defined key/value metadata",
         "IsBlock": true,
         "ConfigImplicitMode": "Block",
         "Elem": {
@@ -2192,31 +2894,48 @@
       },
       "mountpoint": {
         "Type": "String",
+        "Description": "The mountpoint of the volume.",
         "Computed": true
       },
       "name": {
         "Type": "String",
         "Optional": true,
+        "Description": "The name of the Docker volume (will be generated if not provided).",
         "Computed": true
       }
     }
   },
   "data-sources": {
+    "docker_image": {
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The name of the Docker image, including any tags or SHA256 repo digests."
+      },
+      "repo_digest": {
+        "Type": "String",
+        "Description": "The image sha256 digest in the form of `repo[:tag]@sha256:\u003chash\u003e`. It may be empty in the edge case where the local image was pulled from a repo, tagged locally, and then referred to in the data source by that local name/tag.",
+        "Computed": true
+      }
+    },
     "docker_network": {
       "driver": {
         "Type": "String",
+        "Description": "The driver of the Docker network. Possible values are `bridge`, `host`, `overlay`, `macvlan`. See [network docs](https://docs.docker.com/network/#network-drivers) for more details.",
         "Computed": true
       },
       "id": {
         "Type": "String",
-        "Optional": true
+        "Computed": true
       },
       "internal": {
         "Type": "Bool",
+        "Description": "If `true`, the network is internal.",
         "Computed": true
       },
       "ipam_config": {
         "Type": "Set",
+        "Description": "The IPAM configuration options",
         "Computed": true,
         "IsBlock": true,
         "ConfigImplicitMode": "ComputedBlock",
@@ -2225,43 +2944,103 @@
           "Info": {
             "aux_address": {
               "Type": "Map",
-              "Optional": true
+              "Optional": true,
+              "Description": "Auxiliary IPv4 or IPv6 addresses used by Network driver"
             },
             "gateway": {
               "Type": "String",
-              "Optional": true
+              "Optional": true,
+              "Description": "The IP address of the gateway"
             },
             "ip_range": {
               "Type": "String",
-              "Optional": true
+              "Optional": true,
+              "Description": "The ip range in CIDR form"
             },
             "subnet": {
               "Type": "String",
-              "Optional": true
+              "Optional": true,
+              "Description": "The subnet in CIDR form"
             }
           }
         }
       },
       "name": {
         "Type": "String",
-        "Optional": true
+        "Required": true,
+        "Description": "The name of the Docker network."
       },
       "options": {
         "Type": "Map",
+        "Description": "Only available with bridge networks. See [bridge options docs](https://docs.docker.com/engine/reference/commandline/network_create/#bridge-driver-options) for more details.",
         "Computed": true
       },
       "scope": {
         "Type": "String",
+        "Description": "Scope of the network. One of `swarm`, `global`, or `local`.",
+        "Computed": true
+      }
+    },
+    "docker_plugin": {
+      "alias": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The alias of the Docker plugin. If the tag is omitted, `:latest` is complemented to the attribute value."
+      },
+      "enabled": {
+        "Type": "Bool",
+        "Description": "If `true` the plugin is enabled",
+        "Computed": true
+      },
+      "env": {
+        "Type": "Set",
+        "Description": "The environment variables in the form of `KEY=VALUE`, e.g. `DEBUG=0`",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "grant_all_permissions": {
+        "Type": "Bool",
+        "Description": "If true, grant all permissions necessary to run the plugin",
+        "Computed": true
+      },
+      "id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The ID of the plugin, which has precedence over the `alias` of both are given"
+      },
+      "name": {
+        "Type": "String",
+        "Description": "The plugin name. If the tag is omitted, `:latest` is complemented to the attribute value.",
+        "Computed": true
+      },
+      "plugin_reference": {
+        "Type": "String",
+        "Description": "The Docker Plugin Reference",
         "Computed": true
       }
     },
     "docker_registry_image": {
+      "insecure_skip_verify": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "If `true`, the verification of TLS certificates of the server/registry is disabled. Defaults to `false`",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
       "name": {
         "Type": "String",
-        "Optional": true
+        "Required": true,
+        "Description": "The name of the Docker image, including any tags. e.g. `alpine:latest`"
       },
       "sha256_digest": {
         "Type": "String",
+        "Description": "The content digest of the image, as stored in the registry.",
         "Computed": true
       }
     }

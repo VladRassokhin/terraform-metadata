@@ -3,7 +3,7 @@
   ".sdk_type": "terraform-plugin-sdk-v1",
   "name": "postgresql",
   "type": "provider",
-  "version": "v1.7.1",
+  "version": "v1.14.0",
   "provider": {
     "clientcert": {
       "Type": "List",
@@ -80,6 +80,14 @@
       "Optional": true,
       "Description": "The PostgreSQL port number to connect to at the server host, or socket file name extension for Unix-domain connections",
       "DefaultFunc": "ENV(PGPORT)"
+    },
+    "scheme": {
+      "Type": "String",
+      "Optional": true,
+      "Default": {
+        "Type": "string",
+        "Value": "postgres"
+      }
     },
     "ssl_mode": {
       "Type": "String",
@@ -198,7 +206,6 @@
         "Type": "Set",
         "Required": true,
         "Description": "The list of privileges to apply as default privileges",
-        "MinItems": 1,
         "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
@@ -212,16 +219,43 @@
       },
       "schema": {
         "Type": "String",
-        "Required": true,
+        "Optional": true,
         "Description": "The database schema to set default privileges for this role"
+      },
+      "with_grant_option": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Permit the grant recipient to grant it to others",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
       }
     },
     "postgresql_extension": {
+      "create_cascade": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "When true, will also create any extensions that this extension depends on that are not already installed",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
       "database": {
         "Type": "String",
         "Optional": true,
         "Description": "Sets the database to add the extension to",
         "Computed": true
+      },
+      "drop_cascade": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "When true, will also drop all the objects that depend on the extension, and in turn all objects that depend on those objects",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
       },
       "name": {
         "Type": "String",
@@ -249,13 +283,22 @@
       "object_type": {
         "Type": "String",
         "Required": true,
-        "Description": "The PostgreSQL object type to grant the privileges on (one of: database, table, sequence, function)"
+        "Description": "The PostgreSQL object type to grant the privileges on (one of: database, function, schema, sequence, table, foreign_data_wrapper, foreign_server)"
+      },
+      "objects": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "The specific objects to grant privileges on for this role (empty means all objects of the requested type)",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       },
       "privileges": {
         "Type": "Set",
         "Required": true,
         "Description": "The list of privileges to grant",
-        "MinItems": 1,
         "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
@@ -280,6 +323,50 @@
           "Type": "bool",
           "Value": "false"
         }
+      }
+    },
+    "postgresql_grant_role": {
+      "grant_role": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The name of the role that is granted to role"
+      },
+      "role": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The name of the role to grant grant_role"
+      },
+      "with_admin_option": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Permit the grant recipient to grant it to others",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      }
+    },
+    "postgresql_physical_replication_slot": {
+      "name": {
+        "Type": "String",
+        "Required": true
+      }
+    },
+    "postgresql_replication_slot": {
+      "database": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Sets the database to add the replication slot to",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true
+      },
+      "plugin": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Sets the output plugin to use"
       }
     },
     "postgresql_role": {
@@ -332,6 +419,11 @@
           "Type": "bool",
           "Value": "true"
         }
+      },
+      "idle_in_transaction_session_timeout": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Terminate any session with an open transaction that has been idle for longer than the specified duration in milliseconds"
       },
       "inherit": {
         "Type": "Bool",
@@ -472,6 +564,7 @@
         "Type": "Set",
         "Optional": true,
         "Computed": true,
+        "Deprecated": "Use postgresql_grant resource instead (with object_type=\"schema\")",
         "IsBlock": true,
         "ConfigImplicitMode": "Block",
         "Elem": {

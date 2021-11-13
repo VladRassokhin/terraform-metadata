@@ -1,9 +1,9 @@
 {
   ".schema_version": "2",
-  ".sdk_type": "terraform-plugin-sdk-v1",
+  ".sdk_type": "terraform-plugin-sdk-v2",
   "name": "launchdarkly",
   "type": "provider",
-  "version": "v1.3.2",
+  "version": "v2.1.1",
   "provider": {
     "access_token": {
       "Type": "String",
@@ -25,18 +25,210 @@
     }
   },
   "resources": {
-    "launchdarkly_custom_role": {
-      "description": {
-        "Type": "String",
-        "Optional": true
+    "launchdarkly_access_token": {
+      "custom_roles": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "A list of custom role IDs to use as access limits for the access token",
+        "ConflictsWith": [
+          "role",
+          "policy_statements"
+        ],
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       },
-      "key": {
-        "Type": "String",
-        "Required": true
+      "default_api_version": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The default API version for this token",
+        "Computed": true
+      },
+      "expire": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Replace the computed token secret with a new value. The expired secret will no longer be able to authorize usage of the LaunchDarkly API. Should be an expiration time for the current token secret, expressed as a Unix epoch time in milliseconds. Setting this to a negative value will expire the existing token immediately. To reset the token value again, change 'expire' to a new value. Setting this field at resource creation time WILL NOT set an expiration time for the token.",
+        "Deprecated": "'expire' is deprecated and will be removed in the next major release of the LaunchDarly provider"
+      },
+      "inline_roles": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "An array of statements represented as config blocks with 3 attributes: effect, resources, actions. May be used in place of a built-in or custom role.",
+        "MinItems": 1,
+        "ConflictsWith": [
+          "role",
+          "custom_roles",
+          "policy_statements"
+        ],
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "actions": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "An action to perform on a resource",
+              "MinItems": 1,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "effect": {
+              "Type": "String",
+              "Required": true
+            },
+            "not_actions": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Targeted actions will be those actions NOT in this list. The 'actions' field must be empty to use this field",
+              "MinItems": 1,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "not_resources": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Targeted resources will be those resources NOT in this list. The 'resources' field must be empty to use this field",
+              "MinItems": 1,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "resources": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "A list of LaunchDarkly resource specifiers",
+              "MinItems": 1,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
       },
       "name": {
         "Type": "String",
-        "Required": true
+        "Optional": true,
+        "Description": "A human-friendly name for the access token"
+      },
+      "policy_statements": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "An array of statements represented as config blocks with 3 attributes: effect, resources, actions. May be used in place of a built-in or custom role.",
+        "MinItems": 1,
+        "ConflictsWith": [
+          "role",
+          "custom_roles",
+          "inline_roles"
+        ],
+        "Deprecated": "'policy_statements' is deprecated in favor of 'inline_roles'. This field will be removed in the next major release of the LaunchDarkly provider",
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "actions": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "An action to perform on a resource",
+              "MinItems": 1,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "effect": {
+              "Type": "String",
+              "Required": true
+            },
+            "not_actions": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Targeted actions will be those actions NOT in this list. The 'actions' field must be empty to use this field",
+              "MinItems": 1,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "not_resources": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Targeted resources will be those resources NOT in this list. The 'resources' field must be empty to use this field",
+              "MinItems": 1,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "resources": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "A list of LaunchDarkly resource specifiers",
+              "MinItems": 1,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
+      "role": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The default built-in role for the token. Available options are \"reader\", \"writer\", and \"admin\"",
+        "ConflictsWith": [
+          "custom_roles",
+          "policy_statements"
+        ]
+      },
+      "service_token": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether the token is a service token",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "token": {
+        "Type": "String",
+        "Description": "The access token used to authorize usage of the LaunchDarkly API",
+        "Computed": true
+      }
+    },
+    "launchdarkly_custom_role": {
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Description of the custom role"
+      },
+      "key": {
+        "Type": "String",
+        "Required": true,
+        "Description": "A unique key that will be used to reference the custom role in your code"
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "A name for the custom role"
       },
       "policy": {
         "Type": "Set",
@@ -84,6 +276,7 @@
             "actions": {
               "Type": "List",
               "Optional": true,
+              "Description": "An action to perform on a resource",
               "MinItems": 1,
               "ConfigImplicitMode": "Attr",
               "Elem": {
@@ -98,6 +291,7 @@
             "not_actions": {
               "Type": "List",
               "Optional": true,
+              "Description": "Targeted actions will be those actions NOT in this list. The 'actions' field must be empty to use this field",
               "MinItems": 1,
               "ConfigImplicitMode": "Attr",
               "Elem": {
@@ -108,6 +302,7 @@
             "not_resources": {
               "Type": "List",
               "Optional": true,
+              "Description": "Targeted resources will be those resources NOT in this list. The 'resources' field must be empty to use this field",
               "MinItems": 1,
               "ConfigImplicitMode": "Attr",
               "Elem": {
@@ -118,6 +313,7 @@
             "resources": {
               "Type": "List",
               "Optional": true,
+              "Description": "A list of LaunchDarkly resource specifiers",
               "MinItems": 1,
               "ConfigImplicitMode": "Attr",
               "Elem": {
@@ -132,15 +328,13 @@
     "launchdarkly_destination": {
       "config": {
         "Type": "Map",
-        "Optional": true,
+        "Required": true,
+        "Description": "The destination-specific configuration object corresponding to your data export kind - see documentation for required fields for each kind",
+        "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
         }
-      },
-      "enabled": {
-        "Type": "Bool",
-        "Optional": true
       },
       "env_key": {
         "Type": "String",
@@ -150,12 +344,17 @@
       "kind": {
         "Type": "String",
         "Required": true,
-        "Description": "The data export destination type - must be 'kinesis', 'google-pubsub', 'mparticle', or 'segment'"
+        "Description": "The data export destination type. Available choices are 'kinesis', 'google-pubsub', 'segment', 'azure-event-hubs', and 'mparticle'"
       },
       "name": {
         "Type": "String",
         "Required": true,
-        "Description": "a human-readable name for your data export destination"
+        "Description": "A human-readable name for your data export destination"
+      },
+      "on": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether the data export destination is on or not"
       },
       "project_key": {
         "Type": "String",
@@ -165,6 +364,7 @@
       "tags": {
         "Type": "Set",
         "Optional": true,
+        "Description": "Tags associated with your resource",
         "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
@@ -177,29 +377,104 @@
         "Type": "String",
         "Computed": true
       },
+      "approval_settings": {
+        "Type": "List",
+        "Optional": true,
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "can_apply_declined_changes": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Whether changes can be applied as long as minNumApprovals is met, regardless of whether any reviewers have declined a request. Defaults to true",
+              "Default": {
+                "Type": "bool",
+                "Value": "true"
+              }
+            },
+            "can_review_own_request": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Whether requesters can approve or decline their own request. They may always comment.",
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
+              }
+            },
+            "min_num_approvals": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "The number of approvals required before an approval request can be applied.",
+              "Default": {
+                "Type": "int",
+                "Value": "1"
+              }
+            },
+            "required": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Whether any changes to flags in this environment will require approval. You may only set required or requiredApprovalTags, not both.",
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
+              }
+            },
+            "required_approval_tags": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "An array of tags used to specify which flags with those tags require approval. You may only set requiredApprovalTags or required, not both.",
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
       "client_side_id": {
         "Type": "String",
         "Computed": true
       },
       "color": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "A color swatch (as an RGB hex value with no leading '#', e.g. C8C8C8)"
       },
       "confirm_changes": {
         "Type": "Bool",
-        "Optional": true
+        "Optional": true,
+        "Description": "Whether or not to require confirmation for flag and segment changes in this environment",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
       },
       "default_track_events": {
         "Type": "Bool",
-        "Optional": true
+        "Optional": true,
+        "Description": "Whether or not to default to sending data export events for flags created in the environment",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
       },
       "default_ttl": {
         "Type": "Int",
-        "Optional": true
+        "Optional": true,
+        "Description": "The TTL for the environment. This must be between 0 and 60 minutes. The TTL setting only applies to environments using the PHP SDK",
+        "Default": {
+          "Type": "int",
+          "Value": "0"
+        }
       },
       "key": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "A project-unique key for the new environment"
       },
       "mobile_key": {
         "Type": "String",
@@ -207,23 +482,36 @@
       },
       "name": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "The name of the new environment"
       },
       "project_key": {
         "Type": "String",
-        "Optional": true
+        "Required": true,
+        "Description": "The LaunchDarkly project key"
       },
       "require_comments": {
         "Type": "Bool",
-        "Optional": true
+        "Optional": true,
+        "Description": "Whether or not to require comments for flag and segment changes in this environment",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
       },
       "secure_mode": {
         "Type": "Bool",
-        "Optional": true
+        "Optional": true,
+        "Description": "Whether or not to use secure mode. Secure mode ensures a user of the client-side SDK cannot impersonate another user",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
       },
       "tags": {
         "Type": "Set",
         "Optional": true,
+        "Description": "Tags associated with your resource",
         "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
@@ -232,6 +520,15 @@
       }
     },
     "launchdarkly_feature_flag": {
+      "archived": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether to archive the flag",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
       "custom_properties": {
         "Type": "Set",
         "Optional": true,
@@ -262,23 +559,39 @@
           }
         }
       },
-      "default_off_variation": {
-        "Type": "String",
+      "defaults": {
+        "Type": "List",
         "Optional": true,
-        "Description": "The value of the variation served when the flag is off for new environments"
-      },
-      "default_on_variation": {
-        "Type": "String",
-        "Optional": true,
-        "Description": "The value of the variation served when the flag is on for new environments"
+        "Description": "The default variations used for this flag in new environments. If omitted, the first and last variation will be used",
+        "Computed": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "off_variation": {
+              "Type": "Int",
+              "Required": true,
+              "Description": "The index of the variation served when the flag is off for new environments"
+            },
+            "on_variation": {
+              "Type": "Int",
+              "Required": true,
+              "Description": "The index of the variation served when the flag is on for new environments"
+            }
+          }
+        }
       },
       "description": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Description": "A short description of what the flag will be used for"
       },
       "include_in_snippet": {
         "Type": "Bool",
         "Optional": true,
+        "Description": "Whether or not this flag should be made available to the client-side JavaScript SDK",
         "Default": {
           "Type": "bool",
           "Value": "false"
@@ -287,25 +600,28 @@
       "key": {
         "Type": "String",
         "Required": true,
-        "Description": "The human-readable name of the feature flag"
+        "Description": "A unique key that will be used to reference the flag in your code"
       },
       "maintainer_id": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Description": "The LaunchDarkly id of the user who will maintain the flag. If not set, the API will automatically apply the member associated with your Terraform API key or the most recently set maintainer",
+        "Computed": true
       },
       "name": {
         "Type": "String",
         "Required": true,
-        "Description": "The feature flag's description"
+        "Description": "A human-friendly name for the feature flag"
       },
       "project_key": {
         "Type": "String",
         "Required": true,
-        "Description": "The feature flag's project key"
+        "Description": "The LaunchDarkly project key"
       },
       "tags": {
         "Type": "Set",
         "Optional": true,
+        "Description": "Tags associated with your resource",
         "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
@@ -315,6 +631,7 @@
       "temporary": {
         "Type": "Bool",
         "Optional": true,
+        "Description": "Whether or not the flag is a temporary flag",
         "Default": {
           "Type": "bool",
           "Value": "false"
@@ -328,6 +645,7 @@
       "variations": {
         "Type": "List",
         "Optional": true,
+        "Description": "An array of possible variations for the flag",
         "Computed": true,
         "MinItems": 2,
         "IsBlock": true,
@@ -337,15 +655,18 @@
           "Info": {
             "description": {
               "Type": "String",
-              "Optional": true
+              "Optional": true,
+              "Description": "A description for the variation"
             },
             "name": {
               "Type": "String",
-              "Optional": true
+              "Optional": true,
+              "Description": "A name for the variation"
             },
             "value": {
               "Type": "String",
-              "Required": true
+              "Required": true,
+              "Description": "The value of the flag for this variation"
             }
           }
         }
@@ -354,11 +675,13 @@
     "launchdarkly_feature_flag_environment": {
       "env_key": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "The LaunchDarkly environment key"
       },
-      "flag_fallthrough": {
+      "fallthrough": {
         "Type": "List",
-        "Optional": true,
+        "Required": true,
+        "Description": "Nested block describing the default variation to serve if no prerequisites, user_target, or rules apply. You must specify either variation or rollout_weights",
         "MaxItems": 1,
         "IsBlock": true,
         "ConfigImplicitMode": "Block",
@@ -367,7 +690,8 @@
           "Info": {
             "bucket_by": {
               "Type": "String",
-              "Optional": true
+              "Optional": true,
+              "Description": "Group percentage rollout by a custom attribute. This argument is only valid if rollout_weights is also specified"
             },
             "rollout_weights": {
               "Type": "List",
@@ -380,22 +704,35 @@
             },
             "variation": {
               "Type": "Int",
-              "Optional": true
+              "Optional": true,
+              "Description": "The integer variation index to serve in case of fallthrough"
             }
           }
         }
       },
       "flag_id": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "The global feature flag's unique id in the format `\u003cproject_key\u003e/\u003cflag_key\u003e`"
       },
       "off_variation": {
         "Type": "Int",
-        "Optional": true
+        "Required": true,
+        "Description": "The index of the variation to serve if targeting is disabled"
+      },
+      "on": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether targeting is enabled",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
       },
       "prerequisites": {
         "Type": "List",
         "Optional": true,
+        "Description": "List of nested blocks describing prerequisite feature flags rules",
         "IsBlock": true,
         "ConfigImplicitMode": "Block",
         "Elem": {
@@ -403,11 +740,13 @@
           "Info": {
             "flag_key": {
               "Type": "String",
-              "Required": true
+              "Required": true,
+              "Description": "The prerequisite feature flag's key"
             },
             "variation": {
               "Type": "Int",
               "Required": true,
+              "Description": "The index of the prerequisite feature flag's variation to target",
               "ConfigImplicitMode": "Attr",
               "Elem": {
                 "Type": "SchemaElements",
@@ -420,6 +759,7 @@
       "rules": {
         "Type": "List",
         "Optional": true,
+        "Description": "List of logical targeting rules. You must specify either clauses or rollout weights",
         "IsBlock": true,
         "ConfigImplicitMode": "Block",
         "Elem": {
@@ -427,11 +767,13 @@
           "Info": {
             "bucket_by": {
               "Type": "String",
-              "Optional": true
+              "Optional": true,
+              "Description": "Group percentage rollout by a custom attribute. This argument is only valid if rollout_weights is also specified"
             },
             "clauses": {
               "Type": "List",
               "Optional": true,
+              "Description": "List of nested blocks specifying the logical clauses to evaluate",
               "IsBlock": true,
               "ConfigImplicitMode": "Block",
               "Elem": {
@@ -439,19 +781,36 @@
                 "Info": {
                   "attribute": {
                     "Type": "String",
-                    "Required": true
+                    "Required": true,
+                    "Description": "The user attribute to operate on"
                   },
                   "negate": {
                     "Type": "Bool",
-                    "Required": true
+                    "Optional": true,
+                    "Description": "Whether to negate the rule clause",
+                    "Default": {
+                      "Type": "bool",
+                      "Value": "false"
+                    }
                   },
                   "op": {
                     "Type": "String",
-                    "Required": true
+                    "Required": true,
+                    "Description": "The operator associated with the rule clause. Available options are in, endsWith, startsWith, matches, contains, lessThan, lessThanOrEqual, greaterThanOrEqual, before, after, segmentMatch, semVerEqual, semVerLessThan, and semVerGreaterThan"
+                  },
+                  "value_type": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "The type for each of the clause's values. Available types are boolean, string, and number. If omitted, value_type defaults to string",
+                    "Default": {
+                      "Type": "string",
+                      "Value": "string"
+                    }
                   },
                   "values": {
                     "Type": "List",
                     "Required": true,
+                    "Description": "The list of values associated with the rule clause",
                     "ConfigImplicitMode": "Attr",
                     "Elem": {
                       "Type": "SchemaElements",
@@ -473,6 +832,7 @@
             "variation": {
               "Type": "Int",
               "Optional": true,
+              "Description": "The integer variation index to serve if the rule clauses evaluate to true. This argument is only valid if clauses are also specified",
               "ConfigImplicitMode": "Attr",
               "Elem": {
                 "Type": "SchemaElements",
@@ -482,17 +842,10 @@
           }
         }
       },
-      "targeting_enabled": {
-        "Type": "Bool",
-        "Optional": true
-      },
-      "track_events": {
-        "Type": "Bool",
-        "Optional": true
-      },
-      "user_targets": {
-        "Type": "List",
+      "targets": {
+        "Type": "Set",
         "Optional": true,
+        "Description": "Set of nested blocks describing the individual user targets for each variation",
         "IsBlock": true,
         "ConfigImplicitMode": "Block",
         "Elem": {
@@ -500,23 +853,37 @@
           "Info": {
             "values": {
               "Type": "List",
-              "Optional": true,
+              "Required": true,
+              "Description": "List of user strings to target",
               "ConfigImplicitMode": "Attr",
               "Elem": {
                 "Type": "SchemaElements",
                 "ElementsType": "String"
               }
+            },
+            "variation": {
+              "Type": "Int",
+              "Required": true,
+              "Description": "Index of the variation to serve if a user_target is matched"
             }
           }
+        }
+      },
+      "track_events": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether to send event data back to LaunchDarkly",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
         }
       }
     },
     "launchdarkly_project": {
       "environments": {
         "Type": "List",
-        "Optional": true,
-        "Computed": true,
-        "Deprecated": "The 'environments' attribute is now deprecated. Please use the launchdarkly_environment resource to maintain future compatability.",
+        "Required": true,
+        "Description": "List of nested `environments` blocks describing LaunchDarkly environments that belong to the project",
         "IsBlock": true,
         "ConfigImplicitMode": "Block",
         "Elem": {
@@ -526,29 +893,104 @@
               "Type": "String",
               "Computed": true
             },
+            "approval_settings": {
+              "Type": "List",
+              "Optional": true,
+              "Computed": true,
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "can_apply_declined_changes": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Description": "Whether changes can be applied as long as minNumApprovals is met, regardless of whether any reviewers have declined a request. Defaults to true",
+                    "Default": {
+                      "Type": "bool",
+                      "Value": "true"
+                    }
+                  },
+                  "can_review_own_request": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Description": "Whether requesters can approve or decline their own request. They may always comment.",
+                    "Default": {
+                      "Type": "bool",
+                      "Value": "false"
+                    }
+                  },
+                  "min_num_approvals": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Description": "The number of approvals required before an approval request can be applied.",
+                    "Default": {
+                      "Type": "int",
+                      "Value": "1"
+                    }
+                  },
+                  "required": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Description": "Whether any changes to flags in this environment will require approval. You may only set required or requiredApprovalTags, not both.",
+                    "Default": {
+                      "Type": "bool",
+                      "Value": "false"
+                    }
+                  },
+                  "required_approval_tags": {
+                    "Type": "List",
+                    "Optional": true,
+                    "Description": "An array of tags used to specify which flags with those tags require approval. You may only set requiredApprovalTags or required, not both.",
+                    "ConfigImplicitMode": "Attr",
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  }
+                }
+              }
+            },
             "client_side_id": {
               "Type": "String",
               "Computed": true
             },
             "color": {
               "Type": "String",
-              "Required": true
+              "Required": true,
+              "Description": "A color swatch (as an RGB hex value with no leading '#', e.g. C8C8C8)"
             },
             "confirm_changes": {
               "Type": "Bool",
-              "Optional": true
+              "Optional": true,
+              "Description": "Whether or not to require confirmation for flag and segment changes in this environment",
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
+              }
             },
             "default_track_events": {
               "Type": "Bool",
-              "Optional": true
+              "Optional": true,
+              "Description": "Whether or not to default to sending data export events for flags created in the environment",
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
+              }
             },
             "default_ttl": {
               "Type": "Int",
-              "Optional": true
+              "Optional": true,
+              "Description": "The TTL for the environment. This must be between 0 and 60 minutes. The TTL setting only applies to environments using the PHP SDK",
+              "Default": {
+                "Type": "int",
+                "Value": "0"
+              }
             },
             "key": {
               "Type": "String",
-              "Required": true
+              "Required": true,
+              "Description": "A project-unique key for the new environment"
             },
             "mobile_key": {
               "Type": "String",
@@ -556,19 +998,31 @@
             },
             "name": {
               "Type": "String",
-              "Required": true
+              "Required": true,
+              "Description": "The name of the new environment"
             },
             "require_comments": {
               "Type": "Bool",
-              "Optional": true
+              "Optional": true,
+              "Description": "Whether or not to require comments for flag and segment changes in this environment",
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
+              }
             },
             "secure_mode": {
               "Type": "Bool",
-              "Optional": true
+              "Optional": true,
+              "Description": "Whether or not to use secure mode. Secure mode ensures a user of the client-side SDK cannot impersonate another user",
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
+              }
             },
             "tags": {
               "Type": "Set",
               "Optional": true,
+              "Description": "Tags associated with your resource",
               "ConfigImplicitMode": "Attr",
               "Elem": {
                 "Type": "SchemaElements",
@@ -578,17 +1032,29 @@
           }
         }
       },
+      "include_in_snippet": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether feature flags created under the project should be available to client-side SDKs by default",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
       "key": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "The project's unique key"
       },
       "name": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "A human-readable name for your project"
       },
       "tags": {
         "Type": "Set",
         "Optional": true,
+        "Description": "Tags associated with your resource",
         "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
@@ -597,17 +1063,25 @@
       }
     },
     "launchdarkly_segment": {
+      "creation_date": {
+        "Type": "Int",
+        "Description": "The segment's creation date represented as a UNIX epoch timestamp.",
+        "Computed": true
+      },
       "description": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Description": "The description of the segment's purpose."
       },
       "env_key": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "The segment's environment key."
       },
       "excluded": {
         "Type": "List",
         "Optional": true,
+        "Description": "List of user keys excluded from the segment",
         "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
@@ -617,6 +1091,7 @@
       "included": {
         "Type": "List",
         "Optional": true,
+        "Description": "List of user keys included in the segment.",
         "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
@@ -625,15 +1100,18 @@
       },
       "key": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "The unique key that references the segment."
       },
       "name": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "The human-friendly name for the segment."
       },
       "project_key": {
         "Type": "String",
-        "Optional": true
+        "Required": true,
+        "Description": "The segment's project key."
       },
       "rules": {
         "Type": "List",
@@ -646,6 +1124,7 @@
             "bucket_by": {
               "Type": "String",
               "Optional": true,
+              "Description": "The attribute by which to group users together.",
               "ConfigImplicitMode": "Attr",
               "Elem": {
                 "Type": "SchemaElements",
@@ -655,6 +1134,7 @@
             "clauses": {
               "Type": "List",
               "Optional": true,
+              "Description": "List of nested blocks specifying the logical clauses to evaluate",
               "IsBlock": true,
               "ConfigImplicitMode": "Block",
               "Elem": {
@@ -662,19 +1142,36 @@
                 "Info": {
                   "attribute": {
                     "Type": "String",
-                    "Required": true
+                    "Required": true,
+                    "Description": "The user attribute to operate on"
                   },
                   "negate": {
                     "Type": "Bool",
-                    "Required": true
+                    "Optional": true,
+                    "Description": "Whether to negate the rule clause",
+                    "Default": {
+                      "Type": "bool",
+                      "Value": "false"
+                    }
                   },
                   "op": {
                     "Type": "String",
-                    "Required": true
+                    "Required": true,
+                    "Description": "The operator associated with the rule clause. Available options are in, endsWith, startsWith, matches, contains, lessThan, lessThanOrEqual, greaterThanOrEqual, before, after, segmentMatch, semVerEqual, semVerLessThan, and semVerGreaterThan"
+                  },
+                  "value_type": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "The type for each of the clause's values. Available types are boolean, string, and number. If omitted, value_type defaults to string",
+                    "Default": {
+                      "Type": "string",
+                      "Value": "string"
+                    }
                   },
                   "values": {
                     "Type": "List",
                     "Required": true,
+                    "Description": "The list of values associated with the rule clause",
                     "ConfigImplicitMode": "Attr",
                     "Elem": {
                       "Type": "SchemaElements",
@@ -687,6 +1184,7 @@
             "weight": {
               "Type": "Int",
               "Optional": true,
+              "Description": "The integer weight of the rule (between 0 and 100000).",
               "ConfigImplicitMode": "Attr",
               "Elem": {
                 "Type": "SchemaElements",
@@ -699,6 +1197,7 @@
       "tags": {
         "Type": "Set",
         "Optional": true,
+        "Description": "Tags associated with your resource",
         "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
@@ -710,6 +1209,7 @@
       "custom_roles": {
         "Type": "Set",
         "Optional": true,
+        "Description": "IDs or keys of custom roles. Team members must have either a role or custom role",
         "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
@@ -718,32 +1218,47 @@
       },
       "email": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "The team member's email address"
       },
       "first_name": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Description": "The team member's first name"
       },
       "last_name": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Description": "The team member's last name"
       },
       "role": {
         "Type": "String",
         "Optional": true,
+        "Description": "The team member's role. This must be reader, writer, admin, or owner. Team members must have either a role or custom role",
         "Computed": true
       }
     },
     "launchdarkly_webhook": {
-      "enabled": {
-        "Type": "Bool",
-        "Required": true
-      },
       "name": {
         "Type": "String",
-        "Optional": true
+        "Optional": true,
+        "Description": "A human-readable name for your webhook"
       },
-      "policy_statements": {
+      "on": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether this webhook is enabled or not",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "secret": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "If sign is true, and the secret attribute is omitted, LaunchDarkly will automatically generate a secret for you"
+      },
+      "statements": {
         "Type": "List",
         "Optional": true,
         "MinItems": 1,
@@ -755,6 +1270,7 @@
             "actions": {
               "Type": "List",
               "Optional": true,
+              "Description": "An action to perform on a resource",
               "MinItems": 1,
               "ConfigImplicitMode": "Attr",
               "Elem": {
@@ -769,6 +1285,7 @@
             "not_actions": {
               "Type": "List",
               "Optional": true,
+              "Description": "Targeted actions will be those actions NOT in this list. The 'actions' field must be empty to use this field",
               "MinItems": 1,
               "ConfigImplicitMode": "Attr",
               "Elem": {
@@ -779,6 +1296,7 @@
             "not_resources": {
               "Type": "List",
               "Optional": true,
+              "Description": "Targeted resources will be those resources NOT in this list. The 'resources' field must be empty to use this field",
               "MinItems": 1,
               "ConfigImplicitMode": "Attr",
               "Elem": {
@@ -789,6 +1307,7 @@
             "resources": {
               "Type": "List",
               "Optional": true,
+              "Description": "A list of LaunchDarkly resource specifiers",
               "MinItems": 1,
               "ConfigImplicitMode": "Attr",
               "Elem": {
@@ -799,13 +1318,10 @@
           }
         }
       },
-      "secret": {
-        "Type": "String",
-        "Optional": true
-      },
       "tags": {
         "Type": "Set",
         "Optional": true,
+        "Description": "Tags associated with your resource",
         "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
@@ -814,11 +1330,717 @@
       },
       "url": {
         "Type": "String",
-        "Required": true
+        "Required": true,
+        "Description": "The URL of the remote webhook"
       }
     }
   },
   "data-sources": {
+    "launchdarkly_environment": {
+      "api_key": {
+        "Type": "String",
+        "Computed": true
+      },
+      "approval_settings": {
+        "Type": "List",
+        "Optional": true,
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "can_apply_declined_changes": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Whether changes can be applied as long as minNumApprovals is met, regardless of whether any reviewers have declined a request. Defaults to true",
+              "Default": {
+                "Type": "bool",
+                "Value": "true"
+              }
+            },
+            "can_review_own_request": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Whether requesters can approve or decline their own request. They may always comment.",
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
+              }
+            },
+            "min_num_approvals": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "The number of approvals required before an approval request can be applied.",
+              "Default": {
+                "Type": "int",
+                "Value": "1"
+              }
+            },
+            "required": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Whether any changes to flags in this environment will require approval. You may only set required or requiredApprovalTags, not both.",
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
+              }
+            },
+            "required_approval_tags": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "An array of tags used to specify which flags with those tags require approval. You may only set requiredApprovalTags or required, not both.",
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
+      "client_side_id": {
+        "Type": "String",
+        "Computed": true
+      },
+      "color": {
+        "Type": "String",
+        "Computed": true
+      },
+      "confirm_changes": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether or not to require confirmation for flag and segment changes in this environment",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "default_track_events": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether or not to default to sending data export events for flags created in the environment",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "default_ttl": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The TTL for the environment. This must be between 0 and 60 minutes. The TTL setting only applies to environments using the PHP SDK",
+        "Default": {
+          "Type": "int",
+          "Value": "0"
+        }
+      },
+      "key": {
+        "Type": "String",
+        "Required": true,
+        "Description": "A project-unique key for the new environment"
+      },
+      "mobile_key": {
+        "Type": "String",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Computed": true
+      },
+      "project_key": {
+        "Type": "String",
+        "Required": true
+      },
+      "require_comments": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether or not to require comments for flag and segment changes in this environment",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "secure_mode": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether or not to use secure mode. Secure mode ensures a user of the client-side SDK cannot impersonate another user",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "tags": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Tags associated with your resource",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      }
+    },
+    "launchdarkly_feature_flag": {
+      "archived": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether to archive the flag",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "client_side_availability": {
+        "Type": "List",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "using_environment_id": {
+              "Type": "Bool",
+              "Optional": true
+            },
+            "using_mobile_key": {
+              "Type": "Bool",
+              "Optional": true
+            }
+          }
+        }
+      },
+      "custom_properties": {
+        "Type": "Set",
+        "Optional": true,
+        "MaxItems": 64,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "key": {
+              "Type": "String",
+              "Required": true
+            },
+            "name": {
+              "Type": "String",
+              "Required": true
+            },
+            "value": {
+              "Type": "List",
+              "Required": true,
+              "MaxItems": 64,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
+      "defaults": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "The default variations used for this flag in new environments. If omitted, the first and last variation will be used",
+        "Computed": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "off_variation": {
+              "Type": "Int",
+              "Required": true,
+              "Description": "The index of the variation served when the flag is off for new environments"
+            },
+            "on_variation": {
+              "Type": "Int",
+              "Required": true,
+              "Description": "The index of the variation served when the flag is on for new environments"
+            }
+          }
+        }
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "A short description of what the flag will be used for"
+      },
+      "include_in_snippet": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether or not this flag should be made available to the client-side JavaScript SDK",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "key": {
+        "Type": "String",
+        "Required": true,
+        "Description": "A unique key that will be used to reference the flag in your code"
+      },
+      "maintainer_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The LaunchDarkly id of the user who will maintain the flag. If not set, the API will automatically apply the member associated with your Terraform API key or the most recently set maintainer",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Description": "The feature flag's human-readable name",
+        "Computed": true
+      },
+      "project_key": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The LaunchDarkly project key"
+      },
+      "tags": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Tags associated with your resource",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "temporary": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether or not the flag is a temporary flag",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "variation_type": {
+        "Type": "String",
+        "Description": "The uniform type for all variations. Can be either \"boolean\", \"string\", \"number\", or \"json\".",
+        "Computed": true
+      },
+      "variations": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "An array of possible variations for the flag",
+        "Computed": true,
+        "MinItems": 2,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "description": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "A description for the variation"
+            },
+            "name": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "A name for the variation"
+            },
+            "value": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The value of the flag for this variation"
+            }
+          }
+        }
+      }
+    },
+    "launchdarkly_feature_flag_environment": {
+      "env_key": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The LaunchDarkly environment key"
+      },
+      "fallthrough": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Nested block describing the default variation to serve if no prerequisites, user_target, or rules apply. You must specify either variation or rollout_weights",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "bucket_by": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Group percentage rollout by a custom attribute. This argument is only valid if rollout_weights is also specified"
+            },
+            "rollout_weights": {
+              "Type": "List",
+              "Optional": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "Int"
+              }
+            },
+            "variation": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "The integer variation index to serve in case of fallthrough"
+            }
+          }
+        }
+      },
+      "flag_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The global feature flag's unique id in the format `\u003cproject_key\u003e/\u003cflag_key\u003e`"
+      },
+      "off_variation": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The index of the variation to serve if targeting is disabled"
+      },
+      "on": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether targeting is enabled",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "prerequisites": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "List of nested blocks describing prerequisite feature flags rules",
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "flag_key": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The prerequisite feature flag's key"
+            },
+            "variation": {
+              "Type": "Int",
+              "Required": true,
+              "Description": "The index of the prerequisite feature flag's variation to target",
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "Int"
+              }
+            }
+          }
+        }
+      },
+      "rules": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "List of logical targeting rules. You must specify either clauses or rollout weights",
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "bucket_by": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Group percentage rollout by a custom attribute. This argument is only valid if rollout_weights is also specified"
+            },
+            "clauses": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "List of nested blocks specifying the logical clauses to evaluate",
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "attribute": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "The user attribute to operate on"
+                  },
+                  "negate": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Description": "Whether to negate the rule clause",
+                    "Default": {
+                      "Type": "bool",
+                      "Value": "false"
+                    }
+                  },
+                  "op": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "The operator associated with the rule clause. Available options are in, endsWith, startsWith, matches, contains, lessThan, lessThanOrEqual, greaterThanOrEqual, before, after, segmentMatch, semVerEqual, semVerLessThan, and semVerGreaterThan"
+                  },
+                  "value_type": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "The type for each of the clause's values. Available types are boolean, string, and number. If omitted, value_type defaults to string",
+                    "Default": {
+                      "Type": "string",
+                      "Value": "string"
+                    }
+                  },
+                  "values": {
+                    "Type": "List",
+                    "Required": true,
+                    "Description": "The list of values associated with the rule clause",
+                    "ConfigImplicitMode": "Attr",
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  }
+                }
+              }
+            },
+            "rollout_weights": {
+              "Type": "List",
+              "Optional": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "Int"
+              }
+            },
+            "variation": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "The integer variation index to serve if the rule clauses evaluate to true. This argument is only valid if clauses are also specified",
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "Int"
+              }
+            }
+          }
+        }
+      },
+      "targets": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Set of nested blocks describing the individual user targets for each variation",
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "values": {
+              "Type": "List",
+              "Required": true,
+              "Description": "List of user strings to target",
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "variation": {
+              "Type": "Int",
+              "Required": true,
+              "Description": "Index of the variation to serve if a user_target is matched"
+            }
+          }
+        }
+      },
+      "track_events": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether to send event data back to LaunchDarkly",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      }
+    },
+    "launchdarkly_project": {
+      "client_side_availability": {
+        "Type": "List",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "using_environment_id": {
+              "Type": "Bool",
+              "Optional": true
+            },
+            "using_mobile_key": {
+              "Type": "Bool",
+              "Optional": true
+            }
+          }
+        }
+      },
+      "key": {
+        "Type": "String",
+        "Required": true
+      },
+      "name": {
+        "Type": "String",
+        "Computed": true
+      },
+      "tags": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Tags associated with your resource",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      }
+    },
+    "launchdarkly_segment": {
+      "creation_date": {
+        "Type": "Int",
+        "Description": "The segment's creation date represented as a UNIX epoch timestamp.",
+        "Computed": true
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The description of the segment's purpose."
+      },
+      "env_key": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The segment's environment key."
+      },
+      "excluded": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "List of user keys excluded from the segment",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "included": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "List of user keys included in the segment.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "key": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The unique key that references the segment."
+      },
+      "name": {
+        "Type": "String",
+        "Description": "The human-friendly name for the segment.",
+        "Computed": true
+      },
+      "project_key": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The segment's project key."
+      },
+      "rules": {
+        "Type": "List",
+        "Optional": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "bucket_by": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The attribute by which to group users together.",
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "clauses": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "List of nested blocks specifying the logical clauses to evaluate",
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "attribute": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "The user attribute to operate on"
+                  },
+                  "negate": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Description": "Whether to negate the rule clause",
+                    "Default": {
+                      "Type": "bool",
+                      "Value": "false"
+                    }
+                  },
+                  "op": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "The operator associated with the rule clause. Available options are in, endsWith, startsWith, matches, contains, lessThan, lessThanOrEqual, greaterThanOrEqual, before, after, segmentMatch, semVerEqual, semVerLessThan, and semVerGreaterThan"
+                  },
+                  "value_type": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "The type for each of the clause's values. Available types are boolean, string, and number. If omitted, value_type defaults to string",
+                    "Default": {
+                      "Type": "string",
+                      "Value": "string"
+                    }
+                  },
+                  "values": {
+                    "Type": "List",
+                    "Required": true,
+                    "Description": "The list of values associated with the rule clause",
+                    "ConfigImplicitMode": "Attr",
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  }
+                }
+              }
+            },
+            "weight": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "The integer weight of the rule (between 0 and 100000).",
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "Int"
+              }
+            }
+          }
+        }
+      },
+      "tags": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Tags associated with your resource",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      }
+    },
     "launchdarkly_team_member": {
       "custom_roles": {
         "Type": "Set",
@@ -842,6 +2064,101 @@
         "Computed": true
       },
       "role": {
+        "Type": "String",
+        "Computed": true
+      }
+    },
+    "launchdarkly_webhook": {
+      "id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The ID of the webhook"
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "A human-readable name for your webhook"
+      },
+      "on": {
+        "Type": "Bool",
+        "Computed": true
+      },
+      "secret": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "If sign is true, and the secret attribute is omitted, LaunchDarkly will automatically generate a secret for you"
+      },
+      "statements": {
+        "Type": "List",
+        "Optional": true,
+        "MinItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "actions": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "An action to perform on a resource",
+              "MinItems": 1,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "effect": {
+              "Type": "String",
+              "Required": true
+            },
+            "not_actions": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Targeted actions will be those actions NOT in this list. The 'actions' field must be empty to use this field",
+              "MinItems": 1,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "not_resources": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Targeted resources will be those resources NOT in this list. The 'resources' field must be empty to use this field",
+              "MinItems": 1,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "resources": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "A list of LaunchDarkly resource specifiers",
+              "MinItems": 1,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
+      "tags": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Tags associated with your resource",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "url": {
         "Type": "String",
         "Computed": true
       }
