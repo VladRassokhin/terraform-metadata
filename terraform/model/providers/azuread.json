@@ -3,7 +3,7 @@
   ".sdk_type": "terraform-plugin-sdk-v2",
   "name": "azuread",
   "type": "provider",
-  "version": "v2.9.0",
+  "version": "v2.16.0",
   "provider": {
     "client_certificate": {
       "Type": "String",
@@ -44,7 +44,7 @@
     "environment": {
       "Type": "String",
       "Required": true,
-      "Description": "The cloud environment which should be used. Possible values are: `global` (also `public`), `usgovernmentl4` (also `usgovernment`), `usgovernmentl5` (also `dod`), `germany` (also `german`), and `china`. Defaults to `global`",
+      "Description": "The cloud environment which should be used. Possible values are: `global` (also `public`), `usgovernmentl4` (also `usgovernment`), `usgovernmentl5` (also `dod`), and `china`. Defaults to `global`",
       "DefaultFunc": "ENV(ARM_ENVIRONMENT)"
     },
     "msi_endpoint": {
@@ -79,6 +79,72 @@
     }
   },
   "resources": {
+    "azuread_administrative_unit": {
+      "__timeouts__": [
+        "create",
+        "read",
+        "update",
+        "delete"
+      ],
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The description for the administrative unit"
+      },
+      "display_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The display name for the administrative unit"
+      },
+      "hidden_membership_enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether the administrative unit and its members are hidden or publicly viewable in the directory"
+      },
+      "members": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "A set of object IDs of members who should be present in this administrative unit. Supported object types are Users or Groups",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "object_id": {
+        "Type": "String",
+        "Description": "The object ID of the administrative unit",
+        "Computed": true
+      },
+      "prevent_duplicate_names": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "If `true`, will return an error if an existing administrative unit is found with the same name",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      }
+    },
+    "azuread_administrative_unit_member": {
+      "__timeouts__": [
+        "create",
+        "read",
+        "update",
+        "delete"
+      ],
+      "administrative_unit_object_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The object ID of the administrative unit"
+      },
+      "member_object_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The object ID of the member"
+      }
+    },
     "azuread_app_role_assignment": {
       "__timeouts__": [
         "create",
@@ -794,6 +860,54 @@
         "Description": "The certificate data, which can be PEM encoded, base64 encoded DER or hexadecimal encoded DER. See also the `encoding` argumen"
       }
     },
+    "azuread_application_federated_identity_credential": {
+      "__timeouts__": [
+        "create",
+        "read",
+        "update",
+        "delete"
+      ],
+      "application_object_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The object ID of the application for which this federated identity credential should be created"
+      },
+      "audiences": {
+        "Type": "List",
+        "Required": true,
+        "Description": "List of audiences that can appear in the external token. This specifies what should be accepted in the `aud` claim of incoming tokens.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "credential_id": {
+        "Type": "String",
+        "Description": "A UUID used to uniquely identify this federated identity credential",
+        "Computed": true
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "A description for the federated identity credential"
+      },
+      "display_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "A unique display name for the federated identity credential"
+      },
+      "issuer": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The URL of the external identity provider, which must match the issuer claim of the external token being exchanged. The combination of the values of issuer and subject must be unique on the app."
+      },
+      "subject": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The identifier of the external software workload within the external identity provider. The combination of issuer and subject must be unique on the app."
+      }
+    },
     "azuread_application_password": {
       "__timeouts__": [
         "create",
@@ -946,6 +1060,38 @@
               "Elem": {
                 "Type": "SchemaElements",
                 "ElementsType": "String"
+              }
+            },
+            "devices": {
+              "Type": "List",
+              "Optional": true,
+              "MaxItems": 1,
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "filter": {
+                    "Type": "List",
+                    "Optional": true,
+                    "MaxItems": 1,
+                    "IsBlock": true,
+                    "ConfigImplicitMode": "Block",
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "mode": {
+                          "Type": "String",
+                          "Required": true
+                        },
+                        "rule": {
+                          "Type": "String",
+                          "Required": true
+                        }
+                      }
+                    }
+                  }
+                }
               }
             },
             "locations": {
@@ -1159,6 +1305,10 @@
               "Type": "String",
               "Optional": true
             },
+            "persistent_browser_mode": {
+              "Type": "String",
+              "Optional": true
+            },
             "sign_in_frequency": {
               "Type": "Int",
               "Optional": true
@@ -1235,6 +1385,11 @@
         "Optional": true,
         "Description": "Indicates whether this group can be assigned to an Azure Active Directory role. This property can only be `true` for security-enabled groups."
       },
+      "auto_subscribe_new_members": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Indicates whether new members added to the group will be auto-subscribed to receive email notifications."
+      },
       "behaviors": {
         "Type": "Set",
         "Optional": true,
@@ -1254,6 +1409,46 @@
         "Type": "String",
         "Required": true,
         "Description": "The display name for the group"
+      },
+      "dynamic_membership": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "An optional block to configure dynamic membership for the group. Cannot be used with `members`",
+        "MaxItems": 1,
+        "ConflictsWith": [
+          "members"
+        ],
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "enabled": {
+              "Type": "Bool",
+              "Required": true
+            },
+            "rule": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Rule to determine members for a dynamic group. Required when `group_types` contains 'DynamicMembership'"
+            }
+          }
+        }
+      },
+      "external_senders_allowed": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Indicates whether people external to the organization can send messages to the group."
+      },
+      "hide_from_address_lists": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Indicates whether the group is displayed in certain parts of the Outlook user interface: in the Address Book, in address lists for selecting message recipients, and in the Browse Groups dialog for searching groups."
+      },
+      "hide_from_outlook_clients": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Indicates whether the group is displayed in Outlook clients, such as Outlook for Windows and Outlook on the web."
       },
       "mail": {
         "Type": "String",
@@ -1276,6 +1471,9 @@
         "Optional": true,
         "Description": "A set of members who should be present in this group. Supported object types are Users, Groups or Service Principals",
         "Computed": true,
+        "ConflictsWith": [
+          "dynamic_membership"
+        ],
         "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
@@ -1372,7 +1570,7 @@
       "types": {
         "Type": "Set",
         "Optional": true,
-        "Description": "A set of group types to configure for the group. The only supported type is `Unified`, which specifies a Microsoft 365 group. Required when `mail_enabled` is true",
+        "Description": "A set of group types to configure for the group. `Unified` specifies a Microsoft 365 group. Required when `mail_enabled` is true",
         "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
@@ -1980,6 +2178,40 @@
         "Description": "The certificate data, which can be PEM encoded, base64 encoded DER or hexadecimal encoded DER"
       }
     },
+    "azuread_service_principal_delegated_permission_grant": {
+      "__timeouts__": [
+        "create",
+        "read",
+        "update",
+        "delete"
+      ],
+      "claim_values": {
+        "Type": "Set",
+        "Required": true,
+        "Description": "A set of claim values for delegated permission scopes which should be included in access tokens for the resource",
+        "MinItems": 1,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "resource_service_principal_object_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The object ID of the service principal representing the resource to be accessed"
+      },
+      "service_principal_object_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The object ID of the service principal for which this delegated permission grant should be created"
+      },
+      "user_object_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The object ID of the user on behalf of whom the service principal is authorized to access the resource"
+      }
+    },
     "azuread_service_principal_password": {
       "__timeouts__": [
         "create",
@@ -1989,13 +2221,26 @@
       ],
       "display_name": {
         "Type": "String",
-        "Description": "The display name for the password",
+        "Optional": true,
+        "Description": "A display name for the password",
         "Computed": true
       },
       "end_date": {
         "Type": "String",
+        "Optional": true,
         "Description": "The end date until which the password is valid, formatted as an RFC3339 date string (e.g. `2018-01-01T01:02:03Z`)",
-        "Computed": true
+        "Computed": true,
+        "ConflictsWith": [
+          "end_date_relative"
+        ]
+      },
+      "end_date_relative": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "A relative duration for which the password is valid until, for example `240h` (10 days) or `2400h30m`. Changing this field forces a new resource to be created",
+        "ConflictsWith": [
+          "end_date"
+        ]
       },
       "key_id": {
         "Type": "String",
@@ -2019,7 +2264,8 @@
       },
       "start_date": {
         "Type": "String",
-        "Description": "The start date from which the password is valid, formatted as an RFC3339 date string (e.g. `2018-01-01T01:02:03Z`)",
+        "Optional": true,
+        "Description": "The start date from which the password is valid, formatted as an RFC3339 date string (e.g. `2018-01-01T01:02:03Z`). If this isn't specified, the current date is used",
         "Computed": true
       },
       "value": {
@@ -2323,6 +2569,46 @@
     }
   },
   "data-sources": {
+    "azuread_administrative_unit": {
+      "__timeouts__": [
+        "create",
+        "read",
+        "update",
+        "delete"
+      ],
+      "description": {
+        "Type": "String",
+        "Description": "The description for the administrative unit",
+        "Computed": true
+      },
+      "display_name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The display name for the administrative unit",
+        "Computed": true
+      },
+      "members": {
+        "Type": "List",
+        "Description": "A list of object IDs of members who are be present in this administrative unit.",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "object_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The object ID of the administrative unit",
+        "Computed": true
+      },
+      "visibility": {
+        "Type": "String",
+        "Description": "Whether the administrative unit and its members are hidden or publicly viewable in the directory",
+        "Computed": true
+      }
+    },
     "azuread_application": {
       "__timeouts__": [
         "read"
@@ -3109,6 +3395,11 @@
         "Description": "Indicates whether this group can be assigned to an Azure Active Directory role",
         "Computed": true
       },
+      "auto_subscribe_new_members": {
+        "Type": "Bool",
+        "Description": "Indicates whether new members added to the group will be auto-subscribed to receive email notifications.",
+        "Computed": true
+      },
       "behaviors": {
         "Type": "List",
         "Description": "The group behaviors for a Microsoft 365 group",
@@ -3128,6 +3419,42 @@
         "Type": "String",
         "Optional": true,
         "Description": "The display name for the group",
+        "Computed": true
+      },
+      "dynamic_membership": {
+        "Type": "List",
+        "Description": "An optional block to configure dynamic membership for the group. Cannot be used with `members`",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "enabled": {
+              "Type": "Bool",
+              "Computed": true
+            },
+            "rule": {
+              "Type": "String",
+              "Description": "Rule to determine members for a dynamic group. Required when `group_types` contains 'DynamicMembership'",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "external_senders_allowed": {
+        "Type": "Bool",
+        "Description": "Indicates whether people external to the organization can send messages to the group.",
+        "Computed": true
+      },
+      "hide_from_address_lists": {
+        "Type": "Bool",
+        "Description": "Indicates whether the group is displayed in certain parts of the Outlook user interface: in the Address Book, in address lists for selecting message recipients, and in the Browse Groups dialog for searching groups.",
+        "Computed": true
+      },
+      "hide_from_outlook_clients": {
+        "Type": "Bool",
+        "Description": "Indicates whether the group is displayed in Outlook clients, such as Outlook for Windows and Outlook on the web.",
         "Computed": true
       },
       "mail": {
@@ -3253,6 +3580,12 @@
       "__timeouts__": [
         "read"
       ],
+      "display_name_prefix": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Common display name prefix of the groups",
+        "Computed": true
+      },
       "display_names": {
         "Type": "List",
         "Optional": true,

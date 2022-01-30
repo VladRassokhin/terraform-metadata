@@ -3,7 +3,7 @@
   ".sdk_type": "terraform-plugin-sdk-v2",
   "name": "launchdarkly",
   "type": "provider",
-  "version": "v2.1.1",
+  "version": "v2.4.1",
   "provider": {
     "access_token": {
       "Type": "String",
@@ -32,7 +32,8 @@
         "Description": "A list of custom role IDs to use as access limits for the access token",
         "ConflictsWith": [
           "role",
-          "policy_statements"
+          "policy_statements",
+          "inline_roles"
         ],
         "ConfigImplicitMode": "Attr",
         "Elem": {
@@ -50,7 +51,7 @@
         "Type": "Int",
         "Optional": true,
         "Description": "Replace the computed token secret with a new value. The expired secret will no longer be able to authorize usage of the LaunchDarkly API. Should be an expiration time for the current token secret, expressed as a Unix epoch time in milliseconds. Setting this to a negative value will expire the existing token immediately. To reset the token value again, change 'expire' to a new value. Setting this field at resource creation time WILL NOT set an expiration time for the token.",
-        "Deprecated": "'expire' is deprecated and will be removed in the next major release of the LaunchDarly provider"
+        "Deprecated": "'expire' is deprecated and will be removed in the next major release of the LaunchDarkly provider"
       },
       "inline_roles": {
         "Type": "List",
@@ -212,6 +213,94 @@
         "Type": "String",
         "Description": "The access token used to authorize usage of the LaunchDarkly API",
         "Computed": true
+      }
+    },
+    "launchdarkly_audit_log_subscription": {
+      "config": {
+        "Type": "Map",
+        "Required": true
+      },
+      "integration_key": {
+        "Type": "String",
+        "Required": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true
+      },
+      "on": {
+        "Type": "Bool",
+        "Required": true
+      },
+      "statements": {
+        "Type": "List",
+        "Required": true,
+        "MinItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "actions": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "An action to perform on a resource",
+              "MinItems": 1,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "effect": {
+              "Type": "String",
+              "Required": true
+            },
+            "not_actions": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Targeted actions will be those actions NOT in this list. The 'actions' field must be empty to use this field",
+              "MinItems": 1,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "not_resources": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Targeted resources will be those resources NOT in this list. The 'resources' field must be empty to use this field",
+              "MinItems": 1,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "resources": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "A list of LaunchDarkly resource specifiers",
+              "MinItems": 1,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
+      "tags": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Tags associated with your resource",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       }
     },
     "launchdarkly_custom_role": {
@@ -529,6 +618,34 @@
           "Value": "false"
         }
       },
+      "client_side_availability": {
+        "Type": "List",
+        "Optional": true,
+        "Computed": true,
+        "ConflictsWith": [
+          "include_in_snippet"
+        ],
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "using_environment_id": {
+              "Type": "Bool",
+              "Optional": true,
+              "Computed": true
+            },
+            "using_mobile_key": {
+              "Type": "Bool",
+              "Optional": true,
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
+              }
+            }
+          }
+        }
+      },
       "custom_properties": {
         "Type": "Set",
         "Optional": true,
@@ -592,10 +709,11 @@
         "Type": "Bool",
         "Optional": true,
         "Description": "Whether or not this flag should be made available to the client-side JavaScript SDK",
-        "Default": {
-          "Type": "bool",
-          "Value": "false"
-        }
+        "Computed": true,
+        "ConflictsWith": [
+          "client_side_availability"
+        ],
+        "Deprecated": "'include_in_snippet' is now deprecated. Please migrate to 'client_side_availability' to maintain future compatability."
       },
       "key": {
         "Type": "String",
@@ -879,7 +997,199 @@
         }
       }
     },
+    "launchdarkly_flag_trigger": {
+      "enabled": {
+        "Type": "Bool",
+        "Required": true,
+        "Description": "Whether the trigger is currently active or not. This property defaults to true upon creation"
+      },
+      "env_key": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The LaunchDarkly environment key"
+      },
+      "flag_key": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The key of the feature flag the trigger acts upon"
+      },
+      "instructions": {
+        "Type": "List",
+        "Required": true,
+        "Description": "Instructions containing the action to perform when triggering. Currently supported flag actions are \"turnFlagOn\" and \"turnFlagOff\".",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "kind": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The action to perform when triggering. Currently supported flag actions are \"turnFlagOn\" and \"turnFlagOff\"."
+            }
+          }
+        }
+      },
+      "integration_key": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The unique identifier of the integration you intend to set your trigger up with. \"generic-trigger\" should be used for integrations not explicitly supported."
+      },
+      "maintainer_id": {
+        "Type": "String",
+        "Description": "The LaunchDarkly ID of the member who maintains the trigger. The API will automatically apply the member associated with your Terraform API key or the most recently-set maintainer",
+        "Computed": true
+      },
+      "project_key": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The LaunchDarkly project key"
+      },
+      "trigger_url": {
+        "Type": "String",
+        "Description": "The unique trigger URL",
+        "Computed": true
+      }
+    },
+    "launchdarkly_metric": {
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "A short description of what the metric will be used for"
+      },
+      "event_key": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The event key for your metric (if custom metric)"
+      },
+      "is_active": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether the metric is active",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "is_numeric": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether the metric is numeric",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "key": {
+        "Type": "String",
+        "Required": true,
+        "Description": "A unique key that will be used to reference the metric in your code"
+      },
+      "kind": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The metric type -available choices are 'pageview', 'click', and 'custom'"
+      },
+      "maintainer_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The LaunchDarkly ID of the user who will maintain the metric. If not set, the API will automatically apply the member associated with your Terraform API key or the most recently-set maintainer",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "A human-readable name for your metric"
+      },
+      "project_key": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The LaunchDarkly project key"
+      },
+      "selector": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The CSS selector for your metric (if click metric)"
+      },
+      "success_criteria": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The success criteria for your metric (if numeric metric)"
+      },
+      "tags": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Tags associated with your resource",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "unit": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The unit for your metric (if numeric metric)"
+      },
+      "urls": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "List of nested `url` blocks describing URLs that you want to track the metric on",
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "kind": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The url type - vailable choices are 'exact', 'canonical', 'substring' and 'regex'"
+            },
+            "pattern": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The URL-matching regex"
+            },
+            "substring": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The URL substring"
+            },
+            "url": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The exact or canonical URL"
+            }
+          }
+        }
+      }
+    },
     "launchdarkly_project": {
+      "default_client_side_availability": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "List determining which SDKs have access to new flags created under the project by default",
+        "Computed": true,
+        "ConflictsWith": [
+          "include_in_snippet"
+        ],
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "using_environment_id": {
+              "Type": "Bool",
+              "Required": true
+            },
+            "using_mobile_key": {
+              "Type": "Bool",
+              "Required": true
+            }
+          }
+        }
+      },
       "environments": {
         "Type": "List",
         "Required": true,
@@ -1036,10 +1346,11 @@
         "Type": "Bool",
         "Optional": true,
         "Description": "Whether feature flags created under the project should be available to client-side SDKs by default",
-        "Default": {
-          "Type": "bool",
-          "Value": "false"
-        }
+        "Computed": true,
+        "ConflictsWith": [
+          "default_client_side_availability"
+        ],
+        "Deprecated": "'include_in_snippet' is now deprecated. Please migrate to 'default_client_side_availability' to maintain future compatability."
       },
       "key": {
         "Type": "String",
@@ -1059,6 +1370,83 @@
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
+        }
+      }
+    },
+    "launchdarkly_relay_proxy_configuration": {
+      "display_key": {
+        "Type": "String",
+        "Description": "The last four characters of the full_key.",
+        "Computed": true
+      },
+      "full_key": {
+        "Type": "String",
+        "Description": "The unique key assigned to the Relay Proxy configuration during creation.",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "A human-friendly name for the Relay Proxy configuration"
+      },
+      "policy": {
+        "Type": "List",
+        "Required": true,
+        "MinItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "actions": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "An action to perform on a resource",
+              "MinItems": 1,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "effect": {
+              "Type": "String",
+              "Required": true
+            },
+            "not_actions": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Targeted actions will be those actions NOT in this list. The 'actions' field must be empty to use this field",
+              "MinItems": 1,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "not_resources": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Targeted resources will be those resources NOT in this list. The 'resources' field must be empty to use this field",
+              "MinItems": 1,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "resources": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "A list of LaunchDarkly resource specifiers",
+              "MinItems": 1,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
         }
       }
     },
@@ -1184,7 +1572,7 @@
             "weight": {
               "Type": "Int",
               "Optional": true,
-              "Description": "The integer weight of the rule (between 0 and 100000).",
+              "Description": "The integer weight of the rule (between 1 and 100000).",
               "ConfigImplicitMode": "Attr",
               "Elem": {
                 "Type": "SchemaElements",
@@ -1336,6 +1724,99 @@
     }
   },
   "data-sources": {
+    "launchdarkly_audit_log_subscription": {
+      "config": {
+        "Type": "Map",
+        "Optional": true
+      },
+      "id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The audit log subscription ID"
+      },
+      "integration_key": {
+        "Type": "String",
+        "Required": true
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true
+      },
+      "on": {
+        "Type": "Bool",
+        "Optional": true
+      },
+      "statements": {
+        "Type": "List",
+        "Optional": true,
+        "MinItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "actions": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "An action to perform on a resource",
+              "MinItems": 1,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "effect": {
+              "Type": "String",
+              "Required": true
+            },
+            "not_actions": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Targeted actions will be those actions NOT in this list. The 'actions' field must be empty to use this field",
+              "MinItems": 1,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "not_resources": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Targeted resources will be those resources NOT in this list. The 'resources' field must be empty to use this field",
+              "MinItems": 1,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "resources": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "A list of LaunchDarkly resource specifiers",
+              "MinItems": 1,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
+      "tags": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Tags associated with your resource",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      }
+    },
     "launchdarkly_environment": {
       "api_key": {
         "Type": "String",
@@ -1492,19 +1973,28 @@
       },
       "client_side_availability": {
         "Type": "List",
+        "Optional": true,
         "Computed": true,
+        "ConflictsWith": [
+          "include_in_snippet"
+        ],
         "IsBlock": true,
-        "ConfigImplicitMode": "ComputedBlock",
+        "ConfigImplicitMode": "Block",
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
             "using_environment_id": {
               "Type": "Bool",
-              "Optional": true
+              "Optional": true,
+              "Computed": true
             },
             "using_mobile_key": {
               "Type": "Bool",
-              "Optional": true
+              "Optional": true,
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
+              }
             }
           }
         }
@@ -1572,10 +2062,11 @@
         "Type": "Bool",
         "Optional": true,
         "Description": "Whether or not this flag should be made available to the client-side JavaScript SDK",
-        "Default": {
-          "Type": "bool",
-          "Value": "false"
-        }
+        "Computed": true,
+        "ConflictsWith": [
+          "client_side_availability"
+        ],
+        "Deprecated": "'include_in_snippet' is now deprecated. Please migrate to 'client_side_availability' to maintain future compatability."
       },
       "key": {
         "Type": "String",
@@ -1859,10 +2350,184 @@
         }
       }
     },
+    "launchdarkly_flag_trigger": {
+      "enabled": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether the trigger is currently active or not. This property defaults to true upon creation"
+      },
+      "env_key": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The LaunchDarkly environment key"
+      },
+      "flag_key": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The key of the feature flag the trigger acts upon"
+      },
+      "id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The flag trigger resource ID. This can be found on your trigger URL - please see docs for more info"
+      },
+      "instructions": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Instructions containing the action to perform when triggering. Currently supported flag actions are \"turnFlagOn\" and \"turnFlagOff\".",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "kind": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The action to perform when triggering. Currently supported flag actions are \"turnFlagOn\" and \"turnFlagOff\"."
+            }
+          }
+        }
+      },
+      "integration_key": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The unique identifier of the integration you intend to set your trigger up with. \"generic-trigger\" should be used for integrations not explicitly supported."
+      },
+      "maintainer_id": {
+        "Type": "String",
+        "Description": "The LaunchDarkly ID of the member who maintains the trigger. The API will automatically apply the member associated with your Terraform API key or the most recently-set maintainer",
+        "Computed": true
+      },
+      "project_key": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The LaunchDarkly project key"
+      },
+      "trigger_url": {
+        "Type": "String",
+        "Description": "The unique trigger URL",
+        "Computed": true
+      }
+    },
+    "launchdarkly_metric": {
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "A short description of what the metric will be used for"
+      },
+      "event_key": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The event key for your metric (if custom metric)"
+      },
+      "is_active": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether the metric is active",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "is_numeric": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Whether the metric is numeric",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "key": {
+        "Type": "String",
+        "Required": true,
+        "Description": "A unique key that will be used to reference the metric in your code"
+      },
+      "kind": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The metric type -available choices are 'pageview', 'click', and 'custom'"
+      },
+      "maintainer_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The LaunchDarkly ID of the user who will maintain the metric. If not set, the API will automatically apply the member associated with your Terraform API key or the most recently-set maintainer",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "A human-readable name for your metric"
+      },
+      "project_key": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The LaunchDarkly project key"
+      },
+      "selector": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The CSS selector for your metric (if click metric)"
+      },
+      "success_criteria": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The success criteria for your metric (if numeric metric)"
+      },
+      "tags": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Tags associated with your resource",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "unit": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The unit for your metric (if numeric metric)"
+      },
+      "urls": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "List of nested `url` blocks describing URLs that you want to track the metric on",
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "kind": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The url type - vailable choices are 'exact', 'canonical', 'substring' and 'regex'"
+            },
+            "pattern": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The URL-matching regex"
+            },
+            "substring": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The URL substring"
+            },
+            "url": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The exact or canonical URL"
+            }
+          }
+        }
+      }
+    },
     "launchdarkly_project": {
       "client_side_availability": {
         "Type": "List",
         "Computed": true,
+        "Deprecated": "'client_side_availability' is now deprecated. Please migrate to 'default_client_side_availability' to maintain future compatability.",
         "IsBlock": true,
         "ConfigImplicitMode": "ComputedBlock",
         "Elem": {
@@ -1875,6 +2540,25 @@
             "using_mobile_key": {
               "Type": "Bool",
               "Optional": true
+            }
+          }
+        }
+      },
+      "default_client_side_availability": {
+        "Type": "List",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "using_environment_id": {
+              "Type": "Bool",
+              "Required": true
+            },
+            "using_mobile_key": {
+              "Type": "Bool",
+              "Required": true
             }
           }
         }
@@ -1895,6 +2579,83 @@
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "String"
+        }
+      }
+    },
+    "launchdarkly_relay_proxy_configuration": {
+      "display_key": {
+        "Type": "String",
+        "Description": "The last four characters of the full_key.",
+        "Computed": true
+      },
+      "id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The Relay Proxy configuration's unique 24 character ID"
+      },
+      "name": {
+        "Type": "String",
+        "Description": "A human-friendly name for the Relay Proxy configuration",
+        "Computed": true
+      },
+      "policy": {
+        "Type": "List",
+        "Optional": true,
+        "MinItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "actions": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "An action to perform on a resource",
+              "MinItems": 1,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "effect": {
+              "Type": "String",
+              "Required": true
+            },
+            "not_actions": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Targeted actions will be those actions NOT in this list. The 'actions' field must be empty to use this field",
+              "MinItems": 1,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "not_resources": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Targeted resources will be those resources NOT in this list. The 'resources' field must be empty to use this field",
+              "MinItems": 1,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "resources": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "A list of LaunchDarkly resource specifiers",
+              "MinItems": 1,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
         }
       }
     },
@@ -2020,7 +2781,7 @@
             "weight": {
               "Type": "Int",
               "Optional": true,
-              "Description": "The integer weight of the rule (between 0 and 100000).",
+              "Description": "The integer weight of the rule (between 1 and 100000).",
               "ConfigImplicitMode": "Attr",
               "Elem": {
                 "Type": "SchemaElements",
@@ -2059,6 +2820,11 @@
         "Type": "String",
         "Computed": true
       },
+      "id": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
       "last_name": {
         "Type": "String",
         "Computed": true
@@ -2066,6 +2832,66 @@
       "role": {
         "Type": "String",
         "Computed": true
+      }
+    },
+    "launchdarkly_team_members": {
+      "emails": {
+        "Type": "List",
+        "Required": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "ignore_missing": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "team_members": {
+        "Type": "List",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "custom_roles": {
+              "Type": "Set",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "email": {
+              "Type": "String",
+              "Required": true
+            },
+            "first_name": {
+              "Type": "String",
+              "Computed": true
+            },
+            "id": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            },
+            "last_name": {
+              "Type": "String",
+              "Computed": true
+            },
+            "role": {
+              "Type": "String",
+              "Computed": true
+            }
+          }
+        }
       }
     },
     "launchdarkly_webhook": {

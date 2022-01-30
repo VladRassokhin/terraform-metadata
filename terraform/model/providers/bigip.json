@@ -3,7 +3,7 @@
   ".sdk_type": "terraform-plugin-sdk-v1",
   "name": "bigip",
   "type": "provider",
-  "version": "v1.12.0",
+  "version": "v1.12.2",
   "provider": {
     "address": {
       "Type": "String",
@@ -83,6 +83,12 @@
           "Type": "bool",
           "Value": "false"
         }
+      },
+      "task_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "ID of AS3 post declaration async task",
+        "Computed": true
       },
       "tenant_filter": {
         "Type": "String",
@@ -387,6 +393,35 @@
       }
     },
     "bigip_do": {
+      "bigip_address": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "IP Address of BIGIP host to be used for this resource"
+      },
+      "bigip_password": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Password of  BIGIP host to be used for this resource"
+      },
+      "bigip_port": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Port number of BIGIP host to be used for this resource"
+      },
+      "bigip_token_auth": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Enable to use an external authentication source (LDAP, TACACS, etc)",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "bigip_user": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "UserName of BIGIP host to be used for this resource"
+      },
       "do_json": {
         "Type": "String",
         "Required": true,
@@ -553,6 +588,34 @@
         "Computed": true
       }
     },
+    "bigip_ipsec_profile": {
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Specifies descriptive text that identifies the IPsec interface tunnel profile",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Displays the name of the IPsec interface tunnel profile"
+      },
+      "parent_profile": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Specifies the profile from which this profile inherits settings. The default is the system-supplied `/Common/ipsec` profile",
+        "Default": {
+          "Type": "string",
+          "Value": "/Common/ipsec"
+        }
+      },
+      "traffic_selector": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Specifies the traffic selector for the IPsec interface tunnel to which the profile is applied",
+        "Computed": true
+      }
+    },
     "bigip_ltm_datagroup": {
       "name": {
         "Type": "String",
@@ -666,7 +729,7 @@
       "parent": {
         "Type": "String",
         "Required": true,
-        "Description": "Existing monitor to inherit from. Must be one of /Common/http, /Common/https, /Common/icmp or /Common/gateway-icmp."
+        "Description": "Existing monitor to inherit from. Must be one of /Common/http, /Common/https, /Common/icmp or /Common/gateway_icmp."
       },
       "password": {
         "Type": "String",
@@ -3681,7 +3744,8 @@
       "autolasthop": {
         "Type": "String",
         "Optional": true,
-        "Description": "Specifies whether to automatically map last hop for pools or not. The default is to use next level's defaul"
+        "Description": "Specifies whether to automatically map last hop for pools or not. The default is to use next level's defaul",
+        "Computed": true
       },
       "full_path": {
         "Type": "String",
@@ -3691,16 +3755,18 @@
       "mirror": {
         "Type": "String",
         "Optional": true,
-        "Description": "Enables or disables mirroring of SNAT connections."
+        "Description": "Enables or disables mirroring of SNAT connections.",
+        "Computed": true
       },
       "name": {
         "Type": "String",
         "Required": true,
-        "Description": "Snat list Name"
+        "Description": "Name of the SNAT"
       },
       "origins": {
         "Type": "List",
         "Required": true,
+        "Description": "Specifies, for each SNAT that you create, the origin addresses that are to be members of that SNAT. Specify origin addresses by their IP addresses and service ports",
         "IsBlock": true,
         "ConfigImplicitMode": "Block",
         "Elem": {
@@ -3722,27 +3788,37 @@
       "partition": {
         "Type": "String",
         "Optional": true,
-        "Description": "Which partition on BIG-IP"
+        "Description": "Partition or path to which the SNAT belongs"
       },
       "snatpool": {
         "Type": "String",
         "Optional": true,
-        "Description": "Specifies the name of a SNAT pool. You can only use this option when automap and translation are not used"
+        "Description": "Specifies an existing SNAT pool to which you want to map the client IP address. When you select SNAT Pool, you also select an existing SNAT pool from the associated list.",
+        "ConflictsWith": [
+          "translation"
+        ]
       },
       "sourceport": {
         "Type": "String",
         "Optional": true,
-        "Description": "Specifies whether the system preserves the source port of the connection. "
+        "Description": "Specifies how the SNAT object handles the client's source port. The default is Preserve.",
+        "Default": {
+          "Type": "string",
+          "Value": "preserve"
+        }
       },
       "translation": {
         "Type": "String",
         "Optional": true,
-        "Description": "Specifies the name of a translated IP address."
+        "Description": "Specifies a particular IP address that you want the SNAT to use as a translation address. When you select IP Address, you also type the IP address in the associated text box",
+        "ConflictsWith": [
+          "snatpool"
+        ]
       },
       "vlans": {
         "Type": "Set",
         "Optional": true,
-        "Description": "Vlans or Vlan list",
+        "Description": "Specifies the VLANs or tunnels for which the SNAT is enabled or disabled. The default is All",
         "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
@@ -3752,7 +3828,11 @@
       "vlansdisabled": {
         "Type": "Bool",
         "Optional": true,
-        "Description": "Disables the SNAT on all VLANs."
+        "Description": "Disables the SNAT on all VLANs.",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
       }
     },
     "bigip_ltm_snatpool": {
@@ -4009,8 +4089,11 @@
       "vlans_enabled": {
         "Type": "Bool",
         "Optional": true,
-        "Description": "Enables the virtual server on the VLANs specified by the VLANs option.",
-        "Computed": true
+        "Description": "Enables the virtual server on the VLANs specified by the VLANs option. By default it is set to false",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
       }
     },
     "bigip_net_ike_peer": {
@@ -4262,6 +4345,16 @@
         "Type": "String",
         "Required": true,
         "Description": "Name of the SelfIP"
+      },
+      "port_lockdown": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "port lockdown",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
       },
       "traffic_group": {
         "Type": "String",

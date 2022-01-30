@@ -3,7 +3,7 @@
   ".sdk_type": "terraform-plugin-sdk-v2",
   "name": "ionoscloud",
   "type": "provider",
-  "version": "v6.0.0-beta.14",
+  "version": "v6.1.3",
   "provider": {
     "endpoint": {
       "Type": "String",
@@ -156,11 +156,11 @@
         "Required": true
       },
       "icmp_code": {
-        "Type": "Int",
+        "Type": "String",
         "Optional": true
       },
       "icmp_type": {
-        "Type": "Int",
+        "Type": "String",
         "Optional": true
       },
       "name": {
@@ -424,17 +424,6 @@
           "ElementsType": "String"
         }
       },
-      "available_upgrade_versions": {
-        "Type": "List",
-        "Optional": true,
-        "Description": "List of available versions for upgrading the cluster",
-        "Computed": true,
-        "ConfigImplicitMode": "Attr",
-        "Elem": {
-          "Type": "SchemaElements",
-          "ElementsType": "String"
-        }
-      },
       "k8s_version": {
         "Type": "String",
         "Optional": true,
@@ -468,6 +457,15 @@
         "Type": "String",
         "Required": true,
         "Description": "The desired name for the cluster"
+      },
+      "public": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "The indicator if the cluster is public or private. Be aware that setting it to false is currently in beta phase.",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
       },
       "s3_buckets": {
         "Type": "List",
@@ -558,6 +556,11 @@
         "Required": true,
         "Description": "The UUID of the VDC"
       },
+      "gateway_ip": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Public IP address for the gateway performing source NAT for the node pool's nodes belonging to a private cluster. Required only if the node pool belongs to a private cluster."
+      },
       "k8s_cluster_id": {
         "Type": "String",
         "Required": true,
@@ -578,7 +581,7 @@
         }
       },
       "lans": {
-        "Type": "List",
+        "Type": "Set",
         "Optional": true,
         "Description": "A list of Local Area Networks the node pool should be part of",
         "IsBlock": true,
@@ -601,7 +604,7 @@
               "Description": "The LAN ID of an existing LAN at the related datacenter"
             },
             "routes": {
-              "Type": "List",
+              "Type": "Set",
               "Optional": true,
               "Description": "An array of additional LANs attached to worker nodes",
               "IsBlock": true,
@@ -661,7 +664,7 @@
       "public_ips": {
         "Type": "List",
         "Optional": true,
-        "Description": "A list of fixed IPs",
+        "Description": "A list of fixed IPs. Cannot be set on private clusters.",
         "ConfigImplicitMode": "Attr",
         "Elem": {
           "Type": "SchemaElements",
@@ -1140,6 +1143,154 @@
         "Required": true
       }
     },
+    "ionoscloud_pg_cluster": {
+      "__timeouts__": [
+        "create",
+        "update",
+        "delete",
+        "default"
+      ],
+      "connections": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Details about the network connection for your cluster.",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "cidr": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The IP and subnet for the database.\n          Note the following unavailable IP ranges:\n          10.233.64.0/18\n          10.233.0.0/18\n          10.233.114.0/24"
+            },
+            "datacenter_id": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The datacenter to connect your cluster to."
+            },
+            "lan_id": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The LAN to connect your cluster to."
+            }
+          }
+        }
+      },
+      "cores": {
+        "Type": "Int",
+        "Required": true,
+        "Description": "The number of CPU cores per replica."
+      },
+      "credentials": {
+        "Type": "List",
+        "Required": true,
+        "Description": "Credentials for the database user to be created.",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "password": {
+              "Type": "String",
+              "Required": true
+            },
+            "username": {
+              "Type": "String",
+              "Required": true,
+              "Description": "the username for the initial postgres user. some system usernames are restricted (e.g. \"postgres\", \"admin\", \"standby\")"
+            }
+          }
+        }
+      },
+      "display_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The friendly name of your cluster."
+      },
+      "from_backup": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "The PostgreSQL version of your cluster.",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "backup_id": {
+              "Type": "String",
+              "Required": true,
+              "Description": "The unique ID of the backup you want to restore."
+            },
+            "recovery_target_time": {
+              "Type": "String",
+              "Optional": true,
+              "Description": " If this value is supplied as ISO 8601 timestamp, the backup will be replayed up until the given timestamp. If empty, the backup will be applied completely."
+            }
+          }
+        }
+      },
+      "instances": {
+        "Type": "Int",
+        "Required": true,
+        "Description": "The total number of instances in the cluster (one master and n-1 standbys)"
+      },
+      "location": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The physical location where the cluster will be created. This will be where all of your instances live. Property cannot be modified after datacenter creation (disallowed in update requests)"
+      },
+      "maintenance_window": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "a weekly 4 hour-long window, during which maintenance might occur",
+        "Computed": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "day_of_the_week": {
+              "Type": "String",
+              "Required": true
+            },
+            "time": {
+              "Type": "String",
+              "Required": true
+            }
+          }
+        }
+      },
+      "postgres_version": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The PostgreSQL version of your cluster."
+      },
+      "ram": {
+        "Type": "Int",
+        "Required": true,
+        "Description": "The amount of memory per instance in megabytes. Has to be a multiple of 1024."
+      },
+      "storage_size": {
+        "Type": "Int",
+        "Required": true,
+        "Description": "The amount of storage per instance in megabytes."
+      },
+      "storage_type": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The storage type used in your cluster."
+      },
+      "synchronization_mode": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Represents different modes of replication."
+      }
+    },
     "ionoscloud_private_crossconnect": {
       "__timeouts__": [
         "create",
@@ -1476,6 +1627,11 @@
               "Description": "The uuid of the Backup Unit that user has access to. The property is immutable and is only allowed to be set on a new volume creation. It is mandatory to provide either 'public image' or 'imageAlias' in conjunction with this property.",
               "Computed": true
             },
+            "boot_server": {
+              "Type": "String",
+              "Description": "The UUID of the attached server.",
+              "Computed": true
+            },
             "bus": {
               "Type": "String",
               "Optional": true,
@@ -1739,6 +1895,11 @@
         "Optional": true,
         "Computed": true
       },
+      "boot_server": {
+        "Type": "String",
+        "Description": "The UUID of the attached server.",
+        "Computed": true
+      },
       "bus": {
         "Type": "String",
         "Optional": true,
@@ -1946,11 +2107,11 @@
         "Required": true
       },
       "icmp_code": {
-        "Type": "Int",
+        "Type": "String",
         "Computed": true
       },
       "icmp_type": {
-        "Type": "Int",
+        "Type": "String",
         "Computed": true
       },
       "id": {
@@ -2260,6 +2421,34 @@
         "Optional": true
       }
     },
+    "ionoscloud_ipfailover": {
+      "__timeouts__": [
+        "create",
+        "update",
+        "delete",
+        "default"
+      ],
+      "datacenter_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "id": {
+        "Type": "String",
+        "Required": true
+      },
+      "ip": {
+        "Type": "String",
+        "Optional": true
+      },
+      "lan_id": {
+        "Type": "String",
+        "Optional": true
+      },
+      "nicuuid": {
+        "Type": "String",
+        "Optional": true
+      }
+    },
     "ionoscloud_k8s_cluster": {
       "__timeouts__": [
         "create",
@@ -2433,6 +2622,11 @@
           "ElementsType": "String"
         }
       },
+      "public": {
+        "Type": "Bool",
+        "Description": "The indicator if the cluster is public or private. Be aware that setting it to false is currently in beta phase.",
+        "Computed": true
+      },
       "s3_buckets": {
         "Type": "List",
         "Description": "List of S3 bucket configured for K8s usage. For now it contains only an S3 bucket used to store K8s API audit logs.",
@@ -2544,6 +2738,11 @@
       "datacenter_id": {
         "Type": "String",
         "Description": "The UUID of the VDC",
+        "Computed": true
+      },
+      "gateway_ip": {
+        "Type": "String",
+        "Description": "Public IP address for the gateway performing source NAT for the node pool's nodes belonging to a private cluster. Required only if the node pool belongs to a private cluster.",
         "Computed": true
       },
       "id": {
@@ -3081,6 +3280,298 @@
         }
       }
     },
+    "ionoscloud_nic": {
+      "__timeouts__": [
+        "create",
+        "update",
+        "delete",
+        "default"
+      ],
+      "datacenter_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "device_number": {
+        "Type": "Int",
+        "Computed": true
+      },
+      "dhcp": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "firewall_active": {
+        "Type": "Bool",
+        "Optional": true
+      },
+      "firewall_type": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "id": {
+        "Type": "String",
+        "Optional": true
+      },
+      "ips": {
+        "Type": "List",
+        "Optional": true,
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "lan": {
+        "Type": "Int",
+        "Optional": true
+      },
+      "mac": {
+        "Type": "String",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true
+      },
+      "pci_slot": {
+        "Type": "Int",
+        "Computed": true
+      },
+      "server_id": {
+        "Type": "String",
+        "Required": true
+      }
+    },
+    "ionoscloud_pg_backups": {
+      "__timeouts__": [
+        "create",
+        "update",
+        "delete",
+        "default"
+      ],
+      "cluster_backups": {
+        "Type": "List",
+        "Description": "list of backups",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "cluster_id": {
+              "Type": "String",
+              "Description": "The unique ID of the cluster",
+              "Computed": true
+            },
+            "id": {
+              "Type": "String",
+              "Description": "The unique ID of the resource.",
+              "Computed": true
+            },
+            "metadata": {
+              "Type": "List",
+              "Description": "Metadata of the resource",
+              "Computed": true,
+              "IsBlock": true,
+              "ConfigImplicitMode": "ComputedBlock",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "created_date": {
+                    "Type": "String",
+                    "Description": "The ISO 8601 creation timestamp.",
+                    "Computed": true
+                  }
+                }
+              }
+            },
+            "type": {
+              "Type": "String",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "cluster_id": {
+        "Type": "String",
+        "Required": true
+      }
+    },
+    "ionoscloud_pg_cluster": {
+      "__timeouts__": [
+        "create",
+        "update",
+        "delete",
+        "default"
+      ],
+      "connections": {
+        "Type": "List",
+        "Description": "Details about the network connection for your cluster.",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "cidr": {
+              "Type": "String",
+              "Description": "The IP and subnet for the database. Note the following unavailable IP ranges: 10.233.64.0/18, 10.233.0.0/18, 10.233.114.0/24",
+              "Computed": true
+            },
+            "datacenter_id": {
+              "Type": "String",
+              "Description": "The datacenter to connect your cluster to.",
+              "Computed": true
+            },
+            "lan_id": {
+              "Type": "String",
+              "Description": "The LAN to connect your cluster to.",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "cores": {
+        "Type": "Int",
+        "Description": "The number of CPU cores per replica.",
+        "Computed": true
+      },
+      "credentials": {
+        "Type": "List",
+        "Description": "Credentials for the database user to be created.",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "password": {
+              "Type": "String",
+              "Computed": true
+            },
+            "username": {
+              "Type": "String",
+              "Description": "the username for the initial postgres user. some system usernames are restricted (e.g. \"postgres\", \"admin\", \"standby\")",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "display_name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The name of your cluster."
+      },
+      "from_backup": {
+        "Type": "List",
+        "Description": "The PostgreSQL version of your cluster.",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "backup_id": {
+              "Type": "String",
+              "Description": "The unique ID of the backup you want to restore.",
+              "Computed": true
+            },
+            "recovery_target_time": {
+              "Type": "String",
+              "Description": " If this value is supplied as ISO 8601 timestamp, the backup will be replayed up until the given timestamp. If empty, the backup will be applied completely.",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The id of your cluster."
+      },
+      "instances": {
+        "Type": "Int",
+        "Description": "The total number of instances in the cluster (one master and n-1 standbys)",
+        "Computed": true
+      },
+      "location": {
+        "Type": "String",
+        "Description": "The physical location where the cluster will be created. This will be where all of your instances live. Property cannot be modified after datacenter creation (disallowed in update requests)",
+        "Computed": true
+      },
+      "maintenance_window": {
+        "Type": "List",
+        "Description": "a weekly 4 hour-long window, during which maintenance might occur",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "day_of_the_week": {
+              "Type": "String",
+              "Computed": true
+            },
+            "time": {
+              "Type": "String",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "postgres_version": {
+        "Type": "String",
+        "Description": "The PostgreSQL version of your cluster.",
+        "Computed": true
+      },
+      "ram": {
+        "Type": "Int",
+        "Description": "The amount of memory per instance in megabytes. Has to be a multiple of 1024.",
+        "Computed": true
+      },
+      "storage_size": {
+        "Type": "Int",
+        "Description": "The amount of storage per instance in megabytes.",
+        "Computed": true
+      },
+      "storage_type": {
+        "Type": "String",
+        "Description": "The storage type used in your cluster.",
+        "Computed": true
+      },
+      "synchronization_mode": {
+        "Type": "String",
+        "Description": "Represents different modes of replication.",
+        "Computed": true
+      }
+    },
+    "ionoscloud_pg_versions": {
+      "__timeouts__": [
+        "create",
+        "update",
+        "delete",
+        "default"
+      ],
+      "cluster_id": {
+        "Type": "String",
+        "Optional": true
+      },
+      "postgres_versions": {
+        "Type": "List",
+        "Description": "list of PostgreSQL versions",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      }
+    },
     "ionoscloud_private_crossconnect": {
       "__timeouts__": [
         "create",
@@ -3494,6 +3985,11 @@
               "Type": "String",
               "Computed": true
             },
+            "boot_server": {
+              "Type": "String",
+              "Description": "The UUID of the attached server.",
+              "Computed": true
+            },
             "bus": {
               "Type": "String",
               "Computed": true
@@ -3573,6 +4069,34 @@
             }
           }
         }
+      }
+    },
+    "ionoscloud_share": {
+      "__timeouts__": [
+        "create",
+        "update",
+        "delete",
+        "default"
+      ],
+      "edit_privilege": {
+        "Type": "Bool",
+        "Optional": true
+      },
+      "group_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "id": {
+        "Type": "String",
+        "Required": true
+      },
+      "resource_id": {
+        "Type": "String",
+        "Required": true
+      },
+      "share_privilege": {
+        "Type": "Bool",
+        "Optional": true
       }
     },
     "ionoscloud_snapshot": {
@@ -3746,6 +4270,11 @@
       },
       "backup_unit_id": {
         "Type": "String",
+        "Computed": true
+      },
+      "boot_server": {
+        "Type": "String",
+        "Description": "The UUID of the attached server.",
         "Computed": true
       },
       "bus": {

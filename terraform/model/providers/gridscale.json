@@ -3,7 +3,7 @@
   ".sdk_type": "terraform-plugin-sdk-v2",
   "name": "gridscale",
   "type": "provider",
-  "version": "v1.13.0",
+  "version": "v1.14.0",
   "provider": {
     "api_url": {
       "Type": "String",
@@ -122,6 +122,123 @@
         "Type": "String",
         "Required": true,
         "Description": "UUID of the storage used to create storage backups"
+      }
+    },
+    "gridscale_filesystem": {
+      "__timeouts__": [
+        "create",
+        "update",
+        "delete"
+      ],
+      "allowed_ip_ranges": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Allowed CIDR block or IP address in CIDR notation.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "anon_gid": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Target group id when root squash is active."
+      },
+      "anon_uid": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "Target user id when root squash is active."
+      },
+      "change_time": {
+        "Type": "String",
+        "Description": "Time of the last change.",
+        "Computed": true
+      },
+      "create_time": {
+        "Type": "String",
+        "Description": "Date time this service has been created.",
+        "Computed": true
+      },
+      "labels": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "List of labels.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "listen_port": {
+        "Type": "Set",
+        "Description": "The port numbers where this Filesystem service accepts connections.",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "host": {
+              "Type": "String",
+              "Computed": true
+            },
+            "name": {
+              "Type": "String",
+              "Computed": true
+            },
+            "port": {
+              "Type": "Int",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The human-readable name of the object. It supports the full UTF-8 character set, with a maximum of 64 characters."
+      },
+      "network_uuid": {
+        "Type": "String",
+        "Description": "Network UUID containing security zone.",
+        "Computed": true
+      },
+      "performance_class": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Performance class of Filesystem service."
+      },
+      "release": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The Filesystem service release of this instance.\\n\n\t\t\t\tFor convenience, please use gscloud https://github.com/gridscale/gscloud to get the list of available Filesystem service releases."
+      },
+      "root_squash": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Map root user/group ownership to anon_uid/anon_gid"
+      },
+      "security_zone_uuid": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Security zone UUID linked to Filesystem service.",
+        "Computed": true
+      },
+      "service_template_uuid": {
+        "Type": "String",
+        "Description": "PaaS service template that Filesystem service uses.",
+        "Computed": true
+      },
+      "status": {
+        "Type": "String",
+        "Description": "Current status of Filesystem service.",
+        "Computed": true
+      },
+      "usage_in_minutes": {
+        "Type": "Int",
+        "Description": "Number of minutes that Filesystem service is in use.",
+        "Computed": true
       }
     },
     "gridscale_firewall": {
@@ -1850,7 +1967,8 @@
       "dhcp_range": {
         "Type": "String",
         "Optional": true,
-        "Description": "The general IP Range configured for this network (/24 for private networks). If it is not set, gridscale internal default range is used."
+        "Description": "The general IP Range configured for this network (/24 for private networks). If it is not set, gridscale internal default range is used. \n\t\t\t\tIf it is not set and DHCP is enabled, dhcp_range will be set by the backend automatically.",
+        "Computed": true
       },
       "dhcp_reserved_subnet": {
         "Type": "Set",
@@ -2584,6 +2702,11 @@
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
+            "auto_assigned_ip": {
+              "Type": "String",
+              "Description": "DHCP IP which is automatically assigned to the server.",
+              "Computed": true
+            },
             "bootdevice": {
               "Type": "Bool",
               "Optional": true,
@@ -2596,6 +2719,11 @@
             "firewall_template_uuid": {
               "Type": "String",
               "Optional": true
+            },
+            "ip": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Manually assign DHCP IP to the server."
             },
             "mac": {
               "Type": "String",
@@ -2616,10 +2744,8 @@
             "ordering": {
               "Type": "Int",
               "Optional": true,
-              "Default": {
-                "Type": "int",
-                "Value": "0"
-              }
+              "Computed": true,
+              "Deprecated": "This field `ordering` is deprecated. The network ordering of the server corresponds to the order of the networks in the server resource block."
             },
             "rules_v4_in": {
               "Type": "List",
@@ -5332,9 +5458,13 @@
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
+            "auto_assigned_ip": {
+              "Type": "String",
+              "Description": "DHCP IP which is automatically assigned to the server.",
+              "Computed": true
+            },
             "bootdevice": {
               "Type": "Bool",
-              "Optional": true,
               "Computed": true
             },
             "create_time": {
@@ -5343,6 +5473,11 @@
             },
             "firewall_template_uuid": {
               "Type": "String",
+              "Computed": true
+            },
+            "ip": {
+              "Type": "String",
+              "Description": "DHCP IP which is manually assigned to the server.",
               "Computed": true
             },
             "mac": {

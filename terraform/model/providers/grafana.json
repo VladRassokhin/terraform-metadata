@@ -3,7 +3,7 @@
   ".sdk_type": "terraform-plugin-sdk-v2",
   "name": "grafana",
   "type": "provider",
-  "version": "v1.14.0",
+  "version": "v1.18.0",
   "provider": {
     "auth": {
       "Type": "String",
@@ -28,6 +28,12 @@
       "Required": true,
       "Description": "The organization id to operate on within grafana. May alternatively be set via the `GRAFANA_ORG_ID` environment variable.",
       "DefaultFunc": "ENV(GRAFANA_ORG_ID)"
+    },
+    "retries": {
+      "Type": "Int",
+      "Optional": true,
+      "Description": "The amount of retries to use for Grafana API calls. May alternatively be set via the `GRAFANA_RETRIES` environment variable.",
+      "DefaultFunc": "ENV(GRAFANA_RETRIES)"
     },
     "sm_access_token": {
       "Type": "String",
@@ -124,6 +130,32 @@
         "Computed": true
       }
     },
+    "grafana_api_key": {
+      "expiration": {
+        "Type": "String",
+        "Computed": true
+      },
+      "id": {
+        "Type": "String",
+        "Computed": true
+      },
+      "key": {
+        "Type": "String",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true
+      },
+      "role": {
+        "Type": "String",
+        "Required": true
+      },
+      "seconds_to_live": {
+        "Type": "Int",
+        "Optional": true
+      }
+    },
     "grafana_builtin_role_assignment": {
       "builtin_role": {
         "Type": "String",
@@ -172,6 +204,11 @@
         "Type": "Int",
         "Optional": true,
         "Description": "The id of the folder to save the dashboard in."
+      },
+      "message": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Set a commit message for the version history."
       },
       "overwrite": {
         "Type": "Bool",
@@ -283,6 +320,16 @@
         "Description": "(Required by some data source types) The name of the database to use on the selected data source server.",
         "Default": {
           "Type": "string"
+        }
+      },
+      "http_headers": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "Custom HTTP headers",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
         }
       },
       "is_default": {
@@ -570,6 +617,12 @@
         "Required": true,
         "Description": "The data source type. Must be one of the supported data source keywords."
       },
+      "uid": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Unique identifier. If unset, this will be automatically generated.",
+        "Computed": true
+      },
       "url": {
         "Type": "String",
         "Optional": true,
@@ -584,7 +637,54 @@
         }
       }
     },
+    "grafana_data_source_permission": {
+      "datasource_id": {
+        "Type": "Int",
+        "Required": true,
+        "Description": "ID of the datasource to apply permissions to."
+      },
+      "permissions": {
+        "Type": "Set",
+        "Required": true,
+        "Description": "The permission items to add/update. Items that are omitted from the list will be removed.",
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "permission": {
+              "Type": "String",
+              "Required": true,
+              "Description": "Permission to associate with item. Must be `Query`."
+            },
+            "team_id": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "ID of the team to manage permissions for.",
+              "Default": {
+                "Type": "int",
+                "Value": "0"
+              }
+            },
+            "user_id": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "ID of the user to manage permissions for.",
+              "Default": {
+                "Type": "int",
+                "Value": "0"
+              }
+            }
+          }
+        }
+      }
+    },
     "grafana_folder": {
+      "id": {
+        "Type": "String",
+        "Description": "Unique internal identifier.",
+        "Computed": true
+      },
       "title": {
         "Type": "String",
         "Required": true,
@@ -640,6 +740,70 @@
               }
             }
           }
+        }
+      }
+    },
+    "grafana_machine_learning_job": {
+      "datasource_id": {
+        "Type": "Int",
+        "Required": true,
+        "Description": "The id of the datasource to query."
+      },
+      "datasource_type": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The type of datasource being queried. Currently allowed values are prometheus, graphite, loki, postgres, and datadog."
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "A description of the job."
+      },
+      "hyper_params": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "The hyperparameters used to fine tune the algorithm. See https://grafana.com/docs/grafana-cloud/machine-learning/models/ for the full list of available hyperparameters.",
+        "Default": {
+          "Type": "map[string]interface {}",
+          "Value": "map[]"
+        }
+      },
+      "id": {
+        "Type": "String",
+        "Description": "The ID of the job.",
+        "Computed": true
+      },
+      "interval": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The data interval in seconds to train the data on.",
+        "Default": {
+          "Type": "int",
+          "Value": "300"
+        }
+      },
+      "metric": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The metric used to query the job results."
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The name of the job."
+      },
+      "query_params": {
+        "Type": "Map",
+        "Required": true,
+        "Description": "An object representing the query params to query Grafana with."
+      },
+      "training_window": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The data interval in seconds to train the data on.",
+        "Default": {
+          "Type": "int",
+          "Value": "7776000"
         }
       }
     },
@@ -701,6 +865,52 @@
           "Type": "SchemaElements",
           "ElementsType": "String"
         }
+      }
+    },
+    "grafana_playlist": {
+      "interval": {
+        "Type": "String",
+        "Required": true
+      },
+      "item": {
+        "Type": "Set",
+        "Required": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "order": {
+              "Type": "Int",
+              "Required": true
+            },
+            "title": {
+              "Type": "String",
+              "Required": true
+            },
+            "type": {
+              "Type": "String",
+              "Optional": true
+            },
+            "value": {
+              "Type": "String",
+              "Optional": true
+            }
+          }
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The name of the playlist."
+      },
+      "org_id": {
+        "Type": "String",
+        "Computed": true
       }
     },
     "grafana_role": {
@@ -827,7 +1037,7 @@
       "settings": {
         "Type": "Set",
         "Required": true,
-        "Description": "Check settings.",
+        "Description": "Check settings. Should contain exactly one nested block.",
         "MaxItems": 1,
         "IsBlock": true,
         "ConfigImplicitMode": "Block",
@@ -1413,6 +1623,46 @@
                   }
                 }
               }
+            },
+            "traceroute": {
+              "Type": "Set",
+              "Optional": true,
+              "Description": "Settings for traceroute check. The target must be a valid hostname or IP address",
+              "MaxItems": 1,
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "max_hops": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Description": "Maximum TTL for the trace",
+                    "Default": {
+                      "Type": "int",
+                      "Value": "64"
+                    }
+                  },
+                  "max_unknown_hops": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Description": "Maximum number of hosts to travers that give no response",
+                    "Default": {
+                      "Type": "int",
+                      "Value": "15"
+                    }
+                  },
+                  "ptr_lookup": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Description": "Reverse lookup hostnames from IP addresses",
+                    "Default": {
+                      "Type": "bool",
+                      "Value": "true"
+                    }
+                  }
+                }
+              }
             }
           }
         }
@@ -1588,10 +1838,32 @@
         "Type": "String",
         "Required": true,
         "Description": "The password for the Grafana user."
+      },
+      "user_id": {
+        "Type": "Int",
+        "Description": "The numerical ID of the Grafana user.",
+        "Computed": true
       }
     }
   },
   "data-sources": {
+    "grafana_folder": {
+      "id": {
+        "Type": "Int",
+        "Description": "The numerical ID of the Grafana folder.",
+        "Computed": true
+      },
+      "title": {
+        "Type": "String",
+        "Required": true,
+        "Description": "The name of the Grafana folder."
+      },
+      "uid": {
+        "Type": "String",
+        "Description": "The uid of the Grafana folder.",
+        "Computed": true
+      }
+    },
     "grafana_synthetic_monitoring_probe": {
       "id": {
         "Type": "String",
@@ -1640,6 +1912,15 @@
       }
     },
     "grafana_synthetic_monitoring_probes": {
+      "filter_deprecated": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "If true, only probes that are not deprecated will be returned.",
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
       "probes": {
         "Type": "Map",
         "Description": "Map of probes with their names as keys and IDs as values.",
@@ -1648,6 +1929,43 @@
         "Elem": {
           "Type": "SchemaElements",
           "ElementsType": "Int"
+        }
+      }
+    },
+    "grafana_user": {
+      "email": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The email address of the Grafana user.",
+        "Default": {
+          "Type": "string"
+        }
+      },
+      "is_admin": {
+        "Type": "Bool",
+        "Description": "Whether the user is an admin.",
+        "Computed": true
+      },
+      "login": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The username for the Grafana user.",
+        "Default": {
+          "Type": "string"
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Description": "The display name for the Grafana user.",
+        "Computed": true
+      },
+      "user_id": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "The numerical ID of the Grafana user.",
+        "Default": {
+          "Type": "int",
+          "Value": "-1"
         }
       }
     }

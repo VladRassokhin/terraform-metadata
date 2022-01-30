@@ -1,0 +1,2054 @@
+{
+  ".schema_version": "2",
+  ".sdk_type": "terraform-plugin-sdk-v2",
+  "name": "ec",
+  "type": "provider",
+  "version": "v0.3.0",
+  "provider": {
+    "apikey": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "API Key to use for API authentication. The only valid authentication mechanism for the Elasticsearch Service.",
+      "DefaultFunc": "MENV(EC_API_KEY)"
+    },
+    "endpoint": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "Endpoint where the terraform provider will point to. Defaults to \"https://api.elastic-cloud.com\".",
+      "DefaultFunc": "MENV(EC_ENDPOINT,EC_HOST)"
+    },
+    "insecure": {
+      "Type": "Bool",
+      "Optional": true,
+      "Description": "Allow the provider to skip TLS validation on its outgoing HTTP calls.",
+      "DefaultFunc": "MENV(EC_INSECURE,EC_SKIP_TLS_VALIDATION)",
+      "Default": {
+        "Type": "bool",
+        "Value": "false"
+      }
+    },
+    "password": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "Password to use for API authentication. Available only when targeting ECE Installations or Elasticsearch Service Private.",
+      "DefaultFunc": "MENV(EC_PASS,EC_PASSWORD)"
+    },
+    "timeout": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "Timeout used for individual HTTP calls. Defaults to \"1m\".",
+      "DefaultFunc": "MENV(EC_TIMEOUT)"
+    },
+    "username": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "Username to use for API authentication. Available only when targeting ECE Installations or Elasticsearch Service Private.",
+      "DefaultFunc": "MENV(EC_USER,EC_USERNAME)"
+    },
+    "verbose": {
+      "Type": "Bool",
+      "Optional": true,
+      "Description": "When set, a \"request.log\" file will be written with all outgoing HTTP requests. Defaults to \"false\".",
+      "DefaultFunc": "MENV(EC_VERBOSE)"
+    },
+    "verbose_credentials": {
+      "Type": "Bool",
+      "Optional": true,
+      "Description": "When set with verbose, the contents of the Authorization header will not be redacted. Defaults to \"false\".",
+      "DefaultFunc": "ENV(EC_VERBOSE_CREDENTIALS)"
+    },
+    "verbose_file": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "Timeout used for individual HTTP calls. Defaults to \"1m\".",
+      "DefaultFunc": "ENV(EC_VERBOSE_FILE)"
+    }
+  },
+  "resources": {
+    "ec_deployment": {
+      "__timeouts__": [
+        "update",
+        "delete",
+        "default"
+      ],
+      "alias": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Optional deployment alias that affects the format of the resource URLs",
+        "Computed": true
+      },
+      "apm": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Optional APM resource definition",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "config": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Optionally define the Apm configuration options for the APM Server",
+              "MaxItems": 1,
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "debug_enabled": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Description": "Optionally enable debug mode for APM servers - defaults to false",
+                    "Default": {
+                      "Type": "bool",
+                      "Value": "false"
+                    }
+                  },
+                  "docker_image": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Optionally override the docker image the APM nodes will use. Note that this field will only work for internal users only."
+                  },
+                  "user_settings_json": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "An arbitrary JSON object allowing (non-admin) cluster owners to set their parameters (only one of this and 'user_settings_yaml' is allowed), provided they are on the whitelist ('user_settings_whitelist') and not on the blacklist ('user_settings_blacklist'). (This field together with 'user_settings_override*' and 'system_settings' defines the total set of resource settings)"
+                  },
+                  "user_settings_override_json": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "An arbitrary JSON object allowing ECE admins owners to set clusters' parameters (only one of this and 'user_settings_override_yaml' is allowed), ie in addition to the documented 'system_settings'. (This field together with 'system_settings' and 'user_settings*' defines the total set of resource settings)"
+                  },
+                  "user_settings_override_yaml": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "An arbitrary YAML object allowing (non-admin) cluster owners to set their parameters (only one of this and 'user_settings_json' is allowed), provided they are on the whitelist ('user_settings_whitelist') and not on the blacklist ('user_settings_blacklist'). (These field together with 'user_settings_override*' and 'system_settings' defines the total set of resource settings)"
+                  },
+                  "user_settings_yaml": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "An arbitrary YAML object allowing ECE admins owners to set clusters' parameters (only one of this and 'user_settings_override_json' is allowed), ie in addition to the documented 'system_settings'. (This field together with 'system_settings' and 'user_settings*' defines the total set of resource settings)"
+                  }
+                }
+              }
+            },
+            "elasticsearch_cluster_ref_id": {
+              "Type": "String",
+              "Optional": true,
+              "Default": {
+                "Type": "string",
+                "Value": "main-elasticsearch"
+              }
+            },
+            "http_endpoint": {
+              "Type": "String",
+              "Computed": true
+            },
+            "https_endpoint": {
+              "Type": "String",
+              "Computed": true
+            },
+            "ref_id": {
+              "Type": "String",
+              "Optional": true,
+              "Default": {
+                "Type": "string",
+                "Value": "main-apm"
+              }
+            },
+            "region": {
+              "Type": "String",
+              "Computed": true
+            },
+            "resource_id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "topology": {
+              "Type": "List",
+              "Optional": true,
+              "Computed": true,
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "instance_configuration_id": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "size": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "size_resource": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Optional size type, defaults to \"memory\".",
+                    "Default": {
+                      "Type": "string",
+                      "Value": "memory"
+                    }
+                  },
+                  "zone_count": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Computed": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "apm_secret_token": {
+        "Type": "String",
+        "Computed": true
+      },
+      "deployment_template_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Required Deployment Template identifier to create the deployment from"
+      },
+      "elasticsearch": {
+        "Type": "List",
+        "Required": true,
+        "Description": "Required Elasticsearch resource definition",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "autoscale": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Enable or disable autoscaling. Defaults to the setting coming from the deployment template. Accepted values are \"true\" or \"false\".",
+              "Computed": true
+            },
+            "cloud_id": {
+              "Type": "String",
+              "Description": "The encoded Elasticsearch credentials to use in Beats or Logstash",
+              "Computed": true
+            },
+            "config": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Optional Elasticsearch settings which will be applied to all topologies unless overridden on the topology element",
+              "MaxItems": 1,
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "docker_image": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Optionally override the docker image the Elasticsearch nodes will use. Note that this field will only work for internal users only."
+                  },
+                  "plugins": {
+                    "Type": "Set",
+                    "Optional": true,
+                    "Description": "List of Elasticsearch supported plugins, which vary from version to version. Check the Stack Pack version to see which plugins are supported for each version. This is currently only available from the UI and [ecctl](https://www.elastic.co/guide/en/ecctl/master/ecctl_stack_list.html)",
+                    "ConfigImplicitMode": "Attr",
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  },
+                  "user_settings_json": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "JSON-formatted user level \"elasticsearch.yml\" setting overrides"
+                  },
+                  "user_settings_override_json": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "JSON-formatted admin (ECE) level \"elasticsearch.yml\" setting overrides"
+                  },
+                  "user_settings_override_yaml": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "YAML-formatted admin (ECE) level \"elasticsearch.yml\" setting overrides"
+                  },
+                  "user_settings_yaml": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "YAML-formatted user level \"elasticsearch.yml\" setting overrides"
+                  }
+                }
+              }
+            },
+            "extension": {
+              "Type": "Set",
+              "Optional": true,
+              "Description": "Optional Elasticsearch extensions such as custom bundles or plugins.",
+              "MinItems": 1,
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "name": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "Extension name."
+                  },
+                  "type": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "Extension type, only `bundle` or `plugin` are supported."
+                  },
+                  "url": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "Bundle or plugin URL, the extension URL can be obtained from the `ec_deployment_extension.\u003cname\u003e.url` attribute or the API and cannot be a random HTTP address that is hosted elsewhere."
+                  },
+                  "version": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "Elasticsearch compatibility version. Bundles should specify major or minor versions with wildcards, such as `7.*` or `*` but **plugins must use full version notation down to the patch level**, such as `7.10.1` and wildcards are not allowed."
+                  }
+                }
+              }
+            },
+            "http_endpoint": {
+              "Type": "String",
+              "Description": "The Elasticsearch resource HTTP endpoint",
+              "Computed": true
+            },
+            "https_endpoint": {
+              "Type": "String",
+              "Description": "The Elasticsearch resource HTTPs endpoint",
+              "Computed": true
+            },
+            "ref_id": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Optional ref_id to set on the Elasticsearch resource",
+              "Default": {
+                "Type": "string",
+                "Value": "main-elasticsearch"
+              }
+            },
+            "region": {
+              "Type": "String",
+              "Description": "The Elasticsearch resource region",
+              "Computed": true
+            },
+            "remote_cluster": {
+              "Type": "Set",
+              "Optional": true,
+              "Description": "Optional Elasticsearch remote clusters to configure for the Elasticsearch resource, can be set multiple times",
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "alias": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "Alias for this Cross Cluster Search binding"
+                  },
+                  "deployment_id": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "Remote deployment ID"
+                  },
+                  "ref_id": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Remote elasticsearch \"ref_id\", it is best left to the default value",
+                    "Default": {
+                      "Type": "string",
+                      "Value": "main-elasticsearch"
+                    }
+                  },
+                  "skip_unavailable": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Description": "If true, skip the cluster during search when disconnected",
+                    "Default": {
+                      "Type": "bool",
+                      "Value": "false"
+                    }
+                  }
+                }
+              }
+            },
+            "resource_id": {
+              "Type": "String",
+              "Description": "The Elasticsearch resource unique identifier",
+              "Computed": true
+            },
+            "snapshot_source": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Optional snapshot source settings. Restore data from a snapshot of another deployment.",
+              "MaxItems": 1,
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "snapshot_name": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Name of the snapshot to restore. Use '__latest_success__' to get the most recent successful snapshot.",
+                    "Default": {
+                      "Type": "string",
+                      "Value": "__latest_success__"
+                    }
+                  },
+                  "source_elasticsearch_cluster_id": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "ID of the Elasticsearch cluster that will be used as the source of the snapshot"
+                  }
+                }
+              }
+            },
+            "topology": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Optional topology element which must be set once but can be set multiple times to compose complex topologies",
+              "Computed": true,
+              "MinItems": 1,
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "autoscaling": {
+                    "Type": "List",
+                    "Optional": true,
+                    "Description": "Optional Elasticsearch autoscaling settings, such a maximum and minimum size and resources.",
+                    "Computed": true,
+                    "MaxItems": 1,
+                    "IsBlock": true,
+                    "ConfigImplicitMode": "Block",
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "max_size": {
+                          "Type": "String",
+                          "Optional": true,
+                          "Description": "Maximum size value for the maximum autoscaling setting.",
+                          "Computed": true
+                        },
+                        "max_size_resource": {
+                          "Type": "String",
+                          "Optional": true,
+                          "Description": "Maximum resource type for the maximum autoscaling setting.",
+                          "Computed": true
+                        },
+                        "min_size": {
+                          "Type": "String",
+                          "Optional": true,
+                          "Description": "Minimum size value for the minimum autoscaling setting.",
+                          "Computed": true
+                        },
+                        "min_size_resource": {
+                          "Type": "String",
+                          "Optional": true,
+                          "Description": "Minimum resource type for the minimum autoscaling setting.",
+                          "Computed": true
+                        },
+                        "policy_override_json": {
+                          "Type": "String",
+                          "Description": "Computed policy overrides set directly via the API or other clients.",
+                          "Computed": true
+                        }
+                      }
+                    }
+                  },
+                  "config": {
+                    "Type": "List",
+                    "Description": "Computed read-only configuration to avoid unsetting plan settings from 'topology.elasticsearch'",
+                    "Computed": true,
+                    "IsBlock": true,
+                    "ConfigImplicitMode": "ComputedBlock",
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "plugins": {
+                          "Type": "Set",
+                          "Description": "List of Elasticsearch supported plugins, which vary from version to version. Check the Stack Pack version to see which plugins are supported for each version. This is currently only available from the UI and [ecctl](https://www.elastic.co/guide/en/ecctl/master/ecctl_stack_list.html)",
+                          "Computed": true,
+                          "ConfigImplicitMode": "Attr",
+                          "Elem": {
+                            "Type": "SchemaElements",
+                            "ElementsType": "String"
+                          }
+                        },
+                        "user_settings_json": {
+                          "Type": "String",
+                          "Description": "JSON-formatted user level \"elasticsearch.yml\" setting overrides",
+                          "Computed": true
+                        },
+                        "user_settings_override_json": {
+                          "Type": "String",
+                          "Description": "JSON-formatted admin (ECE) level \"elasticsearch.yml\" setting overrides",
+                          "Computed": true
+                        },
+                        "user_settings_override_yaml": {
+                          "Type": "String",
+                          "Description": "YAML-formatted admin (ECE) level \"elasticsearch.yml\" setting overrides",
+                          "Computed": true
+                        },
+                        "user_settings_yaml": {
+                          "Type": "String",
+                          "Description": "YAML-formatted user level \"elasticsearch.yml\" setting overrides",
+                          "Computed": true
+                        }
+                      }
+                    }
+                  },
+                  "id": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "Required topology ID from the deployment template"
+                  },
+                  "instance_configuration_id": {
+                    "Type": "String",
+                    "Description": "Computed Instance Configuration ID of the topology element",
+                    "Computed": true
+                  },
+                  "node_roles": {
+                    "Type": "Set",
+                    "Description": "The computed list of node roles for the current topology element",
+                    "Computed": true,
+                    "ConfigImplicitMode": "Attr",
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  },
+                  "node_type_data": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "The node type for the Elasticsearch Topology element (data node)",
+                    "Computed": true
+                  },
+                  "node_type_ingest": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "The node type for the Elasticsearch Topology element (ingest node)",
+                    "Computed": true
+                  },
+                  "node_type_master": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "The node type for the Elasticsearch Topology element (master node)",
+                    "Computed": true
+                  },
+                  "node_type_ml": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "The node type for the Elasticsearch Topology element (machine learning node)",
+                    "Computed": true
+                  },
+                  "size": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Optional amount of memory per node in the \"\u003csize in GB\u003eg\" notation",
+                    "Computed": true
+                  },
+                  "size_resource": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Optional size type, defaults to \"memory\".",
+                    "Default": {
+                      "Type": "string",
+                      "Value": "memory"
+                    }
+                  },
+                  "zone_count": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Description": "Optional number of zones that the Elasticsearch cluster will span. This is used to set HA",
+                    "Computed": true
+                  }
+                }
+              }
+            },
+            "trust_account": {
+              "Type": "Set",
+              "Optional": true,
+              "Description": "Optional Elasticsearch account trust settings.",
+              "Computed": true,
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "account_id": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "The ID of the Account."
+                  },
+                  "trust_all": {
+                    "Type": "Bool",
+                    "Required": true,
+                    "Description": "If true, all clusters in this account will by default be trusted and the `trust_allowlist` is ignored."
+                  },
+                  "trust_allowlist": {
+                    "Type": "Set",
+                    "Optional": true,
+                    "Description": "The list of clusters to trust. Only used when `trust_all` is false.",
+                    "ConfigImplicitMode": "Attr",
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  }
+                }
+              }
+            },
+            "trust_external": {
+              "Type": "Set",
+              "Optional": true,
+              "Description": "Optional Elasticsearch external trust settings.",
+              "Computed": true,
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "relationship_id": {
+                    "Type": "String",
+                    "Required": true,
+                    "Description": "The ID of the external trust relationship."
+                  },
+                  "trust_all": {
+                    "Type": "Bool",
+                    "Required": true,
+                    "Description": "If true, all clusters in this account will by default be trusted and the `trust_allowlist` is ignored."
+                  },
+                  "trust_allowlist": {
+                    "Type": "Set",
+                    "Optional": true,
+                    "Description": "The list of clusters to trust. Only used when `trust_all` is false.",
+                    "ConfigImplicitMode": "Attr",
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "elasticsearch_password": {
+        "Type": "String",
+        "Description": "Computed password obtained upon creating the Elasticsearch resource",
+        "Computed": true
+      },
+      "elasticsearch_username": {
+        "Type": "String",
+        "Description": "Computed username obtained upon creating the Elasticsearch resource",
+        "Computed": true
+      },
+      "enterprise_search": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Optional Enterprise Search resource definition",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "config": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Optionally define the Enterprise Search configuration options for the Enterprise Search Server",
+              "MaxItems": 1,
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "docker_image": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Optionally override the docker image the Enterprise Search nodes will use. Note that this field will only work for internal users only."
+                  },
+                  "user_settings_json": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "An arbitrary JSON object allowing (non-admin) cluster owners to set their parameters (only one of this and 'user_settings_yaml' is allowed), provided they are on the whitelist ('user_settings_whitelist') and not on the blacklist ('user_settings_blacklist'). (This field together with 'user_settings_override*' and 'system_settings' defines the total set of resource settings)"
+                  },
+                  "user_settings_override_json": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "An arbitrary JSON object allowing ECE admins owners to set clusters' parameters (only one of this and 'user_settings_override_yaml' is allowed), ie in addition to the documented 'system_settings'. (This field together with 'system_settings' and 'user_settings*' defines the total set of resource settings)"
+                  },
+                  "user_settings_override_yaml": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "An arbitrary YAML object allowing (non-admin) cluster owners to set their parameters (only one of this and 'user_settings_json' is allowed), provided they are on the whitelist ('user_settings_whitelist') and not on the blacklist ('user_settings_blacklist'). (These field together with 'user_settings_override*' and 'system_settings' defines the total set of resource settings)"
+                  },
+                  "user_settings_yaml": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "An arbitrary YAML object allowing ECE admins owners to set clusters' parameters (only one of this and 'user_settings_override_json' is allowed), ie in addition to the documented 'system_settings'. (This field together with 'system_settings' and 'user_settings*' defines the total set of resource settings)"
+                  }
+                }
+              }
+            },
+            "elasticsearch_cluster_ref_id": {
+              "Type": "String",
+              "Optional": true,
+              "Default": {
+                "Type": "string",
+                "Value": "main-elasticsearch"
+              }
+            },
+            "http_endpoint": {
+              "Type": "String",
+              "Computed": true
+            },
+            "https_endpoint": {
+              "Type": "String",
+              "Computed": true
+            },
+            "ref_id": {
+              "Type": "String",
+              "Optional": true,
+              "Default": {
+                "Type": "string",
+                "Value": "main-enterprise_search"
+              }
+            },
+            "region": {
+              "Type": "String",
+              "Computed": true
+            },
+            "resource_id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "topology": {
+              "Type": "List",
+              "Optional": true,
+              "Computed": true,
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "instance_configuration_id": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "node_type_appserver": {
+                    "Type": "Bool",
+                    "Computed": true
+                  },
+                  "node_type_connector": {
+                    "Type": "Bool",
+                    "Computed": true
+                  },
+                  "node_type_worker": {
+                    "Type": "Bool",
+                    "Computed": true
+                  },
+                  "size": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "size_resource": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Optional size type, defaults to \"memory\".",
+                    "Default": {
+                      "Type": "string",
+                      "Value": "memory"
+                    }
+                  },
+                  "zone_count": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Computed": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "kibana": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Optional Kibana resource definition",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "config": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "Optionally define the Kibana configuration options for the Kibana Server",
+              "MaxItems": 1,
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "docker_image": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Optionally override the docker image the Kibana nodes will use. Note that this field will only work for internal users only."
+                  },
+                  "user_settings_json": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "An arbitrary JSON object allowing (non-admin) cluster owners to set their parameters (only one of this and 'user_settings_yaml' is allowed), provided they are on the whitelist ('user_settings_whitelist') and not on the blacklist ('user_settings_blacklist'). (This field together with 'user_settings_override*' and 'system_settings' defines the total set of resource settings)"
+                  },
+                  "user_settings_override_json": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "An arbitrary JSON object allowing ECE admins owners to set clusters' parameters (only one of this and 'user_settings_override_yaml' is allowed), ie in addition to the documented 'system_settings'. (This field together with 'system_settings' and 'user_settings*' defines the total set of resource settings)"
+                  },
+                  "user_settings_override_yaml": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "An arbitrary YAML object allowing (non-admin) cluster owners to set their parameters (only one of this and 'user_settings_json' is allowed), provided they are on the whitelist ('user_settings_whitelist') and not on the blacklist ('user_settings_blacklist'). (These field together with 'user_settings_override*' and 'system_settings' defines the total set of resource settings)"
+                  },
+                  "user_settings_yaml": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "An arbitrary YAML object allowing ECE admins owners to set clusters' parameters (only one of this and 'user_settings_override_json' is allowed), ie in addition to the documented 'system_settings'. (This field together with 'system_settings' and 'user_settings*' defines the total set of resource settings)"
+                  }
+                }
+              }
+            },
+            "elasticsearch_cluster_ref_id": {
+              "Type": "String",
+              "Optional": true,
+              "Default": {
+                "Type": "string",
+                "Value": "main-elasticsearch"
+              }
+            },
+            "http_endpoint": {
+              "Type": "String",
+              "Computed": true
+            },
+            "https_endpoint": {
+              "Type": "String",
+              "Computed": true
+            },
+            "ref_id": {
+              "Type": "String",
+              "Optional": true,
+              "Default": {
+                "Type": "string",
+                "Value": "main-kibana"
+              }
+            },
+            "region": {
+              "Type": "String",
+              "Computed": true
+            },
+            "resource_id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "topology": {
+              "Type": "List",
+              "Optional": true,
+              "Computed": true,
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "instance_configuration_id": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "size": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Computed": true
+                  },
+                  "size_resource": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "Optional size type, defaults to \"memory\".",
+                    "Default": {
+                      "Type": "string",
+                      "Value": "memory"
+                    }
+                  },
+                  "zone_count": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Computed": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Optional name for the deployment"
+      },
+      "observability": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Optional observability settings. Ship logs and metrics to a dedicated deployment.",
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "deployment_id": {
+              "Type": "String",
+              "Required": true
+            },
+            "logs": {
+              "Type": "Bool",
+              "Optional": true,
+              "Default": {
+                "Type": "bool",
+                "Value": "true"
+              }
+            },
+            "metrics": {
+              "Type": "Bool",
+              "Optional": true,
+              "Default": {
+                "Type": "bool",
+                "Value": "true"
+              }
+            },
+            "ref_id": {
+              "Type": "String",
+              "Optional": true,
+              "Computed": true
+            }
+          }
+        }
+      },
+      "region": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Required ESS region where to create the deployment, for ECE environments \"ece-region\" must be set"
+      },
+      "request_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Optional request_id to set on the create operation, only use when previous create attempts return with an error and a request_id is returned as part of the error"
+      },
+      "tags": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "Optional map of deployment tags",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "traffic_filter": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "Optional list of traffic filters to apply to this deployment.",
+        "MinItems": 1,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "version": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Required Elastic Stack version to use for all of the deployment resources"
+      }
+    },
+    "ec_deployment_elasticsearch_keystore": {
+      "__timeouts__": [
+        "default"
+      ],
+      "as_file": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Optionally stores the remote keystore setting as a file. The default is false, which stores the keystore setting as string when value is a plain string"
+      },
+      "deployment_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Required deployment ID of the Deployment that holds the Elasticsearch cluster where the keystore setting will be written to"
+      },
+      "setting_name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Required name for the keystore setting, if the setting already exists in the Elasticsearch cluster, it will be overridden"
+      },
+      "value": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Required value of this setting. This can either be a string or a JSON object that is stored as a JSON string in the keystore."
+      }
+    },
+    "ec_deployment_extension": {
+      "__timeouts__": [
+        "default"
+      ],
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Description for extension"
+      },
+      "download_url": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "download url"
+      },
+      "extension_type": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Extension type. bundle or plugin"
+      },
+      "file_hash": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "file hash"
+      },
+      "file_path": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "file path"
+      },
+      "last_modified": {
+        "Type": "String",
+        "Computed": true
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Required name of the ruleset"
+      },
+      "size": {
+        "Type": "Int",
+        "Computed": true
+      },
+      "url": {
+        "Type": "String",
+        "Computed": true
+      },
+      "version": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Eleasticsearch version"
+      }
+    },
+    "ec_deployment_traffic_filter": {
+      "__timeouts__": [
+        "default"
+      ],
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Optional ruleset description"
+      },
+      "include_by_default": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "Should the ruleset be automatically included in the new deployments (Defaults to false)",
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Required name of the ruleset"
+      },
+      "region": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Required filter region, the ruleset can only be attached to deployments in the specific region"
+      },
+      "rule": {
+        "Type": "Set",
+        "Required": true,
+        "Description": "Required list of rules, which the ruleset is made of.",
+        "MinItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "azure_endpoint_guid": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Optional Azure endpoint GUID"
+            },
+            "azure_endpoint_name": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Optional Azure endpoint name"
+            },
+            "description": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Optional rule description"
+            },
+            "id": {
+              "Type": "String",
+              "Description": "Computed rule ID",
+              "Computed": true
+            },
+            "source": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Required traffic filter source: IP address, CIDR mask, or VPC endpoint ID, not required when the type is azure_private_endpoint"
+            }
+          }
+        }
+      },
+      "type": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Required type of the ruleset (\"ip\", \"vpce\" or \"azure_private_endpoint\")"
+      }
+    },
+    "ec_deployment_traffic_filter_association": {
+      "__timeouts__": [
+        "default"
+      ],
+      "deployment_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Required deployment ID where the traffic filter will be associated"
+      },
+      "traffic_filter_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "Required traffic filter ruleset ID to tie to a deployment"
+      }
+    }
+  },
+  "data-sources": {
+    "ec_deployment": {
+      "__timeouts__": [
+        "default"
+      ],
+      "alias": {
+        "Type": "String",
+        "Computed": true
+      },
+      "apm": {
+        "Type": "List",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "elasticsearch_cluster_ref_id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "healthy": {
+              "Type": "Bool",
+              "Computed": true
+            },
+            "http_endpoint": {
+              "Type": "String",
+              "Computed": true
+            },
+            "https_endpoint": {
+              "Type": "String",
+              "Computed": true
+            },
+            "ref_id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "resource_id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "status": {
+              "Type": "String",
+              "Computed": true
+            },
+            "topology": {
+              "Type": "List",
+              "Computed": true,
+              "IsBlock": true,
+              "ConfigImplicitMode": "ComputedBlock",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "instance_configuration_id": {
+                    "Type": "String",
+                    "Computed": true
+                  },
+                  "size": {
+                    "Type": "String",
+                    "Computed": true
+                  },
+                  "size_resource": {
+                    "Type": "String",
+                    "Computed": true
+                  },
+                  "zone_count": {
+                    "Type": "Int",
+                    "Computed": true
+                  }
+                }
+              }
+            },
+            "version": {
+              "Type": "String",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "deployment_template_id": {
+        "Type": "String",
+        "Computed": true
+      },
+      "elasticsearch": {
+        "Type": "List",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "autoscale": {
+              "Type": "String",
+              "Computed": true
+            },
+            "cloud_id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "healthy": {
+              "Type": "Bool",
+              "Computed": true
+            },
+            "http_endpoint": {
+              "Type": "String",
+              "Computed": true
+            },
+            "https_endpoint": {
+              "Type": "String",
+              "Computed": true
+            },
+            "ref_id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "resource_id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "status": {
+              "Type": "String",
+              "Computed": true
+            },
+            "topology": {
+              "Type": "List",
+              "Computed": true,
+              "IsBlock": true,
+              "ConfigImplicitMode": "ComputedBlock",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "autoscaling": {
+                    "Type": "List",
+                    "Description": "Optional Elasticsearch autoscaling settings, such a maximum and minimum size and resources.",
+                    "Computed": true,
+                    "IsBlock": true,
+                    "ConfigImplicitMode": "ComputedBlock",
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "max_size": {
+                          "Type": "String",
+                          "Description": "Maximum size value for the maximum autoscaling setting.",
+                          "Computed": true
+                        },
+                        "max_size_resource": {
+                          "Type": "String",
+                          "Description": "Maximum resource type for the maximum autoscaling setting.",
+                          "Computed": true
+                        },
+                        "min_size": {
+                          "Type": "String",
+                          "Description": "Minimum size value for the minimum autoscaling setting.",
+                          "Computed": true
+                        },
+                        "min_size_resource": {
+                          "Type": "String",
+                          "Description": "Minimum resource type for the minimum autoscaling setting.",
+                          "Computed": true
+                        },
+                        "policy_override_json": {
+                          "Type": "String",
+                          "Description": "Computed policy overrides set directly via the API or other clients.",
+                          "Computed": true
+                        }
+                      }
+                    }
+                  },
+                  "instance_configuration_id": {
+                    "Type": "String",
+                    "Computed": true
+                  },
+                  "node_roles": {
+                    "Type": "Set",
+                    "Computed": true,
+                    "ConfigImplicitMode": "Attr",
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "String"
+                    }
+                  },
+                  "node_type_data": {
+                    "Type": "Bool",
+                    "Computed": true
+                  },
+                  "node_type_ingest": {
+                    "Type": "Bool",
+                    "Computed": true
+                  },
+                  "node_type_master": {
+                    "Type": "Bool",
+                    "Computed": true
+                  },
+                  "node_type_ml": {
+                    "Type": "Bool",
+                    "Optional": true
+                  },
+                  "size": {
+                    "Type": "String",
+                    "Computed": true
+                  },
+                  "size_resource": {
+                    "Type": "String",
+                    "Computed": true
+                  },
+                  "zone_count": {
+                    "Type": "Int",
+                    "Computed": true
+                  }
+                }
+              }
+            },
+            "version": {
+              "Type": "String",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "enterprise_search": {
+        "Type": "List",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "elasticsearch_cluster_ref_id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "healthy": {
+              "Type": "Bool",
+              "Computed": true
+            },
+            "http_endpoint": {
+              "Type": "String",
+              "Computed": true
+            },
+            "https_endpoint": {
+              "Type": "String",
+              "Computed": true
+            },
+            "ref_id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "resource_id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "status": {
+              "Type": "String",
+              "Computed": true
+            },
+            "topology": {
+              "Type": "List",
+              "Computed": true,
+              "IsBlock": true,
+              "ConfigImplicitMode": "ComputedBlock",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "instance_configuration_id": {
+                    "Type": "String",
+                    "Computed": true
+                  },
+                  "node_type_appserver": {
+                    "Type": "Bool",
+                    "Computed": true
+                  },
+                  "node_type_connector": {
+                    "Type": "Bool",
+                    "Computed": true
+                  },
+                  "node_type_worker": {
+                    "Type": "Bool",
+                    "Computed": true
+                  },
+                  "size": {
+                    "Type": "String",
+                    "Computed": true
+                  },
+                  "size_resource": {
+                    "Type": "String",
+                    "Computed": true
+                  },
+                  "zone_count": {
+                    "Type": "Int",
+                    "Computed": true
+                  }
+                }
+              }
+            },
+            "version": {
+              "Type": "String",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "healthy": {
+        "Type": "Bool",
+        "Computed": true
+      },
+      "id": {
+        "Type": "String",
+        "Required": true
+      },
+      "kibana": {
+        "Type": "List",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "elasticsearch_cluster_ref_id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "healthy": {
+              "Type": "Bool",
+              "Computed": true
+            },
+            "http_endpoint": {
+              "Type": "String",
+              "Computed": true
+            },
+            "https_endpoint": {
+              "Type": "String",
+              "Computed": true
+            },
+            "ref_id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "resource_id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "status": {
+              "Type": "String",
+              "Computed": true
+            },
+            "topology": {
+              "Type": "List",
+              "Computed": true,
+              "IsBlock": true,
+              "ConfigImplicitMode": "ComputedBlock",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "instance_configuration_id": {
+                    "Type": "String",
+                    "Computed": true
+                  },
+                  "size": {
+                    "Type": "String",
+                    "Computed": true
+                  },
+                  "size_resource": {
+                    "Type": "String",
+                    "Computed": true
+                  },
+                  "zone_count": {
+                    "Type": "Int",
+                    "Computed": true
+                  }
+                }
+              }
+            },
+            "version": {
+              "Type": "String",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "name": {
+        "Type": "String",
+        "Computed": true
+      },
+      "observability": {
+        "Type": "List",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "deployment_id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "logs": {
+              "Type": "Bool",
+              "Computed": true
+            },
+            "metrics": {
+              "Type": "Bool",
+              "Computed": true
+            },
+            "ref_id": {
+              "Type": "String",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "region": {
+        "Type": "String",
+        "Computed": true
+      },
+      "tags": {
+        "Type": "Map",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "traffic_filter": {
+        "Type": "List",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      }
+    },
+    "ec_deployments": {
+      "__timeouts__": [
+        "default"
+      ],
+      "apm": {
+        "Type": "List",
+        "Optional": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "healthy": {
+              "Type": "String",
+              "Optional": true
+            },
+            "status": {
+              "Type": "String",
+              "Optional": true
+            },
+            "version": {
+              "Type": "String",
+              "Optional": true
+            }
+          }
+        }
+      },
+      "deployment_template_id": {
+        "Type": "String",
+        "Optional": true
+      },
+      "deployments": {
+        "Type": "List",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "alias": {
+              "Type": "String",
+              "Computed": true
+            },
+            "apm_ref_id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "apm_resource_id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "deployment_id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "elasticsearch_ref_id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "elasticsearch_resource_id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "enterprise_search_ref_id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "enterprise_search_resource_id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "kibana_ref_id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "kibana_resource_id": {
+              "Type": "String",
+              "Computed": true
+            },
+            "name": {
+              "Type": "String",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "elasticsearch": {
+        "Type": "List",
+        "Optional": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "healthy": {
+              "Type": "String",
+              "Optional": true
+            },
+            "status": {
+              "Type": "String",
+              "Optional": true
+            },
+            "version": {
+              "Type": "String",
+              "Optional": true
+            }
+          }
+        }
+      },
+      "enterprise_search": {
+        "Type": "List",
+        "Optional": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "healthy": {
+              "Type": "String",
+              "Optional": true
+            },
+            "status": {
+              "Type": "String",
+              "Optional": true
+            },
+            "version": {
+              "Type": "String",
+              "Optional": true
+            }
+          }
+        }
+      },
+      "healthy": {
+        "Type": "String",
+        "Optional": true
+      },
+      "kibana": {
+        "Type": "List",
+        "Optional": true,
+        "MaxItems": 1,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "healthy": {
+              "Type": "String",
+              "Optional": true
+            },
+            "status": {
+              "Type": "String",
+              "Optional": true
+            },
+            "version": {
+              "Type": "String",
+              "Optional": true
+            }
+          }
+        }
+      },
+      "name_prefix": {
+        "Type": "String",
+        "Optional": true
+      },
+      "return_count": {
+        "Type": "Int",
+        "Computed": true
+      },
+      "size": {
+        "Type": "Int",
+        "Optional": true,
+        "Default": {
+          "Type": "int",
+          "Value": "100"
+        }
+      },
+      "tags": {
+        "Type": "Map",
+        "Optional": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      }
+    },
+    "ec_stack": {
+      "__timeouts__": [
+        "default"
+      ],
+      "accessible": {
+        "Type": "Bool",
+        "Computed": true
+      },
+      "allowlisted": {
+        "Type": "Bool",
+        "Computed": true
+      },
+      "apm": {
+        "Type": "List",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "capacity_constraints_max": {
+              "Type": "Int",
+              "Computed": true
+            },
+            "capacity_constraints_min": {
+              "Type": "Int",
+              "Computed": true
+            },
+            "compatible_node_types": {
+              "Type": "List",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "default_plugins": {
+              "Type": "List",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "denylist": {
+              "Type": "List",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "docker_image": {
+              "Type": "String",
+              "Computed": true
+            },
+            "plugins": {
+              "Type": "List",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
+      "elasticsearch": {
+        "Type": "List",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "capacity_constraints_max": {
+              "Type": "Int",
+              "Computed": true
+            },
+            "capacity_constraints_min": {
+              "Type": "Int",
+              "Computed": true
+            },
+            "compatible_node_types": {
+              "Type": "List",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "default_plugins": {
+              "Type": "List",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "denylist": {
+              "Type": "List",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "docker_image": {
+              "Type": "String",
+              "Computed": true
+            },
+            "plugins": {
+              "Type": "List",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
+      "enterprise_search": {
+        "Type": "List",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "capacity_constraints_max": {
+              "Type": "Int",
+              "Computed": true
+            },
+            "capacity_constraints_min": {
+              "Type": "Int",
+              "Computed": true
+            },
+            "compatible_node_types": {
+              "Type": "List",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "default_plugins": {
+              "Type": "List",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "denylist": {
+              "Type": "List",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "docker_image": {
+              "Type": "String",
+              "Computed": true
+            },
+            "plugins": {
+              "Type": "List",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
+      "kibana": {
+        "Type": "List",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "ComputedBlock",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "capacity_constraints_max": {
+              "Type": "Int",
+              "Computed": true
+            },
+            "capacity_constraints_min": {
+              "Type": "Int",
+              "Computed": true
+            },
+            "compatible_node_types": {
+              "Type": "List",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "default_plugins": {
+              "Type": "List",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "denylist": {
+              "Type": "List",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "docker_image": {
+              "Type": "String",
+              "Computed": true
+            },
+            "plugins": {
+              "Type": "List",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
+      "lock": {
+        "Type": "Bool",
+        "Optional": true
+      },
+      "min_upgradable_from": {
+        "Type": "String",
+        "Computed": true
+      },
+      "region": {
+        "Type": "String",
+        "Required": true
+      },
+      "upgradable_to": {
+        "Type": "List",
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "version": {
+        "Type": "String",
+        "Computed": true
+      },
+      "version_regex": {
+        "Type": "String",
+        "Required": true
+      }
+    }
+  }
+}

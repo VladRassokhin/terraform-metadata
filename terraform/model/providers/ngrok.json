@@ -1,0 +1,1862 @@
+{
+  ".schema_version": "2",
+  ".sdk_type": "terraform-plugin-sdk-v2",
+  "name": "ngrok",
+  "type": "provider",
+  "version": "v0.1.3",
+  "provider": {
+    "api_base_url": {
+      "Type": "String",
+      "Optional": true,
+      "Description": "base URL for the ngrok API. only overridden for ngrok's internal testing purposes.",
+      "DefaultFunc": "ENV(NGROK_API_BASE_URL)"
+    },
+    "api_key": {
+      "Type": "String",
+      "Required": true,
+      "Description": "ngrok API key used for authenticating to the API",
+      "DefaultFunc": "ENV(NGROK_API_KEY)"
+    }
+  },
+  "resources": {
+    "ngrok_api_key": {
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "human-readable description of what uses the API key to authenticate. optional, max 255 bytes."
+      },
+      "id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "unique API key resource identifier",
+        "Computed": true
+      },
+      "metadata": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "arbitrary user-defined data of this API key. optional, max 4096 bytes"
+      },
+      "token": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "the bearer token that can be placed into the Authorization header to authenticate request to the ngrok API. **This value is only available one time, on the API response from key creation. Otherwise it is null.**",
+        "Computed": true
+      }
+    },
+    "ngrok_certificate_authority": {
+      "ca_pem": {
+        "Type": "String",
+        "Required": true,
+        "Description": "raw PEM of the Certificate Authority"
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "human-readable description of this Certificate Authority. optional, max 255 bytes."
+      },
+      "id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "unique identifier for this Certificate Authority",
+        "Computed": true
+      },
+      "metadata": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "arbitrary user-defined machine-readable data of this Certificate Authority. optional, max 4096 bytes."
+      }
+    },
+    "ngrok_credential": {
+      "acl": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "optional list of ACL rules. If unspecified, the credential will have no restrictions. The only allowed ACL rule at this time is the `bind` rule. The `bind` rule allows the caller to restrict what domains and addresses the token is allowed to bind. For example, to allow the token to open a tunnel on example.ngrok.io your ACL would include the rule `bind:example.ngrok.io`. Bind rules may specify a leading wildcard to match multiple domains with a common suffix. For example, you may specify a rule of `bind:*.example.com` which will allow `x.example.com`, `y.example.com`, `*.example.com`, etc. A rule of `'*'` is equivalent to no acl at all and will explicitly permit all actions.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "human-readable description of who or what will use the credential to authenticate. Optional, max 255 bytes."
+      },
+      "id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "unique tunnel credential resource identifier",
+        "Computed": true
+      },
+      "metadata": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "arbitrary user-defined machine-readable data of this credential. Optional, max 4096 bytes."
+      },
+      "token": {
+        "Type": "String",
+        "Description": "the credential's authtoken that can be used to authenticate an ngrok client. **This value is only available one time, on the API response from credential creation, otherwise it is null.**",
+        "Computed": true
+      }
+    },
+    "ngrok_endpoint_configuration": {
+      "backend": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "backend module configuration or `null`",
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "backend": {
+              "Type": "Set",
+              "Optional": true,
+              "Description": "backend to be used to back this endpoint",
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "id": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "a resource identifier",
+                    "Computed": true
+                  },
+                  "uri": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "a uri for locating a resource",
+                    "Computed": true
+                  }
+                }
+              }
+            },
+            "enabled": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "`true` if the module will be applied to traffic, `false` to disable. default `true` if unspecified",
+              "Default": {
+                "Type": "bool",
+                "Value": "true"
+              }
+            }
+          }
+        }
+      },
+      "basic_auth": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "basic auth module configuration or `null`",
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "allow_options": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "true or false indicating whether to allow OPTIONS requests through without authentication which is necessary for CORS. default is `false`"
+            },
+            "auth_provider_id": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "determines how the basic auth credentials are validated. Currently only the value `agent` is supported which means that credentials will be validated against the username and password specified by the ngrok agent's `-auth` flag, if any."
+            },
+            "enabled": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "`true` if the module will be applied to traffic, `false` to disable. default `true` if unspecified",
+              "Default": {
+                "Type": "bool",
+                "Value": "true"
+              }
+            },
+            "realm": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "an arbitrary string to be specified in as the 'realm' value in the `WWW-Authenticate` header. default is `ngrok`"
+            }
+          }
+        }
+      },
+      "circuit_breaker": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "circuit breaker module configuration or `null`",
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "enabled": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "`true` if the module will be applied to traffic, `false` to disable. default `true` if unspecified",
+              "Default": {
+                "Type": "bool",
+                "Value": "true"
+              }
+            },
+            "error_threshold_percentage": {
+              "Type": "Float",
+              "Optional": true,
+              "Description": "Error threshold percentage should be between 0 - 1.0, not 0-100.0"
+            },
+            "num_buckets": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "Integer number of buckets into which metrics are retained. Max 128."
+            },
+            "rolling_window": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "Integer number of seconds in the statistical rolling window that metrics are retained for."
+            },
+            "tripped_duration": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "Integer number of seconds after which the circuit is tripped to wait before re-evaluating upstream health"
+            },
+            "volume_threshold": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "Integer number of requests in a rolling window that will trip the circuit. Helpful if traffic volume is low."
+            }
+          }
+        }
+      },
+      "compression": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "compression module configuration or `null`",
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "enabled": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "`true` if the module will be applied to traffic, `false` to disable. default `true` if unspecified",
+              "Default": {
+                "Type": "bool",
+                "Value": "true"
+              }
+            }
+          }
+        }
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "human-readable description of what this endpoint configuration will be do when applied or what traffic it will be applied to. Optional, max 255 bytes"
+      },
+      "id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "unique identifier of this endpoint configuration",
+        "Computed": true
+      },
+      "ip_policy": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "ip policy module configuration or `null`",
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "enabled": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "`true` if the module will be applied to traffic, `false` to disable. default `true` if unspecified",
+              "Default": {
+                "Type": "bool",
+                "Value": "true"
+              }
+            },
+            "ip_policies": {
+              "Type": "List",
+              "Optional": true,
+              "Computed": true,
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "id": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "a resource identifier",
+                    "Computed": true
+                  },
+                  "uri": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "a uri for locating a resource",
+                    "Computed": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "logging": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "logging module configuration or `null`",
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "enabled": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "`true` if the module will be applied to traffic, `false` to disable. default `true` if unspecified",
+              "Default": {
+                "Type": "bool",
+                "Value": "true"
+              }
+            },
+            "event_streams": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "list of all EventStreams that will be used to configure and export this endpoint's logs",
+              "Computed": true,
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "id": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "a resource identifier",
+                    "Computed": true
+                  },
+                  "uri": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "a uri for locating a resource",
+                    "Computed": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "metadata": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "arbitrary user-defined machine-readable data of this endpoint configuration. Optional, max 4096 bytes."
+      },
+      "mutual_tls": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "mutual TLS module configuration or `null`",
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "certificate_authorities": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "PEM-encoded CA certificates that will be used to validate. Multiple CAs may be provided by concatenating them together.",
+              "Computed": true,
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "id": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "a resource identifier",
+                    "Computed": true
+                  },
+                  "uri": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "a uri for locating a resource",
+                    "Computed": true
+                  }
+                }
+              }
+            },
+            "enabled": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "`true` if the module will be applied to traffic, `false` to disable. default `true` if unspecified",
+              "Default": {
+                "Type": "bool",
+                "Value": "true"
+              }
+            }
+          }
+        }
+      },
+      "oauth": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "oauth module configuration or `null`",
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "auth_check_interval": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "Integer number of seconds after which ngrok guarantees it will refresh user state from the identity provider and recheck whether the user is still authorized to access the endpoint. This is the preferred tunable to use to enforce a minimum amount of time after which a revoked user will no longer be able to access the resource."
+            },
+            "cookie_prefix": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "the prefix of the session cookie that ngrok sets on the http client to cache authentication. default is 'ngrok.'",
+              "Default": {
+                "Type": "string",
+                "Value": "ngrok."
+              }
+            },
+            "enabled": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "`true` if the module will be applied to traffic, `false` to disable. default `true` if unspecified",
+              "Default": {
+                "Type": "bool",
+                "Value": "true"
+              }
+            },
+            "inactivity_timeout": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "Integer number of seconds of inactivity after which if the user has not accessed the endpoint, their session will time out and they will be forced to reauthenticate."
+            },
+            "maximum_duration": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "Integer number of seconds of the maximum duration of an authenticated session. After this period is exceeded, a user must reauthenticate."
+            },
+            "options_passthrough": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Do not enforce authentication on HTTP OPTIONS requests. necessary if you are supporting CORS."
+            },
+            "provider": {
+              "Type": "Set",
+              "Optional": true,
+              "Description": "an object which defines the identity provider to use for authentication and configuration for who may access the endpoint",
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "facebook": {
+                    "Type": "Set",
+                    "Optional": true,
+                    "Description": "configuration for using facebook as the identity provider",
+                    "IsBlock": true,
+                    "ConfigImplicitMode": "Block",
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "client_id": {
+                          "Type": "String",
+                          "Optional": true,
+                          "Description": "the OAuth app client ID. retrieve it from the identity provider's dashboard where you created your own OAuth app. optional. if unspecified, ngrok will use its own managed oauth application which has additional restrictions. see the OAuth module docs for more details. if present, client_secret must be present as well."
+                        },
+                        "client_secret": {
+                          "Type": "String",
+                          "Optional": true,
+                          "Description": "the OAuth app client secret. retrieve if from the identity provider's dashboard where you created your own OAuth app. optional, see all of the caveats in the docs for `client_id`."
+                        },
+                        "email_addresses": {
+                          "Type": "List",
+                          "Optional": true,
+                          "Description": "a list of email addresses of users authenticated by identity provider who are allowed access to the endpoint",
+                          "ConfigImplicitMode": "Attr",
+                          "Elem": {
+                            "Type": "SchemaElements",
+                            "ElementsType": "String"
+                          }
+                        },
+                        "email_domains": {
+                          "Type": "List",
+                          "Optional": true,
+                          "Description": "a list of email domains of users authenticated by identity provider who are allowed access to the endpoint",
+                          "ConfigImplicitMode": "Attr",
+                          "Elem": {
+                            "Type": "SchemaElements",
+                            "ElementsType": "String"
+                          }
+                        },
+                        "scopes": {
+                          "Type": "List",
+                          "Optional": true,
+                          "Description": "a list of provider-specific OAuth scopes with the permissions your OAuth app would like to ask for. these may not be set if you are using the ngrok-managed oauth app (i.e. you must pass both `client_id` and `client_secret` to set scopes)",
+                          "ConfigImplicitMode": "Attr",
+                          "Elem": {
+                            "Type": "SchemaElements",
+                            "ElementsType": "String"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "github": {
+                    "Type": "Set",
+                    "Optional": true,
+                    "Description": "configuration for using github as the identity provider",
+                    "IsBlock": true,
+                    "ConfigImplicitMode": "Block",
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "client_id": {
+                          "Type": "String",
+                          "Optional": true,
+                          "Description": "the OAuth app client ID. retrieve it from the identity provider's dashboard where you created your own OAuth app. optional. if unspecified, ngrok will use its own managed oauth application which has additional restrictions. see the OAuth module docs for more details. if present, client_secret must be present as well."
+                        },
+                        "client_secret": {
+                          "Type": "String",
+                          "Optional": true,
+                          "Description": "the OAuth app client secret. retrieve if from the identity provider's dashboard where you created your own OAuth app. optional, see all of the caveats in the docs for `client_id`."
+                        },
+                        "email_addresses": {
+                          "Type": "List",
+                          "Optional": true,
+                          "Description": "a list of email addresses of users authenticated by identity provider who are allowed access to the endpoint",
+                          "ConfigImplicitMode": "Attr",
+                          "Elem": {
+                            "Type": "SchemaElements",
+                            "ElementsType": "String"
+                          }
+                        },
+                        "email_domains": {
+                          "Type": "List",
+                          "Optional": true,
+                          "Description": "a list of email domains of users authenticated by identity provider who are allowed access to the endpoint",
+                          "ConfigImplicitMode": "Attr",
+                          "Elem": {
+                            "Type": "SchemaElements",
+                            "ElementsType": "String"
+                          }
+                        },
+                        "organizations": {
+                          "Type": "List",
+                          "Optional": true,
+                          "Description": "a list of github org identifiers. users who are members of any of the listed organizations will be allowed access. identifiers should be the organization's 'slug'",
+                          "ConfigImplicitMode": "Attr",
+                          "Elem": {
+                            "Type": "SchemaElements",
+                            "ElementsType": "String"
+                          }
+                        },
+                        "scopes": {
+                          "Type": "List",
+                          "Optional": true,
+                          "Description": "a list of provider-specific OAuth scopes with the permissions your OAuth app would like to ask for. these may not be set if you are using the ngrok-managed oauth app (i.e. you must pass both `client_id` and `client_secret` to set scopes)",
+                          "ConfigImplicitMode": "Attr",
+                          "Elem": {
+                            "Type": "SchemaElements",
+                            "ElementsType": "String"
+                          }
+                        },
+                        "teams": {
+                          "Type": "List",
+                          "Optional": true,
+                          "Description": "a list of github teams identifiers. users will be allowed access to the endpoint if they are a member of any of these teams. identifiers should be in the 'slug' format qualified with the org name, e.g. `org-name/team-name`",
+                          "ConfigImplicitMode": "Attr",
+                          "Elem": {
+                            "Type": "SchemaElements",
+                            "ElementsType": "String"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "google": {
+                    "Type": "Set",
+                    "Optional": true,
+                    "Description": "configuration for using google as the identity provider",
+                    "IsBlock": true,
+                    "ConfigImplicitMode": "Block",
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "client_id": {
+                          "Type": "String",
+                          "Optional": true,
+                          "Description": "the OAuth app client ID. retrieve it from the identity provider's dashboard where you created your own OAuth app. optional. if unspecified, ngrok will use its own managed oauth application which has additional restrictions. see the OAuth module docs for more details. if present, client_secret must be present as well."
+                        },
+                        "client_secret": {
+                          "Type": "String",
+                          "Optional": true,
+                          "Description": "the OAuth app client secret. retrieve if from the identity provider's dashboard where you created your own OAuth app. optional, see all of the caveats in the docs for `client_id`."
+                        },
+                        "email_addresses": {
+                          "Type": "List",
+                          "Optional": true,
+                          "Description": "a list of email addresses of users authenticated by identity provider who are allowed access to the endpoint",
+                          "ConfigImplicitMode": "Attr",
+                          "Elem": {
+                            "Type": "SchemaElements",
+                            "ElementsType": "String"
+                          }
+                        },
+                        "email_domains": {
+                          "Type": "List",
+                          "Optional": true,
+                          "Description": "a list of email domains of users authenticated by identity provider who are allowed access to the endpoint",
+                          "ConfigImplicitMode": "Attr",
+                          "Elem": {
+                            "Type": "SchemaElements",
+                            "ElementsType": "String"
+                          }
+                        },
+                        "scopes": {
+                          "Type": "List",
+                          "Optional": true,
+                          "Description": "a list of provider-specific OAuth scopes with the permissions your OAuth app would like to ask for. these may not be set if you are using the ngrok-managed oauth app (i.e. you must pass both `client_id` and `client_secret` to set scopes)",
+                          "ConfigImplicitMode": "Attr",
+                          "Elem": {
+                            "Type": "SchemaElements",
+                            "ElementsType": "String"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "microsoft": {
+                    "Type": "Set",
+                    "Optional": true,
+                    "Description": "configuration for using microsoft as the identity provider",
+                    "IsBlock": true,
+                    "ConfigImplicitMode": "Block",
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "client_id": {
+                          "Type": "String",
+                          "Optional": true,
+                          "Description": "the OAuth app client ID. retrieve it from the identity provider's dashboard where you created your own OAuth app. optional. if unspecified, ngrok will use its own managed oauth application which has additional restrictions. see the OAuth module docs for more details. if present, client_secret must be present as well."
+                        },
+                        "client_secret": {
+                          "Type": "String",
+                          "Optional": true,
+                          "Description": "the OAuth app client secret. retrieve if from the identity provider's dashboard where you created your own OAuth app. optional, see all of the caveats in the docs for `client_id`."
+                        },
+                        "email_addresses": {
+                          "Type": "List",
+                          "Optional": true,
+                          "Description": "a list of email addresses of users authenticated by identity provider who are allowed access to the endpoint",
+                          "ConfigImplicitMode": "Attr",
+                          "Elem": {
+                            "Type": "SchemaElements",
+                            "ElementsType": "String"
+                          }
+                        },
+                        "email_domains": {
+                          "Type": "List",
+                          "Optional": true,
+                          "Description": "a list of email domains of users authenticated by identity provider who are allowed access to the endpoint",
+                          "ConfigImplicitMode": "Attr",
+                          "Elem": {
+                            "Type": "SchemaElements",
+                            "ElementsType": "String"
+                          }
+                        },
+                        "scopes": {
+                          "Type": "List",
+                          "Optional": true,
+                          "Description": "a list of provider-specific OAuth scopes with the permissions your OAuth app would like to ask for. these may not be set if you are using the ngrok-managed oauth app (i.e. you must pass both `client_id` and `client_secret` to set scopes)",
+                          "ConfigImplicitMode": "Attr",
+                          "Elem": {
+                            "Type": "SchemaElements",
+                            "ElementsType": "String"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "oidc": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "oidc module configuration or `null`",
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "client_id": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The OIDC app's client ID and OIDC audience."
+            },
+            "client_secret": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The OIDC app's client secret."
+            },
+            "cookie_prefix": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "the prefix of the session cookie that ngrok sets on the http client to cache authentication. default is 'ngrok.'",
+              "Default": {
+                "Type": "string",
+                "Value": "ngrok."
+              }
+            },
+            "enabled": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "`true` if the module will be applied to traffic, `false` to disable. default `true` if unspecified",
+              "Default": {
+                "Type": "bool",
+                "Value": "true"
+              }
+            },
+            "inactivity_timeout": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "Integer number of seconds of inactivity after which if the user has not accessed the endpoint, their session will time out and they will be forced to reauthenticate."
+            },
+            "issuer": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "URL of the OIDC \"OpenID provider\". This is the base URL used for discovery."
+            },
+            "maximum_duration": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "Integer number of seconds of the maximum duration of an authenticated session. After this period is exceeded, a user must reauthenticate."
+            },
+            "options_passthrough": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Do not enforce authentication on HTTP OPTIONS requests. necessary if you are supporting CORS."
+            },
+            "scopes": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "The set of scopes to request from the OIDC identity provider.",
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
+      "request_headers": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "request headers module configuration or `null`",
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "add": {
+              "Type": "Map",
+              "Optional": true,
+              "Description": "a map of header key to header value that will be injected into the HTTP Request before being sent to the upstream application server",
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "enabled": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "`true` if the module will be applied to traffic, `false` to disable. default `true` if unspecified",
+              "Default": {
+                "Type": "bool",
+                "Value": "true"
+              }
+            },
+            "remove": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "a list of header names that will be removed from the HTTP Request before being sent to the upstream application server",
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
+      "response_headers": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "response headers module configuration or `null`",
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "add": {
+              "Type": "Map",
+              "Optional": true,
+              "Description": "a map of header key to header value that will be injected into the HTTP Response returned to the HTTP client",
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "enabled": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "`true` if the module will be applied to traffic, `false` to disable. default `true` if unspecified",
+              "Default": {
+                "Type": "bool",
+                "Value": "true"
+              }
+            },
+            "remove": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "a list of header names that will be removed from the HTTP Response returned to the HTTP client",
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      },
+      "saml": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "saml module configuration or `null`",
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "allow_idp_initiated": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "If true, the IdP may initiate a login directly (e.g. the user does not need to visit the endpoint first and then be redirected). The IdP should set the `RelayState` parameter to the target URL of the resource they want the user to be redirected to after the SAML login assertion has been processed."
+            },
+            "assertion_consumer_service_url": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The public URL of the SP's Assertion Consumer Service. This is where the IdP will redirect to during an authentication flow. This will need to be specified to the IdP as configuration.",
+              "Computed": true
+            },
+            "authorized_groups": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "If present, only users who are a member of one of the listed groups may access the target endpoint.",
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "cookie_prefix": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "the prefix of the session cookie that ngrok sets on the http client to cache authentication. default is 'ngrok.'",
+              "Default": {
+                "Type": "string",
+                "Value": "ngrok."
+              }
+            },
+            "enabled": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "`true` if the module will be applied to traffic, `false` to disable. default `true` if unspecified",
+              "Default": {
+                "Type": "bool",
+                "Value": "true"
+              }
+            },
+            "entity_id": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The SP Entity's unique ID. This always takes the form of a URL. In ngrok's implementation, this URL is the same as the metadata URL. This will need to be specified to the IdP as configuration.",
+              "Computed": true
+            },
+            "force_authn": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "If true, indicates that whenever we redirect a user to the IdP for authentication that the IdP must prompt the user for authentication credentials even if the user already has a valid session with the IdP."
+            },
+            "idp_metadata": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The full XML IdP EntityDescriptor. Your IdP may provide this to you as a a file to download or as a URL."
+            },
+            "idp_metadata_url": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The IdP's metadata URL which returns the XML IdP EntityDescriptor. The IdP's metadata URL specifies how to connect to the IdP as well as its public key which is then used to validate the signature on incoming SAML assertions to the ACS endpoint."
+            },
+            "inactivity_timeout": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "Integer number of seconds of inactivity after which if the user has not accessed the endpoint, their session will time out and they will be forced to reauthenticate."
+            },
+            "maximum_duration": {
+              "Type": "Int",
+              "Optional": true,
+              "Description": "Integer number of seconds of the maximum duration of an authenticated session. After this period is exceeded, a user must reauthenticate."
+            },
+            "metadata_url": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "A public URL where the SP's metadata is hosted. If an IdP supports dynamic configuration, this is the URL it can use to retrieve the SP metadata.",
+              "Computed": true
+            },
+            "options_passthrough": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "Do not enforce authentication on HTTP OPTIONS requests. necessary if you are supporting CORS."
+            },
+            "request_signing_certificate_pem": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "PEM-encoded x.509 certificate of the key pair that is used to sign all SAML requests that the ngrok SP makes to the IdP. Many IdPs do not support request signing verification, but we highly recommend specifying this in the IdP's configuration if it is supported.",
+              "Computed": true
+            },
+            "single_logout_url": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The public URL of the SP's Single Logout Service. This is where the IdP will redirect to during a single logout flow. This will optionally need to be specified to the IdP as configuration.",
+              "Computed": true
+            }
+          }
+        }
+      },
+      "tls_termination": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "TLS termination module configuration or `null`",
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "enabled": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "`true` if the module will be applied to traffic, `false` to disable. default `true` if unspecified",
+              "Default": {
+                "Type": "bool",
+                "Value": "true"
+              }
+            },
+            "min_version": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "The minimum TLS version used for termination and advertised to the client during the TLS handshake. if unspecified, ngrok will choose an industry-safe default. This value must be null if `terminate_at` is set to `upstream`."
+            },
+            "terminate_at": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "`edge` if the ngrok edge should terminate TLS traffic, `upstream` if TLS traffic should be passed through to the upstream ngrok agent / application server for termination. if `upstream` is chosen, most other modules will be disallowed because they rely on the ngrok edge being able to access the underlying traffic."
+            }
+          }
+        }
+      },
+      "type": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "they type of traffic this endpoint configuration can be applied to. one of: `http`, `https`, `tcp`"
+      },
+      "webhook_validation": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "webhook validation module configuration or `null`",
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "enabled": {
+              "Type": "Bool",
+              "Optional": true,
+              "Description": "`true` if the module will be applied to traffic, `false` to disable. default `true` if unspecified",
+              "Default": {
+                "Type": "bool",
+                "Value": "true"
+              }
+            },
+            "provider": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "a string indicating which webhook provider will be sending webhooks to this endpoint. Value must be one of the supported providers: `SLACK`, `SNS`, `STRIPE`, `GITHUB`, `TWILIO`, `SHOPIFY`, `GITLAB`, `INTERCOM`."
+            },
+            "secret": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "a string secret used to validate requests from the given provider. All providers except AWS SNS require a secret"
+            }
+          }
+        }
+      }
+    },
+    "ngrok_event_destination": {
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Human-readable description of the Event Destination. Optional, max 255 bytes."
+      },
+      "format": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "The output format you would like to serialize events into when sending to their target. Currently the only accepted value is `JSON`."
+      },
+      "id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Unique identifier for this Event Destination.",
+        "Computed": true
+      },
+      "metadata": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Arbitrary user-defined machine-readable data of this Event Destination. Optional, max 4096 bytes."
+      },
+      "target": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "An object that encapsulates where and how to send your events. An event destination must contain exactly one of the following objects, leaving the rest null: `kinesis`, `firehose`, `cloudwatch_logs`, or `s3`.",
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "cloudwatch_logs": {
+              "Type": "Set",
+              "Optional": true,
+              "Description": "Configuration used to send events to Amazon CloudWatch Logs.",
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "auth": {
+                    "Type": "Set",
+                    "Optional": true,
+                    "Description": "Configuration for how to authenticate into your AWS account. Exactly one of `role` or `creds` should be configured.",
+                    "IsBlock": true,
+                    "ConfigImplicitMode": "Block",
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "creds": {
+                          "Type": "Set",
+                          "Optional": true,
+                          "Description": "Credentials to your AWS account if you prefer ngrok to sign in with long-term access keys.",
+                          "IsBlock": true,
+                          "ConfigImplicitMode": "Block",
+                          "Elem": {
+                            "Type": "SchemaInfo",
+                            "Info": {
+                              "aws_access_key_id": {
+                                "Type": "String",
+                                "Optional": true,
+                                "Description": "The ID portion of an AWS access key."
+                              },
+                              "aws_secret_access_key": {
+                                "Type": "String",
+                                "Optional": true,
+                                "Description": "The secret portion of an AWS access key."
+                              }
+                            }
+                          }
+                        },
+                        "role": {
+                          "Type": "Set",
+                          "Optional": true,
+                          "Description": "A role for ngrok to assume on your behalf to deposit events into your AWS account.",
+                          "IsBlock": true,
+                          "ConfigImplicitMode": "Block",
+                          "Elem": {
+                            "Type": "SchemaInfo",
+                            "Info": {
+                              "role_arn": {
+                                "Type": "String",
+                                "Optional": true,
+                                "Description": "An ARN that specifies the role that ngrok should use to deliver to the configured target."
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "log_group_arn": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "An Amazon Resource Name specifying the CloudWatch Logs group to deposit events into."
+                  }
+                }
+              }
+            },
+            "debug": {
+              "Type": "Set",
+              "Optional": true,
+              "Description": "Configuration used for internal debugging.",
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "callback_url": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "URL to send events to."
+                  },
+                  "log": {
+                    "Type": "Bool",
+                    "Optional": true,
+                    "Description": "Whether or not to output to publisher service logs."
+                  }
+                }
+              }
+            },
+            "firehose": {
+              "Type": "Set",
+              "Optional": true,
+              "Description": "Configuration used to send events to Amazon Kinesis Data Firehose.",
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "auth": {
+                    "Type": "Set",
+                    "Optional": true,
+                    "Description": "Configuration for how to authenticate into your AWS account. Exactly one of `role` or `creds` should be configured.",
+                    "IsBlock": true,
+                    "ConfigImplicitMode": "Block",
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "creds": {
+                          "Type": "Set",
+                          "Optional": true,
+                          "Description": "Credentials to your AWS account if you prefer ngrok to sign in with long-term access keys.",
+                          "IsBlock": true,
+                          "ConfigImplicitMode": "Block",
+                          "Elem": {
+                            "Type": "SchemaInfo",
+                            "Info": {
+                              "aws_access_key_id": {
+                                "Type": "String",
+                                "Optional": true,
+                                "Description": "The ID portion of an AWS access key."
+                              },
+                              "aws_secret_access_key": {
+                                "Type": "String",
+                                "Optional": true,
+                                "Description": "The secret portion of an AWS access key."
+                              }
+                            }
+                          }
+                        },
+                        "role": {
+                          "Type": "Set",
+                          "Optional": true,
+                          "Description": "A role for ngrok to assume on your behalf to deposit events into your AWS account.",
+                          "IsBlock": true,
+                          "ConfigImplicitMode": "Block",
+                          "Elem": {
+                            "Type": "SchemaInfo",
+                            "Info": {
+                              "role_arn": {
+                                "Type": "String",
+                                "Optional": true,
+                                "Description": "An ARN that specifies the role that ngrok should use to deliver to the configured target."
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "delivery_stream_arn": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "An Amazon Resource Name specifying the Firehose delivery stream to deposit events into."
+                  }
+                }
+              }
+            },
+            "kinesis": {
+              "Type": "Set",
+              "Optional": true,
+              "Description": "Configuration used to send events to Amazon Kinesis.",
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
+              "Elem": {
+                "Type": "SchemaInfo",
+                "Info": {
+                  "auth": {
+                    "Type": "Set",
+                    "Optional": true,
+                    "Description": "Configuration for how to authenticate into your AWS account. Exactly one of `role` or `creds` should be configured.",
+                    "IsBlock": true,
+                    "ConfigImplicitMode": "Block",
+                    "Elem": {
+                      "Type": "SchemaInfo",
+                      "Info": {
+                        "creds": {
+                          "Type": "Set",
+                          "Optional": true,
+                          "Description": "Credentials to your AWS account if you prefer ngrok to sign in with long-term access keys.",
+                          "IsBlock": true,
+                          "ConfigImplicitMode": "Block",
+                          "Elem": {
+                            "Type": "SchemaInfo",
+                            "Info": {
+                              "aws_access_key_id": {
+                                "Type": "String",
+                                "Optional": true,
+                                "Description": "The ID portion of an AWS access key."
+                              },
+                              "aws_secret_access_key": {
+                                "Type": "String",
+                                "Optional": true,
+                                "Description": "The secret portion of an AWS access key."
+                              }
+                            }
+                          }
+                        },
+                        "role": {
+                          "Type": "Set",
+                          "Optional": true,
+                          "Description": "A role for ngrok to assume on your behalf to deposit events into your AWS account.",
+                          "IsBlock": true,
+                          "ConfigImplicitMode": "Block",
+                          "Elem": {
+                            "Type": "SchemaInfo",
+                            "Info": {
+                              "role_arn": {
+                                "Type": "String",
+                                "Optional": true,
+                                "Description": "An ARN that specifies the role that ngrok should use to deliver to the configured target."
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "stream_arn": {
+                    "Type": "String",
+                    "Optional": true,
+                    "Description": "An Amazon Resource Name specifying the Kinesis stream to deposit events into."
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "verify_with_test_event": {
+        "Type": "Bool",
+        "Optional": true
+      }
+    },
+    "ngrok_event_subscription": {
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Arbitrary customer supplied information intended to be human readable. Optional, max 255 chars."
+      },
+      "destination_ids": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "A list of Event Destination IDs which should be used for this Event Stream. Event Streams are required to have at least one Event Destination.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Unique identifier for this Event Subscription.",
+        "Computed": true
+      },
+      "metadata": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "Arbitrary customer supplied information intended to be machine readable. Optional, max 4096 chars."
+      },
+      "sources": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "Sources containing the types for which this event subscription will trigger",
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "fields": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "TODO",
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "filter": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "TODO"
+            },
+            "type": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "Type of event for which an event subscription will trigger"
+            },
+            "uri": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "URI of the Event Source API resource.",
+              "Computed": true
+            }
+          }
+        }
+      }
+    },
+    "ngrok_ip_policy": {
+      "action": {
+        "Type": "String",
+        "Required": true,
+        "Description": "the IP policy action. Supported values are `allow` or `deny`"
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "human-readable description of the source IPs of this IP policy. optional, max 255 bytes."
+      },
+      "id": {
+        "Type": "String",
+        "Description": "unique identifier for this IP policy",
+        "Computed": true
+      },
+      "metadata": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "arbitrary user-defined machine-readable data of this IP policy. optional, max 4096 bytes."
+      }
+    },
+    "ngrok_ip_policy_rule": {
+      "cidr": {
+        "Type": "String",
+        "Required": true,
+        "Description": "an IP or IP range specified in CIDR notation. IPv4 and IPv6 are both supported."
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "human-readable description of the source IPs of this IP rule. optional, max 255 bytes."
+      },
+      "id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "unique identifier for this IP policy rule",
+        "Computed": true
+      },
+      "ip_policy_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "ID of the IP policy this IP policy rule will be attached to"
+      },
+      "metadata": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "arbitrary user-defined machine-readable data of this IP policy rule. optional, max 4096 bytes."
+      }
+    },
+    "ngrok_ip_restriction": {
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "human-readable description of this IP restriction. optional, max 255 bytes."
+      },
+      "enforced": {
+        "Type": "Bool",
+        "Optional": true,
+        "Description": "true if the IP restriction will be enforced. if false, only warnings will be issued"
+      },
+      "id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "unique identifier for this IP restriction",
+        "Computed": true
+      },
+      "ip_policy_ids": {
+        "Type": "List",
+        "Required": true,
+        "Description": "the set of IP policy identifiers that are used to enforce the restriction",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "metadata": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "arbitrary user-defined machine-readable data of this IP restriction. optional, max 4096 bytes."
+      },
+      "type": {
+        "Type": "String",
+        "Required": true,
+        "Description": "the type of IP restriction. this defines what traffic will be restricted with the attached policies. four values are currently supported: `dashboard`, `api`, `agent`, and `endpoints`"
+      }
+    },
+    "ngrok_ip_whitelist_entry": {
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "human-readable description of the source IPs for this IP whitelist entry. optional, max 255 bytes."
+      },
+      "id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "unique identifier for this IP whitelist entry",
+        "Computed": true
+      },
+      "ip_net": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "an IP address or IP network range in CIDR notation (e.g. 10.1.1.1 or 10.1.0.0/16) of addresses that will be whitelisted to communicate with your tunnel endpoints"
+      },
+      "metadata": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "arbitrary user-defined machine-readable data of this IP whitelist entry. optional, max 4096 bytes."
+      }
+    },
+    "ngrok_reserved_addr": {
+      "addr": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "hostname:port of the reserved address that was assigned at creation time",
+        "Computed": true
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "human-readable description of what this reserved address will be used for"
+      },
+      "endpoint_configuration_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "ID of an endpoint configuration of type tcp that will be used to handle inbound traffic to this address"
+      },
+      "id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "unique reserved address resource identifier",
+        "Computed": true
+      },
+      "metadata": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "arbitrary user-defined machine-readable data of this reserved address. Optional, max 4096 bytes."
+      },
+      "region": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "reserve the address in this geographic ngrok datacenter. Optional, default is us. (au, eu, ap, us, jp, in, sa)",
+        "Default": {
+          "Type": "string",
+          "Value": "us"
+        }
+      }
+    },
+    "ngrok_reserved_domain": {
+      "certificate_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "ID of a user-uploaded TLS certificate to use for connections to targeting this domain. Optional, mutually exclusive with `certificate_management_policy`."
+      },
+      "certificate_management_policy": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "configuration for automatic management of TLS certificates for this domain, or null if automatic management is disabled",
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "authority": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "certificate authority to request certificates from. The only supported value is letsencrypt."
+            },
+            "private_key_type": {
+              "Type": "String",
+              "Optional": true,
+              "Description": "type of private key to use when requesting certificates. Defaults to rsa, can be either rsa or ecdsa.",
+              "Default": {
+                "Type": "string",
+                "Value": "rsa"
+              }
+            }
+          }
+        }
+      },
+      "cname_target": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "DNS CNAME target for a custom hostname, or null if the reserved domain is a subdomain of *.ngrok.io",
+        "Computed": true
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "human-readable description of what this reserved domain will be used for"
+      },
+      "domain": {
+        "Type": "String",
+        "Description": "hostname of the reserved domain",
+        "Computed": true
+      },
+      "http_endpoint_configuration_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "ID of an endpoint configuration of type http that will be used to handle inbound http traffic to this domain"
+      },
+      "https_endpoint_configuration_id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "ID of an endpoint configuration of type https that will be used to handle inbound https traffic to this domain"
+      },
+      "id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "unique reserved domain resource identifier",
+        "Computed": true
+      },
+      "metadata": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "arbitrary user-defined machine-readable data of this reserved domain. Optional, max 4096 bytes."
+      },
+      "name": {
+        "Type": "String",
+        "Required": true,
+        "Description": "the domain name to reserve. It may be a full domain name like app.example.com. If the name does not contain a '.' it will reserve that subdomain on ngrok.io."
+      },
+      "region": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "reserve the domain in this geographic ngrok datacenter. Optional, default is us. (au, eu, ap, us, jp, in, sa)"
+      }
+    },
+    "ngrok_ssh_certificate_authority": {
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "human-readable description of this SSH Certificate Authority. optional, max 255 bytes."
+      },
+      "elliptic_curve": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "the type of elliptic curve to use when creating an ECDSA key"
+      },
+      "id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "unique identifier for this SSH Certificate Authority",
+        "Computed": true
+      },
+      "key_size": {
+        "Type": "Int",
+        "Optional": true,
+        "Description": "the key size to use when creating an RSA key. one of `2048` or `4096`"
+      },
+      "key_type": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "the type of private key for this SSH Certificate Authority",
+        "Computed": true
+      },
+      "metadata": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "arbitrary user-defined machine-readable data of this SSH Certificate Authority. optional, max 4096 bytes."
+      },
+      "private_key_type": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "the type of private key to generate. one of `rsa`, `ecdsa`, `ed25519`"
+      },
+      "public_key": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "raw public key for this SSH Certificate Authority",
+        "Computed": true
+      }
+    },
+    "ngrok_ssh_credential": {
+      "acl": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "optional list of ACL rules. If unspecified, the credential will have no restrictions. The only allowed ACL rule at this time is the `bind` rule. The `bind` rule allows the caller to restrict what domains and addresses the token is allowed to bind. For example, to allow the token to open a tunnel on example.ngrok.io your ACL would include the rule `bind:example.ngrok.io`. Bind rules may specify a leading wildcard to match multiple domains with a common suffix. For example, you may specify a rule of `bind:*.example.com` which will allow `x.example.com`, `y.example.com`, `*.example.com`, etc. A rule of `'*'` is equivalent to no acl at all and will explicitly permit all actions.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "human-readable description of who or what will use the ssh credential to authenticate. Optional, max 255 bytes."
+      },
+      "id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "unique ssh credential resource identifier",
+        "Computed": true
+      },
+      "metadata": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "arbitrary user-defined machine-readable data of this ssh credential. Optional, max 4096 bytes."
+      },
+      "public_key": {
+        "Type": "String",
+        "Required": true,
+        "Description": "the PEM-encoded public key of the SSH keypair that will be used to authenticate"
+      }
+    },
+    "ngrok_ssh_host_certificate": {
+      "certificate": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "the signed SSH certificate in OpenSSH Authorized Keys format. this value should be placed in a `-cert.pub` certificate file on disk that should be referenced in your `sshd_config` configuration file with a `HostCertificate` directive",
+        "Computed": true
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "human-readable description of this SSH Host Certificate. optional, max 255 bytes."
+      },
+      "id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "unique identifier for this SSH Host Certificate",
+        "Computed": true
+      },
+      "key_type": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "the key type of the `public_key`, one of `rsa`, `ecdsa` or `ed25519`",
+        "Computed": true
+      },
+      "metadata": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "arbitrary user-defined machine-readable data of this SSH Host Certificate. optional, max 4096 bytes."
+      },
+      "principals": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "the list of principals included in the ssh host certificate. This is the list of hostnames and/or IP addresses that are authorized to serve SSH traffic with this certificate. Dangerously, if no principals are specified, this certificate is considered valid for all hosts.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "public_key": {
+        "Type": "String",
+        "Required": true,
+        "Description": "a public key in OpenSSH Authorized Keys format that this certificate signs"
+      },
+      "ssh_certificate_authority_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "the ssh certificate authority that is used to sign this ssh host certificate"
+      },
+      "valid_after": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "the time when the ssh host certificate becomes valid, in RFC 3339 format."
+      },
+      "valid_until": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "the time after which the ssh host certificate becomes invalid, in RFC 3339 format. the OpenSSH certificates RFC calls this `valid_before`."
+      }
+    },
+    "ngrok_ssh_user_certificate": {
+      "certificate": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "the signed SSH certificate in OpenSSH Authorized Keys Format. this value should be placed in a `-cert.pub` certificate file on disk that should be referenced in your `sshd_config` configuration file with a `HostCertificate` directive",
+        "Computed": true
+      },
+      "critical_options": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "A map of critical options included in the certificate. Only two critical options are currently defined by OpenSSH: `force-command` and `source-address`. See [the OpenSSH certificate protocol spec](https://github.com/openssh/openssh-portable/blob/master/PROTOCOL.certkeys) for additional details.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "human-readable description of this SSH User Certificate. optional, max 255 bytes."
+      },
+      "extensions": {
+        "Type": "Map",
+        "Optional": true,
+        "Description": "A map of extensions included in the certificate. Extensions are additional metadata that can be interpreted by the SSH server for any purpose. These can be used to permit or deny the ability to open a terminal, do port forwarding, x11 forwarding, and more. If unspecified, the certificate will include limited permissions with the following extension map: `{\"permit-pty\": \"\", \"permit-user-rc\": \"\"}` OpenSSH understands a number of predefined extensions. See [the OpenSSH certificate protocol spec](https://github.com/openssh/openssh-portable/blob/master/PROTOCOL.certkeys) for additional details.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "unique identifier for this SSH User Certificate",
+        "Computed": true
+      },
+      "key_type": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "the key type of the `public_key`, one of `rsa`, `ecdsa` or `ed25519`",
+        "Computed": true
+      },
+      "metadata": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "arbitrary user-defined machine-readable data of this SSH User Certificate. optional, max 4096 bytes."
+      },
+      "principals": {
+        "Type": "List",
+        "Optional": true,
+        "Description": "the list of principals included in the ssh user certificate. This is the list of usernames that the certificate holder may sign in as on a machine authorizinig the signing certificate authority. Dangerously, if no principals are specified, this certificate may be used to log in as any user.",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "String"
+        }
+      },
+      "public_key": {
+        "Type": "String",
+        "Required": true,
+        "Description": "a public key in OpenSSH Authorized Keys format that this certificate signs"
+      },
+      "ssh_certificate_authority_id": {
+        "Type": "String",
+        "Required": true,
+        "Description": "the ssh certificate authority that is used to sign this ssh user certificate"
+      },
+      "valid_after": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "the time when the ssh host certificate becomes valid, in RFC 3339 format."
+      },
+      "valid_until": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "the time after which the ssh host certificate becomes invalid, in RFC 3339 format. the OpenSSH certificates RFC calls this `valid_before`."
+      }
+    },
+    "ngrok_tls_certificate": {
+      "certificate_pem": {
+        "Type": "String",
+        "Required": true,
+        "Description": "chain of PEM-encoded certificates, leaf first. See [Certificate Bundles](https://ngrok.com/docs/api#tls-certificates-pem)."
+      },
+      "description": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "human-readable description of this TLS certificate. optional, max 255 bytes."
+      },
+      "id": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "unique identifier for this TLS certificate",
+        "Computed": true
+      },
+      "metadata": {
+        "Type": "String",
+        "Optional": true,
+        "Description": "arbitrary user-defined machine-readable data of this TLS certificate. optional, max 4096 bytes."
+      },
+      "private_key_pem": {
+        "Type": "String",
+        "Required": true,
+        "Description": "private key for the TLS certificate, PEM-encoded. See [Private Keys](https://ngrok.com/docs/ngrok-link#tls-certificates-key)."
+      },
+      "subject_alternative_names": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "subject alternative names (SANs) from the leaf of this TLS certificate",
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "dns_names": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "set of additional domains (including wildcards) this TLS certificate is valid for",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            },
+            "ips": {
+              "Type": "List",
+              "Optional": true,
+              "Description": "set of IP addresses this TLS certificate is also valid for",
+              "Computed": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "String"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "data-sources": {}
+}

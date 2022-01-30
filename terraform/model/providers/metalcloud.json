@@ -1,9 +1,9 @@
 {
   ".schema_version": "2",
-  ".sdk_type": "terraform-plugin-sdk-v1",
+  ".sdk_type": "terraform-plugin-sdk-v2",
   "name": "metalcloud",
   "type": "provider",
-  "version": "v1.1.7",
+  "version": "v2.2.8",
   "provider": {
     "api_key": {
       "Type": "String",
@@ -13,13 +13,9 @@
     },
     "endpoint": {
       "Type": "String",
-      "Optional": true,
+      "Required": true,
       "Description": "The URL to the API",
-      "DefaultFunc": "ENV(METALCLOUD_ENDPOINT)",
-      "Default": {
-        "Type": "string",
-        "Value": "https://api.bigstep.com/metal-cloud"
-      }
+      "DefaultFunc": "ENV(METALCLOUD_ENDPOINT)"
     },
     "logging": {
       "Type": "Bool",
@@ -53,7 +49,109 @@
     }
   },
   "resources": {
-    "metalcloud_infrastructure": {
+    "metalcloud_drive_array": {
+      "drive_array_id": {
+        "Type": "Int",
+        "Computed": true
+      },
+      "drive_array_io_limit_policy": {
+        "Type": "String",
+        "Computed": true
+      },
+      "drive_array_label": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "drive_array_storage_type": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "drive_array_wwn": {
+        "Type": "Map",
+        "Optional": true,
+        "Computed": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Value": "String"
+        }
+      },
+      "drive_size_mbytes_default": {
+        "Type": "Int",
+        "Optional": true,
+        "Default": {
+          "Type": "int",
+          "Value": "40960"
+        }
+      },
+      "infrastructure_id": {
+        "Type": "Int",
+        "Required": true
+      },
+      "instance_array_id": {
+        "Type": "Int",
+        "Optional": true,
+        "Default": {
+          "Type": "int",
+          "Value": "0"
+        }
+      },
+      "volume_template_id": {
+        "Type": "Int",
+        "Optional": true,
+        "Computed": true
+      }
+    },
+    "metalcloud_firmware_policy": {
+      "instance_array_list": {
+        "Type": "List",
+        "Optional": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "Int"
+        }
+      },
+      "server_firmware_upgrade_policy_action": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "server_firmware_upgrade_policy_id": {
+        "Type": "Int",
+        "Optional": true,
+        "Computed": true
+      },
+      "server_firmware_upgrade_policy_label": {
+        "Type": "String",
+        "Required": true
+      },
+      "server_firmware_upgrade_policy_rule": {
+        "Type": "Set",
+        "Optional": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "operation": {
+              "Type": "String",
+              "Required": true
+            },
+            "property": {
+              "Type": "String",
+              "Required": true
+            },
+            "value": {
+              "Type": "String",
+              "Required": true
+            }
+          }
+        }
+      }
+    },
+    "metalcloud_infrastructure_deployer": {
       "__timeouts__": [
         "create",
         "update"
@@ -63,7 +161,7 @@
         "Optional": true,
         "Default": {
           "Type": "bool",
-          "Value": "true"
+          "Value": "false"
         }
       },
       "attempt_soft_shutdown": {
@@ -90,10 +188,9 @@
           "Value": "true"
         }
       },
-      "datacenter_name": {
-        "Type": "String",
-        "Optional": true,
-        "DefaultFunc": "ENV(METALCLOUD_DATACENTER)"
+      "edited": {
+        "Type": "Bool",
+        "Computed": true
       },
       "hard_shutdown_after_timeout": {
         "Type": "Bool",
@@ -106,317 +203,31 @@
       "infrastructure_custom_variables": {
         "Type": "Map",
         "Optional": true,
+        "Computed": true,
         "ConfigImplicitMode": "Attr",
         "Elem": {
           "Value": "String"
         }
       },
-      "infrastructure_label": {
-        "Type": "String",
+      "infrastructure_id": {
+        "Type": "Int",
         "Required": true
       },
-      "instance_array": {
-        "Type": "Set",
-        "Optional": true,
-        "IsBlock": true,
-        "ConfigImplicitMode": "Block",
-        "Elem": {
-          "Type": "SchemaInfo",
-          "Info": {
-            "drive_array": {
-              "Type": "Set",
-              "Optional": true,
-              "IsBlock": true,
-              "ConfigImplicitMode": "Block",
-              "Elem": {
-                "Type": "SchemaInfo",
-                "Info": {
-                  "drive_array_id": {
-                    "Type": "Int",
-                    "Optional": true,
-                    "Computed": true
-                  },
-                  "drive_array_label": {
-                    "Type": "String",
-                    "Required": true
-                  },
-                  "drive_array_storage_type": {
-                    "Type": "String",
-                    "Required": true
-                  },
-                  "drive_size_mbytes_default": {
-                    "Type": "Int",
-                    "Optional": true,
-                    "Default": {
-                      "Type": "int",
-                      "Value": "40960"
-                    }
-                  },
-                  "instance_array_id": {
-                    "Type": "Int",
-                    "Optional": true,
-                    "Computed": true
-                  },
-                  "volume_template_id": {
-                    "Type": "Int",
-                    "Optional": true
-                  }
-                }
-              }
-            },
-            "firewall_rule": {
-              "Type": "Set",
-              "Optional": true,
-              "IsBlock": true,
-              "ConfigImplicitMode": "Block",
-              "Elem": {
-                "Type": "SchemaInfo",
-                "Info": {
-                  "firewall_rule_description": {
-                    "Type": "String",
-                    "Optional": true
-                  },
-                  "firewall_rule_destination_ip_address_range_end": {
-                    "Type": "String",
-                    "Optional": true
-                  },
-                  "firewall_rule_destination_ip_address_range_start": {
-                    "Type": "String",
-                    "Optional": true
-                  },
-                  "firewall_rule_enabled": {
-                    "Type": "Bool",
-                    "Optional": true,
-                    "Default": {
-                      "Type": "bool",
-                      "Value": "true"
-                    }
-                  },
-                  "firewall_rule_ip_address_type": {
-                    "Type": "String",
-                    "Optional": true,
-                    "Default": {
-                      "Type": "string",
-                      "Value": "ipv4"
-                    }
-                  },
-                  "firewall_rule_port_range_end": {
-                    "Type": "Int",
-                    "Optional": true
-                  },
-                  "firewall_rule_port_range_start": {
-                    "Type": "Int",
-                    "Optional": true
-                  },
-                  "firewall_rule_protocol": {
-                    "Type": "String",
-                    "Optional": true,
-                    "Default": {
-                      "Type": "string",
-                      "Value": "tcp"
-                    }
-                  },
-                  "firewall_rule_source_ip_address_range_end": {
-                    "Type": "String",
-                    "Optional": true
-                  },
-                  "firewall_rule_source_ip_address_range_start": {
-                    "Type": "String",
-                    "Optional": true
-                  }
-                }
-              }
-            },
-            "instance_array_additional_wan_ipv4_json": {
-              "Type": "String",
-              "Optional": true
-            },
-            "instance_array_boot_method": {
-              "Type": "String",
-              "Optional": true,
-              "Default": {
-                "Type": "string",
-                "Value": "pxe_iscsi"
-              }
-            },
-            "instance_array_custom_variables": {
-              "Type": "Map",
-              "Optional": true,
-              "ConfigImplicitMode": "Attr",
-              "Elem": {
-                "Value": "String"
-              }
-            },
-            "instance_array_disk_count": {
-              "Type": "Int",
-              "Optional": true,
-              "Default": {
-                "Type": "int",
-                "Value": "0"
-              }
-            },
-            "instance_array_disk_size_mbytes": {
-              "Type": "Int",
-              "Optional": true,
-              "Default": {
-                "Type": "int",
-                "Value": "0"
-              }
-            },
-            "instance_array_firewall_managed": {
-              "Type": "Bool",
-              "Optional": true,
-              "Default": {
-                "Type": "bool",
-                "Value": "true"
-              }
-            },
-            "instance_array_id": {
-              "Type": "Int",
-              "Optional": true,
-              "Computed": true
-            },
-            "instance_array_instance_count": {
-              "Type": "Int",
-              "Required": true
-            },
-            "instance_array_label": {
-              "Type": "String",
-              "Required": true
-            },
-            "instance_array_processor_core_count": {
-              "Type": "Int",
-              "Optional": true,
-              "Default": {
-                "Type": "int",
-                "Value": "1"
-              }
-            },
-            "instance_array_processor_core_mhz": {
-              "Type": "Int",
-              "Optional": true,
-              "Default": {
-                "Type": "int",
-                "Value": "1000"
-              }
-            },
-            "instance_array_processor_count": {
-              "Type": "Int",
-              "Optional": true,
-              "Default": {
-                "Type": "int",
-                "Value": "1"
-              }
-            },
-            "instance_array_ram_gbytes": {
-              "Type": "Int",
-              "Optional": true,
-              "Default": {
-                "Type": "int",
-                "Value": "1"
-              }
-            },
-            "instance_custom_variables": {
-              "Type": "List",
-              "Optional": true,
-              "IsBlock": true,
-              "ConfigImplicitMode": "Block",
-              "Elem": {
-                "Type": "SchemaInfo",
-                "Info": {
-                  "custom_variables": {
-                    "Type": "Map",
-                    "Required": true,
-                    "ConfigImplicitMode": "Attr",
-                    "Elem": {
-                      "Value": "String"
-                    }
-                  },
-                  "instance_index": {
-                    "Type": "Int",
-                    "Required": true
-                  }
-                }
-              }
-            },
-            "instances": {
-              "Type": "String",
-              "Optional": true,
-              "Computed": true
-            },
-            "interface": {
-              "Type": "Set",
-              "Optional": true,
-              "IsBlock": true,
-              "ConfigImplicitMode": "Block",
-              "Elem": {
-                "Type": "SchemaInfo",
-                "Info": {
-                  "interface_index": {
-                    "Type": "Int",
-                    "Required": true
-                  },
-                  "network_id": {
-                    "Type": "Int",
-                    "Optional": true,
-                    "Computed": true
-                  },
-                  "network_label": {
-                    "Type": "String",
-                    "Required": true
-                  }
-                }
-              }
-            },
-            "volume_template_id": {
-              "Type": "Int",
-              "Optional": true,
-              "Default": {
-                "Type": "int",
-                "Value": "0"
-              }
-            }
-          }
-        }
+      "infrastructure_service_status": {
+        "Type": "String",
+        "Computed": true
       },
       "keep_detaching_drives": {
         "Type": "Bool",
         "Optional": true,
+        "Computed": true
+      },
+      "keep_infrastructure_on_resource_destroy": {
+        "Type": "Bool",
+        "Optional": true,
         "Default": {
           "Type": "bool",
-          "Value": "true"
-        }
-      },
-      "network": {
-        "Type": "Set",
-        "Optional": true,
-        "IsBlock": true,
-        "ConfigImplicitMode": "Block",
-        "Elem": {
-          "Type": "SchemaInfo",
-          "Info": {
-            "network_id": {
-              "Type": "Int",
-              "Optional": true,
-              "Computed": true
-            },
-            "network_label": {
-              "Type": "String",
-              "Required": true
-            },
-            "network_lan_autoallocate_ips": {
-              "Type": "Bool",
-              "Optional": true,
-              "Default": {
-                "Type": "bool",
-                "Value": "false"
-              }
-            },
-            "network_type": {
-              "Type": "String",
-              "Required": true
-            }
-          }
+          "Value": "false"
         }
       },
       "prevent_deploy": {
@@ -427,47 +238,52 @@
           "Value": "true"
         }
       },
-      "shared_drive": {
+      "server_allocation_policy": {
         "Type": "Set",
         "Optional": true,
+        "Computed": true,
         "IsBlock": true,
         "ConfigImplicitMode": "Block",
         "Elem": {
           "Type": "SchemaInfo",
           "Info": {
-            "shared_drive_attached_instance_arrays": {
-              "Type": "List",
+            "allocation_policy": {
+              "Type": "Set",
               "Optional": true,
-              "ConfigImplicitMode": "Attr",
+              "Description": "Server allocation policy",
+              "IsBlock": true,
+              "ConfigImplicitMode": "Block",
               "Elem": {
-                "Type": "SchemaElements",
-                "ElementsType": "String"
+                "Type": "SchemaInfo",
+                "Info": {
+                  "server_count": {
+                    "Type": "Int",
+                    "Optional": true,
+                    "Description": "Count of servers of this server type.",
+                    "Computed": true
+                  },
+                  "server_ids": {
+                    "Type": "Set",
+                    "Optional": true,
+                    "Description": "List of server IDs to associate with this instance array on this server type id.",
+                    "ConfigImplicitMode": "Attr",
+                    "Elem": {
+                      "Type": "SchemaElements",
+                      "ElementsType": "Int"
+                    }
+                  },
+                  "server_type_id": {
+                    "Type": "Int",
+                    "Required": true,
+                    "Description": "Server type to allocate to instance array."
+                  }
+                }
               }
             },
-            "shared_drive_has_gfs": {
-              "Type": "Bool",
-              "Optional": true,
-              "Default": {
-                "Type": "bool",
-                "Value": "false"
-              }
-            },
-            "shared_drive_id": {
+            "instance_array_id": {
               "Type": "Int",
-              "Optional": true,
-              "Computed": true
-            },
-            "shared_drive_label": {
-              "Type": "String",
-              "Required": true
-            },
-            "shared_drive_size_mbytes": {
-              "Type": "Int",
-              "Required": true
-            },
-            "shared_drive_storage_type": {
-              "Type": "String",
-              "Optional": true
+              "Required": true,
+              "Description": "Instance_array ID"
             }
           }
         }
@@ -475,22 +291,475 @@
       "skip_ansible": {
         "Type": "Bool",
         "Optional": true,
-        "Default": {
-          "Type": "bool",
-          "Value": "false"
-        }
+        "Computed": true
       },
       "soft_shutdown_timeout_seconds": {
         "Type": "Int",
         "Optional": true,
         "Default": {
           "Type": "int",
-          "Value": "180"
+          "Value": "30"
         }
+      }
+    },
+    "metalcloud_instance_array": {
+      "firewall_rule": {
+        "Type": "Set",
+        "Optional": true,
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "firewall_rule_description": {
+              "Type": "String",
+              "Optional": true
+            },
+            "firewall_rule_destination_ip_address_range_end": {
+              "Type": "String",
+              "Optional": true
+            },
+            "firewall_rule_destination_ip_address_range_start": {
+              "Type": "String",
+              "Optional": true
+            },
+            "firewall_rule_enabled": {
+              "Type": "Bool",
+              "Optional": true,
+              "Default": {
+                "Type": "bool",
+                "Value": "true"
+              }
+            },
+            "firewall_rule_ip_address_type": {
+              "Type": "String",
+              "Optional": true,
+              "Default": {
+                "Type": "string",
+                "Value": "ipv4"
+              }
+            },
+            "firewall_rule_port_range_end": {
+              "Type": "Int",
+              "Optional": true
+            },
+            "firewall_rule_port_range_start": {
+              "Type": "Int",
+              "Optional": true
+            },
+            "firewall_rule_protocol": {
+              "Type": "String",
+              "Optional": true,
+              "Default": {
+                "Type": "string",
+                "Value": "tcp"
+              }
+            },
+            "firewall_rule_source_ip_address_range_end": {
+              "Type": "String",
+              "Optional": true
+            },
+            "firewall_rule_source_ip_address_range_start": {
+              "Type": "String",
+              "Optional": true
+            }
+          }
+        }
+      },
+      "infrastructure_id": {
+        "Type": "Int",
+        "Required": true
+      },
+      "instance_array_additional_wan_ipv4_json": {
+        "Type": "String",
+        "Optional": true
+      },
+      "instance_array_boot_method": {
+        "Type": "String",
+        "Optional": true,
+        "Default": {
+          "Type": "string",
+          "Value": "pxe_iscsi"
+        }
+      },
+      "instance_array_custom_variables": {
+        "Type": "Map",
+        "Optional": true,
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Value": "String"
+        }
+      },
+      "instance_array_disk_count": {
+        "Type": "Int",
+        "Optional": true,
+        "Computed": true
+      },
+      "instance_array_disk_size_mbytes": {
+        "Type": "Int",
+        "Optional": true,
+        "Computed": true
+      },
+      "instance_array_firewall_managed": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "instance_array_id": {
+        "Type": "Int",
+        "Computed": true
+      },
+      "instance_array_instance_count": {
+        "Type": "Int",
+        "Optional": true
+      },
+      "instance_array_label": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "instance_array_processor_core_count": {
+        "Type": "Int",
+        "Optional": true,
+        "Computed": true
+      },
+      "instance_array_processor_core_mhz": {
+        "Type": "Int",
+        "Optional": true,
+        "Computed": true
+      },
+      "instance_array_processor_count": {
+        "Type": "Int",
+        "Optional": true,
+        "Computed": true
+      },
+      "instance_array_ram_gbytes": {
+        "Type": "Int",
+        "Optional": true,
+        "Computed": true
+      },
+      "instance_custom_variables": {
+        "Type": "List",
+        "Optional": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "custom_variables": {
+              "Type": "Map",
+              "Required": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Value": "String"
+              }
+            },
+            "instance_index": {
+              "Type": "Int",
+              "Required": true
+            }
+          }
+        }
+      },
+      "instance_server_type": {
+        "Type": "List",
+        "Optional": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "instance_index": {
+              "Type": "Int",
+              "Required": true
+            },
+            "server_type_id": {
+              "Type": "Int",
+              "Required": true
+            }
+          }
+        }
+      },
+      "instances": {
+        "Type": "String",
+        "Computed": true
+      },
+      "interface": {
+        "Type": "Set",
+        "Optional": true,
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "interface_index": {
+              "Type": "Int",
+              "Required": true
+            },
+            "network_id": {
+              "Type": "Int",
+              "Required": true
+            }
+          }
+        }
+      },
+      "network_profile": {
+        "Type": "Set",
+        "Optional": true,
+        "Computed": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "network_id": {
+              "Type": "Int",
+              "Required": true
+            },
+            "network_profile_id": {
+              "Type": "Int",
+              "Optional": true
+            }
+          }
+        }
+      },
+      "volume_template_id": {
+        "Type": "Int",
+        "Optional": true,
+        "Default": {
+          "Type": "int",
+          "Value": "0"
+        }
+      }
+    },
+    "metalcloud_network": {
+      "infrastructure_id": {
+        "Type": "Int",
+        "Required": true
+      },
+      "network_id": {
+        "Type": "Int",
+        "Optional": true,
+        "Computed": true
+      },
+      "network_label": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "network_lan_autoallocate_ips": {
+        "Type": "Bool",
+        "Optional": true,
+        "Computed": true
+      },
+      "network_type": {
+        "Type": "String",
+        "Required": true
+      }
+    },
+    "metalcloud_network_profile": {
+      "datacenter_name": {
+        "Type": "String",
+        "Required": true
+      },
+      "network_profile_id": {
+        "Type": "Int",
+        "Optional": true,
+        "Computed": true
+      },
+      "network_profile_label": {
+        "Type": "String",
+        "Required": true
+      },
+      "network_profile_vlan": {
+        "Type": "Set",
+        "Required": true,
+        "IsBlock": true,
+        "ConfigImplicitMode": "Block",
+        "Elem": {
+          "Type": "SchemaInfo",
+          "Info": {
+            "external_connection_ids": {
+              "Type": "List",
+              "Optional": true,
+              "ConfigImplicitMode": "Attr",
+              "Elem": {
+                "Type": "SchemaElements",
+                "ElementsType": "Int"
+              }
+            },
+            "port_mode": {
+              "Type": "String",
+              "Required": true
+            },
+            "provision_subnet_gateways": {
+              "Type": "Bool",
+              "Optional": true,
+              "Default": {
+                "Type": "bool",
+                "Value": "false"
+              }
+            },
+            "vlan_id": {
+              "Type": "Int",
+              "Required": true
+            }
+          }
+        }
+      },
+      "network_type": {
+        "Type": "String",
+        "Required": true
+      }
+    },
+    "metalcloud_shared_drive": {
+      "infrastructure_id": {
+        "Type": "Int",
+        "Required": true
+      },
+      "shared_drive_attached_instance_arrays": {
+        "Type": "Set",
+        "Optional": true,
+        "Description": "List of instance array IDs to which to attach this shared drive",
+        "ConfigImplicitMode": "Attr",
+        "Elem": {
+          "Type": "SchemaElements",
+          "ElementsType": "Int"
+        }
+      },
+      "shared_drive_id": {
+        "Type": "Int",
+        "Optional": true,
+        "Computed": true
+      },
+      "shared_drive_io_limit_policy": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "shared_drive_label": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "shared_drive_size_mbytes": {
+        "Type": "Int",
+        "Optional": true,
+        "Default": {
+          "Type": "int",
+          "Value": "2048"
+        }
+      },
+      "shared_drive_storage_type": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
+      },
+      "shared_drive_targets_json": {
+        "Type": "String",
+        "Computed": true
+      },
+      "shared_drive_wwn": {
+        "Type": "String",
+        "Optional": true,
+        "Computed": true
       }
     }
   },
   "data-sources": {
+    "metalcloud_external_connection": {
+      "datacenter_name": {
+        "Type": "String",
+        "Required": true
+      },
+      "external_connection_description": {
+        "Type": "String",
+        "Optional": true
+      },
+      "external_connection_hidden": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "bool",
+          "Value": "false"
+        }
+      },
+      "external_connection_id": {
+        "Type": "Int",
+        "Optional": true,
+        "Computed": true
+      },
+      "external_connection_label": {
+        "Type": "String",
+        "Required": true
+      }
+    },
+    "metalcloud_infrastructure": {
+      "create_if_not_exists": {
+        "Type": "Bool",
+        "Optional": true,
+        "Default": {
+          "Type": "bool",
+          "Value": "true"
+        }
+      },
+      "datacenter_name": {
+        "Type": "String",
+        "Required": true
+      },
+      "infrastructure_id": {
+        "Type": "Int",
+        "Computed": true
+      },
+      "infrastructure_label": {
+        "Type": "String",
+        "Required": true
+      }
+    },
+    "metalcloud_server_type": {
+      "server_disk_count": {
+        "Type": "Int",
+        "Computed": true
+      },
+      "server_disk_size_mbytes": {
+        "Type": "Int",
+        "Computed": true
+      },
+      "server_disk_type": {
+        "Type": "Int",
+        "Computed": true
+      },
+      "server_processor_core_count": {
+        "Type": "Int",
+        "Computed": true
+      },
+      "server_processor_core_mhz": {
+        "Type": "Int",
+        "Computed": true
+      },
+      "server_processor_count": {
+        "Type": "Int",
+        "Computed": true
+      },
+      "server_ram_gbytes": {
+        "Type": "Int",
+        "Computed": true
+      },
+      "server_type_id": {
+        "Type": "Int",
+        "Optional": true,
+        "Computed": true
+      },
+      "server_type_name": {
+        "Type": "String",
+        "Required": true
+      }
+    },
     "metalcloud_volume_template": {
       "volume_template_id": {
         "Type": "Int",
