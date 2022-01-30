@@ -20,7 +20,7 @@ for name in $(jq -r "keys[]" <$conf); do
     echo "New provider available: $name"
     {
       echo -n "\"$name\": "
-      jq -r ".\"$name\" | del(.\"latest-version\")| del(.\"full-name\")" "$conf"
+      jq -r ".\"$name\" | del(.\"latest-version\")| del(.\"full-name\")" "$conf" | sed 's~https://~~'
       echo ","
     } >>'providers.base.new.json'
     fail=1
