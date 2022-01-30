@@ -12,7 +12,7 @@ which tr &>/dev/null || ( echo "tr required"; exit 1 )
 function urldecode() { : "${*//+/ }"; echo -e "${_//%/\\x}"; }
 
 rm -f providers.html
-curl 'https://registry.terraform.io/search/providers' -o providers.html
+curl -fsSLq 'https://registry.terraform.io/search/providers' -o providers.html
 environment="$(xmllint --html -xpath 'string(//meta[@name="terraform-registry/config/environment"]/@content)' providers.html 2>/dev/null)"
 decoded_environment="$(urldecode "$environment")"
 rm providers.html
