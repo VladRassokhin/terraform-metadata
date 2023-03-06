@@ -1,3 +1,9 @@
+DEPRECATION NOTICE
+========
+
+Actual sources could be found at [JetBrains/intellij-plugins/terraform/metadata-crawler](https://github.com/JetBrains/intellij-plugins/tree/master/terraform/metadata-crawler)
+
+
 Metadata for HashiCorp Terraform
 ========
 
